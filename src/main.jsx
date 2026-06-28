@@ -7,14 +7,17 @@ import './styles/app.css';
 
 const startPosition = new THREE.Vector3(0, 1.7, 20);
 const houseDoorPosition = new THREE.Vector3(0, 1.7, -15.8);
+const computerPosition = new THREE.Vector3(0, 1.7, -24.2);
 
 function App() {
-  const [place, setPlace] = useState('lobby');
   const [studyOpen, setStudyOpen] = useState(false);
-  const [isNearHouse, setIsNearHouse] = useState(false);
+  const [isNearDoor, setIsNearDoor] = useState(false);
+  const [isDoorOpen, setIsDoorOpen] = useState(false);
+  const [isNearComputer, setIsNearComputer] = useState(false);
   const [subjectId, setSubjectId] = useState(studySubjects[0].id);
   const [videoId, setVideoId] = useState(studySubjects[0].videos[0].id);
-  const resetLobbyRef = useRef(() => {});
+  const resetWorldRef = useRef(() => {});
+  const openDoorRef = useRef(() => {});
 
   const subject = useMemo(
     () => studySubjects.find((item) => item.id === subjectId) ?? studySubjects[0],
@@ -33,14 +36,19 @@ function App() {
         return;
       }
 
-      if (place === 'lobby' && isNearHouse && (key === 'e' || key === 'enter')) {
-        enterHouse();
+      if (!studyOpen && isNearDoor && !isDoorOpen && (key === 'e' || key === 'enter')) {
+        openDoorRef.current();
+        return;
+      }
+
+      if (!studyOpen && isNearComputer && (key === 'e' || key === 'enter')) {
+        setStudyOpen(true);
       }
     }
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isNearHouse, place, studyOpen]);
+  }, [isDoorOpen, isNearComputer, isNearDoor, studyOpen]);
 
   function changeSubject(nextSubjectId) {
     const nextSubject = studySubjects.find((item) => item.id === nextSubjectId) ?? studySubjects[0];
@@ -48,34 +56,34 @@ function App() {
     setVideoId(nextSubject.videos[0].id);
   }
 
-  function enterHouse() {
-    setIsNearHouse(false);
-    setPlace('room');
-  }
-
   return (
     <main className="game-shell">
-      {place === 'lobby' ? (
-        <FirstPersonLobby
-          onNearHouseChange={setIsNearHouse}
-          resetRef={resetLobbyRef}
-        />
-      ) : (
-        <SimpleRoom onExit={() => setPlace('lobby')} onOpenStudy={() => setStudyOpen(true)} />
-      )}
-
-      <Hud
-        place={place}
-        isNearHouse={isNearHouse}
-        onReset={() => {
-          if (place === 'lobby') resetLobbyRef.current();
-        }}
+      <FirstPersonWorld
+        onDoorOpenChange={setIsDoorOpen}
+        onNearComputerChange={setIsNearComputer}
+        onNearDoorChange={setIsNearDoor}
+        openDoorRef={openDoorRef}
+        resetRef={resetWorldRef}
       />
 
-      {place === 'lobby' && isNearHouse && (
-        <button className="interaction-prompt" type="button" onClick={enterHouse}>
+      <Hud
+        isDoorOpen={isDoorOpen}
+        isNearComputer={isNearComputer}
+        isNearDoor={isNearDoor}
+        onReset={() => resetWorldRef.current()}
+      />
+
+      {isNearDoor && !isDoorOpen && (
+        <button className="interaction-prompt" type="button" onClick={() => openDoorRef.current()}>
           <DoorOpen size={18} aria-hidden="true" />
-          Entrar a la casa
+          Abrir puerta
+        </button>
+      )}
+
+      {isNearComputer && (
+        <button className="interaction-prompt" type="button" onClick={() => setStudyOpen(true)}>
+          <Monitor size={18} aria-hidden="true" />
+          Abrir computadora
         </button>
       )}
 
@@ -92,9 +100,11 @@ function App() {
   );
 }
 
-function FirstPersonLobby({ onNearHouseChange, resetRef }) {
+function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorChange, openDoorRef, resetRef }) {
   const mountRef = useRef(null);
-  const nearRef = useRef(false);
+  const nearDoorRef = useRef(false);
+  const nearComputerRef = useRef(false);
+  const doorOpenRef = useRef(false);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -122,7 +132,7 @@ function FirstPersonLobby({ onNearHouseChange, resetRef }) {
     sun.shadow.mapSize.set(1024, 1024);
     scene.add(sun);
 
-    buildLobbyScene(scene);
+    const { doorPivot } = buildLobbyScene(scene);
 
     const keys = new Set();
     let yaw = 0;
@@ -136,11 +146,22 @@ function FirstPersonLobby({ onNearHouseChange, resetRef }) {
       yaw = 0;
       pitch = 0;
       camera.rotation.set(pitch, yaw, 0);
-      nearRef.current = false;
-      onNearHouseChange(false);
+      doorOpenRef.current = false;
+      doorPivot.rotation.y = 0;
+      nearDoorRef.current = false;
+      nearComputerRef.current = false;
+      onDoorOpenChange(false);
+      onNearDoorChange(false);
+      onNearComputerChange(false);
     }
 
     resetRef.current = resetCamera;
+    openDoorRef.current = () => {
+      doorOpenRef.current = true;
+      onDoorOpenChange(true);
+      onNearDoorChange(false);
+      nearDoorRef.current = false;
+    };
 
     function onKeyDown(event) {
       const key = event.key.toLowerCase();
@@ -161,12 +182,13 @@ function FirstPersonLobby({ onNearHouseChange, resetRef }) {
       lastX = event.clientX;
       lastY = event.clientY;
       mount.setPointerCapture?.(event.pointerId);
+      renderer.domElement.requestPointerLock?.();
     }
 
     function onPointerMove(event) {
       if (!dragging) return;
-      const dx = event.clientX - lastX;
-      const dy = event.clientY - lastY;
+      const dx = document.pointerLockElement === renderer.domElement ? event.movementX : event.clientX - lastX;
+      const dy = document.pointerLockElement === renderer.domElement ? event.movementY : event.clientY - lastY;
       lastX = event.clientX;
       lastY = event.clientY;
       yaw -= dx * 0.004;
@@ -174,9 +196,21 @@ function FirstPersonLobby({ onNearHouseChange, resetRef }) {
       camera.rotation.set(pitch, yaw, 0);
     }
 
+    function onMouseMove(event) {
+      if (document.pointerLockElement !== renderer.domElement) return;
+      yaw -= event.movementX * 0.004;
+      pitch = clamp(pitch - event.movementY * 0.003, -0.72, 0.52);
+      camera.rotation.set(pitch, yaw, 0);
+    }
+
     function onPointerUp(event) {
+      if (document.pointerLockElement === renderer.domElement) return;
       dragging = false;
       mount.releasePointerCapture?.(event.pointerId);
+    }
+
+    function onPointerLockChange() {
+      dragging = document.pointerLockElement === renderer.domElement;
     }
 
     function onResize() {
@@ -206,10 +240,12 @@ function FirstPersonLobby({ onNearHouseChange, resetRef }) {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('resize', onResize);
+    document.addEventListener('mousemove', onMouseMove);
     mount.addEventListener('pointerdown', onPointerDown);
     mount.addEventListener('pointermove', onPointerMove);
     mount.addEventListener('pointerup', onPointerUp);
     mount.addEventListener('pointerleave', onPointerUp);
+    document.addEventListener('pointerlockchange', onPointerLockChange);
 
     const clock = new THREE.Clock();
     let frameId = 0;
@@ -231,12 +267,24 @@ function FirstPersonLobby({ onNearHouseChange, resetRef }) {
         camera.position.add(move);
         camera.position.x = clamp(camera.position.x, -27.5, 27.5);
         camera.position.z = clamp(camera.position.z, -27.5, 27.5);
+        if (!doorOpenRef.current && camera.position.z < -15.25 && Math.abs(camera.position.x) < 1.8) {
+          camera.position.z = -15.25;
+        }
       }
 
-      const nearHouse = camera.position.distanceTo(houseDoorPosition) < 5;
-      if (nearHouse !== nearRef.current) {
-        nearRef.current = nearHouse;
-        onNearHouseChange(nearHouse);
+      doorPivot.rotation.y += ((doorOpenRef.current ? -Math.PI * 0.62 : 0) - doorPivot.rotation.y) * 0.16;
+
+      const nearDoor = !doorOpenRef.current && camera.position.distanceTo(houseDoorPosition) < 5;
+      if (nearDoor !== nearDoorRef.current) {
+        nearDoorRef.current = nearDoor;
+        onNearDoorChange(nearDoor);
+      }
+
+      const nearComputer =
+        doorOpenRef.current && (camera.position.distanceTo(computerPosition) < 7.4 || camera.position.z < -14.8);
+      if (nearComputer !== nearComputerRef.current) {
+        nearComputerRef.current = nearComputer;
+        onNearComputerChange(nearComputer);
       }
 
       renderer.render(scene, camera);
@@ -250,16 +298,18 @@ function FirstPersonLobby({ onNearHouseChange, resetRef }) {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('resize', onResize);
+      document.removeEventListener('mousemove', onMouseMove);
       mount.removeEventListener('pointerdown', onPointerDown);
       mount.removeEventListener('pointermove', onPointerMove);
       mount.removeEventListener('pointerup', onPointerUp);
       mount.removeEventListener('pointerleave', onPointerUp);
+      document.removeEventListener('pointerlockchange', onPointerLockChange);
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
-  }, [onNearHouseChange, resetRef]);
+  }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, openDoorRef, resetRef]);
 
-  return <section className="three-world" ref={mountRef} aria-label="Lobby 3D en primera persona" />;
+  return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
 }
 
 function buildLobbyScene(scene) {
@@ -298,11 +348,30 @@ function buildLobbyScene(scene) {
   const houseGroup = new THREE.Group();
   houseGroup.position.set(0, 0, -20);
 
-  const body = new THREE.Mesh(new THREE.BoxGeometry(12, 7, 9), houseWall);
-  body.position.y = 3.5;
-  body.castShadow = true;
-  body.receiveShadow = true;
-  houseGroup.add(body);
+  const wallParts = [
+    { position: [-4.75, 3.5, 4.5], size: [2.5, 7, 0.35] },
+    { position: [4.75, 3.5, 4.5], size: [2.5, 7, 0.35] },
+    { position: [0, 5.75, 4.5], size: [7, 2.5, 0.35] },
+    { position: [0, 3.5, -4.5], size: [12, 7, 0.35] },
+    { position: [-6, 3.5, 0], size: [0.35, 7, 9] },
+    { position: [6, 3.5, 0], size: [0.35, 7, 9] }
+  ];
+
+  wallParts.forEach((part) => {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(...part.size), houseWall);
+    wall.position.set(...part.position);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    houseGroup.add(wall);
+  });
+
+  const floor = new THREE.Mesh(
+    new THREE.BoxGeometry(11.4, 0.18, 8.4),
+    new THREE.MeshStandardMaterial({ color: 0xb9865f, roughness: 0.95 })
+  );
+  floor.position.y = 0.09;
+  floor.receiveShadow = true;
+  houseGroup.add(floor);
 
   const roof = new THREE.Mesh(new THREE.ConeGeometry(8.8, 4.8, 4), roofMaterial);
   roof.position.y = 9.4;
@@ -310,10 +379,13 @@ function buildLobbyScene(scene) {
   roof.castShadow = true;
   houseGroup.add(roof);
 
+  const doorPivot = new THREE.Group();
+  doorPivot.position.set(-1.25, 0, 4.72);
   const door = new THREE.Mesh(new THREE.BoxGeometry(2.5, 4, 0.18), doorMaterial);
-  door.position.set(0, 2, 4.6);
+  door.position.set(1.25, 2, 0);
   door.castShadow = true;
-  houseGroup.add(door);
+  doorPivot.add(door);
+  houseGroup.add(doorPivot);
 
   const windowMaterial = new THREE.MeshStandardMaterial({ color: 0x74c7df, roughness: 0.35 });
   [-3.8, 3.8].forEach((x) => {
@@ -323,6 +395,29 @@ function buildLobbyScene(scene) {
   });
 
   scene.add(houseGroup);
+
+  const desk = new THREE.Mesh(
+    new THREE.BoxGeometry(5.2, 1, 1.8),
+    new THREE.MeshStandardMaterial({ color: 0x6a4635, roughness: 0.9 })
+  );
+  desk.position.set(0, 1.05, -24.4);
+  desk.castShadow = true;
+  scene.add(desk);
+
+  const screen = new THREE.Mesh(
+    new THREE.BoxGeometry(2.7, 1.8, 0.2),
+    new THREE.MeshStandardMaterial({ color: 0x203336, roughness: 0.5 })
+  );
+  screen.position.set(0, 2.55, -24.08);
+  screen.castShadow = true;
+  scene.add(screen);
+
+  const screenGlow = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 1.25, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x57c1c8, emissive: 0x1b6f74, emissiveIntensity: 0.6 })
+  );
+  screenGlow.position.set(0, 2.55, -23.92);
+  scene.add(screenGlow);
 
   [
     [-17, -12],
@@ -347,48 +442,28 @@ function buildLobbyScene(scene) {
     leaves.castShadow = true;
     scene.add(leaves);
   });
+
+  return { doorPivot };
 }
 
-function SimpleRoom({ onExit, onOpenStudy }) {
-  return (
-    <section className="simple-room">
-      <button className="exit-room" type="button" onClick={onExit}>
-        <DoorOpen size={20} aria-hidden="true" />
-        Volver al lobby
-      </button>
-      <div className="room-card">
-        <div className="room-desk">
-          <button className="room-computer" type="button" onClick={onOpenStudy}>
-            <Monitor size={46} aria-hidden="true" />
-            Abrir estudio
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Hud({ place, isNearHouse, onReset }) {
+function Hud({ isDoorOpen, isNearComputer, isNearDoor, onReset }) {
   return (
     <aside className="hud">
       <div>
-        <strong>{place === 'lobby' ? 'Lobby 3D' : 'Interior simple'}</strong>
+        <strong>Lobby 3D</strong>
         <span>WASD o flechas para caminar</span>
-        <span>Arrastra el mouse para mirar</span>
+        <span>Click en la escena para mirar con el mouse</span>
       </div>
-      {place === 'lobby' && (
-        <div>
-          <span>Camina por el sendero hasta la puerta</span>
-          <span>E / Enter para entrar cuando estes cerca</span>
-        </div>
-      )}
-      {place === 'lobby' && (
-        <button type="button" onClick={onReset}>
-          <RotateCcw size={16} aria-hidden="true" />
-          Reiniciar
-        </button>
-      )}
-      {isNearHouse && <p className="hud-ready">Estas frente a la puerta.</p>}
+      <div>
+        <span>{isDoorOpen ? 'Entra a la casa y acercate a la computadora' : 'Camina por el sendero hasta la puerta'}</span>
+        <span>E / Enter para interactuar cuando estes cerca</span>
+      </div>
+      <button type="button" onClick={onReset}>
+        <RotateCcw size={16} aria-hidden="true" />
+        Reiniciar
+      </button>
+      {isNearDoor && <p className="hud-ready">Estas frente a la puerta.</p>}
+      {isNearComputer && <p className="hud-ready">Estas frente a la computadora.</p>}
     </aside>
   );
 }
