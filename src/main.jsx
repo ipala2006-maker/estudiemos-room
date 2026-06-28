@@ -7,7 +7,7 @@ import './styles/app.css';
 
 const startPosition = new THREE.Vector3(0, 1.7, 20);
 const houseDoorPosition = new THREE.Vector3(0, 1.7, -13.7);
-const computerPosition = new THREE.Vector3(0, 1.7, -24.2);
+const computerPosition = new THREE.Vector3(-3.0, 1.7, -23.3);
 
 function App() {
   const [studyOpen, setStudyOpen] = useState(false);
@@ -17,7 +17,7 @@ function App() {
   const [subjectId, setSubjectId] = useState(studySubjects[0].id);
   const [videoId, setVideoId] = useState(studySubjects[0].videos[0].id);
   const resetWorldRef = useRef(() => {});
-  const openDoorRef = useRef(() => {});
+  const toggleDoorRef = useRef(() => {});
 
   const subject = useMemo(
     () => studySubjects.find((item) => item.id === subjectId) ?? studySubjects[0],
@@ -36,8 +36,8 @@ function App() {
         return;
       }
 
-      if (!studyOpen && isNearDoor && !isDoorOpen && key === 'e') {
-        openDoorRef.current();
+      if (!studyOpen && isNearDoor && key === 'e') {
+        toggleDoorRef.current();
         return;
       }
 
@@ -62,7 +62,7 @@ function App() {
         onDoorOpenChange={setIsDoorOpen}
         onNearComputerChange={setIsNearComputer}
         onNearDoorChange={setIsNearDoor}
-        openDoorRef={openDoorRef}
+        toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
       />
 
@@ -73,8 +73,8 @@ function App() {
         onReset={() => resetWorldRef.current()}
       />
 
-      {isNearDoor && !isDoorOpen && (
-        <div className="interaction-prompt">Presiona E para abrir la puerta</div>
+      {isNearDoor && (
+        <div className="interaction-prompt">Presiona E para {isDoorOpen ? 'cerrar' : 'abrir'} la puerta</div>
       )}
 
       {isNearComputer && (
@@ -94,7 +94,7 @@ function App() {
   );
 }
 
-function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorChange, openDoorRef, resetRef }) {
+function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorChange, toggleDoorRef, resetRef }) {
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
   const nearComputerRef = useRef(false);
@@ -132,6 +132,8 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
     const keyPulses = new Map();
     let yaw = 0;
     let pitch = 0;
+    let lastMouseX = null;
+    let lastMouseY = null;
 
     function resetCamera() {
       camera.position.copy(startPosition);
@@ -148,11 +150,9 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
     }
 
     resetRef.current = resetCamera;
-    openDoorRef.current = () => {
-      doorOpenRef.current = true;
-      onDoorOpenChange(true);
-      onNearDoorChange(false);
-      nearDoorRef.current = false;
+    toggleDoorRef.current = () => {
+      doorOpenRef.current = !doorOpenRef.current;
+      onDoorOpenChange(doorOpenRef.current);
     };
 
     function onKeyDown(event) {
@@ -169,15 +169,19 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
       keys.delete(event.key.toLowerCase());
     }
 
-    function onPointerDown(event) {
-      event.preventDefault();
-      renderer.domElement.requestPointerLock?.();
-    }
-
     function onMouseMove(event) {
-      if (document.pointerLockElement !== renderer.domElement) return;
-      yaw -= event.movementX * 0.004;
-      pitch = clamp(pitch - event.movementY * 0.003, -0.72, 0.52);
+      if (lastMouseX == null || lastMouseY == null) {
+        lastMouseX = event.clientX;
+        lastMouseY = event.clientY;
+        return;
+      }
+
+      const dx = event.clientX - lastMouseX;
+      const dy = event.clientY - lastMouseY;
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+      yaw -= dx * 0.004;
+      pitch = clamp(pitch - dy * 0.003, -0.72, 0.52);
       camera.rotation.set(pitch, yaw, 0);
     }
 
@@ -191,7 +195,6 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('resize', onResize);
     document.addEventListener('mousemove', onMouseMove);
-    mount.addEventListener('pointerdown', onPointerDown);
 
     const clock = new THREE.Clock();
     let frameId = 0;
@@ -222,18 +225,20 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
         if (!doorOpenRef.current && camera.position.z < -13.7 && Math.abs(camera.position.x) < 7.2) {
           camera.position.z = -13.7;
         }
+        if (doorOpenRef.current && camera.position.z < -22.15 && Math.abs(camera.position.x) < 7.2) {
+          camera.position.z = -22.15;
+        }
       }
 
       doorPivot.rotation.y += ((doorOpenRef.current ? -Math.PI * 0.62 : 0) - doorPivot.rotation.y) * 0.16;
 
-      const nearDoor = !doorOpenRef.current && camera.position.distanceTo(houseDoorPosition) < 5;
+      const nearDoor = camera.position.distanceTo(houseDoorPosition) < 5;
       if (nearDoor !== nearDoorRef.current) {
         nearDoorRef.current = nearDoor;
         onNearDoorChange(nearDoor);
       }
 
-      const nearComputer =
-        doorOpenRef.current && (camera.position.distanceTo(computerPosition) < 7.4 || camera.position.z < -14.8);
+      const nearComputer = doorOpenRef.current && camera.position.distanceTo(computerPosition) < 5.8;
       if (nearComputer !== nearComputerRef.current) {
         nearComputerRef.current = nearComputer;
         onNearComputerChange(nearComputer);
@@ -251,11 +256,10 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('resize', onResize);
       document.removeEventListener('mousemove', onMouseMove);
-      mount.removeEventListener('pointerdown', onPointerDown);
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
-  }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, openDoorRef, resetRef]);
+  }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, toggleDoorRef, resetRef]);
 
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
 }
@@ -347,27 +351,42 @@ function buildLobbyScene(scene) {
   scene.add(houseGroup);
 
   const desk = new THREE.Mesh(
-    new THREE.BoxGeometry(5.2, 1, 1.8),
+    new THREE.BoxGeometry(4.8, 1, 1.8),
     new THREE.MeshStandardMaterial({ color: 0x6a4635, roughness: 0.9 })
   );
-  desk.position.set(0, 1.05, -24.4);
+  desk.position.set(-3.0, 1.05, -24.35);
   desk.castShadow = true;
   scene.add(desk);
 
-  const screen = new THREE.Mesh(
-    new THREE.BoxGeometry(2.7, 1.8, 0.2),
+  const upperScreen = new THREE.Mesh(
+    new THREE.BoxGeometry(4.2, 2.25, 0.2),
     new THREE.MeshStandardMaterial({ color: 0x203336, roughness: 0.5 })
   );
-  screen.position.set(0, 2.55, -24.08);
-  screen.castShadow = true;
-  scene.add(screen);
+  upperScreen.position.set(-3.0, 3.75, -24.08);
+  upperScreen.castShadow = true;
+  scene.add(upperScreen);
 
-  const screenGlow = new THREE.Mesh(
-    new THREE.BoxGeometry(2.2, 1.25, 0.08),
+  const upperGlow = new THREE.Mesh(
+    new THREE.BoxGeometry(3.62, 1.68, 0.08),
     new THREE.MeshStandardMaterial({ color: 0x57c1c8, emissive: 0x1b6f74, emissiveIntensity: 0.6 })
   );
-  screenGlow.position.set(0, 2.55, -23.92);
-  scene.add(screenGlow);
+  upperGlow.position.set(-3.0, 3.75, -23.92);
+  scene.add(upperGlow);
+
+  const lowerScreen = new THREE.Mesh(
+    new THREE.BoxGeometry(3.45, 1.35, 0.2),
+    new THREE.MeshStandardMaterial({ color: 0x203336, roughness: 0.5 })
+  );
+  lowerScreen.position.set(-3.0, 2.05, -24.08);
+  lowerScreen.castShadow = true;
+  scene.add(lowerScreen);
+
+  const lowerGlow = new THREE.Mesh(
+    new THREE.BoxGeometry(2.86, 0.86, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x77d7a6, emissive: 0x1f7f50, emissiveIntensity: 0.55 })
+  );
+  lowerGlow.position.set(-3.0, 2.05, -23.92);
+  scene.add(lowerGlow);
 
   [
     [-17, -12],
@@ -402,7 +421,7 @@ function Hud({ isDoorOpen, isNearComputer, isNearDoor, onReset }) {
       <div>
         <strong>Lobby 3D</strong>
         <span>WASD o flechas para caminar</span>
-        <span>Click en la escena para mirar con el mouse</span>
+        <span>Mueve el mouse para mirar</span>
       </div>
       <div>
         <span>{isDoorOpen ? 'Entra a la casa y acercate a la computadora' : 'Camina por el sendero hasta la puerta'}</span>
