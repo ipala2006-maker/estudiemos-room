@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DoorOpen, Monitor, RotateCcw, X } from 'lucide-react';
+import { Monitor, RotateCcw, X } from 'lucide-react';
 import * as THREE from 'three';
 import { studySubjects } from './data/mockStudyContent.js';
 import './styles/app.css';
 
 const startPosition = new THREE.Vector3(0, 1.7, 20);
-const houseDoorPosition = new THREE.Vector3(0, 1.7, -15.8);
+const houseDoorPosition = new THREE.Vector3(0, 1.7, -13.7);
 const computerPosition = new THREE.Vector3(0, 1.7, -24.2);
 
 function App() {
@@ -36,12 +36,12 @@ function App() {
         return;
       }
 
-      if (!studyOpen && isNearDoor && !isDoorOpen && (key === 'e' || key === 'enter')) {
+      if (!studyOpen && isNearDoor && !isDoorOpen && key === 'e') {
         openDoorRef.current();
         return;
       }
 
-      if (!studyOpen && isNearComputer && (key === 'e' || key === 'enter')) {
+      if (!studyOpen && isNearComputer && key === 'e') {
         setStudyOpen(true);
       }
     }
@@ -74,17 +74,11 @@ function App() {
       />
 
       {isNearDoor && !isDoorOpen && (
-        <button className="interaction-prompt" type="button" onClick={() => openDoorRef.current()}>
-          <DoorOpen size={18} aria-hidden="true" />
-          Abrir puerta
-        </button>
+        <div className="interaction-prompt">Presiona E para abrir la puerta</div>
       )}
 
       {isNearComputer && (
-        <button className="interaction-prompt" type="button" onClick={() => setStudyOpen(true)}>
-          <Monitor size={18} aria-hidden="true" />
-          Abrir computadora
-        </button>
+        <div className="interaction-prompt">Presiona E para abrir la computadora</div>
       )}
 
       {studyOpen && (
@@ -135,11 +129,9 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
     const { doorPivot } = buildLobbyScene(scene);
 
     const keys = new Set();
+    const keyPulses = new Map();
     let yaw = 0;
     let pitch = 0;
-    let dragging = false;
-    let lastX = 0;
-    let lastY = 0;
 
     function resetCamera() {
       camera.position.copy(startPosition);
@@ -167,7 +159,7 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
       const key = event.key.toLowerCase();
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
         keys.add(key);
-        moveCameraForKey(key, 0.55);
+        keyPulses.set(key, 0.12);
         event.preventDefault();
       }
       if (key === 'r') resetCamera();
@@ -178,22 +170,8 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
     }
 
     function onPointerDown(event) {
-      dragging = true;
-      lastX = event.clientX;
-      lastY = event.clientY;
-      mount.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
       renderer.domElement.requestPointerLock?.();
-    }
-
-    function onPointerMove(event) {
-      if (!dragging) return;
-      const dx = document.pointerLockElement === renderer.domElement ? event.movementX : event.clientX - lastX;
-      const dy = document.pointerLockElement === renderer.domElement ? event.movementY : event.clientY - lastY;
-      lastX = event.clientX;
-      lastY = event.clientY;
-      yaw -= dx * 0.004;
-      pitch = clamp(pitch - dy * 0.003, -0.72, 0.52);
-      camera.rotation.set(pitch, yaw, 0);
     }
 
     function onMouseMove(event) {
@@ -203,38 +181,10 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
       camera.rotation.set(pitch, yaw, 0);
     }
 
-    function onPointerUp(event) {
-      if (document.pointerLockElement === renderer.domElement) return;
-      dragging = false;
-      mount.releasePointerCapture?.(event.pointerId);
-    }
-
-    function onPointerLockChange() {
-      dragging = document.pointerLockElement === renderer.domElement;
-    }
-
     function onResize() {
       camera.aspect = mount.clientWidth / mount.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(mount.clientWidth, mount.clientHeight);
-    }
-
-    function moveCameraForKey(key, step) {
-      const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw) * -1);
-      const right = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw));
-      const move = new THREE.Vector3();
-
-      if (key === 'w' || key === 'arrowup') move.add(forward);
-      if (key === 's' || key === 'arrowdown') move.sub(forward);
-      if (key === 'd' || key === 'arrowright') move.add(right);
-      if (key === 'a' || key === 'arrowleft') move.sub(right);
-
-      if (move.lengthSq() > 0) {
-        move.normalize().multiplyScalar(step);
-        camera.position.add(move);
-        camera.position.x = clamp(camera.position.x, -27.5, 27.5);
-        camera.position.z = clamp(camera.position.z, -27.5, 27.5);
-      }
     }
 
     window.addEventListener('keydown', onKeyDown);
@@ -242,10 +192,6 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
     window.addEventListener('resize', onResize);
     document.addEventListener('mousemove', onMouseMove);
     mount.addEventListener('pointerdown', onPointerDown);
-    mount.addEventListener('pointermove', onPointerMove);
-    mount.addEventListener('pointerup', onPointerUp);
-    mount.addEventListener('pointerleave', onPointerUp);
-    document.addEventListener('pointerlockchange', onPointerLockChange);
 
     const clock = new THREE.Clock();
     let frameId = 0;
@@ -257,18 +203,24 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
       const right = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw));
       const move = new THREE.Vector3();
 
-      if (keys.has('w') || keys.has('arrowup')) move.add(forward);
-      if (keys.has('s') || keys.has('arrowdown')) move.sub(forward);
-      if (keys.has('d') || keys.has('arrowright')) move.add(right);
-      if (keys.has('a') || keys.has('arrowleft')) move.sub(right);
+      keyPulses.forEach((timeLeft, key) => {
+        const nextTime = timeLeft - delta;
+        if (nextTime <= 0) keyPulses.delete(key);
+        else keyPulses.set(key, nextTime);
+      });
+
+      if (isMoving(keys, keyPulses, 'w', 'arrowup')) move.add(forward);
+      if (isMoving(keys, keyPulses, 's', 'arrowdown')) move.sub(forward);
+      if (isMoving(keys, keyPulses, 'd', 'arrowright')) move.add(right);
+      if (isMoving(keys, keyPulses, 'a', 'arrowleft')) move.sub(right);
 
       if (move.lengthSq() > 0) {
         move.normalize().multiplyScalar(speed);
         camera.position.add(move);
         camera.position.x = clamp(camera.position.x, -27.5, 27.5);
         camera.position.z = clamp(camera.position.z, -27.5, 27.5);
-        if (!doorOpenRef.current && camera.position.z < -15.25 && Math.abs(camera.position.x) < 1.8) {
-          camera.position.z = -15.25;
+        if (!doorOpenRef.current && camera.position.z < -13.7 && Math.abs(camera.position.x) < 7.2) {
+          camera.position.z = -13.7;
         }
       }
 
@@ -300,10 +252,6 @@ function FirstPersonWorld({ onDoorOpenChange, onNearComputerChange, onNearDoorCh
       window.removeEventListener('resize', onResize);
       document.removeEventListener('mousemove', onMouseMove);
       mount.removeEventListener('pointerdown', onPointerDown);
-      mount.removeEventListener('pointermove', onPointerMove);
-      mount.removeEventListener('pointerup', onPointerUp);
-      mount.removeEventListener('pointerleave', onPointerUp);
-      document.removeEventListener('pointerlockchange', onPointerLockChange);
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
@@ -349,8 +297,10 @@ function buildLobbyScene(scene) {
   houseGroup.position.set(0, 0, -20);
 
   const wallParts = [
-    { position: [-4.75, 3.5, 4.5], size: [2.5, 7, 0.35] },
-    { position: [4.75, 3.5, 4.5], size: [2.5, 7, 0.35] },
+    { position: [-4.15, 3.5, 4.5], size: [3.7, 7, 0.35] },
+    { position: [4.15, 3.5, 4.5], size: [3.7, 7, 0.35] },
+    { position: [-1.775, 2, 4.5], size: [1.05, 4, 0.35] },
+    { position: [1.775, 2, 4.5], size: [1.05, 4, 0.35] },
     { position: [0, 5.75, 4.5], size: [7, 2.5, 0.35] },
     { position: [0, 3.5, -4.5], size: [12, 7, 0.35] },
     { position: [-6, 3.5, 0], size: [0.35, 7, 9] },
@@ -456,7 +406,7 @@ function Hud({ isDoorOpen, isNearComputer, isNearDoor, onReset }) {
       </div>
       <div>
         <span>{isDoorOpen ? 'Entra a la casa y acercate a la computadora' : 'Camina por el sendero hasta la puerta'}</span>
-        <span>E / Enter para interactuar cuando estes cerca</span>
+        <span>E para interactuar cuando estes cerca</span>
       </div>
       <button type="button" onClick={onReset}>
         <RotateCcw size={16} aria-hidden="true" />
@@ -538,6 +488,10 @@ function StudyOverlay({ subject, video, onSubjectChange, onVideoChange, onClose 
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function isMoving(keys, keyPulses, primary, alternate) {
+  return keys.has(primary) || keys.has(alternate) || keyPulses.has(primary) || keyPulses.has(alternate);
 }
 
 createRoot(document.getElementById('root')).render(<App />);
