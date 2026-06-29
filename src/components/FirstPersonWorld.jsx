@@ -307,7 +307,7 @@ function addNeighborhood(scene, materials) {
   addSkylinePanels(scene);
   addStageSetPieces(scene);
   addCourtyardProps(scene, textures);
-  addTrees(scene);
+  addModelNatureAssets(scene);
 }
 
 function addBoundaryWalls(scene, wallMaterial) {
@@ -701,7 +701,78 @@ function addModelNeighborhoodHouses(scene) {
   });
 }
 
-function prepareImportedModel(root) {
+function addModelNatureAssets(scene) {
+  const natureFolder = 'stylized-nature-megakit';
+  const treePlacements = [
+    { file: 'Tree.glb', position: [-17, 0, -11], targetSize: 6.8, rotation: [0, -0.35, 0] },
+    { file: 'Tree-aVOxaHRPWe.glb', position: [18, 0, -8], targetSize: 6.4, rotation: [0, 0.45, 0] },
+    { file: 'Pine.glb', position: [-21, 0, 7], targetSize: 6.2, rotation: [0, 0.2, 0] },
+    { file: 'Twisted Tree.glb', position: [21, 0, 13], targetSize: 6.8, rotation: [0, -0.65, 0] },
+    { file: 'Tree.glb', position: [-25, 0, 23], targetSize: 5.5, rotation: [0, 0.9, 0] },
+    { file: 'Pine.glb', position: [25, 0, 22], targetSize: 5.8, rotation: [0, -0.3, 0] }
+  ];
+
+  treePlacements.forEach((asset, index) => {
+    addImportedAsset(scene, {
+      ...asset,
+      folder: natureFolder,
+      name: `cc0-stylized-tree-${index + 1}`,
+      outlineOpacity: 0.36
+    });
+  });
+
+  [
+    { file: 'Bush with Flowers.glb', position: [-8.5, 0, 13.8], targetSize: 3.1, rotation: [0, 0.15, 0] },
+    { file: 'Bush.glb', position: [8.4, 0, 14.2], targetSize: 2.8, rotation: [0, -0.5, 0] },
+    { file: 'Flower Group.glb', position: [-5.3, 0, -8.4], targetSize: 2.3, rotation: [0, 0.3, 0] },
+    { file: 'Grass.glb', position: [6.2, 0, -7.4], targetSize: 2.5, rotation: [0, -0.2, 0] },
+    { file: 'Tall Grass.glb', position: [-26, 0, -4], targetSize: 2.2, rotation: [0, 0.4, 0] },
+    { file: 'Rock Path Round Wide.glb', position: [-6, 0, 3.5], targetSize: 2.2, rotation: [0, 0.2, 0] },
+    { file: 'Rock Medium.glb', position: [23, 0, 5.5], targetSize: 2.4, rotation: [0, -0.4, 0] },
+    { file: 'Pebble Round.glb', position: [-23, 0, 17], targetSize: 1.6, rotation: [0, 0.1, 0] }
+  ].forEach((asset, index) => {
+    addImportedAsset(scene, {
+      ...asset,
+      folder: natureFolder,
+      name: `cc0-nature-detail-${index + 1}`,
+      outlineOpacity: 0.3
+    });
+  });
+}
+
+function addImportedAsset(parent, config) {
+  const {
+    folder,
+    file,
+    name,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    targetSize = 1,
+    scale = 1,
+    outlineColor = 0x111622,
+    outlineOpacity = 0.28,
+    onError
+  } = config;
+  const url = `${import.meta.env.BASE_URL}models/vendor/poly-pizza/${folder}/${encodeURIComponent(file)}`;
+
+  modelLoader.load(
+    url,
+    (gltf) => {
+      const root = gltf.scene;
+      root.name = name ?? file.replace('.glb', '');
+      prepareImportedModel(root, outlineColor, outlineOpacity);
+      fitImportedModel(root, targetSize);
+      root.scale.multiplyScalar(scale);
+      root.rotation.set(rotation[0], rotation[1], rotation[2]);
+      root.position.set(position[0], position[1], position[2]);
+      parent.add(root);
+    },
+    undefined,
+    onError
+  );
+}
+
+function prepareImportedModelWithStyle(root, outlineColor = 0x111622, outlineOpacity = 0.32) {
   root.traverse((child) => {
     if (!child.isMesh) return;
     child.castShadow = true;
@@ -713,8 +784,12 @@ function prepareImportedModel(root) {
         material.needsUpdate = true;
       });
     }
-    addEdges(child, 0x111622, 0.32);
+    addEdges(child, outlineColor, outlineOpacity);
   });
+}
+
+function prepareImportedModel(root, outlineColor = 0x111622, outlineOpacity = 0.32) {
+  prepareImportedModelWithStyle(root, outlineColor, outlineOpacity);
 }
 
 function fitImportedModel(root, targetSize) {
@@ -1210,6 +1285,7 @@ function addCasa1Interior(scene, textures) {
   addMinimalRoomDetails(room);
   addInteriorSetPieces(room);
   addInteriorWorkstationSet(room, textures);
+  addImportedCasa1InteriorAssets(room);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xf8fbff, 0.36));
   ceiling.position.set(0, 16, 0);
@@ -1338,6 +1414,132 @@ function addInteriorWorkstationSet(room, textures) {
   addCableRuns(room);
   addStorageWall(room, textures);
   addSmallTableCluster(room);
+}
+
+function addImportedCasa1InteriorAssets(room) {
+  const furnitureFolder = 'furniture-pack';
+  const interiorFolder = 'house-interior-pack';
+
+  [
+    {
+      folder: furnitureFolder,
+      file: 'Desk.glb',
+      name: 'cc0-computer-desk',
+      position: [-12, 0, -4.15],
+      rotation: [0, Math.PI, 0],
+      targetSize: 5.6,
+      outlineOpacity: 0.34
+    },
+    {
+      folder: furnitureFolder,
+      file: 'Office Chair.glb',
+      name: 'cc0-study-chair',
+      position: [-12, 0, -1.45],
+      rotation: [0, Math.PI, 0],
+      targetSize: 2.25,
+      outlineOpacity: 0.34
+    },
+    {
+      folder: furnitureFolder,
+      file: 'Bookcase with Books.glb',
+      name: 'cc0-bookcase-left',
+      position: [-24.8, 0, 13.8],
+      rotation: [0, Math.PI / 2, 0],
+      targetSize: 6.4,
+      outlineOpacity: 0.32
+    },
+    {
+      folder: interiorFolder,
+      file: 'Shelf Large.glb',
+      name: 'cc0-shelf-right',
+      position: [24.6, 0, 11],
+      rotation: [0, -Math.PI / 2, 0],
+      targetSize: 6.2,
+      outlineOpacity: 0.32
+    },
+    {
+      folder: interiorFolder,
+      file: 'Couch Large.glb',
+      name: 'cc0-couch-corner',
+      position: [18, 0, 20.6],
+      rotation: [0, Math.PI, 0],
+      targetSize: 7.8,
+      outlineOpacity: 0.32
+    },
+    {
+      folder: interiorFolder,
+      file: 'Round Rug.glb',
+      name: 'cc0-round-rug',
+      position: [16.8, 0.05, 19.4],
+      rotation: [0, 0.25, 0],
+      targetSize: 8.2,
+      outlineOpacity: 0.22
+    },
+    {
+      folder: interiorFolder,
+      file: 'Light Floor.glb',
+      name: 'cc0-floor-light-left',
+      position: [-21.8, 0, 20.6],
+      rotation: [0, 0.35, 0],
+      targetSize: 3.6,
+      outlineOpacity: 0.34
+    },
+    {
+      folder: interiorFolder,
+      file: 'Light Desk.glb',
+      name: 'cc0-desk-light',
+      position: [-9.8, 0, -3.1],
+      rotation: [0, -0.35, 0],
+      targetSize: 1.8,
+      outlineOpacity: 0.34
+    },
+    {
+      folder: interiorFolder,
+      file: 'Houseplant.glb',
+      name: 'cc0-houseplant-screen-left',
+      position: [-24.6, 0, -22.4],
+      rotation: [0, 0.25, 0],
+      targetSize: 3.4,
+      outlineOpacity: 0.34
+    },
+    {
+      folder: interiorFolder,
+      file: 'Cactus.glb',
+      name: 'cc0-cactus-screen-right',
+      position: [24.5, 0, -21.2],
+      rotation: [0, -0.45, 0],
+      targetSize: 3.2,
+      outlineOpacity: 0.34
+    },
+    {
+      folder: interiorFolder,
+      file: 'Trashcan.glb',
+      name: 'cc0-trashcan',
+      position: [-19.5, 0, -3.2],
+      rotation: [0, 0.1, 0],
+      targetSize: 1.8,
+      outlineOpacity: 0.34
+    },
+    {
+      folder: interiorFolder,
+      file: 'Table Lamp.glb',
+      name: 'cc0-table-lamp',
+      position: [6.6, 0, 13.8],
+      rotation: [0, -0.15, 0],
+      targetSize: 2.2,
+      outlineOpacity: 0.34
+    }
+  ].forEach((asset) => addImportedAsset(room, asset));
+
+  [
+    { position: [-12.1, 3.2, -3.7], color: 0x38d8ff, intensity: 1.25 },
+    { position: [-21.9, 4.7, 20.6], color: 0xffd95c, intensity: 1 },
+    { position: [6.5, 2.7, 13.8], color: 0xff4f4a, intensity: 0.85 }
+  ].forEach((light) => {
+    const point = new THREE.PointLight(light.color, light.intensity, 10, 2.4);
+    point.position.set(...light.position);
+    room.add(point);
+  });
 }
 
 function addInteriorArchitectureDepth(room) {
