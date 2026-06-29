@@ -295,6 +295,7 @@ function addNeighborhood(scene, materials) {
     scene.add(pathEdge);
     addEdges(pathEdge, 0x111622, 0.32);
   });
+  addPathGeometryDepth(scene, pathMaterial);
 
   addBoundaryWalls(scene, wallMaterial);
   addPathSign(scene, textures);
@@ -366,7 +367,7 @@ function addPathSign(scene, textures) {
   scene.add(post);
 
   const board = new THREE.Mesh(
-    new THREE.BoxGeometry(2.4, 1, 0.22),
+    new THREE.BoxGeometry(2.55, 1.1, 0.28),
     makeMaterial(0xffd95c, 0.48, 0, textures.wood)
   );
   board.position.set(-4.6, 2.3, 5.5);
@@ -390,11 +391,55 @@ function addPathSign(scene, textures) {
   marker.receiveShadow = true;
   scene.add(marker);
 
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.22, 0.42), makeMaterial(0x111622, 0.18));
+  cap.position.set(-4.6, 2.92, 5.5);
+  cap.rotation.z = -0.08;
+  scene.add(cap);
+
+  const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.1, 0.24), makeMaterial(0x111622, 0.18));
+  bracket.position.set(-3.12, 2.18, 5.5);
+  bracket.rotation.z = -0.22;
+  scene.add(bracket);
+
   const bolt = createBoltMesh(0xffd95c, 1.15);
   bolt.position.set(-4.6, 2.42, 4.63);
   bolt.rotation.y = Math.PI;
   scene.add(bolt);
   addEdges(bolt, 0x111622, 0.45);
+}
+
+function addPathGeometryDepth(scene, pathMaterial) {
+  const curbMaterial = makeMaterial(0x111622, 0.18);
+  for (let i = 0; i < 5; i += 1) {
+    const z = 8.8 - i * 4.8;
+    const width = 8.2 - i * 0.42;
+    const lip = createGroundShapeMesh(
+      [
+        [-width / 2, z],
+        [width / 2, z - 0.55],
+        [width / 2 - 0.22, z - 1.05],
+        [-width / 2 - 0.22, z - 0.5]
+      ],
+      0x111622
+    );
+    lip.position.y = 0.285;
+    scene.add(lip);
+
+    const riser = new THREE.Mesh(new THREE.BoxGeometry(width, 0.18, 0.24), curbMaterial);
+    riser.position.set(0, 0.18, z - 0.7);
+    riser.rotation.y = -0.06;
+    riser.castShadow = true;
+    scene.add(riser);
+  }
+
+  [-3.85, 3.85].forEach((x) => {
+    const railBase = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.38, 29), pathMaterial);
+    railBase.position.set(x, 0.25, 1.6);
+    railBase.castShadow = true;
+    railBase.receiveShadow = true;
+    scene.add(railBase);
+    addEdges(railBase, 0x111622, 0.28);
+  });
 }
 
 function addBoundaryMurals(scene) {
@@ -762,6 +807,7 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   addHouseGraphicTrim(houseGroup, isCasa1);
   addHouseAngularMasses(houseGroup, isCasa1);
   addHouseDesignedFacade(houseGroup, isCasa1);
+  addHouseDepthDetails(houseGroup, isCasa1, materials);
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(11.4, 0.18, 8.4),
@@ -794,6 +840,7 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   const roofAccent = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.24, 0.48), makeMaterial(isCasa1 ? 0x38d8ff : 0xffd95c, 0.16));
   roofAccent.position.set(0, 8.48, 4.86);
   houseGroup.add(roofAccent);
+  addLayeredRoofGeometry(houseGroup, isCasa1);
 
   const doorPivot = new THREE.Group();
   doorPivot.position.set(-1.25, 0, 4.72);
@@ -839,6 +886,74 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   houseGroup.add(roomLight);
 
   scene.add(houseGroup);
+}
+
+function addLayeredRoofGeometry(houseGroup, isCasa1) {
+  [
+    { y: 8.08, z: 4.72, width: 13.4, depth: 0.62 },
+    { y: 7.72, z: 4.98, width: 11.2, depth: 0.42 }
+  ].forEach((layer, index) => {
+    const eave = new THREE.Mesh(
+      new THREE.BoxGeometry(layer.width, 0.28, layer.depth),
+      makeMaterial(index === 0 ? 0x111622 : isCasa1 ? 0x38d8ff : 0xffd95c, 0.16)
+    );
+    eave.position.set(0, layer.y, layer.z);
+    eave.rotation.x = -0.06;
+    houseGroup.add(eave);
+    addEdges(eave, 0x111622, 0.34);
+  });
+
+  [-4.9, 4.9].forEach((x) => {
+    const support = new THREE.Mesh(new THREE.BoxGeometry(0.36, 1.25, 0.36), makeMaterial(0x111622, 0.16));
+    support.position.set(x, 7.25, 4.52);
+    support.rotation.z = x < 0 ? -0.22 : 0.22;
+    houseGroup.add(support);
+  });
+}
+
+function addHouseDepthDetails(houseGroup, isCasa1, materials) {
+  const wallTone = isCasa1 ? 0xffef9b : 0xffe7a8;
+  [
+    { x: -3.35, y: 4.65, w: 2.55, h: 1.75, rz: -0.1 },
+    { x: 3.25, y: 4.55, w: 2.45, h: 1.7, rz: 0.1 }
+  ].forEach((win) => {
+    const recess = new THREE.Mesh(new THREE.BoxGeometry(win.w, win.h, 0.42), makeMaterial(0x111622, 0.16));
+    recess.position.set(win.x, win.y, 4.98);
+    recess.rotation.z = win.rz;
+    houseGroup.add(recess);
+
+    const sill = new THREE.Mesh(new THREE.BoxGeometry(win.w + 0.42, 0.24, 0.58), makeMaterial(0xffd95c, 0.16));
+    sill.position.set(win.x, win.y - win.h / 2 - 0.22, 5.22);
+    sill.rotation.z = win.rz;
+    houseGroup.add(sill);
+  });
+
+  const porch = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.36, 2.1), makeMaterial(wallTone, 0.18, 0, materials.textures.plaster));
+  porch.position.set(0, 0.35, 5.55);
+  porch.castShadow = true;
+  porch.receiveShadow = true;
+  houseGroup.add(porch);
+  addEdges(porch, 0x111622, 0.36);
+
+  const entryCanopy = createVerticalShapeMesh(
+    [
+      [-2.55, -0.35],
+      [2.45, -0.22],
+      [1.9, 0.62],
+      [-2.2, 0.76]
+    ],
+    0x111622
+  );
+  entryCanopy.position.set(0, 4.05, 5.58);
+  houseGroup.add(entryCanopy);
+
+  const sideBay = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.7, 2.2), makeMaterial(wallTone, 0.2, 0, materials.textures.plaster));
+  sideBay.position.set(isCasa1 ? -5.9 : 5.9, 3.1, 1.6);
+  sideBay.rotation.y = isCasa1 ? -0.12 : 0.12;
+  sideBay.castShadow = true;
+  sideBay.receiveShadow = true;
+  houseGroup.add(sideBay);
+  addEdges(sideBay, 0x111622, 0.38);
 }
 
 function addHouseAngularMasses(houseGroup, isCasa1) {
@@ -1007,6 +1122,7 @@ function addCasa1Interior(scene, textures) {
   });
 
   addMinimalRoomDetails(room);
+  addInteriorArchitectureDepth(room);
   addInteriorSetPieces(room);
   addInteriorWorkstationSet(room, textures);
 
@@ -1041,6 +1157,7 @@ function addCasa1Interior(scene, textures) {
   room.add(screenSurface);
   addScreenStageDetails(room);
   addScreenHeroFrame(room);
+  addScreenStructuralSupports(room);
 
   addScreenControllerComputer(room, textures);
   addInteriorExitMarker(room);
@@ -1138,6 +1255,76 @@ function addInteriorWorkstationSet(room, textures) {
   addCableRuns(room);
   addStorageWall(room, textures);
   addSmallTableCluster(room);
+}
+
+function addInteriorArchitectureDepth(room) {
+  const structural = makeMaterial(0x111622, 0.18);
+  const lightPanel = makeMaterial(0xffffff, 0.22);
+  const accentPanel = makeMaterial(0xfdfdf2, 0.22);
+
+  [-22, -11, 11, 22].forEach((x) => {
+    const rib = new THREE.Mesh(new THREE.BoxGeometry(0.65, 15.2, 0.55), structural);
+    rib.position.set(x, 7.6, -28.25);
+    rib.castShadow = true;
+    room.add(rib);
+    addEdges(rib, 0x111622, 0.32);
+  });
+
+  [-21.8, 21.8].forEach((x) => {
+    const sideRib = new THREE.Mesh(new THREE.BoxGeometry(0.55, 13.5, 0.65), structural);
+    sideRib.position.set(x < 0 ? -27.25 : 27.25, 7.1, -11);
+    sideRib.rotation.z = x < 0 ? -0.02 : 0.02;
+    sideRib.castShadow = true;
+    room.add(sideRib);
+  });
+
+  [
+    { pos: [-27.18, 8.2, 6], size: [0.44, 8.6, 10.5], rot: 0.04 },
+    { pos: [27.18, 8.2, 7], size: [0.44, 8.6, 10.5], rot: -0.04 },
+    { pos: [-27.12, 6.4, -20], size: [0.42, 6.5, 8.4], rot: -0.05 },
+    { pos: [27.12, 6.4, -21], size: [0.42, 6.5, 8.4], rot: 0.05 }
+  ].forEach((panel, index) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...panel.size), index % 2 === 0 ? lightPanel : accentPanel);
+    mesh.position.set(...panel.pos);
+    mesh.rotation.z = panel.rot;
+    mesh.castShadow = true;
+    room.add(mesh);
+    addEdges(mesh, 0x111622, 0.22);
+  });
+
+  [-18, 0, 18].forEach((x) => {
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.45, 1.2), structural);
+    beam.position.set(x, 15.35, -5);
+    beam.rotation.z = x === 0 ? 0 : x < 0 ? -0.08 : 0.08;
+    beam.castShadow = true;
+    room.add(beam);
+  });
+}
+
+function addScreenStructuralSupports(room) {
+  const material = makeMaterial(0x111622, 0.16);
+  [
+    { pos: [-18.4, 7.4, -27.92], size: [0.72, 14.2, 0.72], rz: -0.04 },
+    { pos: [18.4, 7.4, -27.92], size: [0.72, 14.2, 0.72], rz: 0.04 },
+    { pos: [-9.2, 1.15, -27.6], size: [7.8, 0.55, 1.25], rz: 0.03 },
+    { pos: [9.2, 1.15, -27.6], size: [7.8, 0.55, 1.25], rz: -0.03 }
+  ].forEach((part) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), material);
+    mesh.position.set(...part.pos);
+    mesh.rotation.z = part.rz;
+    mesh.castShadow = true;
+    room.add(mesh);
+    addEdges(mesh, 0x111622, 0.34);
+  });
+
+  [-14.5, 14.5].forEach((x) => {
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.35, 0.45, 6), makeMaterial(0x211a3d, 0.18));
+    foot.position.set(x, 0.28, -27.2);
+    foot.rotation.y = Math.PI / 6;
+    foot.castShadow = true;
+    room.add(foot);
+    addEdges(foot, 0x111622, 0.34);
+  });
 }
 
 function addMonitorDeskBank(room, textures, x, z, angle) {
@@ -1481,6 +1668,7 @@ function addScreenControllerComputer(room, textures) {
   consoleSlab.rotation.x = -0.18;
   room.add(consoleSlab);
   addEdges(consoleSlab, 0x111622, 0.44);
+  addControlConsoleGeometry(room, textures);
 
   [-13.65, -10.35].forEach((x) => {
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.65, 0.28), makeMaterial(0x111622, 0.16));
@@ -1561,6 +1749,43 @@ function addScreenControllerComputer(room, textures) {
   room.add(interactionRing);
 }
 
+function addControlConsoleGeometry(room, textures) {
+  const consoleShell = createGroundShapeMesh(
+    [
+      [-2.6, -1.1],
+      [2.45, -0.88],
+      [1.95, 0.95],
+      [-2.25, 1.2]
+    ],
+    0x211a3d
+  );
+  consoleShell.position.set(-12, 1.96, -3.62);
+  consoleShell.rotation.x = -0.22;
+  room.add(consoleShell);
+
+  [
+    { x: -13.45, z: -3.55, s: 0.32 },
+    { x: -12.55, z: -3.45, s: 0.24 },
+    { x: -11.65, z: -3.5, s: 0.3 },
+    { x: -10.85, z: -3.42, s: 0.22 }
+  ].forEach((button) => {
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(button.s, button.s * 0.82, 0.18, 12), makeEmissiveMaterial(0x38d8ff, 0.42));
+    knob.position.set(button.x, 2.12, button.z);
+    knob.rotation.x = Math.PI / 2;
+    room.add(knob);
+    addEdges(knob, 0x111622, 0.28);
+  });
+
+  const sidePanel = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.25, 2.2), makeMaterial(0x111622, 0.16, 0, textures.blackStripe));
+  sidePanel.position.set(-14.85, 1.15, -4);
+  sidePanel.rotation.z = -0.08;
+  room.add(sidePanel);
+  const sidePanel2 = sidePanel.clone();
+  sidePanel2.position.x = -9.15;
+  sidePanel2.rotation.z = 0.08;
+  room.add(sidePanel2);
+}
+
 function addTrees(scene) {
   [
     [-17, -12],
@@ -1575,17 +1800,27 @@ function addTrees(scene) {
     scene.add(trunk);
     addEdges(trunk, 0x111622, 0.42);
 
+    [-0.42, 0.42].forEach((offset) => {
+      const root = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.28, 0.34), makeMaterial(0x211a3d, 0.22));
+      root.position.set(x + offset, 0.18, z + (offset > 0 ? 0.28 : -0.22));
+      root.rotation.y = offset > 0 ? 0.45 : -0.35;
+      root.castShadow = true;
+      scene.add(root);
+      addEdges(root, 0x111622, 0.34);
+    });
+
     const foliageGroup = new THREE.Group();
     foliageGroup.position.set(x, 4.6, z);
     [
-      { y: 0, scale: [3.4, 2.2, 2.9], color: 0x27c36a, rz: -0.12 },
-      { y: 1.35, scale: [2.8, 2.1, 2.45], color: 0x53ec7e, rz: 0.1 },
-      { y: 2.55, scale: [2.05, 1.75, 1.9], color: 0xffd95c, rz: -0.08 }
+      { pos: [-0.42, -0.1, 0.08], scale: [2.65, 1.6, 2.2], color: 0x27c36a, rz: -0.18, ry: 0.2 },
+      { pos: [0.7, 0.85, -0.22], scale: [2.35, 1.55, 2.05], color: 0x53ec7e, rz: 0.14, ry: -0.35 },
+      { pos: [-0.1, 1.85, 0.15], scale: [1.75, 1.35, 1.55], color: 0xffd95c, rz: -0.08, ry: 0.55 },
+      { pos: [-0.95, 0.9, -0.15], scale: [1.55, 1.2, 1.45], color: 0x38d8ff, rz: 0.22, ry: -0.2 }
     ].forEach((leaf) => {
-      const mesh = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 4), makeMaterial(leaf.color, 0.2));
+      const mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 0), makeMaterial(leaf.color, 0.2));
       mesh.scale.set(...leaf.scale);
-      mesh.position.y = leaf.y;
-      mesh.rotation.y = Math.PI / 4;
+      mesh.position.set(...leaf.pos);
+      mesh.rotation.y = leaf.ry;
       mesh.rotation.z = leaf.rz;
       mesh.castShadow = true;
       foliageGroup.add(mesh);
