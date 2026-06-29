@@ -306,6 +306,7 @@ function addNeighborhood(scene, materials) {
   addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 18, -18, false);
   addSkylinePanels(scene);
   addStageSetPieces(scene);
+  addCourtyardProps(scene, textures);
   addTrees(scene);
 }
 
@@ -600,6 +601,140 @@ function addStageSetPieces(scene) {
   });
 }
 
+function addCourtyardProps(scene, textures) {
+  addCartoonCrateStack(scene, -21.5, 4.5, 0.9, textures);
+  addCartoonCrateStack(scene, 21.2, 2.8, -0.9, textures);
+  addGraphicBench(scene, -15, -7.8, 0.28);
+  addGraphicBench(scene, 15, -7.2, -0.24);
+  addRoundStudySpot(scene, -16.5, 13.2, 0x8fb9b0);
+  addRoundStudySpot(scene, 16.8, 12.5, 0xd1a86a);
+  addRailSegment(scene, -24, 16, -24, 2, 0x1d7b69);
+  addRailSegment(scene, 24, 15, 24, 1, 0x1d7b69);
+  addGroundGrate(scene, -18.8, 18.2, 0.15);
+  addGroundGrate(scene, 18.8, 18.2, -0.15);
+}
+
+function addCartoonCrateStack(scene, x, z, lean, textures) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  [
+    { pos: [0, 0.75, 0], size: [3.3, 1.5, 2.2], color: 0xb07b52, rz: 0.02 },
+    { pos: [1.15, 2.15, -0.25], size: [2.2, 1.35, 2], color: 0xc59464, rz: -0.08 },
+    { pos: [-1.2, 2.1, 0.45], size: [2, 1.25, 1.8], color: 0x7aa98f, rz: 0.08 }
+  ].forEach((crate) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...crate.size), makeMaterial(crate.color, 0.24, 0, textures.wood));
+    mesh.position.set(...crate.pos);
+    mesh.rotation.z = crate.rz + lean * 0.03;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+    addCrateMarks(group, crate.pos, crate.size);
+  });
+  scene.add(group);
+  addGroupEdges(group, 0x111622, 0.44);
+}
+
+function addCrateMarks(group, pos, size) {
+  const mark = createVerticalShapeMesh(
+    [
+      [-0.75, -0.08],
+      [-0.56, -0.28],
+      [0, 0.15],
+      [0.58, -0.3],
+      [0.78, -0.08],
+      [0.18, 0.38],
+      [0.76, 0.82],
+      [0.56, 1.02],
+      [0, 0.58],
+      [-0.58, 1.02],
+      [-0.78, 0.82],
+      [-0.18, 0.38]
+    ],
+    0x27352f
+  );
+  mark.position.set(pos[0], pos[1] + 0.1, pos[2] + size[2] / 2 + 0.03);
+  mark.scale.setScalar(Math.min(size[0], size[1]) * 0.42);
+  group.add(mark);
+}
+
+function addGraphicBench(scene, x, z, rotationY) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  group.rotation.y = rotationY;
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.38, 1.45), makeMaterial(0x7fb88b, 0.22));
+  seat.position.y = 1.1;
+  group.add(seat);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(5.35, 1.35, 0.34), makeMaterial(0x8fc59a, 0.22));
+  back.position.set(0, 1.85, -0.62);
+  back.rotation.x = -0.12;
+  group.add(back);
+  [-2.25, 2.25].forEach((lx) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.26, 1.08, 0.26), makeMaterial(0x2a2a2e, 0.18));
+    leg.position.set(lx, 0.55, 0.42);
+    group.add(leg);
+  });
+  const pillow = createVerticalShapeMesh(
+    [
+      [-0.75, -0.46],
+      [0.74, -0.34],
+      [0.84, 0.42],
+      [-0.56, 0.55]
+    ],
+    0x38d8ff
+  );
+  pillow.position.set(1.35, 2.05, -0.83);
+  pillow.scale.set(0.9, 0.9, 0.9);
+  group.add(pillow);
+  scene.add(group);
+  addGroupEdges(group, 0x111622, 0.42);
+}
+
+function addRoundStudySpot(scene, x, z, color) {
+  const rug = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 0.06, 48), makeMaterial(color, 0.24));
+  rug.position.set(x, 0.08, z);
+  rug.receiveShadow = true;
+  scene.add(rug);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(3.55, 0.045, 8, 64), makeMaterial(0x111622, 0.18));
+  ring.position.set(x, 0.14, z);
+  ring.rotation.x = Math.PI / 2;
+  scene.add(ring);
+}
+
+function addRailSegment(scene, x1, z1, x2, z2, color) {
+  const group = new THREE.Group();
+  const dx = x2 - x1;
+  const dz = z2 - z1;
+  const length = Math.hypot(dx, dz);
+  const angle = Math.atan2(dx, dz);
+  group.position.set((x1 + x2) / 2, 0, (z1 + z2) / 2);
+  group.rotation.y = angle;
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, length), makeMaterial(color, 0.18));
+  rail.position.y = 1.8;
+  group.add(rail);
+  for (let i = -length / 2; i <= length / 2; i += 2.1) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.8, 0.18), makeMaterial(0x17463f, 0.18));
+    post.position.set(0, 0.9, i);
+    group.add(post);
+  }
+  scene.add(group);
+  addGroupEdges(group, 0x111622, 0.36);
+}
+
+function addGroundGrate(scene, x, z, rotationY) {
+  const group = new THREE.Group();
+  group.position.set(x, 0.17, z);
+  group.rotation.y = rotationY;
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.08, 2.2), makeMaterial(0x2c3036, 0.18));
+  group.add(frame);
+  for (let i = -2.1; i <= 2.1; i += 0.52) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.11, 2.3), makeMaterial(0x9aa4a8, 0.18));
+    bar.position.x = i;
+    group.add(bar);
+  }
+  scene.add(group);
+  addGroupEdges(group, 0x111622, 0.32);
+}
+
 function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   const houseGroup = new THREE.Group();
   houseGroup.position.set(xOffset, 0, zOffset);
@@ -873,6 +1008,7 @@ function addCasa1Interior(scene, textures) {
 
   addMinimalRoomDetails(room);
   addInteriorSetPieces(room);
+  addInteriorWorkstationSet(room, textures);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xf8fbff, 0.36));
   ceiling.position.set(0, 16, 0);
@@ -994,6 +1130,169 @@ function addInteriorSetPieces(room) {
     room.add(column);
     addGroupEdges(column, 0x111622, 0.42);
   });
+}
+
+function addInteriorWorkstationSet(room, textures) {
+  addMonitorDeskBank(room, textures, -19.8, -18.5, 0.18);
+  addMonitorDeskBank(room, textures, 19.2, -18.2, -0.18);
+  addCableRuns(room);
+  addStorageWall(room, textures);
+  addSmallTableCluster(room);
+}
+
+function addMonitorDeskBank(room, textures, x, z, angle) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  group.rotation.y = angle;
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.55, 2.4), makeMaterial(0x565e60, 0.22, 0, textures.blackStripe));
+  desk.position.y = 2.25;
+  group.add(desk);
+  [-4.4, 4.4].forEach((lx) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.32, 2.2, 0.32), makeMaterial(0x20252a, 0.18));
+    leg.position.set(lx, 1.1, 0.85);
+    group.add(leg);
+  });
+
+  [
+    { x: -3.2, y: 3.45, rot: -0.16, scale: 1 },
+    { x: 0.3, y: 3.85, rot: 0.04, scale: 1.18 },
+    { x: 3.7, y: 3.45, rot: 0.16, scale: 1 }
+  ].forEach((screen) => {
+    addTechMonitor(group, screen.x, screen.y, -0.9, screen.rot, screen.scale);
+  });
+
+  const tower = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.2, 1.1), makeMaterial(0x20252a, 0.18));
+  tower.position.set(-5.1, 1.15, -0.35);
+  group.add(tower);
+  const towerLight = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.08), makeEmissiveMaterial(0x38d8ff, 0.7));
+  towerLight.position.set(-5.1, 1.8, -0.93);
+  group.add(towerLight);
+
+  room.add(group);
+  addGroupEdges(group, 0x111622, 0.38);
+}
+
+function addTechMonitor(group, x, y, z, rotationZ, scale) {
+  const frame = createVerticalShapeMesh(
+    [
+      [-1.5, -0.8],
+      [1.6, -0.72],
+      [1.45, 0.92],
+      [-1.35, 0.8]
+    ],
+    0x111622
+  );
+  frame.position.set(x, y, z);
+  frame.rotation.z = rotationZ;
+  frame.scale.setScalar(scale);
+  group.add(frame);
+
+  const display = createVerticalShapeMesh(
+    [
+      [-1.22, -0.58],
+      [1.26, -0.52],
+      [1.12, 0.66],
+      [-1.08, 0.58]
+    ],
+    0x155cff
+  );
+  display.position.set(x, y, z + 0.06);
+  display.rotation.z = rotationZ;
+  display.scale.setScalar(scale);
+  group.add(display);
+
+  const glow = new THREE.PointLight(0x38d8ff, 0.38, 6, 2);
+  glow.position.set(x, y, z + 0.8);
+  group.add(glow);
+
+  for (let i = 0; i < 4; i += 1) {
+    const line = createVerticalShapeMesh(
+      [
+        [-0.92 + i * 0.42, -0.35],
+        [-0.82 + i * 0.42, -0.35],
+        [-0.72 + i * 0.42, 0.35],
+        [-0.82 + i * 0.42, 0.35]
+      ],
+      i % 2 === 0 ? 0x38d8ff : 0xffd95c
+    );
+    line.position.set(x, y, z + 0.08);
+    line.rotation.z = rotationZ;
+    line.scale.setScalar(scale);
+    group.add(line);
+  }
+}
+
+function addCableRuns(room) {
+  [
+    { points: [[-18, 0.12, -15], [-12, 0.12, -9], [-8, 0.12, -10]], color: 0x111622 },
+    { points: [[18, 0.12, -16], [12, 0.12, -9], [8, 0.12, -10]], color: 0x111622 },
+    { points: [[-13, 0.14, -3], [-7, 0.14, 1], [-2, 0.14, -2]], color: 0xff4f4a }
+  ].forEach((cable) => {
+    for (let i = 0; i < cable.points.length - 1; i += 1) {
+      const [x1, y1, z1] = cable.points[i];
+      const [x2, y2, z2] = cable.points[i + 1];
+      const dx = x2 - x1;
+      const dz = z2 - z1;
+      const length = Math.hypot(dx, dz);
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, length), makeMaterial(cable.color, 0.16));
+      mesh.position.set((x1 + x2) / 2, y1, (z1 + z2) / 2);
+      mesh.rotation.y = Math.atan2(dx, dz);
+      room.add(mesh);
+    }
+  });
+}
+
+function addStorageWall(room, textures) {
+  const group = new THREE.Group();
+  group.position.set(-24.8, 0, 12);
+  group.rotation.y = Math.PI / 2;
+  const shelf = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.32, 1.2), makeMaterial(0x565e60, 0.22));
+  shelf.position.y = 3.2;
+  group.add(shelf);
+  const shelf2 = shelf.clone();
+  shelf2.position.y = 5.2;
+  group.add(shelf2);
+  [
+    { pos: [-3, 1.1, 0], size: [1.6, 2.2, 1.2], color: 0xb07b52 },
+    { pos: [-1.3, 1.55, 0.1], size: [1.8, 3.1, 1.2], color: 0xc59464 },
+    { pos: [1, 1.25, 0], size: [1.7, 2.5, 1.2], color: 0x7aa98f },
+    { pos: [3, 0.8, 0], size: [1.5, 1.6, 1.2], color: 0xffd95c }
+  ].forEach((box) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...box.size), makeMaterial(box.color, 0.24, 0, textures.wood));
+    mesh.position.set(...box.pos);
+    group.add(mesh);
+  });
+  room.add(group);
+  addGroupEdges(group, 0x111622, 0.38);
+}
+
+function addSmallTableCluster(room) {
+  const table = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.28, 2.8), makeMaterial(0xe1d2ad, 0.22));
+  table.position.set(0, 1.35, 13.4);
+  room.add(table);
+  addEdges(table, 0x111622, 0.36);
+  [-1.65, 1.65].forEach((x) => {
+    [-1, 1].forEach((z) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.35, 0.18), makeMaterial(0x111622, 0.18));
+      leg.position.set(x, 0.68, 13.4 + z);
+      room.add(leg);
+    });
+  });
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.7, 16), makeMaterial(0xff4f4a, 0.2));
+  cup.position.set(1.25, 1.85, 13.1);
+  room.add(cup);
+  const tablet = createGroundShapeMesh(
+    [
+      [-0.7, -0.45],
+      [0.7, -0.36],
+      [0.62, 0.45],
+      [-0.62, 0.36]
+    ],
+    0x155cff
+  );
+  tablet.position.set(-0.8, 1.53, 13.4);
+  tablet.rotation.y = 0.2;
+  room.add(tablet);
 }
 
 function addInteriorExitMarker(room) {
