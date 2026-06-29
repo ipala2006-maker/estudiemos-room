@@ -43,6 +43,7 @@ function App() {
       }
 
       if (isNearComputer && key === 'e') {
+        document.exitPointerLock?.();
         setStudyOpen(true);
       }
     }

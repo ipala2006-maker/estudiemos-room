@@ -4,7 +4,6 @@ import * as THREE from 'three';
 const startPosition = new THREE.Vector3(0, 1.7, 20);
 const houseDoorPosition = new THREE.Vector3(0, 1.7, -13.7);
 const computerPosition = new THREE.Vector3(-3, 1.7, -23.3);
-const tmpBox = new THREE.Box3();
 
 export function FirstPersonWorld({
   onDoorOpenChange,
@@ -59,17 +58,23 @@ export function FirstPersonWorld({
 
     const { doorPivot } = buildLobbyScene(scene);
 
-    const keys = new Set();
+    const keys = {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false
+    };
+    const velocity = new THREE.Vector3();
+    const inputDirection = new THREE.Vector3();
     let yaw = 0;
     let pitch = 0;
-    let lastMouseX = null;
-    let lastMouseY = null;
     let pointerLocked = false;
 
     function resetCamera() {
       camera.position.copy(startPosition);
       yaw = 0;
       pitch = 0;
+      velocity.set(0, 0, 0);
       camera.rotation.set(pitch, yaw, 0);
       doorOpenRef.current = false;
       doorPivot.rotation.y = 0;
@@ -87,22 +92,28 @@ export function FirstPersonWorld({
     };
 
     function onKeyDown(event) {
-      const key = event.key.toLowerCase();
-      if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
-        keys.add(key);
+      if (updateMovementKey(event.code, true)) {
         event.preventDefault();
       }
-      if (key === 'r') resetCamera();
+      if (event.code === 'KeyR') resetCamera();
     }
 
     function onKeyUp(event) {
-      keys.delete(event.key.toLowerCase());
+      updateMovementKey(event.code, false);
+    }
+
+    function updateMovementKey(code, isPressed) {
+      if (code === 'KeyW' || code === 'ArrowUp') keys.forward = isPressed;
+      else if (code === 'KeyS' || code === 'ArrowDown') keys.backward = isPressed;
+      else if (code === 'KeyA' || code === 'ArrowLeft') keys.left = isPressed;
+      else if (code === 'KeyD' || code === 'ArrowRight') keys.right = isPressed;
+      else return false;
+
+      return true;
     }
 
     function onPointerLockChange() {
       pointerLocked = document.pointerLockElement === renderer.domElement;
-      lastMouseX = null;
-      lastMouseY = null;
     }
 
     function onCanvasClick() {
@@ -110,25 +121,12 @@ export function FirstPersonWorld({
     }
 
     function onMouseMove(event) {
-      if (pointerLocked) {
-        yaw -= event.movementX * 0.0019;
-        pitch = clamp(pitch - event.movementY * 0.0016, -0.58, 0.42);
-        camera.rotation.set(pitch, yaw, 0);
+      if (!pointerLocked) {
         return;
       }
 
-      if (lastMouseX == null || lastMouseY == null || !mount.matches(':hover')) {
-        lastMouseX = event.clientX;
-        lastMouseY = event.clientY;
-        return;
-      }
-
-      const dx = event.clientX - lastMouseX;
-      const dy = event.clientY - lastMouseY;
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
-      yaw -= dx * 0.0015;
-      pitch = clamp(pitch - dy * 0.0012, -0.58, 0.42);
+      yaw -= event.movementX * 0.0022;
+      pitch = clamp(pitch - event.movementY * 0.0019, -0.7, 0.5);
       camera.rotation.set(pitch, yaw, 0);
     }
 
@@ -150,19 +148,28 @@ export function FirstPersonWorld({
 
     function animate() {
       const delta = Math.min(clock.getDelta(), 0.04);
-      const speed = 5.9 * delta;
       const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw) * -1);
       const right = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw));
-      const move = new THREE.Vector3();
+      inputDirection.set(0, 0, 0);
 
-      if (isMoving(keys, 'w', 'arrowup')) move.add(forward);
-      if (isMoving(keys, 's', 'arrowdown')) move.sub(forward);
-      if (isMoving(keys, 'd', 'arrowright')) move.add(right);
-      if (isMoving(keys, 'a', 'arrowleft')) move.sub(right);
+      if (keys.forward) inputDirection.add(forward);
+      if (keys.backward) inputDirection.sub(forward);
+      if (keys.right) inputDirection.add(right);
+      if (keys.left) inputDirection.sub(right);
 
-      if (move.lengthSq() > 0) {
-        move.normalize().multiplyScalar(speed);
-        camera.position.add(move);
+      velocity.multiplyScalar(Math.exp(-10 * delta));
+
+      if (inputDirection.lengthSq() > 0) {
+        inputDirection.normalize();
+        velocity.addScaledVector(inputDirection, 34 * delta);
+      }
+
+      if (velocity.length() > 7.2) {
+        velocity.setLength(7.2);
+      }
+
+      if (velocity.lengthSq() > 0.0001) {
+        camera.position.addScaledVector(velocity, delta);
         camera.position.x = clamp(camera.position.x, -27.5, 27.5);
         camera.position.z = clamp(camera.position.z, -27.5, 27.5);
 
@@ -213,12 +220,19 @@ export function FirstPersonWorld({
 }
 
 function buildLobbyScene(scene) {
-  const groundMaterial = makeMaterial(0x6f9f6a, 0.88);
-  const pathMaterial = makeMaterial(0xcab47e, 0.8);
-  const wallMaterial = makeMaterial(0xdbe5df, 0.62);
-  const houseWall = makeMaterial(0xe5c98f, 0.7);
-  const roofMaterial = makeMaterial(0x87463f, 0.58);
-  const doorMaterial = makeMaterial(0x5a3d30, 0.58);
+  const textures = {
+    grass: createTexture('grass'),
+    path: createTexture('path'),
+    plaster: createTexture('plaster'),
+    wood: createTexture('wood'),
+    roof: createTexture('roof')
+  };
+  const groundMaterial = makeMaterial(0x6f9f6a, 0.88, 0, textures.grass);
+  const pathMaterial = makeMaterial(0xcab47e, 0.8, 0, textures.path);
+  const wallMaterial = makeMaterial(0xdbe5df, 0.62, 0, textures.plaster);
+  const houseWall = makeMaterial(0xe5c98f, 0.7, 0, textures.plaster);
+  const roofMaterial = makeMaterial(0x87463f, 0.58, 0, textures.roof);
+  const doorMaterial = makeMaterial(0x5a3d30, 0.58, 0, textures.wood);
 
   const ground = new THREE.Mesh(new THREE.BoxGeometry(60, 0.6, 60), groundMaterial);
   ground.position.y = -0.3;
@@ -242,9 +256,9 @@ function buildLobbyScene(scene) {
   });
 
   addBoundaryWalls(scene, wallMaterial);
-  addPathSign(scene);
-  const doorPivot = addHouse(scene, { houseWall, roofMaterial, doorMaterial });
-  addDeskComputer(scene);
+  addPathSign(scene, textures);
+  const doorPivot = addHouse(scene, { houseWall, roofMaterial, doorMaterial, textures });
+  addDeskComputer(scene, textures);
   addTrees(scene);
 
   return { doorPivot };
@@ -281,10 +295,10 @@ function addBoundaryWalls(scene, wallMaterial) {
   });
 }
 
-function addPathSign(scene) {
+function addPathSign(scene, textures) {
   const post = new THREE.Mesh(
     new THREE.BoxGeometry(0.3, 2.1, 0.3),
-    makeMaterial(0x5d4336, 0.72)
+    makeMaterial(0x5d4336, 0.72, 0, textures.wood)
   );
   post.position.set(-4.6, 1.05, 5.5);
   post.castShadow = true;
@@ -292,7 +306,7 @@ function addPathSign(scene) {
 
   const board = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 1, 0.22),
-    makeMaterial(0xe4cc8e, 0.68)
+    makeMaterial(0xe4cc8e, 0.68, 0, textures.wood)
   );
   board.position.set(-4.6, 2.3, 5.5);
   board.castShadow = true;
@@ -306,6 +320,14 @@ function addPathSign(scene) {
   arrow.rotation.x = Math.PI / 2;
   arrow.rotation.z = Math.PI;
   scene.add(arrow);
+
+  const marker = new THREE.Mesh(
+    new THREE.BoxGeometry(0.16, 0.05, 13),
+    makeMaterial(0xf6e7b8, 0.78)
+  );
+  marker.position.set(0, 0.16, -7);
+  marker.receiveShadow = true;
+  scene.add(marker);
 }
 
 function addHouse(scene, materials) {
@@ -334,7 +356,7 @@ function addHouse(scene, materials) {
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(11.4, 0.18, 8.4),
-    makeMaterial(0xa67855, 0.62)
+    makeMaterial(0xa67855, 0.62, 0, materials.textures.wood)
   );
   floor.position.y = 0.09;
   floor.receiveShadow = true;
@@ -369,11 +391,7 @@ function addHouse(scene, materials) {
     const window = new THREE.Mesh(new THREE.BoxGeometry(2, 1.8, 0.16), windowMaterial);
     window.position.set(x, 4.5, 4.7);
     houseGroup.add(window);
-
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(2.22, 2.02, 0.08), makeMaterial(0xf4e5c8, 0.58));
-    frame.position.set(x, 4.5, 4.62);
-    houseGroup.add(frame);
-    frame.renderOrder = -1;
+    addWindowFrame(houseGroup, x, 4.5, 4.82);
   });
 
   const roomLight = new THREE.PointLight(0xffdf9a, 2.1, 14, 1.8);
@@ -384,10 +402,10 @@ function addHouse(scene, materials) {
   return doorPivot;
 }
 
-function addDeskComputer(scene) {
+function addDeskComputer(scene, textures) {
   const desk = new THREE.Mesh(
     new THREE.BoxGeometry(4.8, 1, 1.8),
-    makeMaterial(0x654738, 0.56)
+    makeMaterial(0x654738, 0.56, 0, textures.wood)
   );
   desk.position.set(-3, 1.05, -24.35);
   desk.castShadow = true;
@@ -432,6 +450,25 @@ function addDeskComputer(scene) {
   chair.castShadow = true;
   scene.add(chair);
   addEdges(chair, 0x151f22, 0.32);
+
+  const lampBase = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.12, 0.45), makeMaterial(0x2f3a3c, 0.42, 0.08));
+  lampBase.position.set(-5.05, 1.63, -24.2);
+  lampBase.castShadow = true;
+  scene.add(lampBase);
+
+  const lampArm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.12), makeMaterial(0x2f3a3c, 0.42, 0.08));
+  lampArm.position.set(-5.05, 2.18, -24.2);
+  lampArm.castShadow = true;
+  scene.add(lampArm);
+
+  const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.36, 6), makeMaterial(0xe2c575, 0.5));
+  lampShade.position.set(-5.05, 2.82, -24.2);
+  lampShade.castShadow = true;
+  scene.add(lampShade);
+
+  const lampLight = new THREE.PointLight(0xffd98a, 1.25, 7, 2);
+  lampLight.position.set(-5.05, 2.7, -23.8);
+  scene.add(lampLight);
 }
 
 function addTrees(scene) {
@@ -461,17 +498,33 @@ function addTrees(scene) {
   });
 }
 
-function makeMaterial(color, roughness, metalness = 0) {
+function addWindowFrame(group, x, y, z) {
+  const material = makeMaterial(0xf0dfbf, 0.58);
+  [
+    { position: [x, y + 1.02, z], size: [2.3, 0.18, 0.12] },
+    { position: [x, y - 1.02, z], size: [2.3, 0.18, 0.12] },
+    { position: [x - 1.14, y, z], size: [0.18, 2.1, 0.12] },
+    { position: [x + 1.14, y, z], size: [0.18, 2.1, 0.12] },
+    { position: [x, y, z], size: [0.12, 2, 0.12] }
+  ].forEach((part) => {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(...part.size), material);
+    bar.position.set(...part.position);
+    bar.castShadow = true;
+    group.add(bar);
+  });
+}
+
+function makeMaterial(color, roughness, metalness = 0, texture = null) {
   return new THREE.MeshStandardMaterial({
     color,
     roughness,
     metalness,
+    map: texture,
     flatShading: false
   });
 }
 
 function addEdges(mesh, color, opacity) {
-  tmpBox.setFromObject(mesh);
   const geometry = new THREE.EdgesGeometry(mesh.geometry, 25);
   const material = new THREE.LineBasicMaterial({
     color,
@@ -488,10 +541,99 @@ function addEdges(mesh, color, opacity) {
   return edges;
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
+function createTexture(type) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  if (type === 'grass') drawGrassTexture(ctx);
+  if (type === 'path') drawPathTexture(ctx);
+  if (type === 'plaster') drawPlasterTexture(ctx);
+  if (type === 'wood') drawWoodTexture(ctx);
+  if (type === 'roof') drawRoofTexture(ctx);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(type === 'wood' ? 1.8 : 4, type === 'wood' ? 1.8 : 4);
+  texture.anisotropy = 4;
+  return texture;
 }
 
-function isMoving(keys, primary, alternate) {
-  return keys.has(primary) || keys.has(alternate);
+function drawGrassTexture(ctx) {
+  ctx.fillStyle = '#6e9f69';
+  ctx.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 420; i++) {
+    const shade = i % 3 === 0 ? '#5d8d59' : i % 3 === 1 ? '#7dac72' : '#88b77c';
+    ctx.fillStyle = shade;
+    ctx.fillRect((i * 47) % 128, (i * 29) % 128, 2 + (i % 3), 1);
+  }
+}
+
+function drawPathTexture(ctx) {
+  ctx.fillStyle = '#c8b177';
+  ctx.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 260; i++) {
+    ctx.fillStyle = i % 2 === 0 ? '#bda468' : '#d8c48b';
+    ctx.fillRect((i * 31) % 128, (i * 53) % 128, 3, 2);
+  }
+}
+
+function drawPlasterTexture(ctx) {
+  ctx.fillStyle = '#ded7c5';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.strokeStyle = 'rgba(118, 104, 84, 0.14)';
+  for (let y = 0; y < 128; y += 32) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(128, y + 0.5);
+    ctx.stroke();
+  }
+  for (let x = 0; x < 128; x += 64) {
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, 128);
+    ctx.stroke();
+  }
+}
+
+function drawWoodTexture(ctx) {
+  ctx.fillStyle = '#76523c';
+  ctx.fillRect(0, 0, 128, 128);
+  for (let y = 12; y < 128; y += 20) {
+    ctx.strokeStyle = 'rgba(46, 31, 22, 0.34)';
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.bezierCurveTo(36, y + 5, 84, y - 5, 128, y + 2);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255, 226, 180, 0.14)';
+  for (let y = 6; y < 128; y += 24) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(128, y + 3);
+    ctx.stroke();
+  }
+}
+
+function drawRoofTexture(ctx) {
+  ctx.fillStyle = '#88463f';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.strokeStyle = 'rgba(48, 24, 24, 0.28)';
+  for (let y = 0; y < 128; y += 18) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(128, y + 0.5);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255, 214, 172, 0.12)';
+  for (let x = 0; x < 128; x += 24) {
+    ctx.fillRect(x, 0, 4, 128);
+  }
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }

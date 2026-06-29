@@ -6,7 +6,7 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, onBackHome, onRese
       <div>
         <strong>Lobby 3D</strong>
         <span>WASD o flechas para caminar</span>
-        <span>Click en el mundo y mouse para mirar</span>
+        <span>Click en el mundo para capturar el mouse</span>
         <span>E para interactuar cuando estes cerca</span>
       </div>
 
