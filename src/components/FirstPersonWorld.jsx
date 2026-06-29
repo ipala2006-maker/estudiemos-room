@@ -1,21 +1,32 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { Casa1 } from '../maps/Casa1.js';
 
-const startPosition = new THREE.Vector3(0, 1.7, 20);
-const houseDoorPosition = new THREE.Vector3(0, 1.7, -13.7);
-const computerPosition = new THREE.Vector3(-3, 1.7, -23.3);
+const activeMap = Casa1;
+const startPosition = activeMap.startPosition;
+const houseDoorPosition = activeMap.doorPosition;
+const computerPosition = activeMap.computerPosition;
 
 export function FirstPersonWorld({
   onDoorOpenChange,
   onNearComputerChange,
   onNearDoorChange,
   resetRef,
-  toggleDoorRef
+  toggleDoorRef,
+  controlsEnabled = true
 }) {
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
   const nearComputerRef = useRef(false);
   const doorOpenRef = useRef(false);
+  const controlsEnabledRef = useRef(controlsEnabled);
+
+  useEffect(() => {
+    controlsEnabledRef.current = controlsEnabled;
+    if (!controlsEnabled) {
+      document.exitPointerLock?.();
+    }
+  }, [controlsEnabled]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -71,6 +82,13 @@ export function FirstPersonWorld({
     let pitch = 0;
     let pointerLocked = false;
 
+    function clearMovementInput() {
+      keys.forward = false;
+      keys.backward = false;
+      keys.left = false;
+      keys.right = false;
+    }
+
     function resetCamera() {
       camera.position.copy(startPosition);
       yaw = 0;
@@ -92,6 +110,11 @@ export function FirstPersonWorld({
     };
 
     function onKeyDown(event) {
+      if (!controlsEnabledRef.current) {
+        clearMovementInput();
+        return;
+      }
+
       if (updateMovementKey(event.code, true)) {
         event.preventDefault();
       }
@@ -117,11 +140,12 @@ export function FirstPersonWorld({
     }
 
     function onCanvasClick() {
+      if (!controlsEnabledRef.current) return;
       renderer.domElement.requestPointerLock?.();
     }
 
     function onMouseMove(event) {
-      if (!pointerLocked) {
+      if (!controlsEnabledRef.current || !pointerLocked) {
         return;
       }
 
@@ -148,6 +172,10 @@ export function FirstPersonWorld({
 
     function animate() {
       const delta = Math.min(clock.getDelta(), 0.04);
+      if (!controlsEnabledRef.current) {
+        clearMovementInput();
+      }
+
       camera.getWorldDirection(cameraForwardHorizontal);
       cameraForwardHorizontal.y = 0;
       cameraForwardHorizontal.normalize();
@@ -159,11 +187,11 @@ export function FirstPersonWorld({
       inputDirection.addScaledVector(cameraForwardHorizontal, inputVertical);
       inputDirection.addScaledVector(cameraRightHorizontal, inputHorizontal);
 
-      if (inputDirection.lengthSq() > 0) {
+      if (controlsEnabledRef.current && inputDirection.lengthSq() > 0) {
         inputDirection.normalize();
         camera.position.addScaledVector(inputDirection, 6.4 * delta);
-        camera.position.x = clamp(camera.position.x, -27.5, 27.5);
-        camera.position.z = clamp(camera.position.z, -27.5, 27.5);
+        camera.position.x = clamp(camera.position.x, activeMap.bounds.minX, activeMap.bounds.maxX);
+        camera.position.z = clamp(camera.position.z, activeMap.bounds.minZ, activeMap.bounds.maxZ);
 
         if (!doorOpenRef.current && camera.position.z < -13.7 && Math.abs(camera.position.x) < 7.2) {
           camera.position.z = -13.7;
@@ -222,7 +250,7 @@ function buildLobbyScene(scene) {
   const groundMaterial = makeMaterial(0x6f9f6a, 0.88, 0, textures.grass);
   const pathMaterial = makeMaterial(0xcab47e, 0.8, 0, textures.path);
   const wallMaterial = makeMaterial(0xdbe5df, 0.62, 0, textures.plaster);
-  const houseWall = makeMaterial(0xe5c98f, 0.7, 0, textures.plaster);
+  const houseWall = makeMaterial(activeMap.style.interiorWall, 0.7, 0, textures.plaster);
   const roofMaterial = makeMaterial(0x87463f, 0.58, 0, textures.roof);
   const doorMaterial = makeMaterial(0x5a3d30, 0.58, 0, textures.wood);
 
@@ -348,7 +376,7 @@ function addHouse(scene, materials) {
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(11.4, 0.18, 8.4),
-    makeMaterial(0xa67855, 0.62, 0, materials.textures.wood)
+    makeMaterial(activeMap.style.interiorFloor, 0.72, 0, materials.textures.plaster)
   );
   floor.position.y = 0.09;
   floor.receiveShadow = true;
@@ -397,7 +425,7 @@ function addHouse(scene, materials) {
 function addDeskComputer(scene, textures) {
   const desk = new THREE.Mesh(
     new THREE.BoxGeometry(4.8, 1, 1.8),
-    makeMaterial(0x654738, 0.56, 0, textures.wood)
+    makeMaterial(activeMap.style.desk, 0.56, 0, textures.wood)
   );
   desk.position.set(-3, 1.05, -24.35);
   desk.castShadow = true;

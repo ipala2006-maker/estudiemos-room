@@ -1,41 +1,29 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ComputerUI } from './components/ComputerUI.jsx';
 import { FirstPersonWorld } from './components/FirstPersonWorld.jsx';
 import { Hud } from './components/Hud.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
-import { StudyOverlay } from './components/StudyOverlay.jsx';
-import { studySubjects } from './data/mockStudyContent.js';
 import './styles/app.css';
 
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
-  const [studyOpen, setStudyOpen] = useState(false);
+  const [computerOpen, setComputerOpen] = useState(false);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
-  const [subjectId, setSubjectId] = useState(studySubjects[0].id);
-  const [videoId, setVideoId] = useState(studySubjects[0].videos[0].id);
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
-
-  const subject = useMemo(
-    () => studySubjects.find((item) => item.id === subjectId) ?? studySubjects[0],
-    [subjectId]
-  );
-  const video = useMemo(
-    () => subject.videos.find((item) => item.id === videoId) ?? subject.videos[0],
-    [subject, videoId]
-  );
 
   useEffect(() => {
     function onKeyDown(event) {
       const key = event.key.toLowerCase();
-      if (studyOpen && key === 'escape') {
-        setStudyOpen(false);
+      if (computerOpen && key === 'escape') {
+        setComputerOpen(false);
         return;
       }
 
-      if (!hasStarted || studyOpen) return;
+      if (!hasStarted || computerOpen) return;
 
       if (isNearDoor && key === 'e') {
         toggleDoorRef.current();
@@ -44,22 +32,16 @@ function App() {
 
       if (isNearComputer && key === 'e') {
         document.exitPointerLock?.();
-        setStudyOpen(true);
+        setComputerOpen(true);
       }
     }
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hasStarted, isNearComputer, isNearDoor, studyOpen]);
-
-  function changeSubject(nextSubjectId) {
-    const nextSubject = studySubjects.find((item) => item.id === nextSubjectId) ?? studySubjects[0];
-    setSubjectId(nextSubject.id);
-    setVideoId(nextSubject.videos[0].id);
-  }
+  }, [computerOpen, hasStarted, isNearComputer, isNearDoor]);
 
   function backToStart() {
-    setStudyOpen(false);
+    setComputerOpen(false);
     setHasStarted(false);
     setIsNearComputer(false);
     setIsNearDoor(false);
@@ -78,6 +60,7 @@ function App() {
         onNearDoorChange={setIsNearDoor}
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
+        controlsEnabled={!computerOpen}
       />
 
       <Hud
@@ -94,15 +77,7 @@ function App() {
 
       {isNearComputer && <div className="interaction-prompt">Presiona E para usar la computadora</div>}
 
-      {studyOpen && (
-        <StudyOverlay
-          subject={subject}
-          video={video}
-          onSubjectChange={changeSubject}
-          onVideoChange={setVideoId}
-          onClose={() => setStudyOpen(false)}
-        />
-      )}
+      {computerOpen && <ComputerUI onClose={() => setComputerOpen(false)} />}
     </main>
   );
 }
