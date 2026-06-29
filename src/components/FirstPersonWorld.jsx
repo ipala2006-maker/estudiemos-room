@@ -4,7 +4,7 @@ import { Casa1 } from '../maps/Casa1.js';
 
 const activeMap = Casa1;
 const startPosition = activeMap.startPosition;
-const houseDoorPosition = activeMap.doorPosition;
+const houseDoorPosition = activeMap.entrancePosition;
 const computerPosition = activeMap.computerPosition;
 
 export function FirstPersonWorld({
@@ -13,13 +13,15 @@ export function FirstPersonWorld({
   onNearDoorChange,
   resetRef,
   toggleDoorRef,
-  controlsEnabled = true
+  controlsEnabled = true,
+  screenPlatformId = 'youtube'
 }) {
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
   const nearComputerRef = useRef(false);
   const doorOpenRef = useRef(false);
   const controlsEnabledRef = useRef(controlsEnabled);
+  const screenPlatformRef = useRef(screenPlatformId);
 
   useEffect(() => {
     controlsEnabledRef.current = controlsEnabled;
@@ -27,6 +29,10 @@ export function FirstPersonWorld({
       document.exitPointerLock?.();
     }
   }, [controlsEnabled]);
+
+  useEffect(() => {
+    screenPlatformRef.current = screenPlatformId;
+  }, [screenPlatformId]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -67,7 +73,7 @@ export function FirstPersonWorld({
     softFill.position.set(-18, 12, -8);
     scene.add(softFill);
 
-    const { doorPivot } = buildLobbyScene(scene);
+    const { giantScreen } = buildWorldScene(scene);
 
     const keys = {
       forward: false,
@@ -95,7 +101,6 @@ export function FirstPersonWorld({
       pitch = 0;
       camera.rotation.set(pitch, yaw, 0);
       doorOpenRef.current = false;
-      doorPivot.rotation.y = 0;
       nearDoorRef.current = false;
       nearComputerRef.current = false;
       onDoorOpenChange(false);
@@ -106,6 +111,11 @@ export function FirstPersonWorld({
     resetRef.current = resetCamera;
     toggleDoorRef.current = () => {
       doorOpenRef.current = !doorOpenRef.current;
+      camera.position.copy(doorOpenRef.current ? activeMap.interiorSpawnPosition : startPosition);
+      yaw = doorOpenRef.current ? Math.PI : 0;
+      pitch = 0;
+      camera.rotation.set(pitch, yaw, 0);
+      clearMovementInput();
       onDoorOpenChange(doorOpenRef.current);
     };
 
@@ -190,28 +200,22 @@ export function FirstPersonWorld({
       if (controlsEnabledRef.current && inputDirection.lengthSq() > 0) {
         inputDirection.normalize();
         camera.position.addScaledVector(inputDirection, 6.4 * delta);
-        camera.position.x = clamp(camera.position.x, activeMap.bounds.minX, activeMap.bounds.maxX);
-        camera.position.z = clamp(camera.position.z, activeMap.bounds.minZ, activeMap.bounds.maxZ);
-
-        if (!doorOpenRef.current && camera.position.z < -13.7 && Math.abs(camera.position.x) < 7.2) {
-          camera.position.z = -13.7;
-        }
-
-        if (doorOpenRef.current && camera.position.z < -22.15 && Math.abs(camera.position.x) < 7.2) {
-          camera.position.z = -22.15;
-        }
+        const bounds = doorOpenRef.current ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
+        camera.position.x = clamp(camera.position.x, bounds.minX, bounds.maxX);
+        camera.position.z = clamp(camera.position.z, bounds.minZ, bounds.maxZ);
       }
 
-      doorPivot.rotation.y += ((doorOpenRef.current ? -Math.PI * 0.62 : 0) - doorPivot.rotation.y) * 0.16;
+      updateGiantScreen(giantScreen, screenPlatformRef.current);
 
-      const nearDoor = camera.position.distanceTo(houseDoorPosition) < 5;
+      const nearDoor = doorOpenRef.current
+        ? camera.position.distanceTo(activeMap.interiorExitPosition) < 4.5
+        : camera.position.distanceTo(houseDoorPosition) < 5;
       if (nearDoor !== nearDoorRef.current) {
         nearDoorRef.current = nearDoor;
         onNearDoorChange(nearDoor);
       }
 
-      const isInsideHouse = camera.position.z < -17.2 && Math.abs(camera.position.x) < 7;
-      const nearComputer = doorOpenRef.current && (isInsideHouse || camera.position.distanceTo(computerPosition) < 5.8);
+      const nearComputer = doorOpenRef.current && camera.position.distanceTo(computerPosition) < 7;
       if (nearComputer !== nearComputerRef.current) {
         nearComputerRef.current = nearComputer;
         onNearComputerChange(nearComputer);
@@ -239,7 +243,7 @@ export function FirstPersonWorld({
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
 }
 
-function buildLobbyScene(scene) {
+function buildWorldScene(scene) {
   const textures = {
     grass: createTexture('grass'),
     path: createTexture('path'),
@@ -254,6 +258,13 @@ function buildLobbyScene(scene) {
   const roofMaterial = makeMaterial(0x87463f, 0.58, 0, textures.roof);
   const doorMaterial = makeMaterial(0x5a3d30, 0.58, 0, textures.wood);
 
+  addNeighborhood(scene, { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures });
+  const giantScreen = addCasa1Interior(scene, textures);
+  return { giantScreen };
+}
+
+function addNeighborhood(scene, materials) {
+  const { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures } = materials;
   const ground = new THREE.Mesh(new THREE.BoxGeometry(60, 0.6, 60), groundMaterial);
   ground.position.y = -0.3;
   ground.receiveShadow = true;
@@ -277,11 +288,10 @@ function buildLobbyScene(scene) {
 
   addBoundaryWalls(scene, wallMaterial);
   addPathSign(scene, textures);
-  const doorPivot = addHouse(scene, { houseWall, roofMaterial, doorMaterial, textures });
-  addDeskComputer(scene, textures);
+  addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 0, -20, true);
+  addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, -18, -18, false);
+  addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 18, -18, false);
   addTrees(scene);
-
-  return { doorPivot };
 }
 
 function addBoundaryWalls(scene, wallMaterial) {
@@ -350,9 +360,9 @@ function addPathSign(scene, textures) {
   scene.add(marker);
 }
 
-function addHouse(scene, materials) {
+function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   const houseGroup = new THREE.Group();
-  houseGroup.position.set(0, 0, -20);
+  houseGroup.position.set(xOffset, 0, zOffset);
 
   const wallParts = [
     { position: [-4.15, 3.5, 4.5], size: [3.7, 7, 0.35] },
@@ -406,6 +416,16 @@ function addHouse(scene, materials) {
   addEdges(door, 0x2f221c, 0.38);
   houseGroup.add(doorPivot);
 
+  if (!isCasa1) {
+    const blocked = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 3.6, 0.12),
+      makeMaterial(0x9d9d95, 0.72)
+    );
+    blocked.position.set(0, 2, 4.9);
+    blocked.castShadow = true;
+    houseGroup.add(blocked);
+  }
+
   const windowMaterial = makeMaterial(0x8fc9d4, 0.2, 0.05);
   [-3.8, 3.8].forEach((x) => {
     const window = new THREE.Mesh(new THREE.BoxGeometry(2, 1.8, 0.16), windowMaterial);
@@ -419,76 +439,108 @@ function addHouse(scene, materials) {
   houseGroup.add(roomLight);
 
   scene.add(houseGroup);
-  return doorPivot;
 }
 
-function addDeskComputer(scene, textures) {
+function addCasa1Interior(scene, textures) {
+  const room = new THREE.Group();
+  room.position.set(90, 0, -6);
+
+  const floor = new THREE.Mesh(
+    new THREE.BoxGeometry(56, 0.4, 58),
+    makeMaterial(0xf4f4f0, 0.78)
+  );
+  floor.position.set(0, -0.2, 0);
+  floor.receiveShadow = true;
+  room.add(floor);
+
+  const wallMaterial = makeMaterial(0xffffff, 0.72);
+  [
+    { position: [0, 8, -29], size: [56, 16, 0.5] },
+    { position: [-28, 8, 0], size: [0.5, 16, 58] },
+    { position: [28, 8, 0], size: [0.5, 16, 58] },
+    { position: [0, 8, 29], size: [56, 16, 0.5] }
+  ].forEach((part) => {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(...part.size), wallMaterial);
+    wall.position.set(...part.position);
+    wall.receiveShadow = true;
+    wall.castShadow = true;
+    room.add(wall);
+  });
+
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xfbfbf8, 0.74));
+  ceiling.position.set(0, 16, 0);
+  ceiling.receiveShadow = true;
+  room.add(ceiling);
+
+  const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(36, 14, 0.35), makeMaterial(0x11171b, 0.42, 0.06));
+  screenFrame.position.set(0, 8.5, -28.55);
+  screenFrame.castShadow = true;
+  room.add(screenFrame);
+
+  const screenCanvas = document.createElement('canvas');
+  screenCanvas.width = 1024;
+  screenCanvas.height = 512;
+  const screenTexture = new THREE.CanvasTexture(screenCanvas);
+  screenTexture.colorSpace = THREE.SRGBColorSpace;
+
+  const screenSurface = new THREE.Mesh(
+    new THREE.BoxGeometry(34.6, 12.8, 0.12),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, map: screenTexture, emissive: 0xffffff, emissiveIntensity: 0.25 })
+  );
+  screenSurface.position.set(0, 8.5, -28.25);
+  room.add(screenSurface);
+
+  addScreenControllerComputer(room, textures);
+  addInteriorExitMarker(room);
+
+  const keyLight = new THREE.PointLight(0xffffff, 2.2, 46, 1.7);
+  keyLight.position.set(0, 12, 0);
+  room.add(keyLight);
+
+  scene.add(room);
+  return { canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentPlatformId: '' };
+}
+
+function addInteriorExitMarker(room) {
+  const marker = new THREE.Mesh(new THREE.BoxGeometry(6, 0.08, 2), makeMaterial(0xd8e8ff, 0.8));
+  marker.position.set(0, 0.05, 26);
+  marker.receiveShadow = true;
+  room.add(marker);
+}
+
+function addScreenControllerComputer(room, textures) {
   const desk = new THREE.Mesh(
     new THREE.BoxGeometry(4.8, 1, 1.8),
     makeMaterial(activeMap.style.desk, 0.56, 0, textures.wood)
   );
-  desk.position.set(-3, 1.05, -24.35);
+  desk.position.set(-12, 1.05, -4);
   desk.castShadow = true;
-  scene.add(desk);
+  room.add(desk);
   addEdges(desk, 0x3d2b22, 0.32);
 
   const upperScreen = new THREE.Mesh(
-    new THREE.BoxGeometry(4.2, 2.25, 0.2),
+    new THREE.BoxGeometry(2.7, 1.6, 0.2),
     makeMaterial(0x12191c, 0.34, 0.04)
   );
-  upperScreen.position.set(-3, 3.75, -24.08);
+  upperScreen.position.set(-12, 2.7, -4.35);
   upperScreen.castShadow = true;
-  scene.add(upperScreen);
+  room.add(upperScreen);
 
   const upperGlow = new THREE.Mesh(
-    new THREE.BoxGeometry(3.62, 1.68, 0.08),
+    new THREE.BoxGeometry(2.25, 1.12, 0.08),
     new THREE.MeshStandardMaterial({ color: 0x9ed8d0, roughness: 0.38, emissive: 0x28736e, emissiveIntensity: 0.54 })
   );
-  upperGlow.position.set(-3, 3.75, -23.92);
-  scene.add(upperGlow);
-
-  const lowerScreen = new THREE.Mesh(
-    new THREE.BoxGeometry(3.45, 1.35, 0.2),
-    makeMaterial(0x12191c, 0.34, 0.04)
-  );
-  lowerScreen.position.set(-3, 2.05, -24.08);
-  lowerScreen.castShadow = true;
-  scene.add(lowerScreen);
-
-  const lowerGlow = new THREE.Mesh(
-    new THREE.BoxGeometry(2.86, 0.86, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0xb2dfbd, roughness: 0.42, emissive: 0x357047, emissiveIntensity: 0.48 })
-  );
-  lowerGlow.position.set(-3, 2.05, -23.92);
-  scene.add(lowerGlow);
+  upperGlow.position.set(-12, 2.7, -4.18);
+  room.add(upperGlow);
 
   const chair = new THREE.Mesh(
     new THREE.BoxGeometry(1.25, 1.5, 1.15),
     makeMaterial(0x2d3b3f, 0.52)
   );
-  chair.position.set(-3, 0.86, -22.45);
+  chair.position.set(-12, 0.86, -1.9);
   chair.castShadow = true;
-  scene.add(chair);
+  room.add(chair);
   addEdges(chair, 0x151f22, 0.32);
-
-  const lampBase = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.12, 0.45), makeMaterial(0x2f3a3c, 0.42, 0.08));
-  lampBase.position.set(-5.05, 1.63, -24.2);
-  lampBase.castShadow = true;
-  scene.add(lampBase);
-
-  const lampArm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.12), makeMaterial(0x2f3a3c, 0.42, 0.08));
-  lampArm.position.set(-5.05, 2.18, -24.2);
-  lampArm.castShadow = true;
-  scene.add(lampArm);
-
-  const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.36, 6), makeMaterial(0xe2c575, 0.5));
-  lampShade.position.set(-5.05, 2.82, -24.2);
-  lampShade.castShadow = true;
-  scene.add(lampShade);
-
-  const lampLight = new THREE.PointLight(0xffd98a, 1.25, 7, 2);
-  lampLight.position.set(-5.05, 2.7, -23.8);
-  scene.add(lampLight);
 }
 
 function addTrees(scene) {
@@ -532,6 +584,73 @@ function addWindowFrame(group, x, y, z) {
     bar.castShadow = true;
     group.add(bar);
   });
+}
+
+function updateGiantScreen(giantScreen, platformId) {
+  if (giantScreen.currentPlatformId === platformId) return;
+  giantScreen.currentPlatformId = platformId;
+
+  const ctx = giantScreen.context;
+  const width = giantScreen.canvas.width;
+  const height = giantScreen.canvas.height;
+  const platform = getPlatformScreenState(platformId);
+
+  ctx.fillStyle = '#081114';
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = platform.background;
+  ctx.fillRect(18, 18, width - 36, 382);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  for (let x = 40; x < width; x += 80) {
+    ctx.fillRect(x, 44, 2, 316);
+  }
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 64px system-ui, sans-serif';
+  ctx.fillText(platform.title, 62, 150);
+
+  ctx.font = '500 30px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  ctx.fillText(platform.subtitle, 66, 210);
+
+  ctx.fillStyle = platform.accent;
+  ctx.fillRect(18, 408, width - 36, 86);
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.fillRect(18, 408, width - 36, 2);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 28px system-ui, sans-serif';
+  ctx.fillText('Zona secundaria 20% - controles / estado / cola de reproduccion', 54, 462);
+
+  giantScreen.texture.needsUpdate = true;
+}
+
+function getPlatformScreenState(platformId) {
+  if (platformId === 'netflix') {
+    return {
+      title: 'Netflix',
+      subtitle: 'Placeholder bloqueado: requiere soporte DRM',
+      background: '#2b1014',
+      accent: '#e50914'
+    };
+  }
+
+  if (platformId === 'custom-video') {
+    return {
+      title: 'Video externo',
+      subtitle: 'Placeholder para futuras fuentes aprobadas',
+      background: '#10243f',
+      accent: '#4f8cff'
+    };
+  }
+
+  return {
+    title: 'YouTube',
+    subtitle: 'Placeholder de app preparada para integracion',
+    background: '#2c1111',
+    accent: '#ff3b30'
+  };
 }
 
 function makeMaterial(color, roughness, metalness = 0, texture = null) {

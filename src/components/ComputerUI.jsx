@@ -1,9 +1,8 @@
 import { Monitor, Play, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { videoPlatforms } from '../data/videoPlatforms.js';
 
-export function ComputerUI({ onClose }) {
-  const [selectedPlatformId, setSelectedPlatformId] = useState(videoPlatforms[0].id);
+export function ComputerUI({ onClose, onPlatformSelect, selectedPlatformId = videoPlatforms[0].id }) {
   const selectedPlatform = useMemo(
     () => videoPlatforms.find((platform) => platform.id === selectedPlatformId) ?? videoPlatforms[0],
     [selectedPlatformId]
@@ -29,7 +28,7 @@ export function ComputerUI({ onClose }) {
                 key={platform.id}
                 type="button"
                 className={platform.id === selectedPlatform.id ? 'is-selected' : ''}
-                onClick={() => setSelectedPlatformId(platform.id)}
+                onClick={() => onPlatformSelect(platform.id)}
                 style={{ '--platform-accent': platform.accent }}
               >
                 <Monitor size={22} aria-hidden="true" />

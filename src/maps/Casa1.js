@@ -4,13 +4,21 @@ export const Casa1 = {
   id: 'casa-1',
   name: 'Casa 1',
   startPosition: new THREE.Vector3(0, 1.7, 20),
-  doorPosition: new THREE.Vector3(0, 1.7, -13.7),
-  computerPosition: new THREE.Vector3(-3, 1.7, -23.3),
-  bounds: {
+  entrancePosition: new THREE.Vector3(0, 1.7, -13.7),
+  interiorSpawnPosition: new THREE.Vector3(90, 1.7, 16),
+  interiorExitPosition: new THREE.Vector3(90, 1.7, 20),
+  computerPosition: new THREE.Vector3(78, 1.7, -10),
+  neighborhoodBounds: {
     minX: -27.5,
     maxX: 27.5,
     minZ: -27.5,
     maxZ: 27.5
+  },
+  interiorBounds: {
+    minX: 62,
+    maxX: 118,
+    minZ: -36,
+    maxZ: 23
   },
   style: {
     interiorWall: 0xf4f4ef,

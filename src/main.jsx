@@ -12,6 +12,7 @@ function App() {
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
+  const [screenPlatformId, setScreenPlatformId] = useState('youtube');
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
 
@@ -61,6 +62,7 @@ function App() {
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
         controlsEnabled={!computerOpen}
+        screenPlatformId={screenPlatformId}
       />
 
       <Hud
@@ -72,12 +74,20 @@ function App() {
       />
 
       {isNearDoor && (
-        <div className="interaction-prompt">Presiona E para {isDoorOpen ? 'cerrar' : 'abrir'} la puerta</div>
+        <div className="interaction-prompt">
+          Presiona E para {isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}
+        </div>
       )}
 
       {isNearComputer && <div className="interaction-prompt">Presiona E para usar la computadora</div>}
 
-      {computerOpen && <ComputerUI onClose={() => setComputerOpen(false)} />}
+      {computerOpen && (
+        <ComputerUI
+          selectedPlatformId={screenPlatformId}
+          onPlatformSelect={setScreenPlatformId}
+          onClose={() => setComputerOpen(false)}
+        />
+      )}
     </main>
   );
 }
