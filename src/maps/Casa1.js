@@ -31,9 +31,9 @@ export const Casa1 = {
     maxZ: 23
   },
   style: {
-    interiorWall: 0xf4f4ef,
-    interiorFloor: 0xe8e8df,
-    exteriorWall: 0xe7dfc9,
-    desk: 0x565656
+    interiorWall: 0xffffff,
+    interiorFloor: 0xf4f6ee,
+    exteriorWall: 0xffefbd,
+    desk: 0x30344f
   }
 };
