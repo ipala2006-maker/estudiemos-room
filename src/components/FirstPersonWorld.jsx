@@ -300,6 +300,7 @@ function addNeighborhood(scene, materials) {
   addPathSign(scene, textures);
   addNeighborhoodAccents(scene);
   addRhythmRoad(scene);
+  addDesignedPath(scene);
   addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 0, -20, true);
   addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, -18, -18, false);
   addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 18, -18, false);
@@ -324,6 +325,7 @@ function addBoundaryWalls(scene, wallMaterial) {
     scene.add(wall);
     addEdges(wall, 0x2f6c78, 0.34);
   });
+  addBoundaryMurals(scene);
 
   [
     { position: [-16, 3.4, -29.25], size: [8, 4.8, 0.22], color: 0xff4f4a, rot: -0.08 },
@@ -394,6 +396,80 @@ function addPathSign(scene, textures) {
   addEdges(bolt, 0x111622, 0.45);
 }
 
+function addBoundaryMurals(scene) {
+  const murals = [
+    {
+      points: [
+        [-9, -2.2],
+        [7.2, -2.2],
+        [8.8, 1.8],
+        [3.3, 2.7],
+        [-7.6, 2.1]
+      ],
+      position: [-13, 3.4, -29.42],
+      color: 0xff4f4a
+    },
+    {
+      points: [
+        [-7.8, -1.9],
+        [8.2, -2.3],
+        [6.4, 2.5],
+        [-3.4, 2.9],
+        [-9.2, 0.6]
+      ],
+      position: [13.8, 3.55, -29.44],
+      color: 0xffd95c
+    },
+    {
+      points: [
+        [-2.2, -5.5],
+        [2.4, -4.6],
+        [2.1, 5.3],
+        [-2.6, 4.4],
+        [-3.1, -1.2]
+      ],
+      position: [-29.45, 3.8, 10],
+      color: 0x38d8ff,
+      rotateY: Math.PI / 2
+    },
+    {
+      points: [
+        [-2.6, -5.1],
+        [2.5, -4.1],
+        [2.8, 5.1],
+        [-1.8, 5.8],
+        [-3.1, 1.2]
+      ],
+      position: [29.45, 3.7, -12],
+      color: 0x211a3d,
+      rotateY: -Math.PI / 2
+    }
+  ];
+
+  murals.forEach((mural) => {
+    const mesh = createVerticalShapeMesh(mural.points, mural.color);
+    mesh.position.set(...mural.position);
+    mesh.rotation.y = mural.rotateY ?? 0;
+    scene.add(mesh);
+    addEdges(mesh, 0x111622, 0.58);
+
+    const slash = createVerticalShapeMesh(
+      [
+        [-1.2, -2.4],
+        [0.3, -2.4],
+        [2.2, 2.4],
+        [0.6, 2.4]
+      ],
+      0xffffff
+    );
+    slash.position.copy(mesh.position);
+    slash.position.z += mural.rotateY ? 0 : 0.04;
+    slash.position.x += mural.rotateY ? (mural.rotateY > 0 ? 0.04 : -0.04) : 0;
+    slash.rotation.copy(mesh.rotation);
+    scene.add(slash);
+  });
+}
+
 function addNeighborhoodAccents(scene) {
   const accentSpecs = [
     { position: [-8, 0.12, -6], size: [1.1, 0.08, 1.1], color: 0x38d8ff },
@@ -410,6 +486,45 @@ function addNeighborhoodAccents(scene) {
     scene.add(tile);
     addEdges(tile, 0x142326, 0.24);
   });
+}
+
+function addDesignedPath(scene) {
+  const pathSections = [
+    { z0: 19, z1: 12, left: -3.8, right: 3.8, color: 0xffd95c },
+    { z0: 12, z1: 5, left: -3.25, right: 3.25, color: 0xffc829 },
+    { z0: 5, z1: -3.5, left: -2.85, right: 2.85, color: 0xffd95c },
+    { z0: -3.5, z1: -13.2, left: -2.3, right: 2.3, color: 0xffc829 }
+  ];
+
+  pathSections.forEach((section, index) => {
+    const slab = createGroundShapeMesh(
+      [
+        [section.left, section.z0],
+        [section.right, section.z0 - 0.9],
+        [section.right * 0.82, section.z1],
+        [section.left * 0.82, section.z1 + 0.7]
+      ],
+      section.color
+    );
+    slab.position.y = 0.19 + index * 0.003;
+    scene.add(slab);
+    addEdges(slab, 0x111622, 0.34);
+  });
+
+  for (let i = 0; i < 11; i += 1) {
+    const z = 17.5 - i * 2.8;
+    const stripe = createGroundShapeMesh(
+      [
+        [-1.6, z],
+        [1.45, z - 0.35],
+        [1.3, z - 0.7],
+        [-1.75, z - 0.35]
+      ],
+      i % 2 === 0 ? 0xffffff : 0x211a3d
+    );
+    stripe.position.y = 0.245;
+    scene.add(stripe);
+  }
 }
 
 function addRhythmRoad(scene) {
@@ -511,6 +626,7 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
 
   addHouseGraphicTrim(houseGroup, isCasa1);
   addHouseAngularMasses(houseGroup, isCasa1);
+  addHouseDesignedFacade(houseGroup, isCasa1);
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(11.4, 0.18, 8.4),
@@ -617,6 +733,97 @@ function addHouseAngularMasses(houseGroup, isCasa1) {
   houseGroup.add(bolt);
 }
 
+function addHouseDesignedFacade(houseGroup, isCasa1) {
+  const backing = createVerticalShapeMesh(
+    [
+      [-6.9, -3.55],
+      [-6.1, 2.85],
+      [-3.2, 4.05],
+      [-0.45, 5.0],
+      [3.8, 4.05],
+      [6.5, 2.65],
+      [6.95, -3.3],
+      [2.7, -3.65],
+      [-3.8, -3.45]
+    ],
+    0x111622
+  );
+  backing.position.set(0, 4.25, 5.02);
+  houseGroup.add(backing);
+
+  const face = createVerticalShapeMesh(
+    [
+      [-5.7, -3.0],
+      [-5.25, 2.25],
+      [-2.6, 3.2],
+      [-0.2, 3.95],
+      [3.1, 3.18],
+      [5.45, 2.0],
+      [5.7, -2.9],
+      [2.4, -3.2],
+      [-3.2, -3.05]
+    ],
+    isCasa1 ? 0xffef9b : 0xffe7a8
+  );
+  face.position.set(0, 4.18, 5.1);
+  houseGroup.add(face);
+
+  [
+    { x: -3.35, y: 4.65, color: 0x9beaff },
+    { x: 3.25, y: 4.55, color: 0x9beaff }
+  ].forEach((window) => {
+    const frame = createVerticalShapeMesh(
+      [
+        [-1.18, -0.82],
+        [0.88, -1.02],
+        [1.2, 0.7],
+        [-0.92, 1.02]
+      ],
+      0x111622
+    );
+    frame.position.set(window.x, window.y, 5.22);
+    houseGroup.add(frame);
+
+    const glass = createVerticalShapeMesh(
+      [
+        [-0.82, -0.55],
+        [0.62, -0.68],
+        [0.82, 0.45],
+        [-0.58, 0.66]
+      ],
+      window.color
+    );
+    glass.position.set(window.x, window.y, 5.28);
+    houseGroup.add(glass);
+  });
+
+  const entry = createVerticalShapeMesh(
+    [
+      [-1.25, -2.95],
+      [1.25, -2.95],
+      [1.25, 0.4],
+      [0.55, 1.15],
+      [-0.65, 1.15],
+      [-1.25, 0.32]
+    ],
+    0x211a3d
+  );
+  entry.position.set(0, 2.95, 5.34);
+  houseGroup.add(entry);
+
+  const accent = createVerticalShapeMesh(
+    [
+      [-5.4, -2.85],
+      [-4.55, -2.75],
+      [4.95, 2.3],
+      [4.1, 2.55]
+    ],
+    isCasa1 ? 0x38d8ff : 0xff4f4a
+  );
+  accent.position.set(0, 4.12, 5.36);
+  houseGroup.add(accent);
+}
+
 function addHouseGraphicTrim(houseGroup, isCasa1) {
   const dark = makeMaterial(0x111622, 0.22);
   const cyan = makeMaterial(0x38d8ff, 0.22);
@@ -697,6 +904,7 @@ function addCasa1Interior(scene, textures) {
   screenSurface.position.set(0, 8.5, -28.25);
   room.add(screenSurface);
   addScreenStageDetails(room);
+  addScreenHeroFrame(room);
 
   addScreenControllerComputer(room, textures);
   addInteriorExitMarker(room);
@@ -735,6 +943,36 @@ function addInteriorSetPieces(room) {
     room.add(mesh);
     addEdges(mesh, 0x111622, 0.42);
   });
+
+  const floorGlyph = createGroundShapeMesh(
+    [
+      [-7.2, 13.2],
+      [5.6, 11.3],
+      [7.2, 14.4],
+      [1.4, 18.4],
+      [-6.4, 17.2]
+    ],
+    0x38d8ff
+  );
+  floorGlyph.position.y = 0.13;
+  room.add(floorGlyph);
+  addEdges(floorGlyph, 0x111622, 0.34);
+
+  const screenArrow = createGroundShapeMesh(
+    [
+      [-3.2, -4.5],
+      [3.2, -4.5],
+      [3.2, -8.5],
+      [6.2, -8.5],
+      [0, -14.2],
+      [-6.2, -8.5],
+      [-3.2, -8.5]
+    ],
+    0xffd95c
+  );
+  screenArrow.position.y = 0.135;
+  room.add(screenArrow);
+  addEdges(screenArrow, 0x111622, 0.34);
 
   [
     { x: -23, z: 21, color: 0x38d8ff },
@@ -793,6 +1031,62 @@ function addScreenStageDetails(room) {
     marker.rotation.z = index % 2 === 0 ? 0.18 : -0.18;
     room.add(marker);
   });
+}
+
+function addScreenHeroFrame(room) {
+  const backBurst = createVerticalShapeMesh(
+    [
+      [-22, -8.5],
+      [-18.4, 6.2],
+      [-8.2, 8.4],
+      [0, 7.2],
+      [10.8, 8.6],
+      [21.8, 5.8],
+      [23.2, -7.8],
+      [11.5, -8.9],
+      [0, -7.8],
+      [-12.6, -9.1]
+    ],
+    0x111622
+  );
+  backBurst.position.set(0, 8.45, -28.84);
+  room.add(backBurst);
+
+  const cyanWing = createVerticalShapeMesh(
+    [
+      [-22.8, -5.8],
+      [-18.8, 5.7],
+      [-15.1, 4.9],
+      [-18.1, -6.4]
+    ],
+    0x38d8ff
+  );
+  cyanWing.position.set(0, 8.45, -28.76);
+  room.add(cyanWing);
+
+  const redWing = createVerticalShapeMesh(
+    [
+      [22.8, -5.7],
+      [18.3, 5.9],
+      [14.8, 4.9],
+      [18.1, -6.6]
+    ],
+    0xff4f4a
+  );
+  redWing.position.set(0, 8.45, -28.75);
+  room.add(redWing);
+
+  const lowerTag = createVerticalShapeMesh(
+    [
+      [-13.5, -8.4],
+      [13.5, -8.4],
+      [11.8, -10.2],
+      [-11.3, -10.2]
+    ],
+    0xffd95c
+  );
+  lowerTag.position.set(0, 8.45, -28.69);
+  room.add(lowerTag);
 }
 
 function addMinimalRoomDetails(room) {
@@ -911,6 +1205,34 @@ function addScreenControllerComputer(room, textures) {
   );
   upperGlow.position.set(-12, 2.7, -4.18);
   room.add(upperGlow);
+
+  const monitorFace = createVerticalShapeMesh(
+    [
+      [-1.8, -1.12],
+      [1.45, -1.0],
+      [1.82, 0.78],
+      [0.92, 1.22],
+      [-1.55, 1.02],
+      [-1.95, 0.05]
+    ],
+    0x111622
+  );
+  monitorFace.position.set(-12, 2.72, -4.08);
+  room.add(monitorFace);
+
+  const monitorScreen = createVerticalShapeMesh(
+    [
+      [-1.28, -0.66],
+      [1.0, -0.56],
+      [1.22, 0.48],
+      [0.55, 0.74],
+      [-1.05, 0.62],
+      [-1.34, 0.04]
+    ],
+    0x9beaff
+  );
+  monitorScreen.position.set(-12, 2.72, -4.0);
+  room.add(monitorScreen);
 
   const monitorCrown = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.28, 0.28), makeMaterial(0xffd95c, 0.18));
   monitorCrown.position.set(-12, 3.75, -4.22);
@@ -1133,6 +1455,34 @@ function createBoltMesh(color, scale = 1) {
   const mesh = new THREE.Mesh(geometry, makeMaterial(color, 0.18));
   mesh.scale.setScalar(scale);
   mesh.castShadow = true;
+  return mesh;
+}
+
+function createVerticalShapeMesh(points, color) {
+  const shape = new THREE.Shape();
+  points.forEach(([x, y], index) => {
+    if (index === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  });
+  shape.closePath();
+  const geometry = new THREE.ShapeGeometry(shape);
+  const mesh = new THREE.Mesh(geometry, makeMaterial(color, 0.16));
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function createGroundShapeMesh(points, color) {
+  const shape = new THREE.Shape();
+  points.forEach(([x, z], index) => {
+    if (index === 0) shape.moveTo(x, z);
+    else shape.lineTo(x, z);
+  });
+  shape.closePath();
+  const geometry = new THREE.ShapeGeometry(shape);
+  geometry.rotateX(-Math.PI / 2);
+  const mesh = new THREE.Mesh(geometry, makeMaterial(color, 0.16));
+  mesh.receiveShadow = true;
   return mesh;
 }
 
