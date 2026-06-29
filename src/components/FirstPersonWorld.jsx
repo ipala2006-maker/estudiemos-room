@@ -64,7 +64,6 @@ export function FirstPersonWorld({
       left: false,
       right: false
     };
-    const velocity = new THREE.Vector3();
     const inputDirection = new THREE.Vector3();
     let yaw = 0;
     let pitch = 0;
@@ -74,7 +73,6 @@ export function FirstPersonWorld({
       camera.position.copy(startPosition);
       yaw = 0;
       pitch = 0;
-      velocity.set(0, 0, 0);
       camera.rotation.set(pitch, yaw, 0);
       doorOpenRef.current = false;
       doorPivot.rotation.y = 0;
@@ -148,8 +146,13 @@ export function FirstPersonWorld({
 
     function animate() {
       const delta = Math.min(clock.getDelta(), 0.04);
-      const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw) * -1);
-      const right = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw));
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      forward.normalize();
+
+      const right = new THREE.Vector3();
+      right.crossVectors(forward, camera.up).normalize();
       inputDirection.set(0, 0, 0);
 
       if (keys.forward) inputDirection.add(forward);
@@ -157,19 +160,9 @@ export function FirstPersonWorld({
       if (keys.right) inputDirection.add(right);
       if (keys.left) inputDirection.sub(right);
 
-      velocity.multiplyScalar(Math.exp(-10 * delta));
-
       if (inputDirection.lengthSq() > 0) {
         inputDirection.normalize();
-        velocity.addScaledVector(inputDirection, 34 * delta);
-      }
-
-      if (velocity.length() > 7.2) {
-        velocity.setLength(7.2);
-      }
-
-      if (velocity.lengthSq() > 0.0001) {
-        camera.position.addScaledVector(velocity, delta);
+        camera.position.addScaledVector(inputDirection, 6.4 * delta);
         camera.position.x = clamp(camera.position.x, -27.5, 27.5);
         camera.position.z = clamp(camera.position.z, -27.5, 27.5);
 
