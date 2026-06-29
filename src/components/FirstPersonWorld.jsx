@@ -6,6 +6,7 @@ const activeMap = Casa1;
 const startPosition = activeMap.startPosition;
 const houseDoorPosition = activeMap.entrancePosition;
 const computerPosition = activeMap.computerPosition;
+const toonGradient = createToonGradient();
 
 export function FirstPersonWorld({
   onDoorOpenChange,
@@ -37,8 +38,8 @@ export function FirstPersonWorld({
   useEffect(() => {
     const mount = mountRef.current;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x90dded);
-    scene.fog = new THREE.Fog(0x90dded, 42, 92);
+    scene.background = new THREE.Color(0x7ddff0);
+    scene.fog = new THREE.Fog(0x7ddff0, 46, 98);
 
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 120);
     camera.position.copy(startPosition);
@@ -48,16 +49,16 @@ export function FirstPersonWorld({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.16;
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.toneMappingExposure = 1;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
-    const ambient = new THREE.HemisphereLight(0xfff4d8, 0x365b72, 1.22);
+    const ambient = new THREE.HemisphereLight(0xffffff, 0x24425e, 1.55);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xffe3a6, 3.65);
+    const sun = new THREE.DirectionalLight(0xfff1a0, 4.35);
     sun.position.set(18, 24, 16);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -69,7 +70,11 @@ export function FirstPersonWorld({
     sun.shadow.camera.bottom = -34;
     scene.add(sun);
 
-    const softFill = new THREE.DirectionalLight(0x9eeaff, 0.62);
+    const rimLight = new THREE.DirectionalLight(0xff4f9a, 1.35);
+    rimLight.position.set(-24, 14, 22);
+    scene.add(rimLight);
+
+    const softFill = new THREE.DirectionalLight(0x5ce6ff, 0.95);
     softFill.position.set(-18, 12, -8);
     scene.add(softFill);
 
@@ -249,14 +254,17 @@ function buildWorldScene(scene) {
     path: createTexture('path'),
     plaster: createTexture('plaster'),
     wood: createTexture('wood'),
-    roof: createTexture('roof')
+    roof: createTexture('roof'),
+    comicWall: createTexture('comicWall'),
+    screenFrame: createTexture('screenFrame'),
+    blackStripe: createTexture('blackStripe')
   };
-  const groundMaterial = makeMaterial(0x43b96e, 0.76, 0, textures.grass);
-  const pathMaterial = makeMaterial(0xf2c94c, 0.64, 0, textures.path);
-  const wallMaterial = makeMaterial(0xc9edf4, 0.52, 0, textures.plaster);
-  const houseWall = makeMaterial(0xffefbd, 0.6, 0, textures.plaster);
-  const roofMaterial = makeMaterial(0xf05a4f, 0.48, 0, textures.roof);
-  const doorMaterial = makeMaterial(0x2f2846, 0.5, 0, textures.wood);
+  const groundMaterial = makeMaterial(0x31c96d, 0.42, 0, textures.grass);
+  const pathMaterial = makeMaterial(0xffcf32, 0.34, 0, textures.path);
+  const wallMaterial = makeMaterial(0x93ecff, 0.36, 0, textures.comicWall);
+  const houseWall = makeMaterial(0xffef9b, 0.32, 0, textures.plaster);
+  const roofMaterial = makeMaterial(0xff3d34, 0.26, 0, textures.roof);
+  const doorMaterial = makeMaterial(0x211a3d, 0.28, 0, textures.wood);
 
   addNeighborhood(scene, { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures });
   const giantScreen = addCasa1Interior(scene, textures);
@@ -289,9 +297,11 @@ function addNeighborhood(scene, materials) {
   addBoundaryWalls(scene, wallMaterial);
   addPathSign(scene, textures);
   addNeighborhoodAccents(scene);
+  addRhythmRoad(scene);
   addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 0, -20, true);
   addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, -18, -18, false);
   addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 18, -18, false);
+  addSkylinePanels(scene);
   addTrees(scene);
 }
 
@@ -379,6 +389,43 @@ function addNeighborhoodAccents(scene) {
   });
 }
 
+function addRhythmRoad(scene) {
+  const colors = [0xff4f4a, 0x38d8ff, 0xffd95c];
+  for (let i = 0; i < 9; i += 1) {
+    const z = 16 - i * 3.9;
+    const leftDash = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.08, 1.35),
+      makeMaterial(colors[i % colors.length], 0.24)
+    );
+    leftDash.position.set(-2.05, 0.2, z);
+    leftDash.rotation.y = -0.35;
+    scene.add(leftDash);
+    addEdges(leftDash, 0x111622, 0.42);
+
+    const rightDash = leftDash.clone();
+    rightDash.material = leftDash.material;
+    rightDash.position.x = 2.05;
+    rightDash.rotation.y = 0.35;
+    scene.add(rightDash);
+    addEdges(rightDash, 0x111622, 0.42);
+  }
+}
+
+function addSkylinePanels(scene) {
+  [
+    { x: -25.6, z: -12, color: 0xff4f4a, height: 5.5 },
+    { x: 25.6, z: -5, color: 0xffd95c, height: 4.4 },
+    { x: -25.6, z: 11, color: 0x38d8ff, height: 4.8 },
+    { x: 25.6, z: 15, color: 0x211a3d, height: 5.2 }
+  ].forEach((panel) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, panel.height, 4.8), makeMaterial(panel.color, 0.28));
+    mesh.position.set(panel.x, panel.height / 2, panel.z);
+    mesh.castShadow = true;
+    scene.add(mesh);
+    addEdges(mesh, 0x111622, 0.46);
+  });
+}
+
 function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   const houseGroup = new THREE.Group();
   houseGroup.position.set(xOffset, 0, zOffset);
@@ -402,6 +449,8 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
     houseGroup.add(wall);
     addEdges(wall, 0x4f3356, 0.38);
   });
+
+  addHouseGraphicTrim(houseGroup, isCasa1);
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(11.4, 0.18, 8.4),
@@ -435,6 +484,13 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   addEdges(door, 0x151022, 0.48);
   houseGroup.add(doorPivot);
 
+  const doorGlow = new THREE.Mesh(
+    new THREE.BoxGeometry(3.2, 4.7, 0.1),
+    makeEmissiveMaterial(isCasa1 ? 0x38d8ff : 0xffd95c, isCasa1 ? 0.6 : 0.24)
+  );
+  doorGlow.position.set(0, 2.25, 4.62);
+  houseGroup.add(doorGlow);
+
   if (!isCasa1) {
     const blocked = new THREE.Mesh(
       new THREE.BoxGeometry(2.2, 3.6, 0.12),
@@ -460,19 +516,40 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   scene.add(houseGroup);
 }
 
+function addHouseGraphicTrim(houseGroup, isCasa1) {
+  const dark = makeMaterial(0x111622, 0.22);
+  const cyan = makeMaterial(0x38d8ff, 0.22);
+  const red = makeMaterial(0xff4f4a, 0.22);
+  const yellow = makeMaterial(0xffd95c, 0.22);
+
+  [
+    { position: [0, 7.05, 4.78], size: [12.5, 0.25, 0.16], material: dark },
+    { position: [-6.15, 3.5, 4.8], size: [0.24, 7.1, 0.16], material: dark },
+    { position: [6.15, 3.5, 4.8], size: [0.24, 7.1, 0.16], material: dark },
+    { position: [0, 0.8, 4.84], size: [11, 0.24, 0.16], material: isCasa1 ? cyan : yellow },
+    { position: [-4.2, 5.85, 4.86], size: [2.8, 0.18, 0.16], material: red },
+    { position: [4.2, 5.85, 4.86], size: [2.8, 0.18, 0.16], material: cyan }
+  ].forEach((trim) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...trim.size), trim.material);
+    mesh.position.set(...trim.position);
+    mesh.castShadow = true;
+    houseGroup.add(mesh);
+  });
+}
+
 function addCasa1Interior(scene, textures) {
   const room = new THREE.Group();
   room.position.set(90, 0, -6);
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(56, 0.4, 58),
-    makeMaterial(0xf4f6ee, 0.55, 0.02, createTexture('whitePanel'))
+    makeMaterial(0xfdfdf2, 0.34, 0.02, createTexture('whitePanel'))
   );
   floor.position.set(0, -0.2, 0);
   floor.receiveShadow = true;
   room.add(floor);
 
-  const wallMaterial = makeMaterial(0xffffff, 0.52, 0.01, createTexture('whitePanel'));
+  const wallMaterial = makeMaterial(0xffffff, 0.3, 0.01, createTexture('whitePanel'));
   [
     { position: [0, 8, -29], size: [56, 16, 0.5] },
     { position: [-28, 8, 0], size: [0.5, 16, 58] },
@@ -488,12 +565,12 @@ function addCasa1Interior(scene, textures) {
 
   addMinimalRoomDetails(room);
 
-  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xfbfbf8, 0.66));
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xf8fbff, 0.36));
   ceiling.position.set(0, 16, 0);
   ceiling.receiveShadow = true;
   room.add(ceiling);
 
-  const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(36.4, 14.4, 0.22), makeMaterial(0x111622, 0.28, 0.08));
+  const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(36.4, 14.4, 0.22), makeMaterial(0x111622, 0.18, 0.08, textures.screenFrame));
   screenFrame.position.set(0, 8.5, -28.55);
   screenFrame.castShadow = true;
   room.add(screenFrame);
@@ -517,16 +594,17 @@ function addCasa1Interior(scene, textures) {
   );
   screenSurface.position.set(0, 8.5, -28.25);
   room.add(screenSurface);
+  addScreenStageDetails(room);
 
   addScreenControllerComputer(room, textures);
   addInteriorExitMarker(room);
 
-  const keyLight = new THREE.PointLight(0xffffff, 2.2, 46, 1.7);
+  const keyLight = new THREE.PointLight(0xffffff, 2.8, 46, 1.7);
   keyLight.position.set(0, 12, 0);
   room.add(keyLight);
 
   [-18, 0, 18].forEach((x) => {
-    const stripLight = new THREE.PointLight(0xdff7ff, 0.9, 20, 2.2);
+    const stripLight = new THREE.PointLight(x === 0 ? 0xffd95c : 0x38d8ff, 1.35, 22, 2.2);
     stripLight.position.set(x, 13.8, -14);
     room.add(stripLight);
   });
@@ -542,9 +620,39 @@ function addInteriorExitMarker(room) {
   room.add(marker);
 }
 
+function addScreenStageDetails(room) {
+  const sideMaterial = makeMaterial(0xff4f4a, 0.2);
+  const cyanMaterial = makeMaterial(0x38d8ff, 0.2);
+  const yellowMaterial = makeMaterial(0xffd95c, 0.22);
+  const darkMaterial = makeMaterial(0x111622, 0.18);
+
+  [
+    { position: [-19.5, 8.5, -28.2], size: [0.34, 15.5, 0.28], material: sideMaterial },
+    { position: [19.5, 8.5, -28.2], size: [0.34, 15.5, 0.28], material: cyanMaterial },
+    { position: [0, 16.45, -28.18], size: [39.4, 0.3, 0.26], material: yellowMaterial },
+    { position: [0, 0.72, -28.18], size: [39.4, 0.3, 0.26], material: darkMaterial }
+  ].forEach((part) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), part.material);
+    mesh.position.set(...part.position);
+    mesh.castShadow = true;
+    room.add(mesh);
+    addEdges(mesh, 0x111622, 0.38);
+  });
+
+  [-15, -7.5, 7.5, 15].forEach((x, index) => {
+    const marker = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 0.18, 0.18),
+      makeMaterial(index % 2 === 0 ? 0xffd95c : 0x38d8ff, 0.2)
+    );
+    marker.position.set(x, 15.72, -28.03);
+    marker.rotation.z = index % 2 === 0 ? 0.18 : -0.18;
+    room.add(marker);
+  });
+}
+
 function addMinimalRoomDetails(room) {
   const seamMaterial = makeMaterial(0xd8e9ef, 0.56);
-  const baseboardMaterial = makeMaterial(0xe1e5df, 0.58, 0.02);
+  const baseboardMaterial = makeMaterial(0x111622, 0.24, 0.02);
   const accentMaterial = makeMaterial(0x38d8ff, 0.38, 0.02);
 
   for (let x = -21; x <= 21; x += 7) {
@@ -587,6 +695,20 @@ function addMinimalRoomDetails(room) {
     room.add(rhythmLine);
   });
 
+  [
+    { position: [-27.45, 7.2, -12], size: [0.16, 6.2, 8.5], color: 0xff4f4a },
+    { position: [27.45, 7.2, 12], size: [0.16, 6.2, 8.5], color: 0x38d8ff },
+    { position: [-12, 0.08, 13], size: [7, 0.08, 1.5], color: 0xffd95c },
+    { position: [13, 0.08, 5], size: [7, 0.08, 1.5], color: 0xff4f4a }
+  ].forEach((part) => {
+    const graphic = new THREE.Mesh(new THREE.BoxGeometry(...part.size), makeMaterial(part.color, 0.24));
+    graphic.position.set(...part.position);
+    graphic.castShadow = true;
+    graphic.receiveShadow = true;
+    room.add(graphic);
+    addEdges(graphic, 0x111622, 0.28);
+  });
+
   const screenHalo = new THREE.Mesh(
     new THREE.BoxGeometry(39.2, 15.8, 0.08),
     new THREE.MeshStandardMaterial({ color: 0xbaf3ff, emissive: 0x80eaff, emissiveIntensity: 0.22, roughness: 0.38 })
@@ -597,25 +719,29 @@ function addMinimalRoomDetails(room) {
 
 function addScreenControllerComputer(room, textures) {
   const desk = new THREE.Mesh(
-    new THREE.BoxGeometry(4.8, 1, 1.8),
-    makeMaterial(0x30344f, 0.42, 0, textures.wood)
+    new THREE.BoxGeometry(5.4, 1, 2.1),
+    makeMaterial(0x211a3d, 0.24, 0, textures.blackStripe)
   );
   desk.position.set(-12, 1.05, -4);
   desk.castShadow = true;
   room.add(desk);
-  addEdges(desk, 0x3d2b22, 0.32);
+  addEdges(desk, 0x111622, 0.5);
+
+  const deskAccent = new THREE.Mesh(new THREE.BoxGeometry(5.7, 0.18, 0.18), makeMaterial(0xffd95c, 0.18));
+  deskAccent.position.set(-12, 1.63, -2.98);
+  room.add(deskAccent);
 
   const upperScreen = new THREE.Mesh(
-    new THREE.BoxGeometry(2.7, 1.6, 0.2),
-    makeMaterial(0x111622, 0.28, 0.04)
+    new THREE.BoxGeometry(3.15, 1.9, 0.24),
+    makeMaterial(0x111622, 0.16, 0.04, textures.screenFrame)
   );
   upperScreen.position.set(-12, 2.7, -4.35);
   upperScreen.castShadow = true;
   room.add(upperScreen);
 
   const upperGlow = new THREE.Mesh(
-    new THREE.BoxGeometry(2.25, 1.12, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0x9beaff, roughness: 0.28, emissive: 0x1a8ea0, emissiveIntensity: 0.66 })
+    new THREE.BoxGeometry(2.62, 1.3, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x9beaff, roughness: 0.18, emissive: 0x18d8ff, emissiveIntensity: 0.9 })
   );
   upperGlow.position.set(-12, 2.7, -4.18);
   room.add(upperGlow);
@@ -628,6 +754,14 @@ function addScreenControllerComputer(room, textures) {
   chair.castShadow = true;
   room.add(chair);
   addEdges(chair, 0x151f22, 0.32);
+
+  const interactionRing = new THREE.Mesh(
+    new THREE.TorusGeometry(1.35, 0.055, 8, 32),
+    makeEmissiveMaterial(0xffd95c, 0.7)
+  );
+  interactionRing.position.set(-12, 0.08, -4);
+  interactionRing.rotation.x = Math.PI / 2;
+  room.add(interactionRing);
 }
 
 function addTrees(scene) {
@@ -689,41 +823,74 @@ function updateGiantScreen(giantScreen, platformId) {
   ctx.fillRect(0, 0, width, height);
 
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, 'rgba(255,255,255,0.16)');
-  gradient.addColorStop(0.45, 'rgba(255,255,255,0.04)');
-  gradient.addColorStop(1, 'rgba(0,0,0,0.18)');
+  gradient.addColorStop(0, 'rgba(255,255,255,0.28)');
+  gradient.addColorStop(0.42, 'rgba(255,255,255,0.04)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0.42)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.075)';
+  ctx.save();
+  ctx.translate(width * 0.62, -36);
+  ctx.rotate(-0.22);
+  ctx.fillStyle = 'rgba(255, 217, 92, 0.28)';
+  for (let i = 0; i < 9; i += 1) {
+    ctx.fillRect(i * 74, 0, 22, splitY + 110);
+  }
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+  ctx.lineWidth = 3;
   for (let x = 42; x < width; x += 96) {
-    ctx.fillRect(x, 38, 2, splitY - 72);
+    ctx.beginPath();
+    ctx.moveTo(x, 38);
+    ctx.lineTo(x + 42, splitY - 40);
+    ctx.stroke();
   }
 
+  ctx.fillStyle = 'rgba(17,22,34,0.62)';
+  ctx.fillRect(38, 56, 540, 86);
+  ctx.fillStyle = platform.accent;
+  ctx.fillRect(38, 56, 12, 86);
+
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 58px system-ui, sans-serif';
+  ctx.font = '900 52px system-ui, sans-serif';
   ctx.fillText(primaryContent.label, 64, 118);
 
-  ctx.font = '700 76px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(17,22,34,0.42)';
+  ctx.font = '900 86px system-ui, sans-serif';
+  ctx.fillText(platform.title, 70, 228);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 86px system-ui, sans-serif';
   ctx.fillText(platform.title, 64, 220);
 
-  ctx.font = '500 30px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+  ctx.font = '700 30px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.fillText(platform.subtitle, 68, 270);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillStyle = platform.accent;
+  ctx.fillRect(0, splitY - 5, width, 10);
+  ctx.fillStyle = 'rgba(17,22,34,0.72)';
   ctx.fillRect(0, splitY - 2, width, 4);
 
-  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillStyle = 'rgba(17,22,34,0.44)';
   ctx.fillRect(0, splitY, width, height - splitY);
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  for (let x = 0; x < width; x += 48) {
+    ctx.fillRect(x, splitY, 10, height - splitY);
+  }
   ctx.fillStyle = platform.accent;
-  ctx.fillRect(0, splitY, 10, height - splitY);
+  ctx.fillRect(0, splitY, 18, height - splitY);
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 30px system-ui, sans-serif';
+  ctx.font = '900 32px system-ui, sans-serif';
   ctx.fillText(secondaryContent.label, 44, splitY + 44);
-  ctx.font = '500 24px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.76)';
+  ctx.font = '700 24px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
   ctx.fillText(platform.secondaryText, 44, splitY + 78);
+
+  ctx.fillStyle = '#ffd95c';
+  ctx.fillRect(width - 178, splitY + 34, 112, 12);
+  ctx.fillStyle = platform.accent;
+  ctx.fillRect(width - 122, splitY + 58, 72, 12);
 
   giantScreen.texture.needsUpdate = true;
 }
@@ -765,12 +932,21 @@ function getPlatformScreenState(platformId) {
 }
 
 function makeMaterial(color, roughness, metalness = 0, texture = null) {
+  return new THREE.MeshToonMaterial({
+    color,
+    gradientMap: toonGradient,
+    map: texture,
+    dithering: true
+  });
+}
+
+function makeEmissiveMaterial(color, intensity = 0.6) {
   return new THREE.MeshStandardMaterial({
     color,
-    roughness,
-    metalness,
-    map: texture,
-    flatShading: false
+    emissive: color,
+    emissiveIntensity: intensity,
+    roughness: 0.18,
+    metalness: 0
   });
 }
 
@@ -803,39 +979,90 @@ function createTexture(type) {
   if (type === 'wood') drawWoodTexture(ctx);
   if (type === 'roof') drawRoofTexture(ctx);
   if (type === 'whitePanel') drawWhitePanelTexture(ctx);
+  if (type === 'comicWall') drawComicWallTexture(ctx);
+  if (type === 'screenFrame') drawScreenFrameTexture(ctx);
+  if (type === 'blackStripe') drawBlackStripeTexture(ctx);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(type === 'wood' ? 1.8 : 4, type === 'wood' ? 1.8 : 4);
+  const repeat = {
+    wood: [1.8, 1.8],
+    screenFrame: [2, 2],
+    blackStripe: [3, 1.5],
+    roof: [2.8, 2.8],
+    comicWall: [3, 3]
+  }[type] ?? [4, 4];
+  texture.repeat.set(repeat[0], repeat[1]);
   texture.anisotropy = 4;
   return texture;
 }
 
+function createToonGradient() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d');
+  ['#303030', '#777777', '#c8c8c8', '#ffffff'].forEach((color, index) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(index, 0, 1, 1);
+  });
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.NearestFilter;
+  texture.magFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
+  return texture;
+}
+
 function drawGrassTexture(ctx) {
-  ctx.fillStyle = '#43b96e';
+  ctx.fillStyle = '#29ba68';
   ctx.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 420; i++) {
-    const shade = i % 3 === 0 ? '#32975a' : i % 3 === 1 ? '#55ca78' : '#74df8b';
+  for (let i = 0; i < 520; i++) {
+    const shade = i % 4 === 0 ? '#0e9150' : i % 4 === 1 ? '#47e37a' : i % 4 === 2 ? '#75f291' : '#1ea75c';
     ctx.fillStyle = shade;
-    ctx.fillRect((i * 47) % 128, (i * 29) % 128, 2 + (i % 3), 1);
+    ctx.fillRect((i * 47) % 128, (i * 29) % 128, 3 + (i % 5), 2);
+  }
+  ctx.strokeStyle = 'rgba(17, 22, 34, 0.14)';
+  for (let x = -128; x < 256; x += 24) {
+    ctx.beginPath();
+    ctx.moveTo(x, 128);
+    ctx.lineTo(x + 128, 0);
+    ctx.stroke();
   }
 }
 
 function drawPathTexture(ctx) {
   ctx.fillStyle = '#f2c94c';
   ctx.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 260; i++) {
-    ctx.fillStyle = i % 2 === 0 ? '#d5a934' : '#ffe078';
-    ctx.fillRect((i * 31) % 128, (i * 53) % 128, 3, 2);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+  for (let x = -80; x < 180; x += 22) {
+    ctx.beginPath();
+    ctx.moveTo(x, 128);
+    ctx.lineTo(x + 48, 0);
+    ctx.lineTo(x + 58, 0);
+    ctx.lineTo(x + 10, 128);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(17, 22, 34, 0.2)';
+  ctx.lineWidth = 2;
+  for (let y = 12; y < 128; y += 26) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(128, y + 8);
+    ctx.stroke();
   }
 }
 
 function drawPlasterTexture(ctx) {
-  ctx.fillStyle = '#d7f1f5';
+  ctx.fillStyle = '#ffef9b';
   ctx.fillRect(0, 0, 128, 128);
-  ctx.strokeStyle = 'rgba(42, 94, 108, 0.18)';
+  ctx.fillStyle = 'rgba(255, 79, 74, 0.14)';
+  ctx.fillRect(0, 0, 128, 14);
+  ctx.fillRect(0, 64, 128, 8);
+  ctx.strokeStyle = 'rgba(17, 22, 34, 0.24)';
+  ctx.lineWidth = 2;
   for (let y = 0; y < 128; y += 32) {
     ctx.beginPath();
     ctx.moveTo(0, y + 0.5);
@@ -883,6 +1110,16 @@ function drawRoofTexture(ctx) {
   for (let x = 0; x < 128; x += 24) {
     ctx.fillRect(x, 0, 4, 128);
   }
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+  for (let x = -128; x < 128; x += 34) {
+    ctx.beginPath();
+    ctx.moveTo(x, 128);
+    ctx.lineTo(x + 60, 0);
+    ctx.lineTo(x + 70, 0);
+    ctx.lineTo(x + 10, 128);
+    ctx.closePath();
+    ctx.fill();
+  }
 }
 
 function drawWhitePanelTexture(ctx) {
@@ -904,6 +1141,61 @@ function drawWhitePanelTexture(ctx) {
   ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
   ctx.fillRect(0, 0, 128, 2);
   ctx.fillRect(0, 0, 2, 128);
+}
+
+function drawComicWallTexture(ctx) {
+  ctx.fillStyle = '#93ecff';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+  ctx.fillRect(0, 0, 128, 28);
+  ctx.strokeStyle = 'rgba(17, 22, 34, 0.22)';
+  ctx.lineWidth = 3;
+  for (let y = 0; y < 128; y += 32) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(128, y + 0.5);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255, 79, 74, 0.42)';
+  for (let x = -128; x < 180; x += 44) {
+    ctx.beginPath();
+    ctx.moveTo(x, 128);
+    ctx.lineTo(x + 52, 0);
+    ctx.stroke();
+  }
+}
+
+function drawScreenFrameTexture(ctx) {
+  ctx.fillStyle = '#111622';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillStyle = 'rgba(56, 216, 255, 0.24)';
+  for (let x = 0; x < 128; x += 24) {
+    ctx.fillRect(x, 0, 8, 128);
+  }
+  ctx.fillStyle = 'rgba(255, 217, 92, 0.3)';
+  ctx.fillRect(0, 0, 128, 10);
+  ctx.fillRect(0, 118, 128, 10);
+}
+
+function drawBlackStripeTexture(ctx) {
+  ctx.fillStyle = '#211a3d';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillStyle = 'rgba(56, 216, 255, 0.18)';
+  for (let x = -128; x < 160; x += 30) {
+    ctx.beginPath();
+    ctx.moveTo(x, 128);
+    ctx.lineTo(x + 42, 0);
+    ctx.lineTo(x + 56, 0);
+    ctx.lineTo(x + 14, 128);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(255, 217, 92, 0.34)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 24);
+  ctx.lineTo(128, 54);
+  ctx.stroke();
 }
 
 function clamp(value, min, max) {
