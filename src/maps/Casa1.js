@@ -8,6 +8,16 @@ export const Casa1 = {
   interiorSpawnPosition: new THREE.Vector3(90, 1.7, 16),
   interiorExitPosition: new THREE.Vector3(90, 1.7, 20),
   computerPosition: new THREE.Vector3(78, 1.7, -10),
+  screenChannels: {
+    primaryContent: {
+      label: 'Contenido principal',
+      slot: 'upper'
+    },
+    secondaryContent: {
+      label: 'Contenido secundario',
+      slot: 'lower'
+    }
+  },
   neighborhoodBounds: {
     minX: -27.5,
     maxX: 27.5,

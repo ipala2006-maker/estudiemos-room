@@ -447,13 +447,13 @@ function addCasa1Interior(scene, textures) {
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(56, 0.4, 58),
-    makeMaterial(0xf4f4f0, 0.78)
+    makeMaterial(0xf1f1ea, 0.66, 0.02, createTexture('whitePanel'))
   );
   floor.position.set(0, -0.2, 0);
   floor.receiveShadow = true;
   room.add(floor);
 
-  const wallMaterial = makeMaterial(0xffffff, 0.72);
+  const wallMaterial = makeMaterial(0xf9f9f5, 0.64, 0.01, createTexture('whitePanel'));
   [
     { position: [0, 8, -29], size: [56, 16, 0.5] },
     { position: [-28, 8, 0], size: [0.5, 16, 58] },
@@ -467,12 +467,14 @@ function addCasa1Interior(scene, textures) {
     room.add(wall);
   });
 
-  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xfbfbf8, 0.74));
+  addMinimalRoomDetails(room);
+
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xfbfbf8, 0.66));
   ceiling.position.set(0, 16, 0);
   ceiling.receiveShadow = true;
   room.add(ceiling);
 
-  const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(36, 14, 0.35), makeMaterial(0x11171b, 0.42, 0.06));
+  const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(36.4, 14.4, 0.22), makeMaterial(0x151b1e, 0.34, 0.08));
   screenFrame.position.set(0, 8.5, -28.55);
   screenFrame.castShadow = true;
   room.add(screenFrame);
@@ -485,7 +487,14 @@ function addCasa1Interior(scene, textures) {
 
   const screenSurface = new THREE.Mesh(
     new THREE.BoxGeometry(34.6, 12.8, 0.12),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, map: screenTexture, emissive: 0xffffff, emissiveIntensity: 0.25 })
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: screenTexture,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.34,
+      roughness: 0.22,
+      metalness: 0.04
+    })
   );
   screenSurface.position.set(0, 8.5, -28.25);
   room.add(screenSurface);
@@ -497,6 +506,12 @@ function addCasa1Interior(scene, textures) {
   keyLight.position.set(0, 12, 0);
   room.add(keyLight);
 
+  [-18, 0, 18].forEach((x) => {
+    const stripLight = new THREE.PointLight(0xdff7ff, 0.9, 20, 2.2);
+    stripLight.position.set(x, 13.8, -14);
+    room.add(stripLight);
+  });
+
   scene.add(room);
   return { canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentPlatformId: '' };
 }
@@ -506,6 +521,52 @@ function addInteriorExitMarker(room) {
   marker.position.set(0, 0.05, 26);
   marker.receiveShadow = true;
   room.add(marker);
+}
+
+function addMinimalRoomDetails(room) {
+  const seamMaterial = makeMaterial(0xd9ddd8, 0.7);
+  const baseboardMaterial = makeMaterial(0xe1e5df, 0.58, 0.02);
+  const accentMaterial = makeMaterial(0xcfd9dc, 0.5, 0.02);
+
+  for (let x = -21; x <= 21; x += 7) {
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.035, 56), seamMaterial);
+    seam.position.set(x, 0.035, 0);
+    seam.receiveShadow = true;
+    room.add(seam);
+  }
+
+  for (let z = -21; z <= 21; z += 7) {
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(54, 0.04, 0.045), seamMaterial);
+    seam.position.set(0, 0.04, z);
+    seam.receiveShadow = true;
+    room.add(seam);
+  }
+
+  [
+    { position: [0, 0.55, -28.68], size: [52, 0.34, 0.16] },
+    { position: [0, 0.55, 28.68], size: [52, 0.34, 0.16] },
+    { position: [-27.68, 0.55, 0], size: [0.16, 0.34, 54] },
+    { position: [27.68, 0.55, 0], size: [0.16, 0.34, 54] }
+  ].forEach((part) => {
+    const baseboard = new THREE.Mesh(new THREE.BoxGeometry(...part.size), baseboardMaterial);
+    baseboard.position.set(...part.position);
+    baseboard.castShadow = true;
+    room.add(baseboard);
+  });
+
+  [-18, -9, 9, 18].forEach((x) => {
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 9.5, 0.18), accentMaterial);
+    panel.position.set(x, 7.2, -28.42);
+    panel.castShadow = true;
+    room.add(panel);
+  });
+
+  const screenHalo = new THREE.Mesh(
+    new THREE.BoxGeometry(39.2, 15.8, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0xcfeaf2, emissive: 0xbcecff, emissiveIntensity: 0.16, roughness: 0.5 })
+  );
+  screenHalo.position.set(0, 8.5, -28.72);
+  room.add(screenHalo);
 }
 
 function addScreenControllerComputer(room, textures) {
@@ -594,34 +655,49 @@ function updateGiantScreen(giantScreen, platformId) {
   const width = giantScreen.canvas.width;
   const height = giantScreen.canvas.height;
   const platform = getPlatformScreenState(platformId);
-
-  ctx.fillStyle = '#081114';
-  ctx.fillRect(0, 0, width, height);
+  const primaryContent = platform.primaryContent ?? activeMap.screenChannels.primaryContent;
+  const secondaryContent = platform.secondaryContent ?? activeMap.screenChannels.secondaryContent;
+  const splitY = Math.round(height * 0.8);
 
   ctx.fillStyle = platform.background;
-  ctx.fillRect(18, 18, width - 36, 382);
+  ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  for (let x = 40; x < width; x += 80) {
-    ctx.fillRect(x, 44, 2, 316);
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, 'rgba(255,255,255,0.16)');
+  gradient.addColorStop(0.45, 'rgba(255,255,255,0.04)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0.18)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.075)';
+  for (let x = 42; x < width; x += 96) {
+    ctx.fillRect(x, 38, 2, splitY - 72);
   }
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 64px system-ui, sans-serif';
-  ctx.fillText(platform.title, 62, 150);
+  ctx.font = '700 58px system-ui, sans-serif';
+  ctx.fillText(primaryContent.label, 64, 118);
+
+  ctx.font = '700 76px system-ui, sans-serif';
+  ctx.fillText(platform.title, 64, 220);
 
   ctx.font = '500 30px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.82)';
-  ctx.fillText(platform.subtitle, 66, 210);
+  ctx.fillText(platform.subtitle, 68, 270);
 
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(0, splitY - 2, width, 4);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(0, splitY, width, height - splitY);
   ctx.fillStyle = platform.accent;
-  ctx.fillRect(18, 408, width - 36, 86);
-  ctx.fillStyle = 'rgba(0,0,0,0.28)';
-  ctx.fillRect(18, 408, width - 36, 2);
-
+  ctx.fillRect(0, splitY, 10, height - splitY);
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 28px system-ui, sans-serif';
-  ctx.fillText('Zona secundaria 20% - controles / estado / cola de reproduccion', 54, 462);
+  ctx.font = '700 30px system-ui, sans-serif';
+  ctx.fillText(secondaryContent.label, 44, splitY + 44);
+  ctx.font = '500 24px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.76)';
+  ctx.fillText(platform.secondaryText, 44, splitY + 78);
 
   giantScreen.texture.needsUpdate = true;
 }
@@ -631,6 +707,9 @@ function getPlatformScreenState(platformId) {
     return {
       title: 'Netflix',
       subtitle: 'Placeholder bloqueado: requiere soporte DRM',
+      secondaryText: 'Canal secundario: estado de plataforma / aviso DRM',
+      primaryContent: { label: 'Contenido principal', slot: 'upper' },
+      secondaryContent: { label: 'Contenido secundario', slot: 'lower' },
       background: '#2b1014',
       accent: '#e50914'
     };
@@ -640,6 +719,9 @@ function getPlatformScreenState(platformId) {
     return {
       title: 'Video externo',
       subtitle: 'Placeholder para futuras fuentes aprobadas',
+      secondaryText: 'Canal secundario: cola futura / metadatos / controles',
+      primaryContent: { label: 'Contenido principal', slot: 'upper' },
+      secondaryContent: { label: 'Contenido secundario', slot: 'lower' },
       background: '#10243f',
       accent: '#4f8cff'
     };
@@ -648,6 +730,9 @@ function getPlatformScreenState(platformId) {
   return {
     title: 'YouTube',
     subtitle: 'Placeholder de app preparada para integracion',
+    secondaryText: 'Canal secundario: playlist, subtitulos o controles futuros',
+    primaryContent: { label: 'Contenido principal', slot: 'upper' },
+    secondaryContent: { label: 'Contenido secundario', slot: 'lower' },
     background: '#2c1111',
     accent: '#ff3b30'
   };
@@ -691,6 +776,7 @@ function createTexture(type) {
   if (type === 'plaster') drawPlasterTexture(ctx);
   if (type === 'wood') drawWoodTexture(ctx);
   if (type === 'roof') drawRoofTexture(ctx);
+  if (type === 'whitePanel') drawWhitePanelTexture(ctx);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -771,6 +857,27 @@ function drawRoofTexture(ctx) {
   for (let x = 0; x < 128; x += 24) {
     ctx.fillRect(x, 0, 4, 128);
   }
+}
+
+function drawWhitePanelTexture(ctx) {
+  ctx.fillStyle = '#f4f4ef';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.strokeStyle = 'rgba(180, 186, 178, 0.18)';
+  for (let x = 0; x <= 128; x += 32) {
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, 128);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= 128; y += 32) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(128, y + 0.5);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+  ctx.fillRect(0, 0, 128, 2);
+  ctx.fillRect(0, 0, 2, 128);
 }
 
 function clamp(value, min, max) {
