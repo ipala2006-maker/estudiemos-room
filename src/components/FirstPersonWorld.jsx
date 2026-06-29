@@ -65,6 +65,8 @@ export function FirstPersonWorld({
       right: false
     };
     const inputDirection = new THREE.Vector3();
+    const cameraForwardHorizontal = new THREE.Vector3();
+    const cameraRightHorizontal = new THREE.Vector3();
     let yaw = 0;
     let pitch = 0;
     let pointerLocked = false;
@@ -146,19 +148,16 @@ export function FirstPersonWorld({
 
     function animate() {
       const delta = Math.min(clock.getDelta(), 0.04);
-      const forward = new THREE.Vector3();
-      camera.getWorldDirection(forward);
-      forward.y = 0;
-      forward.normalize();
+      camera.getWorldDirection(cameraForwardHorizontal);
+      cameraForwardHorizontal.y = 0;
+      cameraForwardHorizontal.normalize();
+      cameraRightHorizontal.crossVectors(cameraForwardHorizontal, camera.up).normalize();
 
-      const right = new THREE.Vector3();
-      right.crossVectors(forward, camera.up).normalize();
+      const inputVertical = Number(keys.forward) - Number(keys.backward);
+      const inputHorizontal = Number(keys.right) - Number(keys.left);
       inputDirection.set(0, 0, 0);
-
-      if (keys.forward) inputDirection.add(forward);
-      if (keys.backward) inputDirection.sub(forward);
-      if (keys.right) inputDirection.add(right);
-      if (keys.left) inputDirection.sub(right);
+      inputDirection.addScaledVector(cameraForwardHorizontal, inputVertical);
+      inputDirection.addScaledVector(cameraRightHorizontal, inputHorizontal);
 
       if (inputDirection.lengthSq() > 0) {
         inputDirection.normalize();
