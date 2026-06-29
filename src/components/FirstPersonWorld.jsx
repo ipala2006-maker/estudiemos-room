@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Casa1 } from '../maps/Casa1.js';
 
 const activeMap = Casa1;
@@ -7,6 +8,7 @@ const startPosition = activeMap.startPosition;
 const houseDoorPosition = activeMap.entrancePosition;
 const computerPosition = activeMap.computerPosition;
 const toonGradient = createToonGradient();
+const modelLoader = new GLTFLoader();
 
 export function FirstPersonWorld({
   onDoorOpenChange,
@@ -295,16 +297,13 @@ function addNeighborhood(scene, materials) {
     scene.add(pathEdge);
     addEdges(pathEdge, 0x111622, 0.32);
   });
-  addPathGeometryDepth(scene, pathMaterial);
 
   addBoundaryWalls(scene, wallMaterial);
   addPathSign(scene, textures);
   addNeighborhoodAccents(scene);
   addRhythmRoad(scene);
   addDesignedPath(scene);
-  addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 0, -20, true);
-  addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, -18, -18, false);
-  addNeighborhoodHouse(scene, { houseWall, roofMaterial, doorMaterial, textures }, 18, -18, false);
+  addModelNeighborhoodHouses(scene);
   addSkylinePanels(scene);
   addStageSetPieces(scene);
   addCourtyardProps(scene, textures);
@@ -659,6 +658,95 @@ function addCourtyardProps(scene, textures) {
   addGroundGrate(scene, 18.8, 18.2, -0.15);
 }
 
+function addModelNeighborhoodHouses(scene) {
+  const houseModels = [
+    {
+      file: 'Two story house-9N6ROCbmO1.glb',
+      position: [0, 0, -20],
+      targetSize: 12.8,
+      rotationY: Math.PI
+    },
+    {
+      file: 'House.glb',
+      position: [-18, 0, -18],
+      targetSize: 11.4,
+      rotationY: Math.PI
+    },
+    {
+      file: 'Two story house-sGgL4Nt7I7.glb',
+      position: [18, 0, -18],
+      targetSize: 11.6,
+      rotationY: Math.PI
+    }
+  ];
+
+  houseModels.forEach((config, index) => {
+    const url = `${import.meta.env.BASE_URL}models/vendor/poly-pizza/suburban-houses/${encodeURIComponent(config.file)}`;
+    modelLoader.load(
+      url,
+      (gltf) => {
+        const root = gltf.scene;
+        root.name = `cc0-house-${index + 1}`;
+        prepareImportedModel(root);
+        fitImportedModel(root, config.targetSize);
+        root.rotation.y = config.rotationY;
+        root.position.set(config.position[0], config.position[1], config.position[2]);
+        scene.add(root);
+      },
+      undefined,
+      () => {
+        addNeighborhoodHouse(scene, createFallbackHouseMaterials(), config.position[0], config.position[2], index === 0);
+      }
+    );
+  });
+}
+
+function prepareImportedModel(root) {
+  root.traverse((child) => {
+    if (!child.isMesh) return;
+    child.castShadow = true;
+    child.receiveShadow = true;
+    if (child.material) {
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      materials.forEach((material) => {
+        material.side = THREE.FrontSide;
+        material.needsUpdate = true;
+      });
+    }
+    addEdges(child, 0x111622, 0.32);
+  });
+}
+
+function fitImportedModel(root, targetSize) {
+  const box = new THREE.Box3().setFromObject(root);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  const widest = Math.max(size.x, size.z, 0.001);
+  const scale = targetSize / widest;
+  root.scale.setScalar(scale);
+
+  const scaledBox = new THREE.Box3().setFromObject(root);
+  const scaledCenter = new THREE.Vector3();
+  scaledBox.getCenter(scaledCenter);
+  root.position.sub(scaledCenter);
+  root.position.y -= scaledBox.min.y;
+}
+
+function createFallbackHouseMaterials() {
+  const textures = {
+    plaster: createTexture('plaster'),
+    wood: createTexture('wood')
+  };
+  return {
+    houseWall: makeMaterial(0xffef9b, 0.32, 0, textures.plaster),
+    roofMaterial: makeMaterial(0xff3d34, 0.26, 0, createTexture('roof')),
+    doorMaterial: makeMaterial(0x211a3d, 0.28, 0, textures.wood),
+    textures
+  };
+}
+
 function addCartoonCrateStack(scene, x, z, lean, textures) {
   const group = new THREE.Group();
   group.position.set(x, 0, z);
@@ -807,7 +895,6 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   addHouseGraphicTrim(houseGroup, isCasa1);
   addHouseAngularMasses(houseGroup, isCasa1);
   addHouseDesignedFacade(houseGroup, isCasa1);
-  addHouseDepthDetails(houseGroup, isCasa1, materials);
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(11.4, 0.18, 8.4),
@@ -840,7 +927,6 @@ function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   const roofAccent = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.24, 0.48), makeMaterial(isCasa1 ? 0x38d8ff : 0xffd95c, 0.16));
   roofAccent.position.set(0, 8.48, 4.86);
   houseGroup.add(roofAccent);
-  addLayeredRoofGeometry(houseGroup, isCasa1);
 
   const doorPivot = new THREE.Group();
   doorPivot.position.set(-1.25, 0, 4.72);
@@ -1122,7 +1208,6 @@ function addCasa1Interior(scene, textures) {
   });
 
   addMinimalRoomDetails(room);
-  addInteriorArchitectureDepth(room);
   addInteriorSetPieces(room);
   addInteriorWorkstationSet(room, textures);
 
@@ -1156,8 +1241,6 @@ function addCasa1Interior(scene, textures) {
   screenSurface.position.set(0, 8.5, -28.25);
   room.add(screenSurface);
   addScreenStageDetails(room);
-  addScreenHeroFrame(room);
-  addScreenStructuralSupports(room);
 
   addScreenControllerComputer(room, textures);
   addInteriorExitMarker(room);
@@ -1668,7 +1751,6 @@ function addScreenControllerComputer(room, textures) {
   consoleSlab.rotation.x = -0.18;
   room.add(consoleSlab);
   addEdges(consoleSlab, 0x111622, 0.44);
-  addControlConsoleGeometry(room, textures);
 
   [-13.65, -10.35].forEach((x) => {
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.65, 0.28), makeMaterial(0x111622, 0.16));
