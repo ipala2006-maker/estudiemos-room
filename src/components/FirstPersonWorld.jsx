@@ -30,25 +30,39 @@ export function FirstPersonWorld({
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
-    const ambient = new THREE.HemisphereLight(0xffffff, 0x4d6b45, 2.2);
+    const ambient = new THREE.HemisphereLight(0xfff8e8, 0x5d7a65, 1.45);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xffffff, 2.8);
-    sun.position.set(12, 20, 10);
+    const sun = new THREE.DirectionalLight(0xfff2c8, 2.9);
+    sun.position.set(12, 21, 13);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 70;
+    sun.shadow.camera.left = -34;
+    sun.shadow.camera.right = 34;
+    sun.shadow.camera.top = 34;
+    sun.shadow.camera.bottom = -34;
     scene.add(sun);
+
+    const softFill = new THREE.DirectionalLight(0x9fd9ff, 0.55);
+    softFill.position.set(-18, 12, -8);
+    scene.add(softFill);
 
     const { doorPivot } = buildLobbyScene(scene);
 
     const keys = new Set();
-    const keyPulses = new Map();
     let yaw = 0;
     let pitch = 0;
+    let targetYaw = 0;
+    let targetPitch = 0;
     let lastMouseX = null;
     let lastMouseY = null;
 
@@ -56,6 +70,8 @@ export function FirstPersonWorld({
       camera.position.copy(startPosition);
       yaw = 0;
       pitch = 0;
+      targetYaw = 0;
+      targetPitch = 0;
       camera.rotation.set(pitch, yaw, 0);
       doorOpenRef.current = false;
       doorPivot.rotation.y = 0;
@@ -76,7 +92,6 @@ export function FirstPersonWorld({
       const key = event.key.toLowerCase();
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
         keys.add(key);
-        keyPulses.set(key, 0.12);
         event.preventDefault();
       }
       if (key === 'r') resetCamera();
@@ -97,9 +112,8 @@ export function FirstPersonWorld({
       const dy = event.clientY - lastMouseY;
       lastMouseX = event.clientX;
       lastMouseY = event.clientY;
-      yaw -= dx * 0.004;
-      pitch = clamp(pitch - dy * 0.003, -0.72, 0.52);
-      camera.rotation.set(pitch, yaw, 0);
+      targetYaw -= dx * 0.0026;
+      targetPitch = clamp(targetPitch - dy * 0.0021, -0.62, 0.46);
     }
 
     function onResize() {
@@ -118,21 +132,19 @@ export function FirstPersonWorld({
 
     function animate() {
       const delta = Math.min(clock.getDelta(), 0.04);
-      const speed = 8.5 * delta;
+      yaw += (targetYaw - yaw) * 0.38;
+      pitch += (targetPitch - pitch) * 0.38;
+      camera.rotation.set(pitch, yaw, 0);
+
+      const speed = 6.4 * delta;
       const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw) * -1);
       const right = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw));
       const move = new THREE.Vector3();
 
-      keyPulses.forEach((timeLeft, key) => {
-        const nextTime = timeLeft - delta;
-        if (nextTime <= 0) keyPulses.delete(key);
-        else keyPulses.set(key, nextTime);
-      });
-
-      if (isMoving(keys, keyPulses, 'w', 'arrowup')) move.add(forward);
-      if (isMoving(keys, keyPulses, 's', 'arrowdown')) move.sub(forward);
-      if (isMoving(keys, keyPulses, 'd', 'arrowright')) move.add(right);
-      if (isMoving(keys, keyPulses, 'a', 'arrowleft')) move.sub(right);
+      if (isMoving(keys, 'w', 'arrowup')) move.add(forward);
+      if (isMoving(keys, 's', 'arrowdown')) move.sub(forward);
+      if (isMoving(keys, 'd', 'arrowright')) move.add(right);
+      if (isMoving(keys, 'a', 'arrowleft')) move.sub(right);
 
       if (move.lengthSq() > 0) {
         move.normalize().multiplyScalar(speed);
@@ -185,12 +197,12 @@ export function FirstPersonWorld({
 }
 
 function buildLobbyScene(scene) {
-  const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x57a957, roughness: 0.95 });
-  const pathMaterial = new THREE.MeshStandardMaterial({ color: 0xc9ad72, roughness: 1 });
-  const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xb8d4dd, roughness: 0.8 });
-  const houseWall = new THREE.MeshStandardMaterial({ color: 0xe6c894, roughness: 0.9 });
-  const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xb64d43, roughness: 0.8 });
-  const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x6f4a35, roughness: 0.85 });
+  const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x76b870, roughness: 0.92 });
+  const pathMaterial = new THREE.MeshStandardMaterial({ color: 0xd8bd82, roughness: 0.88 });
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xd7e7e2, roughness: 0.72 });
+  const houseWall = new THREE.MeshStandardMaterial({ color: 0xf0d7aa, roughness: 0.82 });
+  const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xa84c43, roughness: 0.74 });
+  const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x6b4937, roughness: 0.76 });
 
   const ground = new THREE.Mesh(new THREE.BoxGeometry(60, 0.6, 60), groundMaterial);
   ground.position.y = -0.3;
@@ -201,6 +213,16 @@ function buildLobbyScene(scene) {
   path.position.set(0, 0.04, 2.5);
   path.receiveShadow = true;
   scene.add(path);
+
+  [-3.05, 3.05].forEach((x) => {
+    const pathEdge = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.11, 35),
+      new THREE.MeshStandardMaterial({ color: 0xf2dfaa, roughness: 0.86 })
+    );
+    pathEdge.position.set(x, 0.1, 2.5);
+    pathEdge.receiveShadow = true;
+    scene.add(pathEdge);
+  });
 
   addBoundaryWalls(scene, wallMaterial);
   addPathSign(scene);
@@ -225,6 +247,19 @@ function addBoundaryWalls(scene, wallMaterial) {
     wall.receiveShadow = true;
     wall.castShadow = true;
     scene.add(wall);
+  });
+
+  const capMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.68 });
+  [
+    { position: [0, 6.25, -30], size: [60, 0.32, 1.1] },
+    { position: [0, 6.25, 30], size: [60, 0.32, 1.1] },
+    { position: [-30, 6.25, 0], size: [1.1, 0.32, 60] },
+    { position: [30, 6.25, 0], size: [1.1, 0.32, 60] }
+  ].forEach((spec) => {
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(...spec.size), capMaterial);
+    cap.position.set(...spec.position);
+    cap.castShadow = true;
+    scene.add(cap);
   });
 }
 
@@ -280,11 +315,19 @@ function addHouse(scene, materials) {
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(11.4, 0.18, 8.4),
-    new THREE.MeshStandardMaterial({ color: 0xb9865f, roughness: 0.95 })
+    new THREE.MeshStandardMaterial({ color: 0xb98763, roughness: 0.88 })
   );
   floor.position.y = 0.09;
   floor.receiveShadow = true;
   houseGroup.add(floor);
+
+  const rug = new THREE.Mesh(
+    new THREE.BoxGeometry(4.9, 0.06, 2.6),
+    new THREE.MeshStandardMaterial({ color: 0x8ab7a4, roughness: 0.92 })
+  );
+  rug.position.set(-2.5, 0.16, -2.1);
+  rug.receiveShadow = true;
+  houseGroup.add(rug);
 
   const roof = new THREE.Mesh(new THREE.ConeGeometry(8.8, 4.8, 4), materials.roofMaterial);
   roof.position.y = 9.4;
@@ -307,6 +350,10 @@ function addHouse(scene, materials) {
     houseGroup.add(window);
   });
 
+  const roomLight = new THREE.PointLight(0xffdf9a, 2.1, 14, 1.8);
+  roomLight.position.set(-2.5, 5.4, -2);
+  houseGroup.add(roomLight);
+
   scene.add(houseGroup);
   return doorPivot;
 }
@@ -314,7 +361,7 @@ function addHouse(scene, materials) {
 function addDeskComputer(scene) {
   const desk = new THREE.Mesh(
     new THREE.BoxGeometry(4.8, 1, 1.8),
-    new THREE.MeshStandardMaterial({ color: 0x6a4635, roughness: 0.9 })
+    new THREE.MeshStandardMaterial({ color: 0x75513d, roughness: 0.74 })
   );
   desk.position.set(-3, 1.05, -24.35);
   desk.castShadow = true;
@@ -322,7 +369,7 @@ function addDeskComputer(scene) {
 
   const upperScreen = new THREE.Mesh(
     new THREE.BoxGeometry(4.2, 2.25, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0x203336, roughness: 0.5 })
+    new THREE.MeshStandardMaterial({ color: 0x18282d, roughness: 0.42 })
   );
   upperScreen.position.set(-3, 3.75, -24.08);
   upperScreen.castShadow = true;
@@ -330,14 +377,14 @@ function addDeskComputer(scene) {
 
   const upperGlow = new THREE.Mesh(
     new THREE.BoxGeometry(3.62, 1.68, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0x57c1c8, emissive: 0x1b6f74, emissiveIntensity: 0.6 })
+    new THREE.MeshStandardMaterial({ color: 0x7dd9d1, emissive: 0x1f8c88, emissiveIntensity: 0.78 })
   );
   upperGlow.position.set(-3, 3.75, -23.92);
   scene.add(upperGlow);
 
   const lowerScreen = new THREE.Mesh(
     new THREE.BoxGeometry(3.45, 1.35, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0x203336, roughness: 0.5 })
+    new THREE.MeshStandardMaterial({ color: 0x18282d, roughness: 0.42 })
   );
   lowerScreen.position.set(-3, 2.05, -24.08);
   lowerScreen.castShadow = true;
@@ -345,10 +392,18 @@ function addDeskComputer(scene) {
 
   const lowerGlow = new THREE.Mesh(
     new THREE.BoxGeometry(2.86, 0.86, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0x77d7a6, emissive: 0x1f7f50, emissiveIntensity: 0.55 })
+    new THREE.MeshStandardMaterial({ color: 0x95e3b5, emissive: 0x2c9462, emissiveIntensity: 0.72 })
   );
   lowerGlow.position.set(-3, 2.05, -23.92);
   scene.add(lowerGlow);
+
+  const chair = new THREE.Mesh(
+    new THREE.BoxGeometry(1.25, 1.5, 1.15),
+    new THREE.MeshStandardMaterial({ color: 0x31474a, roughness: 0.7 })
+  );
+  chair.position.set(-3, 0.86, -22.45);
+  chair.castShadow = true;
+  scene.add(chair);
 }
 
 function addTrees(scene) {
@@ -360,7 +415,7 @@ function addTrees(scene) {
   ].forEach(([x, z]) => {
     const trunk = new THREE.Mesh(
       new THREE.BoxGeometry(1, 3.2, 1),
-      new THREE.MeshStandardMaterial({ color: 0x7a5136, roughness: 0.9 })
+      new THREE.MeshStandardMaterial({ color: 0x80583d, roughness: 0.85 })
     );
     trunk.position.set(x, 1.6, z);
     trunk.castShadow = true;
@@ -368,7 +423,7 @@ function addTrees(scene) {
 
     const leaves = new THREE.Mesh(
       new THREE.ConeGeometry(2.8, 5.5, 4),
-      new THREE.MeshStandardMaterial({ color: 0x2f7f42, roughness: 0.9 })
+      new THREE.MeshStandardMaterial({ color: 0x3f8f52, roughness: 0.88 })
     );
     leaves.position.set(x, 5.3, z);
     leaves.rotation.y = Math.PI / 4;
@@ -381,6 +436,6 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function isMoving(keys, keyPulses, primary, alternate) {
-  return keys.has(primary) || keys.has(alternate) || keyPulses.has(primary) || keyPulses.has(alternate);
+function isMoving(keys, primary, alternate) {
+  return keys.has(primary) || keys.has(alternate);
 }
