@@ -4,6 +4,7 @@ import * as THREE from 'three';
 const startPosition = new THREE.Vector3(0, 1.7, 20);
 const houseDoorPosition = new THREE.Vector3(0, 1.7, -13.7);
 const computerPosition = new THREE.Vector3(-3, 1.7, -23.3);
+const tmpBox = new THREE.Box3();
 
 export function FirstPersonWorld({
   onDoorOpenChange,
@@ -20,10 +21,10 @@ export function FirstPersonWorld({
   useEffect(() => {
     const mount = mountRef.current;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x8ed2f0);
-    scene.fog = new THREE.Fog(0x8ed2f0, 30, 72);
+    scene.background = new THREE.Color(0xa9cfdd);
+    scene.fog = new THREE.Fog(0xa9cfdd, 38, 88);
 
-    const camera = new THREE.PerspectiveCamera(74, mount.clientWidth / mount.clientHeight, 0.1, 120);
+    const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 120);
     camera.position.copy(startPosition);
     camera.rotation.order = 'YXZ';
 
@@ -37,11 +38,11 @@ export function FirstPersonWorld({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
-    const ambient = new THREE.HemisphereLight(0xfff8e8, 0x5d7a65, 1.45);
+    const ambient = new THREE.HemisphereLight(0xf7f0df, 0x60706a, 1.15);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xfff2c8, 2.9);
-    sun.position.set(12, 21, 13);
+    const sun = new THREE.DirectionalLight(0xfff0ca, 3.35);
+    sun.position.set(18, 24, 16);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.near = 1;
@@ -52,7 +53,7 @@ export function FirstPersonWorld({
     sun.shadow.camera.bottom = -34;
     scene.add(sun);
 
-    const softFill = new THREE.DirectionalLight(0x9fd9ff, 0.55);
+    const softFill = new THREE.DirectionalLight(0xd7efff, 0.42);
     softFill.position.set(-18, 12, -8);
     scene.add(softFill);
 
@@ -61,17 +62,14 @@ export function FirstPersonWorld({
     const keys = new Set();
     let yaw = 0;
     let pitch = 0;
-    let targetYaw = 0;
-    let targetPitch = 0;
     let lastMouseX = null;
     let lastMouseY = null;
+    let pointerLocked = false;
 
     function resetCamera() {
       camera.position.copy(startPosition);
       yaw = 0;
       pitch = 0;
-      targetYaw = 0;
-      targetPitch = 0;
       camera.rotation.set(pitch, yaw, 0);
       doorOpenRef.current = false;
       doorPivot.rotation.y = 0;
@@ -101,8 +99,25 @@ export function FirstPersonWorld({
       keys.delete(event.key.toLowerCase());
     }
 
+    function onPointerLockChange() {
+      pointerLocked = document.pointerLockElement === renderer.domElement;
+      lastMouseX = null;
+      lastMouseY = null;
+    }
+
+    function onCanvasClick() {
+      renderer.domElement.requestPointerLock?.();
+    }
+
     function onMouseMove(event) {
-      if (lastMouseX == null || lastMouseY == null) {
+      if (pointerLocked) {
+        yaw -= event.movementX * 0.0019;
+        pitch = clamp(pitch - event.movementY * 0.0016, -0.58, 0.42);
+        camera.rotation.set(pitch, yaw, 0);
+        return;
+      }
+
+      if (lastMouseX == null || lastMouseY == null || !mount.matches(':hover')) {
         lastMouseX = event.clientX;
         lastMouseY = event.clientY;
         return;
@@ -112,8 +127,9 @@ export function FirstPersonWorld({
       const dy = event.clientY - lastMouseY;
       lastMouseX = event.clientX;
       lastMouseY = event.clientY;
-      targetYaw -= dx * 0.0026;
-      targetPitch = clamp(targetPitch - dy * 0.0021, -0.62, 0.46);
+      yaw -= dx * 0.0015;
+      pitch = clamp(pitch - dy * 0.0012, -0.58, 0.42);
+      camera.rotation.set(pitch, yaw, 0);
     }
 
     function onResize() {
@@ -126,17 +142,15 @@ export function FirstPersonWorld({
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('resize', onResize);
     document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('pointerlockchange', onPointerLockChange);
+    renderer.domElement.addEventListener('click', onCanvasClick);
 
     const clock = new THREE.Clock();
     let frameId = 0;
 
     function animate() {
       const delta = Math.min(clock.getDelta(), 0.04);
-      yaw += (targetYaw - yaw) * 0.38;
-      pitch += (targetPitch - pitch) * 0.38;
-      camera.rotation.set(pitch, yaw, 0);
-
-      const speed = 6.4 * delta;
+      const speed = 5.9 * delta;
       const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw) * -1);
       const right = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw));
       const move = new THREE.Vector3();
@@ -188,6 +202,8 @@ export function FirstPersonWorld({
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('resize', onResize);
       document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('pointerlockchange', onPointerLockChange);
+      renderer.domElement.removeEventListener('click', onCanvasClick);
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
@@ -197,17 +213,18 @@ export function FirstPersonWorld({
 }
 
 function buildLobbyScene(scene) {
-  const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x76b870, roughness: 0.92 });
-  const pathMaterial = new THREE.MeshStandardMaterial({ color: 0xd8bd82, roughness: 0.88 });
-  const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xd7e7e2, roughness: 0.72 });
-  const houseWall = new THREE.MeshStandardMaterial({ color: 0xf0d7aa, roughness: 0.82 });
-  const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xa84c43, roughness: 0.74 });
-  const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x6b4937, roughness: 0.76 });
+  const groundMaterial = makeMaterial(0x6f9f6a, 0.88);
+  const pathMaterial = makeMaterial(0xcab47e, 0.8);
+  const wallMaterial = makeMaterial(0xdbe5df, 0.62);
+  const houseWall = makeMaterial(0xe5c98f, 0.7);
+  const roofMaterial = makeMaterial(0x87463f, 0.58);
+  const doorMaterial = makeMaterial(0x5a3d30, 0.58);
 
   const ground = new THREE.Mesh(new THREE.BoxGeometry(60, 0.6, 60), groundMaterial);
   ground.position.y = -0.3;
   ground.receiveShadow = true;
   scene.add(ground);
+  addEdges(ground, 0x4d7750, 0.22);
 
   const path = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.08, 35), pathMaterial);
   path.position.set(0, 0.04, 2.5);
@@ -217,7 +234,7 @@ function buildLobbyScene(scene) {
   [-3.05, 3.05].forEach((x) => {
     const pathEdge = new THREE.Mesh(
       new THREE.BoxGeometry(0.18, 0.11, 35),
-      new THREE.MeshStandardMaterial({ color: 0xf2dfaa, roughness: 0.86 })
+      makeMaterial(0xe7d39d, 0.72)
     );
     pathEdge.position.set(x, 0.1, 2.5);
     pathEdge.receiveShadow = true;
@@ -247,9 +264,10 @@ function addBoundaryWalls(scene, wallMaterial) {
     wall.receiveShadow = true;
     wall.castShadow = true;
     scene.add(wall);
+    addEdges(wall, 0x879c98, 0.28);
   });
 
-  const capMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.68 });
+  const capMaterial = makeMaterial(0xf4f1e6, 0.56);
   [
     { position: [0, 6.25, -30], size: [60, 0.32, 1.1] },
     { position: [0, 6.25, 30], size: [60, 0.32, 1.1] },
@@ -266,7 +284,7 @@ function addBoundaryWalls(scene, wallMaterial) {
 function addPathSign(scene) {
   const post = new THREE.Mesh(
     new THREE.BoxGeometry(0.3, 2.1, 0.3),
-    new THREE.MeshStandardMaterial({ color: 0x6a4635, roughness: 0.9 })
+    makeMaterial(0x5d4336, 0.72)
   );
   post.position.set(-4.6, 1.05, 5.5);
   post.castShadow = true;
@@ -274,7 +292,7 @@ function addPathSign(scene) {
 
   const board = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 1, 0.22),
-    new THREE.MeshStandardMaterial({ color: 0xf3df9b, roughness: 0.8 })
+    makeMaterial(0xe4cc8e, 0.68)
   );
   board.position.set(-4.6, 2.3, 5.5);
   board.castShadow = true;
@@ -282,7 +300,7 @@ function addPathSign(scene) {
 
   const arrow = new THREE.Mesh(
     new THREE.ConeGeometry(0.55, 1.2, 3),
-    new THREE.MeshStandardMaterial({ color: 0x223230, roughness: 0.7 })
+    makeMaterial(0x253331, 0.5)
   );
   arrow.position.set(-4.6, 2.3, 4.82);
   arrow.rotation.x = Math.PI / 2;
@@ -311,11 +329,12 @@ function addHouse(scene, materials) {
     wall.castShadow = true;
     wall.receiveShadow = true;
     houseGroup.add(wall);
+    addEdges(wall, 0xa98862, 0.3);
   });
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(11.4, 0.18, 8.4),
-    new THREE.MeshStandardMaterial({ color: 0xb98763, roughness: 0.88 })
+    makeMaterial(0xa67855, 0.62)
   );
   floor.position.y = 0.09;
   floor.receiveShadow = true;
@@ -323,7 +342,7 @@ function addHouse(scene, materials) {
 
   const rug = new THREE.Mesh(
     new THREE.BoxGeometry(4.9, 0.06, 2.6),
-    new THREE.MeshStandardMaterial({ color: 0x8ab7a4, roughness: 0.92 })
+    makeMaterial(0x6f9889, 0.78)
   );
   rug.position.set(-2.5, 0.16, -2.1);
   rug.receiveShadow = true;
@@ -334,6 +353,7 @@ function addHouse(scene, materials) {
   roof.rotation.y = Math.PI / 4;
   roof.castShadow = true;
   houseGroup.add(roof);
+  addEdges(roof, 0x5c302d, 0.34);
 
   const doorPivot = new THREE.Group();
   doorPivot.position.set(-1.25, 0, 4.72);
@@ -341,13 +361,19 @@ function addHouse(scene, materials) {
   door.position.set(1.25, 2, 0);
   door.castShadow = true;
   doorPivot.add(door);
+  addEdges(door, 0x2f221c, 0.38);
   houseGroup.add(doorPivot);
 
-  const windowMaterial = new THREE.MeshStandardMaterial({ color: 0x74c7df, roughness: 0.35 });
+  const windowMaterial = makeMaterial(0x8fc9d4, 0.2, 0.05);
   [-3.8, 3.8].forEach((x) => {
     const window = new THREE.Mesh(new THREE.BoxGeometry(2, 1.8, 0.16), windowMaterial);
     window.position.set(x, 4.5, 4.7);
     houseGroup.add(window);
+
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(2.22, 2.02, 0.08), makeMaterial(0xf4e5c8, 0.58));
+    frame.position.set(x, 4.5, 4.62);
+    houseGroup.add(frame);
+    frame.renderOrder = -1;
   });
 
   const roomLight = new THREE.PointLight(0xffdf9a, 2.1, 14, 1.8);
@@ -361,15 +387,16 @@ function addHouse(scene, materials) {
 function addDeskComputer(scene) {
   const desk = new THREE.Mesh(
     new THREE.BoxGeometry(4.8, 1, 1.8),
-    new THREE.MeshStandardMaterial({ color: 0x75513d, roughness: 0.74 })
+    makeMaterial(0x654738, 0.56)
   );
   desk.position.set(-3, 1.05, -24.35);
   desk.castShadow = true;
   scene.add(desk);
+  addEdges(desk, 0x3d2b22, 0.32);
 
   const upperScreen = new THREE.Mesh(
     new THREE.BoxGeometry(4.2, 2.25, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0x18282d, roughness: 0.42 })
+    makeMaterial(0x12191c, 0.34, 0.04)
   );
   upperScreen.position.set(-3, 3.75, -24.08);
   upperScreen.castShadow = true;
@@ -377,14 +404,14 @@ function addDeskComputer(scene) {
 
   const upperGlow = new THREE.Mesh(
     new THREE.BoxGeometry(3.62, 1.68, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0x7dd9d1, emissive: 0x1f8c88, emissiveIntensity: 0.78 })
+    new THREE.MeshStandardMaterial({ color: 0x9ed8d0, roughness: 0.38, emissive: 0x28736e, emissiveIntensity: 0.54 })
   );
   upperGlow.position.set(-3, 3.75, -23.92);
   scene.add(upperGlow);
 
   const lowerScreen = new THREE.Mesh(
     new THREE.BoxGeometry(3.45, 1.35, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0x18282d, roughness: 0.42 })
+    makeMaterial(0x12191c, 0.34, 0.04)
   );
   lowerScreen.position.set(-3, 2.05, -24.08);
   lowerScreen.castShadow = true;
@@ -392,18 +419,19 @@ function addDeskComputer(scene) {
 
   const lowerGlow = new THREE.Mesh(
     new THREE.BoxGeometry(2.86, 0.86, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0x95e3b5, emissive: 0x2c9462, emissiveIntensity: 0.72 })
+    new THREE.MeshStandardMaterial({ color: 0xb2dfbd, roughness: 0.42, emissive: 0x357047, emissiveIntensity: 0.48 })
   );
   lowerGlow.position.set(-3, 2.05, -23.92);
   scene.add(lowerGlow);
 
   const chair = new THREE.Mesh(
     new THREE.BoxGeometry(1.25, 1.5, 1.15),
-    new THREE.MeshStandardMaterial({ color: 0x31474a, roughness: 0.7 })
+    makeMaterial(0x2d3b3f, 0.52)
   );
   chair.position.set(-3, 0.86, -22.45);
   chair.castShadow = true;
   scene.add(chair);
+  addEdges(chair, 0x151f22, 0.32);
 }
 
 function addTrees(scene) {
@@ -415,7 +443,7 @@ function addTrees(scene) {
   ].forEach(([x, z]) => {
     const trunk = new THREE.Mesh(
       new THREE.BoxGeometry(1, 3.2, 1),
-      new THREE.MeshStandardMaterial({ color: 0x80583d, roughness: 0.85 })
+      makeMaterial(0x6e4b36, 0.74)
     );
     trunk.position.set(x, 1.6, z);
     trunk.castShadow = true;
@@ -423,13 +451,41 @@ function addTrees(scene) {
 
     const leaves = new THREE.Mesh(
       new THREE.ConeGeometry(2.8, 5.5, 4),
-      new THREE.MeshStandardMaterial({ color: 0x3f8f52, roughness: 0.88 })
+      makeMaterial(0x3f7850, 0.7)
     );
     leaves.position.set(x, 5.3, z);
     leaves.rotation.y = Math.PI / 4;
     leaves.castShadow = true;
     scene.add(leaves);
+    addEdges(leaves, 0x2c5638, 0.22);
   });
+}
+
+function makeMaterial(color, roughness, metalness = 0) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness,
+    metalness,
+    flatShading: false
+  });
+}
+
+function addEdges(mesh, color, opacity) {
+  tmpBox.setFromObject(mesh);
+  const geometry = new THREE.EdgesGeometry(mesh.geometry, 25);
+  const material = new THREE.LineBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
+    depthWrite: false
+  });
+  const edges = new THREE.LineSegments(geometry, material);
+  edges.position.copy(mesh.position);
+  edges.rotation.copy(mesh.rotation);
+  edges.scale.copy(mesh.scale);
+  edges.renderOrder = 2;
+  mesh.parent?.add(edges);
+  return edges;
 }
 
 function clamp(value, min, max) {
