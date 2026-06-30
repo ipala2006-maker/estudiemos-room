@@ -40,8 +40,8 @@ export function FirstPersonWorld({
   useEffect(() => {
     const mount = mountRef.current;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x7ddff0);
-    scene.fog = new THREE.Fog(0x7ddff0, 46, 98);
+    scene.background = new THREE.Color(0xb9d7df);
+    scene.fog = new THREE.Fog(0xb9d7df, 48, 96);
 
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 120);
     camera.position.copy(startPosition);
@@ -57,10 +57,10 @@ export function FirstPersonWorld({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
-    const ambient = new THREE.HemisphereLight(0xffffff, 0x24425e, 1.55);
+    const ambient = new THREE.HemisphereLight(0xfffbf1, 0x4e5f52, 1.45);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xfff1a0, 4.35);
+    const sun = new THREE.DirectionalLight(0xfff3d0, 3.6);
     sun.position.set(18, 24, 16);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -72,11 +72,11 @@ export function FirstPersonWorld({
     sun.shadow.camera.bottom = -34;
     scene.add(sun);
 
-    const rimLight = new THREE.DirectionalLight(0xff4f9a, 1.35);
+    const rimLight = new THREE.DirectionalLight(0xd8c7b0, 0.45);
     rimLight.position.set(-24, 14, 22);
     scene.add(rimLight);
 
-    const softFill = new THREE.DirectionalLight(0x5ce6ff, 0.95);
+    const softFill = new THREE.DirectionalLight(0xc7dce0, 0.5);
     softFill.position.set(-18, 12, -8);
     scene.add(softFill);
 
@@ -261,12 +261,12 @@ function buildWorldScene(scene) {
     screenFrame: createTexture('screenFrame'),
     blackStripe: createTexture('blackStripe')
   };
-  const groundMaterial = makeMaterial(0x31c96d, 0.42, 0, textures.grass);
-  const pathMaterial = makeMaterial(0xffcf32, 0.34, 0, textures.path);
-  const wallMaterial = makeMaterial(0x93ecff, 0.36, 0, textures.comicWall);
-  const houseWall = makeMaterial(0xffef9b, 0.32, 0, textures.plaster);
-  const roofMaterial = makeMaterial(0xff3d34, 0.26, 0, textures.roof);
-  const doorMaterial = makeMaterial(0x211a3d, 0.28, 0, textures.wood);
+  const groundMaterial = makeMaterial(0x6f9a68, 0.42, 0, textures.grass);
+  const pathMaterial = makeMaterial(0xb9b0a1, 0.34, 0, textures.path);
+  const wallMaterial = makeMaterial(0xd8d1c3, 0.36, 0, textures.comicWall);
+  const houseWall = makeMaterial(0xd8c5a8, 0.32, 0, textures.plaster);
+  const roofMaterial = makeMaterial(0x8f6150, 0.26, 0, textures.roof);
+  const doorMaterial = makeMaterial(0x3f362e, 0.28, 0, textures.wood);
 
   addNeighborhood(scene, { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures });
   const giantScreen = addCasa1Interior(scene, textures);
@@ -290,7 +290,7 @@ function addNeighborhood(scene, materials) {
   [-3.05, 3.05].forEach((x) => {
     const pathEdge = new THREE.Mesh(
       new THREE.BoxGeometry(0.34, 0.18, 35),
-      makeMaterial(x < 0 ? 0x38d8ff : 0xff4f4a, 0.2)
+      makeMaterial(x < 0 ? 0x8a9188 : 0x77786e, 0.2)
     );
     pathEdge.position.set(x, 0.1, 2.5);
     pathEdge.receiveShadow = true;
@@ -299,14 +299,7 @@ function addNeighborhood(scene, materials) {
   });
 
   addBoundaryWalls(scene, wallMaterial);
-  addPathSign(scene, textures);
-  addNeighborhoodAccents(scene);
-  addRhythmRoad(scene);
-  addDesignedPath(scene);
   addModelNeighborhoodHouses(scene);
-  addSkylinePanels(scene);
-  addStageSetPieces(scene);
-  addCourtyardProps(scene, textures);
   addModelNatureAssets(scene);
 }
 
@@ -324,25 +317,10 @@ function addBoundaryWalls(scene, wallMaterial) {
     wall.receiveShadow = true;
     wall.castShadow = true;
     scene.add(wall);
-    addEdges(wall, 0x2f6c78, 0.34);
-  });
-  addBoundaryMurals(scene);
-
-  [
-    { position: [-16, 3.4, -29.25], size: [8, 4.8, 0.22], color: 0xff4f4a, rot: -0.08 },
-    { position: [14, 3.1, -29.2], size: [10, 4.2, 0.22], color: 0xffd95c, rot: 0.08 },
-    { position: [-29.2, 3.2, 12], size: [0.22, 4.4, 8], color: 0x38d8ff, rot: 0 },
-    { position: [29.2, 3.6, -12], size: [0.22, 5.1, 9], color: 0xff4f4a, rot: 0 }
-  ].forEach((spec) => {
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(...spec.size), makeMaterial(spec.color, 0.22));
-    panel.position.set(...spec.position);
-    panel.rotation.z = spec.rot;
-    panel.castShadow = true;
-    scene.add(panel);
-    addEdges(panel, 0x111622, 0.45);
+    addEdges(wall, 0x7a7468, 0.24);
   });
 
-  const capMaterial = makeMaterial(0xfff0c9, 0.5);
+  const capMaterial = makeMaterial(0xc7bea9, 0.5);
   [
     { position: [0, 6.25, -30], size: [60, 0.32, 1.1] },
     { position: [0, 6.25, 30], size: [60, 0.32, 1.1] },
@@ -780,6 +758,7 @@ function prepareImportedModelWithStyle(root, outlineColor = 0x111622, outlineOpa
     if (child.material) {
       const materials = Array.isArray(child.material) ? child.material : [child.material];
       materials.forEach((material) => {
+        softenMaterialColor(material);
         material.side = THREE.FrontSide;
         material.needsUpdate = true;
       });
@@ -790,6 +769,13 @@ function prepareImportedModelWithStyle(root, outlineColor = 0x111622, outlineOpa
 
 function prepareImportedModel(root, outlineColor = 0x111622, outlineOpacity = 0.32) {
   prepareImportedModelWithStyle(root, outlineColor, outlineOpacity);
+}
+
+function softenMaterialColor(material) {
+  if (!material?.color) return;
+  const hsl = {};
+  material.color.getHSL(hsl);
+  material.color.setHSL(hsl.h, hsl.s * 0.48, Math.min(0.78, hsl.l * 0.92 + 0.06));
 }
 
 function fitImportedModel(root, targetSize) {
@@ -1284,8 +1270,6 @@ function addCasa1Interior(scene, textures) {
   });
 
   addMinimalRoomDetails(room);
-  addInteriorSetPieces(room);
-  addInteriorWorkstationSet(room, textures);
   addImportedCasa1InteriorAssets(room);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xf8fbff, 0.36));
@@ -1327,7 +1311,7 @@ function addCasa1Interior(scene, textures) {
   room.add(keyLight);
 
   [-18, 0, 18].forEach((x) => {
-    const stripLight = new THREE.PointLight(x === 0 ? 0xffd95c : 0x38d8ff, 1.35, 22, 2.2);
+    const stripLight = new THREE.PointLight(x === 0 ? 0xf0dfbf : 0xcfd8d2, 0.85, 22, 2.2);
     stripLight.position.set(x, 13.8, -14);
     room.add(stripLight);
   });
@@ -1864,9 +1848,8 @@ function addScreenHeroFrame(room) {
 }
 
 function addMinimalRoomDetails(room) {
-  const seamMaterial = makeMaterial(0xd8e9ef, 0.56);
-  const baseboardMaterial = makeMaterial(0x111622, 0.24, 0.02);
-  const accentMaterial = makeMaterial(0x38d8ff, 0.38, 0.02);
+  const seamMaterial = makeMaterial(0xd8d8d0, 0.56);
+  const baseboardMaterial = makeMaterial(0x4a463f, 0.24, 0.02);
 
   for (let x = -21; x <= 21; x += 7) {
     const seam = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.035, 56), seamMaterial);
@@ -1894,64 +1877,36 @@ function addMinimalRoomDetails(room) {
     room.add(baseboard);
   });
 
-  [-18, -9, 9, 18].forEach((x) => {
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 9.5, 0.18), accentMaterial);
-    panel.position.set(x, 7.2, -28.42);
-    panel.castShadow = true;
-    room.add(panel);
-  });
-
-  [-22, 22].forEach((x) => {
-    const rhythmLine = new THREE.Mesh(new THREE.BoxGeometry(0.14, 10.2, 0.2), makeMaterial(0xff4f4a, 0.42));
-    rhythmLine.position.set(x, 7.5, -28.32);
-    rhythmLine.castShadow = true;
-    room.add(rhythmLine);
-  });
-
-  [
-    { position: [-27.45, 7.2, -12], size: [0.16, 6.2, 8.5], color: 0xff4f4a },
-    { position: [27.45, 7.2, 12], size: [0.16, 6.2, 8.5], color: 0x38d8ff },
-    { position: [-12, 0.08, 13], size: [7, 0.08, 1.5], color: 0xffd95c },
-    { position: [13, 0.08, 5], size: [7, 0.08, 1.5], color: 0xff4f4a }
-  ].forEach((part) => {
-    const graphic = new THREE.Mesh(new THREE.BoxGeometry(...part.size), makeMaterial(part.color, 0.24));
-    graphic.position.set(...part.position);
-    graphic.castShadow = true;
-    graphic.receiveShadow = true;
-    room.add(graphic);
-    addEdges(graphic, 0x111622, 0.28);
-  });
-
   const screenHalo = new THREE.Mesh(
     new THREE.BoxGeometry(39.2, 15.8, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0xbaf3ff, emissive: 0x80eaff, emissiveIntensity: 0.22, roughness: 0.38 })
+    new THREE.MeshStandardMaterial({ color: 0xe7e4d8, emissive: 0xded6c4, emissiveIntensity: 0.08, roughness: 0.38 })
   );
   screenHalo.position.set(0, 8.5, -28.72);
   room.add(screenHalo);
 }
 
 function addScreenControllerComputer(room, textures) {
-  const platform = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 2.7), makeMaterial(0x111622, 0.16, 0, textures.blackStripe));
+  const platform = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 2.7), makeMaterial(0x3b3832, 0.16, 0, textures.blackStripe));
   platform.position.set(-12, 0.11, -4);
   platform.castShadow = true;
   platform.receiveShadow = true;
   room.add(platform);
-  addEdges(platform, 0x38d8ff, 0.32);
+  addEdges(platform, 0x7d8278, 0.26);
 
   const desk = new THREE.Mesh(
     new THREE.BoxGeometry(3.3, 0.72, 1.45),
-    makeMaterial(0x211a3d, 0.24, 0, textures.blackStripe)
+    makeMaterial(0x4a4038, 0.24, 0, textures.blackStripe)
   );
   desk.position.set(-12, 0.72, -4);
   desk.castShadow = true;
   room.add(desk);
   addEdges(desk, 0x111622, 0.5);
 
-  const deskAccent = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.12, 0.12), makeMaterial(0xffd95c, 0.18));
+  const deskAccent = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.12, 0.12), makeMaterial(0xb8a889, 0.18));
   deskAccent.position.set(-12, 1.11, -3.28);
   room.add(deskAccent);
 
-  const consoleSlab = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.2, 0.82), makeMaterial(0xff4f4a, 0.18));
+  const consoleSlab = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.2, 0.82), makeMaterial(0x6f6559, 0.18));
   consoleSlab.position.set(-12, 1.22, -3.68);
   consoleSlab.rotation.x = -0.18;
   room.add(consoleSlab);
@@ -1962,7 +1917,7 @@ function addScreenControllerComputer(room, textures) {
     arm.position.set(x, 1.48, -4.22);
     arm.rotation.z = x < -12 ? -0.24 : 0.24;
     room.add(arm);
-    addEdges(arm, 0x38d8ff, 0.32);
+    addEdges(arm, 0x8d9287, 0.28);
   });
 
   const upperScreen = new THREE.Mesh(
@@ -1975,7 +1930,7 @@ function addScreenControllerComputer(room, textures) {
 
   const upperGlow = new THREE.Mesh(
     new THREE.BoxGeometry(1.62, 0.78, 0.06),
-    new THREE.MeshStandardMaterial({ color: 0x9beaff, roughness: 0.18, emissive: 0x18d8ff, emissiveIntensity: 0.9 })
+    new THREE.MeshStandardMaterial({ color: 0xbfcfd0, roughness: 0.18, emissive: 0x9eb9ba, emissiveIntensity: 0.55 })
   );
   upperGlow.position.set(-12, 1.92, -4.2);
   room.add(upperGlow);
@@ -2004,25 +1959,25 @@ function addScreenControllerComputer(room, textures) {
       [-1.05, 0.62],
       [-1.34, 0.04]
     ],
-    0x9beaff
+    0xbfcfd0
   );
   monitorScreen.position.set(-12, 1.93, -4.0);
   monitorScreen.scale.setScalar(0.62);
   room.add(monitorScreen);
 
-  const monitorCrown = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.18, 0.18), makeMaterial(0xffd95c, 0.18));
+  const monitorCrown = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.18, 0.18), makeMaterial(0xb8a889, 0.18));
   monitorCrown.position.set(-12, 2.57, -4.22);
   monitorCrown.rotation.z = -0.05;
   room.add(monitorCrown);
 
-  const miniBolt = createBoltMesh(0xff4f4a, 0.26);
+  const miniBolt = createBoltMesh(0x8d6a5c, 0.26);
   miniBolt.position.set(-11.16, 1.94, -4.05);
   miniBolt.rotation.y = Math.PI;
   room.add(miniBolt);
 
   const chair = new THREE.Mesh(
     new THREE.BoxGeometry(0.78, 0.9, 0.74),
-    makeMaterial(0xff4f4a, 0.48)
+    makeMaterial(0x8a6f62, 0.48)
   );
   chair.position.set(-12, 0.52, -2.35);
   chair.castShadow = true;
@@ -2031,7 +1986,7 @@ function addScreenControllerComputer(room, textures) {
 
   const interactionRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.92, 0.045, 8, 32),
-    makeEmissiveMaterial(0xffd95c, 0.7)
+    makeEmissiveMaterial(0xd7c28a, 0.42)
   );
   interactionRing.position.set(-12, 0.08, -4);
   interactionRing.rotation.x = Math.PI / 2;
@@ -2400,10 +2355,10 @@ function createToonGradient() {
 }
 
 function drawGrassTexture(ctx) {
-  ctx.fillStyle = '#29ba68';
+  ctx.fillStyle = '#6f9a68';
   ctx.fillRect(0, 0, 128, 128);
   for (let i = 0; i < 520; i++) {
-    const shade = i % 4 === 0 ? '#0e9150' : i % 4 === 1 ? '#47e37a' : i % 4 === 2 ? '#75f291' : '#1ea75c';
+    const shade = i % 4 === 0 ? '#547d54' : i % 4 === 1 ? '#82aa76' : i % 4 === 2 ? '#9ab98b' : '#658c5f';
     ctx.fillStyle = shade;
     ctx.fillRect((i * 47) % 128, (i * 29) % 128, 3 + (i % 5), 2);
   }
@@ -2417,9 +2372,9 @@ function drawGrassTexture(ctx) {
 }
 
 function drawPathTexture(ctx) {
-  ctx.fillStyle = '#f2c94c';
+  ctx.fillStyle = '#b9b0a1';
   ctx.fillRect(0, 0, 128, 128);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
   for (let x = -80; x < 180; x += 22) {
     ctx.beginPath();
     ctx.moveTo(x, 128);
@@ -2429,7 +2384,7 @@ function drawPathTexture(ctx) {
     ctx.closePath();
     ctx.fill();
   }
-  ctx.strokeStyle = 'rgba(17, 22, 34, 0.2)';
+  ctx.strokeStyle = 'rgba(77, 72, 65, 0.22)';
   ctx.lineWidth = 2;
   for (let y = 12; y < 128; y += 26) {
     ctx.beginPath();
@@ -2440,12 +2395,12 @@ function drawPathTexture(ctx) {
 }
 
 function drawPlasterTexture(ctx) {
-  ctx.fillStyle = '#ffef9b';
+  ctx.fillStyle = '#d8c5a8';
   ctx.fillRect(0, 0, 128, 128);
-  ctx.fillStyle = 'rgba(255, 79, 74, 0.14)';
+  ctx.fillStyle = 'rgba(116, 100, 82, 0.1)';
   ctx.fillRect(0, 0, 128, 14);
   ctx.fillRect(0, 64, 128, 8);
-  ctx.strokeStyle = 'rgba(17, 22, 34, 0.24)';
+  ctx.strokeStyle = 'rgba(64, 55, 46, 0.22)';
   ctx.lineWidth = 2;
   for (let y = 0; y < 128; y += 32) {
     ctx.beginPath();
@@ -2462,16 +2417,16 @@ function drawPlasterTexture(ctx) {
 }
 
 function drawWoodTexture(ctx) {
-  ctx.fillStyle = '#443452';
+  ctx.fillStyle = '#5a493d';
   ctx.fillRect(0, 0, 128, 128);
   for (let y = 12; y < 128; y += 20) {
-    ctx.strokeStyle = 'rgba(22, 15, 32, 0.36)';
+    ctx.strokeStyle = 'rgba(47, 35, 28, 0.34)';
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.bezierCurveTo(36, y + 5, 84, y - 5, 128, y + 2);
     ctx.stroke();
   }
-  ctx.strokeStyle = 'rgba(255, 225, 115, 0.18)';
+  ctx.strokeStyle = 'rgba(214, 191, 157, 0.16)';
   for (let y = 6; y < 128; y += 24) {
     ctx.beginPath();
     ctx.moveTo(0, y);
@@ -2481,20 +2436,20 @@ function drawWoodTexture(ctx) {
 }
 
 function drawRoofTexture(ctx) {
-  ctx.fillStyle = '#f05a4f';
+  ctx.fillStyle = '#8f6150';
   ctx.fillRect(0, 0, 128, 128);
-  ctx.strokeStyle = 'rgba(79, 31, 62, 0.34)';
+  ctx.strokeStyle = 'rgba(61, 44, 39, 0.34)';
   for (let y = 0; y < 128; y += 18) {
     ctx.beginPath();
     ctx.moveTo(0, y + 0.5);
     ctx.lineTo(128, y + 0.5);
     ctx.stroke();
   }
-  ctx.fillStyle = 'rgba(255, 225, 115, 0.16)';
+  ctx.fillStyle = 'rgba(216, 200, 177, 0.12)';
   for (let x = 0; x < 128; x += 24) {
     ctx.fillRect(x, 0, 4, 128);
   }
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
   for (let x = -128; x < 128; x += 34) {
     ctx.beginPath();
     ctx.moveTo(x, 128);
@@ -2507,9 +2462,9 @@ function drawRoofTexture(ctx) {
 }
 
 function drawWhitePanelTexture(ctx) {
-  ctx.fillStyle = '#fbfbf6';
+  ctx.fillStyle = '#f1efe6';
   ctx.fillRect(0, 0, 128, 128);
-  ctx.strokeStyle = 'rgba(56, 216, 255, 0.13)';
+  ctx.strokeStyle = 'rgba(94, 88, 78, 0.1)';
   for (let x = 0; x <= 128; x += 32) {
     ctx.beginPath();
     ctx.moveTo(x + 0.5, 0);
@@ -2528,11 +2483,11 @@ function drawWhitePanelTexture(ctx) {
 }
 
 function drawComicWallTexture(ctx) {
-  ctx.fillStyle = '#93ecff';
+  ctx.fillStyle = '#d8d1c3';
   ctx.fillRect(0, 0, 128, 128);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
   ctx.fillRect(0, 0, 128, 28);
-  ctx.strokeStyle = 'rgba(17, 22, 34, 0.22)';
+  ctx.strokeStyle = 'rgba(83, 77, 68, 0.2)';
   ctx.lineWidth = 3;
   for (let y = 0; y < 128; y += 32) {
     ctx.beginPath();
@@ -2540,7 +2495,7 @@ function drawComicWallTexture(ctx) {
     ctx.lineTo(128, y + 0.5);
     ctx.stroke();
   }
-  ctx.strokeStyle = 'rgba(255, 79, 74, 0.42)';
+  ctx.strokeStyle = 'rgba(116, 107, 94, 0.22)';
   for (let x = -128; x < 180; x += 44) {
     ctx.beginPath();
     ctx.moveTo(x, 128);
@@ -2550,21 +2505,21 @@ function drawComicWallTexture(ctx) {
 }
 
 function drawScreenFrameTexture(ctx) {
-  ctx.fillStyle = '#111622';
+  ctx.fillStyle = '#2d302d';
   ctx.fillRect(0, 0, 128, 128);
-  ctx.fillStyle = 'rgba(56, 216, 255, 0.24)';
+  ctx.fillStyle = 'rgba(174, 181, 170, 0.18)';
   for (let x = 0; x < 128; x += 24) {
     ctx.fillRect(x, 0, 8, 128);
   }
-  ctx.fillStyle = 'rgba(255, 217, 92, 0.3)';
+  ctx.fillStyle = 'rgba(210, 196, 159, 0.24)';
   ctx.fillRect(0, 0, 128, 10);
   ctx.fillRect(0, 118, 128, 10);
 }
 
 function drawBlackStripeTexture(ctx) {
-  ctx.fillStyle = '#211a3d';
+  ctx.fillStyle = '#3e3933';
   ctx.fillRect(0, 0, 128, 128);
-  ctx.fillStyle = 'rgba(56, 216, 255, 0.18)';
+  ctx.fillStyle = 'rgba(172, 180, 171, 0.12)';
   for (let x = -128; x < 160; x += 30) {
     ctx.beginPath();
     ctx.moveTo(x, 128);
@@ -2574,7 +2529,7 @@ function drawBlackStripeTexture(ctx) {
     ctx.closePath();
     ctx.fill();
   }
-  ctx.strokeStyle = 'rgba(255, 217, 92, 0.34)';
+  ctx.strokeStyle = 'rgba(210, 196, 159, 0.24)';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(0, 24);
