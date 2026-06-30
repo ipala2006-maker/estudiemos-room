@@ -663,19 +663,19 @@ function addModelNeighborhoodHouses(scene) {
     {
       file: 'Two story house-9N6ROCbmO1.glb',
       position: [0, 0, -20],
-      targetSize: 12.8,
+      targetSize: 19.2,
       rotationY: Math.PI
     },
     {
       file: 'House.glb',
       position: [-18, 0, -18],
-      targetSize: 11.4,
+      targetSize: 16.2,
       rotationY: Math.PI
     },
     {
       file: 'Two story house-sGgL4Nt7I7.glb',
       position: [18, 0, -18],
-      targetSize: 11.6,
+      targetSize: 16.4,
       rotationY: Math.PI
     }
   ];
@@ -946,6 +946,7 @@ function addGroundGrate(scene, x, z, rotationY) {
 function addNeighborhoodHouse(scene, materials, xOffset, zOffset, isCasa1) {
   const houseGroup = new THREE.Group();
   houseGroup.position.set(xOffset, 0, zOffset);
+  houseGroup.scale.setScalar(isCasa1 ? 1.35 : 1.2);
 
   const wallParts = [
     { position: [-4.15, 3.5, 4.5], size: [3.7, 7, 0.35] },
@@ -1409,8 +1410,8 @@ function addInteriorSetPieces(room) {
 }
 
 function addInteriorWorkstationSet(room, textures) {
-  addMonitorDeskBank(room, textures, -19.8, -18.5, 0.18);
-  addMonitorDeskBank(room, textures, 19.2, -18.2, -0.18);
+  addMonitorDeskBank(room, textures, -20.8, -18.8, 0.18);
+  addMonitorDeskBank(room, textures, 20.2, -18.6, -0.18);
   addCableRuns(room);
   addStorageWall(room, textures);
   addSmallTableCluster(room);
@@ -1427,7 +1428,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-computer-desk',
       position: [-12, 0, -4.15],
       rotation: [0, Math.PI, 0],
-      targetSize: 5.6,
+      targetSize: 3.25,
       outlineOpacity: 0.34
     },
     {
@@ -1436,7 +1437,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-study-chair',
       position: [-12, 0, -1.45],
       rotation: [0, Math.PI, 0],
-      targetSize: 2.25,
+      targetSize: 1.25,
       outlineOpacity: 0.34
     },
     {
@@ -1445,7 +1446,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-bookcase-left',
       position: [-24.8, 0, 13.8],
       rotation: [0, Math.PI / 2, 0],
-      targetSize: 6.4,
+      targetSize: 4.1,
       outlineOpacity: 0.32
     },
     {
@@ -1454,7 +1455,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-shelf-right',
       position: [24.6, 0, 11],
       rotation: [0, -Math.PI / 2, 0],
-      targetSize: 6.2,
+      targetSize: 4,
       outlineOpacity: 0.32
     },
     {
@@ -1463,7 +1464,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-couch-corner',
       position: [18, 0, 20.6],
       rotation: [0, Math.PI, 0],
-      targetSize: 7.8,
+      targetSize: 4.8,
       outlineOpacity: 0.32
     },
     {
@@ -1472,7 +1473,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-round-rug',
       position: [16.8, 0.05, 19.4],
       rotation: [0, 0.25, 0],
-      targetSize: 8.2,
+      targetSize: 5.4,
       outlineOpacity: 0.22
     },
     {
@@ -1481,7 +1482,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-floor-light-left',
       position: [-21.8, 0, 20.6],
       rotation: [0, 0.35, 0],
-      targetSize: 3.6,
+      targetSize: 2.2,
       outlineOpacity: 0.34
     },
     {
@@ -1490,7 +1491,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-desk-light',
       position: [-9.8, 0, -3.1],
       rotation: [0, -0.35, 0],
-      targetSize: 1.8,
+      targetSize: 0.95,
       outlineOpacity: 0.34
     },
     {
@@ -1499,7 +1500,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-houseplant-screen-left',
       position: [-24.6, 0, -22.4],
       rotation: [0, 0.25, 0],
-      targetSize: 3.4,
+      targetSize: 2,
       outlineOpacity: 0.34
     },
     {
@@ -1508,7 +1509,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-cactus-screen-right',
       position: [24.5, 0, -21.2],
       rotation: [0, -0.45, 0],
-      targetSize: 3.2,
+      targetSize: 1.85,
       outlineOpacity: 0.34
     },
     {
@@ -1517,7 +1518,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-trashcan',
       position: [-19.5, 0, -3.2],
       rotation: [0, 0.1, 0],
-      targetSize: 1.8,
+      targetSize: 0.9,
       outlineOpacity: 0.34
     },
     {
@@ -1526,7 +1527,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-table-lamp',
       position: [6.6, 0, 13.8],
       rotation: [0, -0.15, 0],
-      targetSize: 2.2,
+      targetSize: 1.05,
       outlineOpacity: 0.34
     }
   ].forEach((asset) => addImportedAsset(room, asset));
@@ -1616,6 +1617,7 @@ function addMonitorDeskBank(room, textures, x, z, angle) {
   const group = new THREE.Group();
   group.position.set(x, 0, z);
   group.rotation.y = angle;
+  group.scale.setScalar(0.62);
   const desk = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.55, 2.4), makeMaterial(0x565e60, 0.22, 0, textures.blackStripe));
   desk.position.y = 2.25;
   group.add(desk);
@@ -1718,6 +1720,7 @@ function addStorageWall(room, textures) {
   const group = new THREE.Group();
   group.position.set(-24.8, 0, 12);
   group.rotation.y = Math.PI / 2;
+  group.scale.setScalar(0.68);
   const shelf = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.32, 1.2), makeMaterial(0x565e60, 0.22));
   shelf.position.y = 3.2;
   group.add(shelf);
@@ -1739,30 +1742,30 @@ function addStorageWall(room, textures) {
 }
 
 function addSmallTableCluster(room) {
-  const table = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.28, 2.8), makeMaterial(0xe1d2ad, 0.22));
-  table.position.set(0, 1.35, 13.4);
+  const table = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.22, 1.8), makeMaterial(0xe1d2ad, 0.22));
+  table.position.set(0, 0.82, 13.4);
   room.add(table);
   addEdges(table, 0x111622, 0.36);
-  [-1.65, 1.65].forEach((x) => {
-    [-1, 1].forEach((z) => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.35, 0.18), makeMaterial(0x111622, 0.18));
-      leg.position.set(x, 0.68, 13.4 + z);
+  [-1.1, 1.1].forEach((x) => {
+    [-0.65, 0.65].forEach((z) => {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.82, 0.12), makeMaterial(0x111622, 0.18));
+      leg.position.set(x, 0.41, 13.4 + z);
       room.add(leg);
     });
   });
-  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.7, 16), makeMaterial(0xff4f4a, 0.2));
-  cup.position.set(1.25, 1.85, 13.1);
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.38, 16), makeMaterial(0xff4f4a, 0.2));
+  cup.position.set(0.82, 1.16, 13.18);
   room.add(cup);
   const tablet = createGroundShapeMesh(
     [
-      [-0.7, -0.45],
-      [0.7, -0.36],
-      [0.62, 0.45],
-      [-0.62, 0.36]
+      [-0.42, -0.28],
+      [0.42, -0.22],
+      [0.38, 0.28],
+      [-0.38, 0.22]
     ],
     0x155cff
   );
-  tablet.position.set(-0.8, 1.53, 13.4);
+  tablet.position.set(-0.52, 0.96, 13.4);
   tablet.rotation.y = 0.2;
   room.add(tablet);
 }
@@ -1928,53 +1931,53 @@ function addMinimalRoomDetails(room) {
 }
 
 function addScreenControllerComputer(room, textures) {
-  const platform = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.32, 4.2), makeMaterial(0x111622, 0.16, 0, textures.blackStripe));
-  platform.position.set(-12, 0.18, -4);
+  const platform = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 2.7), makeMaterial(0x111622, 0.16, 0, textures.blackStripe));
+  platform.position.set(-12, 0.11, -4);
   platform.castShadow = true;
   platform.receiveShadow = true;
   room.add(platform);
   addEdges(platform, 0x38d8ff, 0.32);
 
   const desk = new THREE.Mesh(
-    new THREE.BoxGeometry(5.4, 1, 2.1),
+    new THREE.BoxGeometry(3.3, 0.72, 1.45),
     makeMaterial(0x211a3d, 0.24, 0, textures.blackStripe)
   );
-  desk.position.set(-12, 1.05, -4);
+  desk.position.set(-12, 0.72, -4);
   desk.castShadow = true;
   room.add(desk);
   addEdges(desk, 0x111622, 0.5);
 
-  const deskAccent = new THREE.Mesh(new THREE.BoxGeometry(5.7, 0.18, 0.18), makeMaterial(0xffd95c, 0.18));
-  deskAccent.position.set(-12, 1.63, -2.98);
+  const deskAccent = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.12, 0.12), makeMaterial(0xffd95c, 0.18));
+  deskAccent.position.set(-12, 1.11, -3.28);
   room.add(deskAccent);
 
-  const consoleSlab = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.32, 1.25), makeMaterial(0xff4f4a, 0.18));
-  consoleSlab.position.set(-12, 1.78, -3.55);
+  const consoleSlab = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.2, 0.82), makeMaterial(0xff4f4a, 0.18));
+  consoleSlab.position.set(-12, 1.22, -3.68);
   consoleSlab.rotation.x = -0.18;
   room.add(consoleSlab);
   addEdges(consoleSlab, 0x111622, 0.44);
 
-  [-13.65, -10.35].forEach((x) => {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.65, 0.28), makeMaterial(0x111622, 0.16));
-    arm.position.set(x, 2.12, -4.25);
+  [-13.05, -10.95].forEach((x) => {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.08, 0.18), makeMaterial(0x111622, 0.16));
+    arm.position.set(x, 1.48, -4.22);
     arm.rotation.z = x < -12 ? -0.24 : 0.24;
     room.add(arm);
     addEdges(arm, 0x38d8ff, 0.32);
   });
 
   const upperScreen = new THREE.Mesh(
-    new THREE.BoxGeometry(3.15, 1.9, 0.24),
+    new THREE.BoxGeometry(1.95, 1.18, 0.16),
     makeMaterial(0x111622, 0.16, 0.04, textures.screenFrame)
   );
-  upperScreen.position.set(-12, 2.7, -4.35);
+  upperScreen.position.set(-12, 1.92, -4.32);
   upperScreen.castShadow = true;
   room.add(upperScreen);
 
   const upperGlow = new THREE.Mesh(
-    new THREE.BoxGeometry(2.62, 1.3, 0.08),
+    new THREE.BoxGeometry(1.62, 0.78, 0.06),
     new THREE.MeshStandardMaterial({ color: 0x9beaff, roughness: 0.18, emissive: 0x18d8ff, emissiveIntensity: 0.9 })
   );
-  upperGlow.position.set(-12, 2.7, -4.18);
+  upperGlow.position.set(-12, 1.92, -4.2);
   room.add(upperGlow);
 
   const monitorFace = createVerticalShapeMesh(
@@ -1988,7 +1991,8 @@ function addScreenControllerComputer(room, textures) {
     ],
     0x111622
   );
-  monitorFace.position.set(-12, 2.72, -4.08);
+  monitorFace.position.set(-12, 1.93, -4.08);
+  monitorFace.scale.setScalar(0.62);
   room.add(monitorFace);
 
   const monitorScreen = createVerticalShapeMesh(
@@ -2002,30 +2006,31 @@ function addScreenControllerComputer(room, textures) {
     ],
     0x9beaff
   );
-  monitorScreen.position.set(-12, 2.72, -4.0);
+  monitorScreen.position.set(-12, 1.93, -4.0);
+  monitorScreen.scale.setScalar(0.62);
   room.add(monitorScreen);
 
-  const monitorCrown = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.28, 0.28), makeMaterial(0xffd95c, 0.18));
-  monitorCrown.position.set(-12, 3.75, -4.22);
+  const monitorCrown = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.18, 0.18), makeMaterial(0xffd95c, 0.18));
+  monitorCrown.position.set(-12, 2.57, -4.22);
   monitorCrown.rotation.z = -0.05;
   room.add(monitorCrown);
 
-  const miniBolt = createBoltMesh(0xff4f4a, 0.42);
-  miniBolt.position.set(-10.62, 2.72, -4.05);
+  const miniBolt = createBoltMesh(0xff4f4a, 0.26);
+  miniBolt.position.set(-11.16, 1.94, -4.05);
   miniBolt.rotation.y = Math.PI;
   room.add(miniBolt);
 
   const chair = new THREE.Mesh(
-    new THREE.BoxGeometry(1.25, 1.5, 1.15),
+    new THREE.BoxGeometry(0.78, 0.9, 0.74),
     makeMaterial(0xff4f4a, 0.48)
   );
-  chair.position.set(-12, 0.86, -1.9);
+  chair.position.set(-12, 0.52, -2.35);
   chair.castShadow = true;
   room.add(chair);
   addEdges(chair, 0x151f22, 0.32);
 
   const interactionRing = new THREE.Mesh(
-    new THREE.TorusGeometry(1.35, 0.055, 8, 32),
+    new THREE.TorusGeometry(0.92, 0.045, 8, 32),
     makeEmissiveMaterial(0xffd95c, 0.7)
   );
   interactionRing.position.set(-12, 0.08, -4);
