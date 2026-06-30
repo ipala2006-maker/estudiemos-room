@@ -703,12 +703,12 @@ function addModelNeighborhoodHouses(scene) {
 function addModelNatureAssets(scene) {
   const natureFolder = 'stylized-nature-megakit';
   const treePlacements = [
-    { file: 'Tree.glb', position: [-17, 0, -11], targetSize: 6.8, rotation: [0, -0.35, 0] },
-    { file: 'Tree-aVOxaHRPWe.glb', position: [18, 0, -8], targetSize: 6.4, rotation: [0, 0.45, 0] },
-    { file: 'Pine.glb', position: [-21, 0, 7], targetSize: 6.2, rotation: [0, 0.2, 0] },
-    { file: 'Twisted Tree.glb', position: [21, 0, 13], targetSize: 6.8, rotation: [0, -0.65, 0] },
-    { file: 'Tree.glb', position: [-25, 0, 23], targetSize: 5.5, rotation: [0, 0.9, 0] },
-    { file: 'Pine.glb', position: [25, 0, 22], targetSize: 5.8, rotation: [0, -0.3, 0] }
+    { file: 'Tree.glb', position: [-19.5, 0, -9.8], targetSize: 6.2, rotation: [0, -0.45, 0] },
+    { file: 'Tree-aVOxaHRPWe.glb', position: [20.4, 0, -9.4], targetSize: 6.1, rotation: [0, 0.4, 0] },
+    { file: 'Pine.glb', position: [-23.4, 0, 7.6], targetSize: 5.8, rotation: [0, 0.2, 0] },
+    { file: 'Twisted Tree.glb', position: [23.2, 0, 12.8], targetSize: 6.2, rotation: [0, -0.65, 0] },
+    { file: 'Tree.glb', position: [-25.2, 0, 23], targetSize: 5.1, rotation: [0, 0.9, 0] },
+    { file: 'Pine.glb', position: [25.1, 0, 22.5], targetSize: 5.3, rotation: [0, -0.3, 0] }
   ];
 
   treePlacements.forEach((asset, index) => {
@@ -721,14 +721,16 @@ function addModelNatureAssets(scene) {
   });
 
   [
-    { file: 'Bush with Flowers.glb', position: [-8.8, 0, 13.2], targetSize: 3, rotation: [0, 0.15, 0] },
-    { file: 'Bush.glb', position: [8.7, 0, 13.6], targetSize: 2.7, rotation: [0, -0.5, 0] },
-    { file: 'Flower Group.glb', position: [-4.6, 0, -12.2], targetSize: 1.9, rotation: [0, 0.3, 0] },
-    { file: 'Grass.glb', position: [4.5, 0, -12.8], targetSize: 2, rotation: [0, -0.2, 0] },
-    { file: 'Tall Grass.glb', position: [-26, 0, -4], targetSize: 2.2, rotation: [0, 0.4, 0] },
-    { file: 'Rock Path Round Wide.glb', position: [-5.2, 0, 8.6], targetSize: 2, rotation: [0, 0.2, 0] },
-    { file: 'Rock Medium.glb', position: [22.6, 0, 5.2], targetSize: 2.2, rotation: [0, -0.4, 0] },
-    { file: 'Pebble Round.glb', position: [-23, 0, 17], targetSize: 1.6, rotation: [0, 0.1, 0] }
+    { file: 'Bush with Flowers.glb', position: [-8.7, 0, 13.1], targetSize: 2.8, rotation: [0, 0.15, 0] },
+    { file: 'Bush.glb', position: [8.8, 0, 13.3], targetSize: 2.5, rotation: [0, -0.5, 0] },
+    { file: 'Flower Group.glb', position: [-3.9, 0, -13.2], targetSize: 1.55, rotation: [0, 0.3, 0] },
+    { file: 'Flower Group.glb', position: [3.9, 0, -13.1], targetSize: 1.45, rotation: [0, -0.35, 0] },
+    { file: 'Grass.glb', position: [5.2, 0, -14.4], targetSize: 1.7, rotation: [0, -0.2, 0] },
+    { file: 'Tall Grass.glb', position: [-25.8, 0, -3.6], targetSize: 2, rotation: [0, 0.4, 0] },
+    { file: 'Rock Path Round Wide.glb', position: [-5.6, 0, 8.6], targetSize: 1.8, rotation: [0, 0.2, 0] },
+    { file: 'Pebble Round.glb', position: [5.5, 0, 7.9], targetSize: 1.35, rotation: [0, -0.25, 0] },
+    { file: 'Rock Medium.glb', position: [22.8, 0, 5.2], targetSize: 2, rotation: [0, -0.4, 0] },
+    { file: 'Pebble Round.glb', position: [-23, 0, 17], targetSize: 1.45, rotation: [0, 0.1, 0] }
   ].forEach((asset, index) => {
     addImportedAsset(scene, {
       ...asset,
@@ -742,8 +744,9 @@ function addModelNatureAssets(scene) {
 function addExteriorApproachDressing(scene, textures) {
   const trimMaterial = makeMaterial(0x5e6b63, 0.26, 0, textures.wood);
   const stoneMaterial = makeMaterial(0xa9a091, 0.36, 0, textures.path);
+  const porchMaterial = makeMaterial(0x8f8777, 0.32, 0, textures.path);
 
-  [-4.25, 4.25].forEach((x) => {
+  [-4.35, 4.35].forEach((x) => {
     const rail = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 11.5), trimMaterial);
     rail.position.set(x, 0.72, -7.4);
     rail.castShadow = true;
@@ -769,6 +772,28 @@ function addExteriorApproachDressing(scene, textures) {
     stone.receiveShadow = true;
     scene.add(stone);
     addEdges(stone, 0x6c665c, 0.18);
+  });
+
+  const porchPad = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.14, 2.4), porchMaterial);
+  porchPad.position.set(0, 0.1, -14.25);
+  porchPad.receiveShadow = true;
+  scene.add(porchPad);
+  addEdges(porchPad, 0x6c665c, 0.16);
+
+  [
+    { x: -4.7, z: -14.35 },
+    { x: 4.7, z: -14.35 }
+  ].forEach((light) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.7, 0.22), trimMaterial);
+    post.position.set(light.x, 0.85, light.z);
+    post.castShadow = true;
+    scene.add(post);
+    addEdges(post, 0x111622, 0.2);
+
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.36, 0.58), makeEmissiveMaterial(0xf0dfbf, 0.32));
+    cap.position.set(light.x, 1.86, light.z);
+    scene.add(cap);
+    addEdges(cap, 0x6c665c, 0.16);
   });
 }
 
@@ -1463,10 +1488,12 @@ function addInteriorZoneDressing(room, textures) {
   const cableMaterial = makeMaterial(0x252a2b, 0.18);
 
   [
-    { position: [0, 0.075, 4], size: [4.2, 0.08, 35], material: runnerMaterial, edge: 0x5d655f },
-    { position: [0, 0.09, 24.3], size: [8.2, 0.08, 2.4], material: consolePadMaterial, edge: 0x5d655f },
-    { position: [0, 0.12, -25.4], size: [39, 0.12, 4.4], material: screenStageMaterial, edge: 0x3f3a33 },
-    { position: [-11, 0.115, -7.2], size: [7.4, 0.1, 5.6], material: consolePadMaterial, edge: 0x5d655f }
+    { position: [0, 0.075, 4.2], size: [3.7, 0.08, 34.6], material: runnerMaterial, edge: 0x5d655f },
+    { position: [0, 0.09, 23.6], size: [7.4, 0.08, 2.15], material: consolePadMaterial, edge: 0x5d655f },
+    { position: [0, 0.12, -25.6], size: [39, 0.12, 4], material: screenStageMaterial, edge: 0x3f3a33 },
+    { position: [-11.4, 0.115, -8.6], size: [7.2, 0.1, 4.9], material: consolePadMaterial, edge: 0x5d655f },
+    { position: [-19.2, 0.095, 18], size: [7.2, 0.08, 6.2], material: consolePadMaterial, edge: 0x5d655f },
+    { position: [18.4, 0.095, 18.4], size: [8, 0.08, 6.8], material: consolePadMaterial, edge: 0x5d655f }
   ].forEach((part) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), part.material);
     mesh.position.set(...part.position);
@@ -1499,9 +1526,9 @@ function addInteriorZoneDressing(room, textures) {
   });
 
   [
-    { position: [-15.2, 0.1, -7.2], size: [0.16, 0.1, 4.4], rot: 0 },
-    { position: [-18.6, 0.1, -9.2], size: [6.8, 0.1, 0.16], rot: 0 },
-    { position: [-22, 0.1, -12.2], size: [0.16, 0.1, 6], rot: 0 }
+    { position: [-14.8, 0.16, -8.6], size: [0.14, 0.08, 4.1], rot: 0 },
+    { position: [-18.4, 0.16, -10.6], size: [7.2, 0.08, 0.14], rot: 0 },
+    { position: [-22, 0.16, -13.4], size: [0.14, 0.08, 5.6], rot: 0 }
   ].forEach((run) => {
     const cable = new THREE.Mesh(new THREE.BoxGeometry(...run.size), cableMaterial);
     cable.position.set(...run.position);
@@ -1509,11 +1536,23 @@ function addInteriorZoneDressing(room, textures) {
     room.add(cable);
   });
 
-  [-6.8, 6.8].forEach((x) => {
+  [-6.4, 6.4].forEach((x) => {
     const sightline = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 14), makeMaterial(0xc5bda9, 0.32));
     sightline.position.set(x, 0.13, -13.5);
     sightline.receiveShadow = true;
     room.add(sightline);
+  });
+
+  [
+    { x: -13.9, z: -8.6, h: 1.05 },
+    { x: -8.9, z: -8.6, h: 1.05 },
+    { x: -11.4, z: -11.1, h: 1.25 }
+  ].forEach((marker) => {
+    const bollard = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, marker.h, 16), darkMaterial);
+    bollard.position.set(marker.x, marker.h / 2, marker.z);
+    bollard.castShadow = true;
+    room.add(bollard);
+    addEdges(bollard, 0x111622, 0.18);
   });
 }
 
@@ -1526,25 +1565,25 @@ function addImportedCasa1InteriorAssets(room) {
       basePath: 'models/custom',
       file: 'study-computer.glb',
       name: 'custom-study-computer',
-      position: [-11, 0, -7.2],
+      position: [-11.4, 0, -8.6],
       rotation: [0, 0, 0],
-      targetSize: 3.35,
+      targetSize: 3.25,
       outlineOpacity: 0.3
     },
     {
       folder: furnitureFolder,
       file: 'Desk.glb',
       name: 'cc0-computer-desk',
-      position: [-11, 0, -7.2],
+      position: [-11.4, 0, -8.6],
       rotation: [0, Math.PI, 0],
-      targetSize: 3.4,
+      targetSize: 3.35,
       outlineOpacity: 0.34
     },
     {
       folder: furnitureFolder,
       file: 'Office Chair.glb',
       name: 'cc0-study-chair',
-      position: [-11, 0, -4.25],
+      position: [-11.4, 0, -5.55],
       rotation: [0, Math.PI, 0],
       targetSize: 1.25,
       outlineOpacity: 0.34
@@ -1553,108 +1592,117 @@ function addImportedCasa1InteriorAssets(room) {
       folder: furnitureFolder,
       file: 'Office Chair.glb',
       name: 'cc0-reading-chair',
-      position: [-18.3, 0, 14.4],
-      rotation: [0, 0.85, 0],
-      targetSize: 1.2,
+      position: [-16.7, 0, 15.5],
+      rotation: [0, -0.55, 0],
+      targetSize: 1.15,
       outlineOpacity: 0.32
+    },
+    {
+      folder: furnitureFolder,
+      file: 'Table.glb',
+      name: 'cc0-reading-side-table',
+      position: [-20.7, 0, 15.7],
+      rotation: [0, 0.35, 0],
+      targetSize: 1.65,
+      outlineOpacity: 0.3
     },
     {
       folder: furnitureFolder,
       file: 'Bookcase with Books.glb',
       name: 'cc0-bookcase-left',
-      position: [-25, 0, 13.2],
+      position: [-25.1, 0, 11.4],
       rotation: [0, Math.PI / 2, 0],
-      targetSize: 4.1,
+      targetSize: 3.9,
       outlineOpacity: 0.32
     },
     {
       folder: furnitureFolder,
       file: 'Bookcase with Books.glb',
       name: 'cc0-bookcase-back',
-      position: [-14.5, 0, 24.6],
+      position: [-12.7, 0, 24.8],
       rotation: [0, 0, 0],
-      targetSize: 3.8,
+      targetSize: 3.6,
       outlineOpacity: 0.3
     },
     {
       folder: interiorFolder,
       file: 'Shelf Large.glb',
       name: 'cc0-shelf-right',
-      position: [24.6, 0, 11],
+      position: [24.8, 0, 8.2],
       rotation: [0, -Math.PI / 2, 0],
-      targetSize: 4,
+      targetSize: 3.8,
       outlineOpacity: 0.32
     },
     {
       folder: interiorFolder,
       file: 'Shelf Large.glb',
       name: 'cc0-shelf-back-right',
-      position: [24.6, 0, -3.5],
+      position: [24.8, 0, -5.7],
       rotation: [0, -Math.PI / 2, 0],
-      targetSize: 3.7,
+      targetSize: 3.5,
       outlineOpacity: 0.3
     },
     {
       folder: interiorFolder,
       file: 'Couch Large.glb',
       name: 'cc0-couch-corner',
-      position: [18.2, 0, 20.2],
-      rotation: [0, -2.85, 0],
-      targetSize: 4.6,
+      position: [18.9, 0, 20],
+      rotation: [0, -2.55, 0],
+      targetSize: 4.45,
       outlineOpacity: 0.32
     },
     {
       folder: furnitureFolder,
       file: 'Sofa.glb',
       name: 'cc0-reading-sofa',
-      position: [-19.2, 0, 20.3],
+      position: [-21.3, 0, 20],
       rotation: [0, Math.PI / 2, 0],
-      targetSize: 3.6,
+      targetSize: 3.35,
       outlineOpacity: 0.28
     },
     {
       folder: interiorFolder,
       file: 'Round Rug.glb',
       name: 'cc0-round-rug',
-      position: [17.2, 0.05, 18.7],
+      position: [18.4, 0.05, 18.4],
       rotation: [0, 0.25, 0],
-      targetSize: 5.4,
+      targetSize: 5.15,
       outlineOpacity: 0.22
     },
     {
       folder: interiorFolder,
       file: 'Round Rug.glb',
       name: 'cc0-reading-rug',
-      position: [-18.2, 0.05, 17],
+      position: [-19.2, 0.05, 18],
       rotation: [0, -0.35, 0],
-      targetSize: 4.4,
+      targetSize: 4.2,
       outlineOpacity: 0.2
     },
     {
       folder: interiorFolder,
       file: 'Light Floor.glb',
       name: 'cc0-floor-light-left',
-      position: [-22.4, 0, 18.2],
-      rotation: [0, 0.35, 0],
-      targetSize: 2.2,
+      position: [-23.6, 0, 17.1],
+      rotation: [0, 0.65, 0],
+      targetSize: 2.05,
       outlineOpacity: 0.34
     },
     {
       folder: interiorFolder,
       file: 'Light Floor.glb',
       name: 'cc0-floor-light-right',
-      position: [22.2, 0, 2.6],
-      rotation: [0, -0.25, 0],
-      targetSize: 2,
+      position: [23.6, 0, 6.2],
+      rotation: [0, -0.75, 0],
+      targetSize: 1.9,
       outlineOpacity: 0.3
     },
     {
       folder: interiorFolder,
       file: 'Light Desk.glb',
       name: 'cc0-desk-light',
-      position: [-9.65, 1.25, -7.0],
+      position: [-9.95, 1.25, -8.4],
       rotation: [0, -0.55, 0],
-      targetSize: 0.72,
+      targetSize: 0.7,
       outlineOpacity: 0.34
     },
     {
@@ -1670,72 +1718,72 @@ function addImportedCasa1InteriorAssets(room) {
       folder: interiorFolder,
       file: 'Houseplant.glb',
       name: 'cc0-houseplant-screen-left',
-      position: [-24.6, 0, -22.4],
-      rotation: [0, 0.25, 0],
-      targetSize: 2,
+      position: [-24.8, 0, -23.2],
+      rotation: [0, 0.45, 0],
+      targetSize: 1.8,
       outlineOpacity: 0.34
     },
     {
       folder: interiorFolder,
       file: 'Houseplant.glb',
       name: 'cc0-houseplant-back-left',
-      position: [-24.4, 0, 23.2],
-      rotation: [0, -0.15, 0],
-      targetSize: 1.9,
+      position: [-24.6, 0, 23.1],
+      rotation: [0, -0.35, 0],
+      targetSize: 1.65,
       outlineOpacity: 0.28
     },
     {
       folder: interiorFolder,
       file: 'Cactus.glb',
       name: 'cc0-cactus-screen-right',
-      position: [24.5, 0, -21.2],
+      position: [24.7, 0, -23],
       rotation: [0, -0.45, 0],
-      targetSize: 1.85,
+      targetSize: 1.7,
       outlineOpacity: 0.34
     },
     {
       folder: interiorFolder,
       file: 'Cactus.glb',
       name: 'cc0-cactus-lounge',
-      position: [23.2, 0, 22.4],
+      position: [24.1, 0, 22.7],
       rotation: [0, 0.3, 0],
-      targetSize: 1.5,
+      targetSize: 1.35,
       outlineOpacity: 0.28
     },
     {
       folder: interiorFolder,
       file: 'Trashcan.glb',
       name: 'cc0-trashcan',
-      position: [-16.7, 0, -8.1],
+      position: [-15.5, 0, -10.9],
       rotation: [0, 0.1, 0],
-      targetSize: 0.9,
+      targetSize: 0.82,
       outlineOpacity: 0.34
     },
     {
       folder: furnitureFolder,
       file: 'Table.glb',
       name: 'cc0-lounge-side-table',
-      position: [13.8, 0, 16.2],
+      position: [14.3, 0, 16.3],
       rotation: [0, -0.28, 0],
-      targetSize: 1.75,
+      targetSize: 1.65,
       outlineOpacity: 0.3
     },
     {
       folder: interiorFolder,
       file: 'Table Lamp.glb',
       name: 'cc0-table-lamp',
-      position: [13.8, 1.1, 16.2],
+      position: [14.3, 1.05, 16.3],
       rotation: [0, -0.15, 0],
-      targetSize: 0.76,
+      targetSize: 0.72,
       outlineOpacity: 0.34
     }
   ].forEach((asset) => addImportedAsset(room, asset));
 
   [
-    { position: [-10.9, 2.65, -7.2], color: 0xd9c7a6, intensity: 0.95 },
-    { position: [-22.1, 4.2, 18.3], color: 0xf0dfbf, intensity: 0.75 },
-    { position: [13.9, 2.35, 16.2], color: 0xcfd8d2, intensity: 0.55 },
-    { position: [18.4, 3.1, 20.2], color: 0xf0dfbf, intensity: 0.55 }
+    { position: [-11.4, 2.65, -8.6], color: 0xd9c7a6, intensity: 0.95 },
+    { position: [-23.4, 4.2, 17.2], color: 0xf0dfbf, intensity: 0.7 },
+    { position: [14.3, 2.35, 16.3], color: 0xcfd8d2, intensity: 0.55 },
+    { position: [18.8, 3.1, 20], color: 0xf0dfbf, intensity: 0.55 }
   ].forEach((light) => {
     const point = new THREE.PointLight(light.color, light.intensity, 10, 2.4);
     point.position.set(...light.position);
