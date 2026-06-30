@@ -94,6 +94,9 @@ export function FirstPersonWorld({
     let yaw = 0;
     let pitch = 0;
     let pointerLocked = false;
+    let verticalVelocity = 0;
+    let isGrounded = true;
+    const eyeHeight = startPosition.y;
 
     function clearMovementInput() {
       keys.forward = false;
@@ -104,6 +107,8 @@ export function FirstPersonWorld({
 
     function resetCamera() {
       camera.position.copy(startPosition);
+      verticalVelocity = 0;
+      isGrounded = true;
       yaw = 0;
       pitch = 0;
       camera.rotation.set(pitch, yaw, 0);
@@ -133,6 +138,11 @@ export function FirstPersonWorld({
       }
 
       if (updateMovementKey(event.code, true)) {
+        event.preventDefault();
+      }
+      if (event.code === 'Space' && isGrounded) {
+        verticalVelocity = 6.2;
+        isGrounded = false;
         event.preventDefault();
       }
       if (event.code === 'KeyR') resetCamera();
@@ -206,10 +216,20 @@ export function FirstPersonWorld({
 
       if (controlsEnabledRef.current && inputDirection.lengthSq() > 0) {
         inputDirection.normalize();
-        camera.position.addScaledVector(inputDirection, 6.4 * delta);
+        camera.position.addScaledVector(inputDirection, 9.8 * delta);
         const bounds = doorOpenRef.current ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
         camera.position.x = clamp(camera.position.x, bounds.minX, bounds.maxX);
         camera.position.z = clamp(camera.position.z, bounds.minZ, bounds.maxZ);
+      }
+
+      if (controlsEnabledRef.current || !isGrounded) {
+        verticalVelocity -= 16.5 * delta;
+        camera.position.y += verticalVelocity * delta;
+        if (camera.position.y <= eyeHeight) {
+          camera.position.y = eyeHeight;
+          verticalVelocity = 0;
+          isGrounded = true;
+        }
       }
 
       updateGiantScreen(giantScreen, screenPlatformRef.current);
@@ -722,6 +742,7 @@ function addImportedAsset(parent, config) {
   const {
     folder,
     file,
+    basePath = 'models/vendor/poly-pizza',
     name,
     position = [0, 0, 0],
     rotation = [0, 0, 0],
@@ -731,7 +752,7 @@ function addImportedAsset(parent, config) {
     outlineOpacity = 0.28,
     onError
   } = config;
-  const url = `${import.meta.env.BASE_URL}models/vendor/poly-pizza/${folder}/${encodeURIComponent(file)}`;
+  const url = `${import.meta.env.BASE_URL}${basePath}/${folder ? `${folder}/` : ''}${encodeURIComponent(file)}`;
 
   modelLoader.load(
     url,
@@ -1249,13 +1270,13 @@ function addCasa1Interior(scene, textures) {
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(56, 0.4, 58),
-    makeMaterial(0xfdfdf2, 0.34, 0.02, createTexture('whitePanel'))
+    makeMaterial(0xb89d78, 0.34, 0.02, createTexture('hardwoodFloor'))
   );
   floor.position.set(0, -0.2, 0);
   floor.receiveShadow = true;
   room.add(floor);
 
-  const wallMaterial = makeMaterial(0xffffff, 0.3, 0.01, createTexture('whitePanel'));
+  const wallMaterial = makeMaterial(0xd8d0c1, 0.3, 0.01, createTexture('paintedWall'));
   [
     { position: [0, 8, -29], size: [56, 16, 0.5] },
     { position: [-28, 8, 0], size: [0.5, 16, 58] },
@@ -1272,7 +1293,7 @@ function addCasa1Interior(scene, textures) {
   addMinimalRoomDetails(room);
   addImportedCasa1InteriorAssets(room);
 
-  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xf8fbff, 0.36));
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xe8e2d7, 0.36, 0, createTexture('quietCeiling')));
   ceiling.position.set(0, 16, 0);
   ceiling.receiveShadow = true;
   room.add(ceiling);
@@ -1301,10 +1322,6 @@ function addCasa1Interior(scene, textures) {
   );
   screenSurface.position.set(0, 8.5, -28.25);
   room.add(screenSurface);
-  addScreenStageDetails(room);
-
-  addScreenControllerComputer(room, textures);
-  addInteriorExitMarker(room);
 
   const keyLight = new THREE.PointLight(0xffffff, 2.8, 46, 1.7);
   keyLight.position.set(0, 12, 0);
@@ -1407,6 +1424,15 @@ function addImportedCasa1InteriorAssets(room) {
 
   [
     {
+      basePath: 'models/custom',
+      file: 'study-computer.glb',
+      name: 'custom-study-computer',
+      position: [-12, 0, -4.15],
+      rotation: [0, 0, 0],
+      targetSize: 3.6,
+      outlineOpacity: 0.3
+    },
+    {
       folder: furnitureFolder,
       file: 'Desk.glb',
       name: 'cc0-computer-desk',
@@ -1426,12 +1452,30 @@ function addImportedCasa1InteriorAssets(room) {
     },
     {
       folder: furnitureFolder,
+      file: 'Office Chair.glb',
+      name: 'cc0-reading-chair',
+      position: [-6.8, 0, 14.2],
+      rotation: [0, -0.45, 0],
+      targetSize: 1.2,
+      outlineOpacity: 0.32
+    },
+    {
+      folder: furnitureFolder,
       file: 'Bookcase with Books.glb',
       name: 'cc0-bookcase-left',
       position: [-24.8, 0, 13.8],
       rotation: [0, Math.PI / 2, 0],
       targetSize: 4.1,
       outlineOpacity: 0.32
+    },
+    {
+      folder: furnitureFolder,
+      file: 'Bookcase with Books.glb',
+      name: 'cc0-bookcase-back',
+      position: [-14.5, 0, 24.6],
+      rotation: [0, 0, 0],
+      targetSize: 3.8,
+      outlineOpacity: 0.3
     },
     {
       folder: interiorFolder,
@@ -1444,12 +1488,30 @@ function addImportedCasa1InteriorAssets(room) {
     },
     {
       folder: interiorFolder,
+      file: 'Shelf Large.glb',
+      name: 'cc0-shelf-back-right',
+      position: [24.6, 0, -3.5],
+      rotation: [0, -Math.PI / 2, 0],
+      targetSize: 3.7,
+      outlineOpacity: 0.3
+    },
+    {
+      folder: interiorFolder,
       file: 'Couch Large.glb',
       name: 'cc0-couch-corner',
       position: [18, 0, 20.6],
       rotation: [0, Math.PI, 0],
       targetSize: 4.8,
       outlineOpacity: 0.32
+    },
+    {
+      folder: interiorFolder,
+      file: 'Couch Large.glb',
+      name: 'cc0-small-lounge-couch',
+      position: [-9.5, 0, 19.5],
+      rotation: [0, 0.18, 0],
+      targetSize: 3.9,
+      outlineOpacity: 0.28
     },
     {
       folder: interiorFolder,
@@ -1462,12 +1524,30 @@ function addImportedCasa1InteriorAssets(room) {
     },
     {
       folder: interiorFolder,
+      file: 'Round Rug.glb',
+      name: 'cc0-reading-rug',
+      position: [-8, 0.05, 16],
+      rotation: [0, -0.35, 0],
+      targetSize: 4.3,
+      outlineOpacity: 0.2
+    },
+    {
+      folder: interiorFolder,
       file: 'Light Floor.glb',
       name: 'cc0-floor-light-left',
       position: [-21.8, 0, 20.6],
       rotation: [0, 0.35, 0],
       targetSize: 2.2,
       outlineOpacity: 0.34
+    },
+    {
+      folder: interiorFolder,
+      file: 'Light Floor.glb',
+      name: 'cc0-floor-light-right',
+      position: [22.2, 0, 2.6],
+      rotation: [0, -0.25, 0],
+      targetSize: 2,
+      outlineOpacity: 0.3
     },
     {
       folder: interiorFolder,
@@ -1480,6 +1560,15 @@ function addImportedCasa1InteriorAssets(room) {
     },
     {
       folder: interiorFolder,
+      file: 'Light Ceiling.glb',
+      name: 'cc0-ceiling-light-center',
+      position: [0, 12.9, -2],
+      rotation: [0, 0, 0],
+      targetSize: 2.1,
+      outlineOpacity: 0.2
+    },
+    {
+      folder: interiorFolder,
       file: 'Houseplant.glb',
       name: 'cc0-houseplant-screen-left',
       position: [-24.6, 0, -22.4],
@@ -1489,12 +1578,30 @@ function addImportedCasa1InteriorAssets(room) {
     },
     {
       folder: interiorFolder,
+      file: 'Houseplant.glb',
+      name: 'cc0-houseplant-back-left',
+      position: [-24.3, 0, 23.5],
+      rotation: [0, -0.15, 0],
+      targetSize: 1.9,
+      outlineOpacity: 0.28
+    },
+    {
+      folder: interiorFolder,
       file: 'Cactus.glb',
       name: 'cc0-cactus-screen-right',
       position: [24.5, 0, -21.2],
       rotation: [0, -0.45, 0],
       targetSize: 1.85,
       outlineOpacity: 0.34
+    },
+    {
+      folder: interiorFolder,
+      file: 'Cactus.glb',
+      name: 'cc0-cactus-lounge',
+      position: [10.2, 0, 22.6],
+      rotation: [0, 0.3, 0],
+      targetSize: 1.5,
+      outlineOpacity: 0.28
     },
     {
       folder: interiorFolder,
@@ -1517,9 +1624,10 @@ function addImportedCasa1InteriorAssets(room) {
   ].forEach((asset) => addImportedAsset(room, asset));
 
   [
-    { position: [-12.1, 3.2, -3.7], color: 0x38d8ff, intensity: 1.25 },
-    { position: [-21.9, 4.7, 20.6], color: 0xffd95c, intensity: 1 },
-    { position: [6.5, 2.7, 13.8], color: 0xff4f4a, intensity: 0.85 }
+    { position: [-12.1, 2.6, -3.7], color: 0xd9c7a6, intensity: 0.95 },
+    { position: [-21.9, 4.2, 20.6], color: 0xf0dfbf, intensity: 0.75 },
+    { position: [6.5, 2.3, 13.8], color: 0xcfd8d2, intensity: 0.55 },
+    { position: [18.4, 3.1, 20.2], color: 0xf0dfbf, intensity: 0.55 }
   ].forEach((light) => {
     const point = new THREE.PointLight(light.color, light.intensity, 10, 2.4);
     point.position.set(...light.position);
@@ -2318,6 +2426,9 @@ function createTexture(type) {
   if (type === 'wood') drawWoodTexture(ctx);
   if (type === 'roof') drawRoofTexture(ctx);
   if (type === 'whitePanel') drawWhitePanelTexture(ctx);
+  if (type === 'hardwoodFloor') drawHardwoodFloorTexture(ctx);
+  if (type === 'paintedWall') drawPaintedWallTexture(ctx);
+  if (type === 'quietCeiling') drawQuietCeilingTexture(ctx);
   if (type === 'comicWall') drawComicWallTexture(ctx);
   if (type === 'screenFrame') drawScreenFrameTexture(ctx);
   if (type === 'blackStripe') drawBlackStripeTexture(ctx);
@@ -2331,7 +2442,10 @@ function createTexture(type) {
     screenFrame: [2, 2],
     blackStripe: [3, 1.5],
     roof: [2.8, 2.8],
-    comicWall: [3, 3]
+    comicWall: [3, 3],
+    hardwoodFloor: [7, 7],
+    paintedWall: [3.5, 2.5],
+    quietCeiling: [4, 4]
   }[type] ?? [4, 4];
   texture.repeat.set(repeat[0], repeat[1]);
   texture.anisotropy = 4;
@@ -2480,6 +2594,71 @@ function drawWhitePanelTexture(ctx) {
   ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
   ctx.fillRect(0, 0, 128, 2);
   ctx.fillRect(0, 0, 2, 128);
+}
+
+function drawHardwoodFloorTexture(ctx) {
+  ctx.fillStyle = '#b89d78';
+  ctx.fillRect(0, 0, 128, 128);
+  for (let x = 0; x < 128; x += 18) {
+    ctx.fillStyle = x % 36 === 0 ? '#c4aa83' : '#a98d69';
+    ctx.fillRect(x, 0, 17, 128);
+    ctx.strokeStyle = 'rgba(70, 55, 40, 0.26)';
+    ctx.beginPath();
+    ctx.moveTo(x + 17.5, 0);
+    ctx.lineTo(x + 17.5, 128);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(82, 62, 42, 0.18)';
+  for (let y = 16; y < 128; y += 32) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(128, y + 6.5);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+  for (let i = 0; i < 90; i += 1) {
+    ctx.fillRect((i * 31) % 128, (i * 17) % 128, 8 + (i % 9), 1);
+  }
+}
+
+function drawPaintedWallTexture(ctx) {
+  ctx.fillStyle = '#d8d0c1';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+  ctx.fillRect(0, 0, 128, 18);
+  ctx.strokeStyle = 'rgba(97, 86, 72, 0.12)';
+  for (let y = 22; y < 128; y += 24) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.bezierCurveTo(30, y + 2, 72, y - 2, 128, y + 1);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 180; i += 1) {
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(112, 98, 82, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+    ctx.fillRect((i * 41) % 128, (i * 23) % 128, 1, 1);
+  }
+}
+
+function drawQuietCeilingTexture(ctx) {
+  ctx.fillStyle = '#e8e2d7';
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.strokeStyle = 'rgba(120, 110, 96, 0.1)';
+  for (let x = 0; x <= 128; x += 32) {
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, 128);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= 128; y += 32) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(128, y + 0.5);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 220; i += 1) {
+    ctx.fillStyle = 'rgba(105, 98, 88, 0.08)';
+    ctx.fillRect((i * 29) % 128, (i * 47) % 128, 1, 1);
+  }
 }
 
 function drawComicWallTexture(ctx) {

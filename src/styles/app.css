@@ -167,9 +167,7 @@ button {
   inset: 0;
   z-index: 24;
   pointer-events: none;
-  background:
-    linear-gradient(115deg, transparent 0 62%, rgba(199, 190, 169, 0.08) 62% 66%, transparent 66%),
-    repeating-linear-gradient(135deg, rgba(17, 22, 34, 0.018) 0 2px, transparent 2px 14px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(17, 22, 34, 0.05));
   mix-blend-mode: multiply;
 }
 
@@ -308,9 +306,7 @@ button {
   display: grid;
   place-items: center;
   padding: clamp(12px, 3vw, 30px);
-  background:
-    repeating-linear-gradient(135deg, rgba(176, 181, 171, 0.06) 0 12px, transparent 12px 32px),
-    rgba(4, 10, 14, 0.82);
+  background: rgba(4, 10, 14, 0.82);
 }
 
 .computer-window {
@@ -334,9 +330,7 @@ button {
   z-index: 0;
   pointer-events: none;
   border: 2px solid rgba(17, 22, 34, 0.18);
-  background:
-    linear-gradient(90deg, rgba(150, 159, 151, 0.12), transparent 32%),
-    repeating-linear-gradient(0deg, rgba(17, 22, 34, 0.05) 0 2px, transparent 2px 7px);
+  background: rgba(255, 255, 255, 0.08);
   clip-path: polygon(0 6%, 96% 0, 100% 88%, 94% 100%, 3% 96%);
 }
 
@@ -393,9 +387,7 @@ button {
   grid-template-columns: minmax(190px, 240px) 1fr;
   gap: 16px;
   padding: 18px;
-  background:
-    linear-gradient(120deg, rgba(117, 106, 90, 0.14) 0 16%, transparent 16% 40%, rgba(199, 190, 169, 0.16) 40% 52%, transparent 52%),
-    repeating-linear-gradient(135deg, #cfd8d2 0 14px, #e6ebe6 14px 32px);
+  background: #e6ebe6;
   position: relative;
   z-index: 1;
 }
@@ -436,10 +428,7 @@ button {
   padding: clamp(18px, 3vw, 28px);
   border: 3px solid #111622;
   border-radius: 8px;
-  background:
-    linear-gradient(120deg, rgba(199, 190, 169, 0.24) 0 22%, transparent 22%),
-    linear-gradient(90deg, rgba(117, 106, 90, 0.1), transparent 28%),
-    rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.9);
   box-shadow: inset 0 0 0 6px rgba(154, 164, 155, 0.12);
   clip-path: polygon(0 0, 97% 0, 100% 8%, 100% 92%, 96% 100%, 0 100%);
 }
@@ -483,11 +472,7 @@ button {
   border: 4px dashed rgba(17, 22, 34, 0.72);
   border-radius: 8px;
   text-align: center;
-  background:
-    linear-gradient(120deg, rgba(199, 190, 169, 0.18) 0 24%, transparent 24%),
-    repeating-linear-gradient(135deg, rgba(17, 22, 34, 0.08) 0 10px, transparent 10px 24px),
-    radial-gradient(circle at 50% 25%, rgba(214, 208, 192, 0.75), transparent 36%),
-    #edf0eb;
+  background: #edf0eb;
   box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.38);
   clip-path: polygon(0 8%, 4% 0, 100% 0, 100% 90%, 95% 100%, 0 100%);
 }
