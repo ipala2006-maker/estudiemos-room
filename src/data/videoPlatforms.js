@@ -3,24 +3,24 @@ export const videoPlatforms = [
     id: 'youtube',
     name: 'YouTube',
     status: 'placeholder',
-    accent: '#ff3b30',
-    description: 'Primera app preparada para integrar busqueda o embeds controlados mas adelante.',
-    note: 'YouTube app pendiente de integracion. Esta pantalla deja lista la estructura sin abrir YouTube libre todavia.'
+    accent: '#8f4c46',
+    description: 'Fuente preparada para futuras integraciones de busqueda, playlists educativas o canales aprobados.',
+    note: 'La estacion mantiene la estructura lista para conectar contenido educativo curado sin abrir navegacion libre.'
   },
   {
     id: 'netflix',
     name: 'Netflix',
     status: 'locked',
-    accent: '#e50914',
-    description: 'Placeholder por restricciones de DRM y reproduccion embebida.',
-    note: 'No implementado. Netflix suele requerir soporte DRM y no se debe forzar dentro del juego.'
+    accent: '#74423d',
+    description: 'Servicio restringido para este entorno de estudio por limites tecnicos de reproduccion y enfoque.',
+    note: 'Netflix requiere soporte DRM y no encaja con la experiencia de estudio controlada, por eso queda como referencia.'
   },
   {
     id: 'custom-video',
     name: 'Video externo',
     status: 'placeholder',
-    accent: '#4f8cff',
-    description: 'Espacio reservado para futuras plataformas o links aprobados.',
-    note: 'Placeholder para agregar nuevas plataformas sin rehacer la computadora.'
+    accent: '#4f6f78',
+    description: 'Canal reservado para sumar enlaces, clases grabadas o materiales audiovisuales aprobados.',
+    note: 'Esta fuente permite ampliar la computadora con plataformas nuevas sin rehacer la interfaz principal.'
   }
 ];

@@ -7,7 +7,7 @@ export const Casa1 = {
   entrancePosition: new THREE.Vector3(0, 1.7, -13.7),
   interiorSpawnPosition: new THREE.Vector3(90, 1.7, 16),
   interiorExitPosition: new THREE.Vector3(90, 1.7, 20),
-  computerPosition: new THREE.Vector3(78, 1.7, -10),
+  computerPosition: new THREE.Vector3(79, 1.7, -13.2),
   screenChannels: {
     primaryContent: {
       label: 'Contenido principal',

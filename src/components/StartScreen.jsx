@@ -1,18 +1,31 @@
-import { ArrowRight, Keyboard, MousePointer2 } from 'lucide-react';
+import { ArrowRight, Keyboard, MousePointer2, Move3D, ShieldCheck } from 'lucide-react';
 
 export function StartScreen({ onEnter }) {
   return (
     <main className="start-screen">
       <section className="start-content" aria-labelledby="start-title">
-        <p className="start-kicker">Prototipo V0</p>
-        <h1 id="start-title">Estudiemos Room</h1>
+        <p className="start-kicker">Estudiemos Room</p>
+        <h1 id="start-title">Campus de estudio virtual</h1>
         <p className="start-lead">
-          Entra a una sala virtual para estudiar con contenido principal y estimulo controlado.
+          Un entorno 3D tranquilo para entrar a una casa de estudio, abrir tu estacion y concentrarte
+          con contenido guiado.
         </p>
         <p className="start-description">
-          Camina hasta una casita, entra al cuarto de estudio, usa la computadora y abri una pantalla
-          simple con material mock para concentrarte.
+          Explora un barrio suburbano, entra a Casa 1 y usa la computadora para preparar sesiones de
+          estudio con fuentes controladas y una interfaz pensada para no distraer.
         </p>
+
+        <div className="start-meta" aria-label="Caracteristicas principales">
+          <span>
+            <Move3D size={16} aria-hidden="true" />
+            Entorno 3D
+          </span>
+          <span>
+            <ShieldCheck size={16} aria-hidden="true" />
+            Fuentes controladas
+          </span>
+          <span>Modo foco</span>
+        </div>
 
         <button type="button" className="primary-action" onClick={onEnter}>
           Entrar al Room
@@ -28,7 +41,8 @@ export function StartScreen({ onEnter }) {
             <MousePointer2 size={17} aria-hidden="true" />
             Mouse para mirar
           </span>
-          <span>Presiona E para interactuar</span>
+          <span>Espacio para saltar</span>
+          <span>E para interactuar</span>
         </div>
       </section>
     </main>
