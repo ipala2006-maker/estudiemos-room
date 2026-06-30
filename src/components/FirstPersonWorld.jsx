@@ -322,6 +322,7 @@ function addNeighborhood(scene, materials) {
   addModelNeighborhoodHouses(scene);
   addModelNatureAssets(scene);
   addExteriorApproachDressing(scene, textures);
+  addExteriorIdentityDetails(scene, textures);
 }
 
 function addBoundaryWalls(scene, wallMaterial) {
@@ -795,6 +796,52 @@ function addExteriorApproachDressing(scene, textures) {
     scene.add(cap);
     addEdges(cap, 0x6c665c, 0.16);
   });
+}
+
+function addExteriorIdentityDetails(scene, textures) {
+  const signPostMaterial = makeMaterial(0x4b554e, 0.28, 0, textures.wood);
+  const sign = createCanvasSign({
+    width: 512,
+    height: 256,
+    background: '#f4f0e5',
+    accent: '#4f6f78',
+    title: 'ESTUDIEMOS',
+    subtitle: 'Casa 1 - sala de enfoque'
+  });
+  sign.position.set(-6.6, 2.2, 4.8);
+  sign.rotation.y = 0.18;
+  sign.scale.set(3.2, 1.6, 1);
+  scene.add(sign);
+
+  [
+    { x: -7.85, z: 4.92 },
+    { x: -5.35, z: 4.68 }
+  ].forEach((postSpec) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.4, 0.18), signPostMaterial);
+    post.position.set(postSpec.x, 1.18, postSpec.z);
+    post.castShadow = true;
+    scene.add(post);
+    addEdges(post, 0x111622, 0.2);
+  });
+
+  const smallMarker = createCanvasSign({
+    width: 384,
+    height: 192,
+    background: '#172426',
+    accent: '#d7d0c0',
+    title: 'ENTRADA',
+    subtitle: 'Computadora y pantalla'
+  });
+  smallMarker.position.set(5.7, 1.45, -12.8);
+  smallMarker.rotation.y = -0.28;
+  smallMarker.scale.set(2.1, 1.05, 1);
+  scene.add(smallMarker);
+
+  const markerPost = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.7, 0.16), signPostMaterial);
+  markerPost.position.set(5.7, 0.84, -12.8);
+  markerPost.castShadow = true;
+  scene.add(markerPost);
+  addEdges(markerPost, 0x111622, 0.2);
 }
 
 function addImportedAsset(parent, config) {
@@ -1353,6 +1400,7 @@ function addCasa1Interior(scene, textures) {
   addInteriorArchitectureDepth(room);
   addScreenStructuralSupports(room);
   addInteriorZoneDressing(room, textures);
+  addInteriorIdentityAndStudyProps(room, textures);
   addImportedCasa1InteriorAssets(room);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xe8e2d7, 0.36, 0, createTexture('quietCeiling')));
@@ -1554,6 +1602,153 @@ function addInteriorZoneDressing(room, textures) {
     room.add(bollard);
     addEdges(bollard, 0x111622, 0.18);
   });
+}
+
+function addInteriorIdentityAndStudyProps(room, textures) {
+  addWallCanvasPanel(room, {
+    position: [-27.42, 8.8, -5.8],
+    rotation: [0, Math.PI / 2, 0],
+    scale: [4.4, 2.2, 1],
+    title: 'FOCO',
+    subtitle: 'Ruta despejada hacia pantalla',
+    background: '#f4f0e5',
+    accent: '#4f6f78'
+  });
+  addWallCanvasPanel(room, {
+    position: [27.42, 8.8, -6.6],
+    rotation: [0, -Math.PI / 2, 0],
+    scale: [4.4, 2.2, 1],
+    title: 'FUENTES',
+    subtitle: 'Control desde la consola',
+    background: '#172426',
+    accent: '#d7d0c0'
+  });
+  addWallCanvasPanel(room, {
+    position: [0, 14.35, -28.16],
+    rotation: [0, 0, 0],
+    scale: [7.8, 1.35, 1],
+    title: 'ESTUDIEMOS ROOM',
+    subtitle: 'Centro inmersivo de estudio',
+    background: '#172426',
+    accent: '#b9d7df'
+  });
+
+  addStudyBookStack(room, -20.7, 1.12, 15.7, 0.2);
+  addStudyBookStack(room, 14.3, 1.1, 16.3, -0.35);
+  addStudyBookStack(room, -12.9, 1.22, -8.15, 0.1);
+  addWallTechRail(room, -27.36, -14.5, Math.PI / 2);
+  addWallTechRail(room, 27.36, -14.5, -Math.PI / 2);
+  addConsoleStatusLights(room);
+}
+
+function addWallCanvasPanel(room, config) {
+  const panel = createCanvasSign(config);
+  panel.position.set(...config.position);
+  panel.rotation.set(...config.rotation);
+  panel.scale.set(...config.scale);
+  room.add(panel);
+
+  const backing = new THREE.Mesh(new THREE.BoxGeometry(config.scale[0] + 0.18, config.scale[1] + 0.18, 0.08), makeMaterial(0x1c2525, 0.2));
+  backing.position.set(...config.position);
+  backing.rotation.set(...config.rotation);
+  if (Math.abs(config.rotation[1]) > 0.1) {
+    backing.position.x += config.rotation[1] > 0 ? 0.04 : -0.04;
+  } else {
+    backing.position.z -= 0.05;
+  }
+  room.add(backing);
+}
+
+function addStudyBookStack(room, x, y, z, rotationY) {
+  const colors = [0x4f6f78, 0xd7d0c0, 0x8f4c46, 0x5e6b63];
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.rotation.y = rotationY;
+
+  colors.forEach((color, index) => {
+    const book = new THREE.Mesh(new THREE.BoxGeometry(0.78 - index * 0.05, 0.08, 0.52), makeMaterial(color, 0.28));
+    book.position.set(index * 0.03, index * 0.09, index * 0.02);
+    book.rotation.y = (index - 1.5) * 0.04;
+    book.castShadow = true;
+    group.add(book);
+    addEdges(book, 0x111622, 0.16);
+  });
+
+  const note = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.025, 0.46), makeMaterial(0xf4f0e5, 0.34));
+  note.position.set(0.18, 0.44, -0.02);
+  note.rotation.y = -0.08;
+  group.add(note);
+  addEdges(note, 0x8f8777, 0.12);
+  room.add(group);
+}
+
+function addWallTechRail(room, x, z, rotationY) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  group.rotation.y = rotationY;
+
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(0.16, 5.8, 0.22), makeMaterial(0x252a2b, 0.18));
+  rail.position.y = 5.5;
+  group.add(rail);
+
+  [3.5, 5.5, 7.5].forEach((y, index) => {
+    const module = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.8, 1.25), makeMaterial(index === 1 ? 0x4f6f78 : 0x5e6b63, 0.22));
+    module.position.set(0, y, 0);
+    module.castShadow = true;
+    group.add(module);
+    addEdges(module, 0x111622, 0.2);
+  });
+
+  room.add(group);
+}
+
+function addConsoleStatusLights(room) {
+  [
+    { x: -13.05, z: -11.12, color: 0x6fa484 },
+    { x: -11.4, z: -11.12, color: 0xd7c28a },
+    { x: -9.75, z: -11.12, color: 0x4f6f78 }
+  ].forEach((light) => {
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.06, 24), makeEmissiveMaterial(light.color, 0.42));
+    pad.position.set(light.x, 0.22, light.z);
+    pad.rotation.x = Math.PI / 2;
+    room.add(pad);
+  });
+}
+
+function createCanvasSign({ width = 512, height = 256, background, accent, title, subtitle }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = accent;
+  ctx.fillRect(0, 0, Math.max(12, width * 0.04), height);
+  ctx.fillRect(0, 0, width, Math.max(8, height * 0.035));
+
+  ctx.fillStyle = background === '#172426' ? '#ffffff' : '#172426';
+  ctx.font = `900 ${Math.round(height * 0.22)}px system-ui, sans-serif`;
+  ctx.fillText(title, width * 0.11, height * 0.47);
+  ctx.font = `700 ${Math.round(height * 0.105)}px system-ui, sans-serif`;
+  ctx.fillStyle = background === '#172426' ? 'rgba(255,255,255,0.78)' : 'rgba(23,36,38,0.7)';
+  ctx.fillText(subtitle, width * 0.11, height * 0.66);
+
+  ctx.strokeStyle = background === '#172426' ? 'rgba(255,255,255,0.16)' : 'rgba(23,36,38,0.18)';
+  ctx.lineWidth = Math.max(4, width * 0.012);
+  ctx.strokeRect(width * 0.04, height * 0.08, width * 0.9, height * 0.8);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.MeshStandardMaterial({
+    map: texture,
+    roughness: 0.46,
+    metalness: 0.02,
+    side: THREE.DoubleSide
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, height / width), material);
+  mesh.castShadow = true;
+  return mesh;
 }
 
 function addImportedCasa1InteriorAssets(room) {
