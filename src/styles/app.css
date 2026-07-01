@@ -156,6 +156,10 @@ button {
 .computer-dock button:focus-visible,
 .video-app-action:focus-visible,
 .youtube-input-row input:focus-visible,
+.content-search input:focus-visible,
+.computer-tab-list button:focus-visible,
+.library-actions button:focus-visible,
+.favorite-button:focus-visible,
 .zone-icon-button:focus-visible,
 .zone-controls input:focus-visible {
   outline: 3px solid rgba(79, 111, 120, 0.5);
@@ -363,7 +367,7 @@ button {
 }
 
 .computer-window {
-  width: min(1120px, 100%);
+  width: min(1280px, 100%);
   height: min(720px, 100%);
   min-height: 560px;
   display: grid;
@@ -705,9 +709,285 @@ button {
   font-weight: 650;
 }
 
+.computer-tab-list {
+  display: grid;
+  gap: 8px;
+}
+
+.computer-tab-list button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid rgba(17, 22, 34, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  color: #172426;
+  font-weight: 820;
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.computer-tab-list button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(79, 111, 120, 0.28);
+  background: #ffffff;
+}
+
+.computer-tab-list button.is-selected {
+  border-color: rgba(79, 111, 120, 0.34);
+  background: #172426;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(23, 36, 38, 0.16);
+}
+
 .computer-control-app {
   grid-template-rows: auto 1fr;
   overflow: hidden;
+}
+
+.content-control-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
+  gap: 16px;
+  overflow: hidden;
+}
+
+.content-browser,
+.screen-zone-sidebar {
+  min-height: 0;
+  overflow: auto;
+}
+
+.content-browser {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding-right: 2px;
+}
+
+.screen-zone-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.content-search {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid rgba(17, 22, 34, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #4f6f78;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.content-search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #172426;
+  font-weight: 720;
+}
+
+.content-search input::placeholder {
+  color: rgba(83, 100, 104, 0.68);
+}
+
+.content-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.content-section-title h3,
+.preset-card h3,
+.preset-card p,
+.video-library-card h3,
+.video-library-card p {
+  margin: 0;
+}
+
+.content-section-title h3 {
+  color: #172426;
+  font-size: 1rem;
+}
+
+.content-section-title span,
+.preset-card span,
+.video-library-copy span,
+.video-library-copy small {
+  color: #60736e;
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.video-library-list,
+.preset-grid,
+.manual-zone-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.video-library-card,
+.preset-card,
+.manual-zone-card,
+.history-strip {
+  border: 1px solid rgba(17, 22, 34, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 12px 28px rgba(17, 22, 34, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.video-library-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 13px;
+  padding: 13px;
+}
+
+.video-library-thumb {
+  min-height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(185, 215, 223, 0.28), rgba(215, 194, 138, 0.18)),
+    #172426;
+  color: #ffffff;
+}
+
+.video-library-copy {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.video-library-copy h3 {
+  color: #111622;
+  font-size: 1.05rem;
+}
+
+.video-library-copy p {
+  color: #536468;
+  line-height: 1.38;
+  font-size: 0.9rem;
+  font-weight: 640;
+}
+
+.library-actions {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.library-actions button {
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(17, 22, 34, 0.13);
+  border-radius: 8px;
+  background: #172426;
+  color: white;
+  font-weight: 820;
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.library-actions button:last-child {
+  background: #ffffff;
+  color: #172426;
+}
+
+.library-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.favorite-button {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 32px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(17, 22, 34, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #60736e;
+}
+
+.favorite-button.is-active {
+  color: #9a7b2f;
+  background: #fff7d8;
+  border-color: rgba(154, 123, 47, 0.24);
+}
+
+.history-strip,
+.preset-card,
+.manual-zone-card,
+.advanced-link-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-list button {
+  min-height: 34px;
+  max-width: 220px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid rgba(17, 22, 34, 0.1);
+  border-radius: 8px;
+  background: rgba(244, 246, 242, 0.78);
+  color: #172426;
+  font-weight: 760;
+}
+
+.history-list button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-card {
+  align-content: space-between;
+}
+
+.preset-card h3 {
+  margin-top: 4px;
+  color: #111622;
+  font-size: 1.18rem;
+}
+
+.preset-card p,
+.advanced-link-panel p {
+  margin: 0;
+  color: #536468;
+  line-height: 1.48;
+  font-weight: 650;
+}
+
+.advanced-link-panel {
+  border: 1px solid rgba(17, 22, 34, 0.1);
+  border-radius: 8px;
+  background: rgba(244, 246, 242, 0.68);
 }
 
 .screen-zone-grid {
@@ -1211,7 +1491,8 @@ select {
   }
 
   .computer-desktop-control,
-  .screen-zone-grid {
+  .screen-zone-grid,
+  .content-control-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1236,6 +1517,11 @@ select {
   }
 
   .screen-zone-grid {
+    overflow: visible;
+  }
+
+  .content-browser,
+  .screen-zone-sidebar {
     overflow: visible;
   }
 
@@ -1286,7 +1572,8 @@ select {
   .video-app-summary,
   .youtube-input-row,
   .zone-controls,
-  .screen-zone-header {
+  .screen-zone-header,
+  .video-library-card {
     grid-template-columns: 1fr;
   }
 
@@ -1298,5 +1585,9 @@ select {
 
   .screen-zone-header {
     display: grid;
+  }
+
+  .library-actions {
+    grid-template-columns: 1fr 1fr;
   }
 }
