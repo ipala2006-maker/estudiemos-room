@@ -48,8 +48,8 @@ export function FirstPersonWorld({
   useEffect(() => {
     const mount = mountRef.current;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x9ec7d3);
-    scene.fog = new THREE.Fog(0xbfd7d7, 54, 108);
+    scene.background = new THREE.Color(0xb7d4dc);
+    scene.fog = new THREE.Fog(0xcadbd4, 68, 132);
     addStaticSkyDome(scene);
 
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 120);
@@ -60,17 +60,17 @@ export function FirstPersonWorld({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.NoToneMapping;
-    renderer.toneMappingExposure = 1;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.98;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     mount.appendChild(renderer.domElement);
 
-    const ambient = new THREE.HemisphereLight(0xfffbf1, 0x4e5f52, 1.45);
+    const ambient = new THREE.HemisphereLight(0xfffbf1, 0x506653, 1.6);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xfff3d0, 3.6);
-    sun.position.set(18, 24, 16);
+    const sun = new THREE.DirectionalLight(0xfff1c7, 3.25);
+    sun.position.set(22, 28, 18);
     sun.castShadow = true;
     sun.shadow.mapSize.set(768, 768);
     sun.shadow.camera.near = 1;
@@ -319,7 +319,7 @@ function buildWorldScene(scene) {
     screenFrame: createTexture('screenFrame'),
     blackStripe: createTexture('blackStripe')
   };
-  const groundMaterial = makeMaterial(0x6f8f61, 0.46, 0, textures.grass);
+  const groundMaterial = makeMaterial(0x637f55, 0.5, 0, textures.grass);
   const pathMaterial = makeMaterial(0xb6afa2, 0.42, 0, textures.path);
   const wallMaterial = makeMaterial(0xcac0ad, 0.42, 0, textures.comicWall);
   const houseWall = makeMaterial(0xd3b89d, 0.34, 0, textures.plaster);
@@ -334,7 +334,7 @@ function buildWorldScene(scene) {
 
 function addStaticSkyDome(scene) {
   const sky = new THREE.Mesh(
-    new THREE.SphereGeometry(180, 48, 24),
+    new THREE.SphereGeometry(260, 64, 32),
     new THREE.MeshBasicMaterial({
       map: createSkyBackgroundTexture(),
       side: THREE.BackSide,
@@ -342,7 +342,7 @@ function addStaticSkyDome(scene) {
       fog: false
     })
   );
-  sky.position.set(0, 8, 0);
+  sky.position.set(0, -18, 0);
   sky.renderOrder = -20;
   scene.add(sky);
 }
@@ -373,10 +373,14 @@ function createWorldColliders() {
     interior: [
       interiorCollider(0, -28.3, 38, 3.4),
       interiorCollider(-11.4, -8.6, 4.8, 3.2),
-      interiorCollider(-25.1, 11.4, 1.5, 5.5),
-      interiorCollider(-12.7, 24.8, 5.4, 1.4),
-      interiorCollider(24.8, 8.2, 1.5, 5.4),
-      interiorCollider(24.8, -5.7, 1.5, 5.2)
+      interiorCollider(-25.1, 9, 1.5, 5.5),
+      interiorCollider(-12.5, 24.8, 5.2, 1.4),
+      interiorCollider(25.1, 5.6, 1.5, 5.4),
+      interiorCollider(25.1, -8.2, 1.5, 5.0),
+      interiorCollider(-23, 19.4, 2.1, 4.2),
+      interiorCollider(20.3, 19.4, 5.2, 3.2),
+      interiorCollider(-19.9, 15.7, 2.0, 1.7),
+      interiorCollider(14.4, 16.2, 2.0, 1.7)
     ]
   };
 }
@@ -446,8 +450,11 @@ function addNeighborhood(scene, materials) {
   });
 
   addBoundaryWalls(scene, wallMaterial);
+  addExteriorHorizon(scene);
   addModelNeighborhoodHouses(scene);
   addModelNatureAssets(scene);
+  addProfessionalGrassLayer(scene);
+  addGrassEdgeBlends(scene, textures);
   addExteriorApproachDressing(scene, textures);
   addExteriorIdentityDetails(scene, textures);
 }
@@ -481,6 +488,44 @@ function addBoundaryWalls(scene, wallMaterial) {
     cap.castShadow = true;
     scene.add(cap);
   });
+}
+
+function addExteriorHorizon(scene) {
+  const horizonMaterial = makeMaterial(0x6f806a, 0.58);
+  const distantTreeMaterial = makeMaterial(0x506653, 0.6);
+  const hazeMaterial = new THREE.MeshBasicMaterial({
+    color: 0xd9dfd2,
+    transparent: true,
+    opacity: 0.32,
+    depthWrite: false,
+    fog: false
+  });
+
+  [
+    { position: [0, 5.9, -30.62], size: [60, 1.5, 0.08] },
+    { position: [0, 5.9, 30.62], size: [60, 1.5, 0.08] },
+    { position: [-30.62, 5.9, 0], size: [0.08, 1.5, 60] },
+    { position: [30.62, 5.9, 0], size: [0.08, 1.5, 60] }
+  ].forEach((band) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...band.size), horizonMaterial);
+    mesh.position.set(...band.position);
+    scene.add(mesh);
+  });
+
+  [
+    [-26, -30.72, 3.2], [-18, -30.72, 2.5], [-9, -30.72, 3.6], [4, -30.72, 2.9], [16, -30.72, 3.4], [25, -30.72, 2.7],
+    [-30.72, -22, 2.6], [-30.72, -8, 3.2], [-30.72, 7, 2.8], [-30.72, 20, 3.5],
+    [30.72, -21, 3.1], [30.72, -6, 2.6], [30.72, 9, 3.4], [30.72, 23, 2.9]
+  ].forEach(([x, z, h]) => {
+    const tree = new THREE.Mesh(new THREE.ConeGeometry(1.4, h, 7), distantTreeMaterial);
+    tree.position.set(x, 6.35 + h * 0.2, z);
+    tree.rotation.y = x === -30.72 ? Math.PI / 2 : x === 30.72 ? -Math.PI / 2 : 0;
+    scene.add(tree);
+  });
+
+  const haze = new THREE.Mesh(new THREE.BoxGeometry(62, 3.2, 0.05), hazeMaterial);
+  haze.position.set(0, 7.2, -30.86);
+  scene.add(haze);
 }
 
 function addPathSign(scene, textures) {
@@ -852,6 +897,59 @@ function addModelNatureAssets(scene) {
     { x: 22.8, z: 5.2, scale: 1 },
     { x: -23, z: 17, scale: 0.82 }
   ].forEach((rock) => addLightweightRock(scene, rock));
+}
+
+function addProfessionalGrassLayer(scene) {
+  const geometry = new THREE.BoxGeometry(0.055, 0.34, 0.035);
+  const material = makeMaterial(0x789268, 0.48);
+  const bladeCount = 180;
+  const grass = new THREE.InstancedMesh(geometry, material, bladeCount);
+  const matrix = new THREE.Matrix4();
+  const position = new THREE.Vector3();
+  const quaternion = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const rotation = new THREE.Euler();
+  let index = 0;
+
+  for (let i = 0; i < bladeCount; i += 1) {
+    const x = -26 + ((i * 7.7) % 52);
+    const z = -25 + ((i * 11.3) % 50);
+    const nearMainPath = Math.abs(x) < 4.2 && z > -15.6 && z < 20.8;
+    const nearHouse = Math.abs(x) < 11.2 && z < -12.5;
+    if (nearMainPath || nearHouse) continue;
+
+    position.set(x + Math.sin(i * 1.9) * 0.46, 0.18, z + Math.cos(i * 1.3) * 0.46);
+    rotation.set(0.05 + (i % 5) * 0.025, i * 0.71, (i % 7 - 3) * 0.045);
+    quaternion.setFromEuler(rotation);
+    const height = 0.85 + (i % 6) * 0.11;
+    scale.set(0.72 + (i % 4) * 0.12, height, 0.72);
+    matrix.compose(position, quaternion, scale);
+    grass.setMatrixAt(index, matrix);
+    index += 1;
+  }
+
+  grass.count = index;
+  grass.castShadow = true;
+  grass.receiveShadow = true;
+  scene.add(grass);
+}
+
+function addGrassEdgeBlends(scene, textures) {
+  const material = makeMaterial(0x758b62, 0.5, 0, textures.grass);
+  [
+    { position: [-4.25, 0.08, 2.5], size: [0.72, 0.08, 34.6] },
+    { position: [4.25, 0.08, 2.5], size: [0.72, 0.08, 34.6] },
+    { position: [-1.8, 0.09, -15.8], size: [2.3, 0.07, 0.85] },
+    { position: [1.8, 0.09, -15.8], size: [2.3, 0.07, 0.85] },
+    { position: [-8.2, 0.08, 12.8], size: [5.6, 0.07, 1.05] },
+    { position: [8.4, 0.08, 12.4], size: [5.4, 0.07, 1.05] }
+  ].forEach((patch, index) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...patch.size), material);
+    mesh.position.set(...patch.position);
+    mesh.rotation.y = index % 2 === 0 ? -0.035 : 0.035;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+  });
 }
 
 function addLightweightTree(scene, { x, z, height, lean, crown }) {
@@ -1579,11 +1677,7 @@ function addCasa1Interior(scene, textures) {
   });
 
   addMinimalRoomDetails(room);
-  addInteriorArchitectureDepth(room);
-  addScreenStructuralSupports(room);
-  addInteriorZoneDressing(room, textures);
-  addInteriorIdentityAndStudyProps(room, textures);
-  addImportedCasa1InteriorAssets(room);
+  addImmersiveStudyRoom(room, textures);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xe3ded2, 0.42, 0, createTexture('quietCeiling')));
   ceiling.position.set(0, 16, 0);
@@ -1630,6 +1724,176 @@ function addCasa1Interior(scene, textures) {
 
   scene.add(room);
   return { canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentPlatformId: '' };
+}
+
+function addImmersiveStudyRoom(room, textures) {
+  addStudyRoomWallSystem(room, textures);
+  addStudyRoomScreenZone(room, textures);
+  addStudyRoomAssetLayout(room);
+  addStudyRoomStudyDetails(room, textures);
+}
+
+function addStudyRoomWallSystem(room, textures) {
+  const woodMaterial = makeMaterial(0x7b6a57, 0.32, 0, textures.wood);
+  const acousticMaterial = makeMaterial(0xd8d0c0, 0.34, 0.01, createTexture('paintedWall'));
+  const railMaterial = makeMaterial(0x2c3332, 0.2, 0, textures.blackStripe);
+
+  [
+    { pos: [-18, 7.7, -28.7], size: [8.5, 8.8, 0.14] },
+    { pos: [18, 7.7, -28.7], size: [8.5, 8.8, 0.14] },
+    { pos: [-27.66, 7.3, -12], size: [0.14, 7.8, 9.5] },
+    { pos: [27.66, 7.3, -12], size: [0.14, 7.8, 9.5] },
+    { pos: [-27.66, 7.3, 10.5], size: [0.14, 7.2, 10.5] },
+    { pos: [27.66, 7.3, 10.5], size: [0.14, 7.2, 10.5] }
+  ].forEach((panel, index) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...panel.size), index < 2 ? acousticMaterial : woodMaterial);
+    mesh.position.set(...panel.pos);
+    mesh.castShadow = true;
+    room.add(mesh);
+  });
+
+  [-18, -6, 6, 18].forEach((x) => {
+    const baffle = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.22, 1.15), railMaterial);
+    baffle.position.set(x, 14.7, -3);
+    baffle.castShadow = true;
+    room.add(baffle);
+  });
+
+  addWallCanvasPanel(room, {
+    position: [0, 14.35, -28.16],
+    rotation: [0, 0, 0],
+    scale: [7.8, 1.35, 1],
+    title: 'ESTUDIEMOS ROOM',
+    subtitle: 'Sala inmersiva de estudio',
+    background: '#172426',
+    accent: '#b9d7df'
+  });
+
+  addWallCanvasPanel(room, {
+    position: [-27.42, 8.9, -3],
+    rotation: [0, Math.PI / 2, 0],
+    scale: [4.2, 2.1, 1],
+    title: 'FOCO',
+    subtitle: 'Estudio profundo',
+    background: '#f4f0e5',
+    accent: '#4f6f78'
+  });
+
+  addWallCanvasPanel(room, {
+    position: [27.42, 8.9, -3],
+    rotation: [0, -Math.PI / 2, 0],
+    scale: [4.2, 2.1, 1],
+    title: 'CONTROL',
+    subtitle: 'Fuentes y pantalla',
+    background: '#172426',
+    accent: '#d7d0c0'
+  });
+}
+
+function addStudyRoomScreenZone(room, textures) {
+  const stageMaterial = makeMaterial(0x6f604f, 0.28, 0, textures.wood);
+  const darkMaterial = makeMaterial(0x1f2627, 0.18, 0, textures.blackStripe);
+  const speakerMaterial = makeMaterial(0x303939, 0.18);
+
+  const stage = new THREE.Mesh(new THREE.BoxGeometry(38.5, 0.18, 4.2), stageMaterial);
+  stage.position.set(0, 0.12, -25.6);
+  stage.receiveShadow = true;
+  room.add(stage);
+  addEdges(stage, 0x3f3a33, 0.14);
+
+  [-19.2, 19.2].forEach((x) => {
+    const tower = new THREE.Group();
+    tower.position.set(x, 0, -24.9);
+    tower.rotation.y = x < 0 ? 0.08 : -0.08;
+
+    const cabinet = new THREE.Mesh(new THREE.BoxGeometry(1.4, 3.8, 1.05), speakerMaterial);
+    cabinet.position.y = 1.9;
+    cabinet.castShadow = true;
+    tower.add(cabinet);
+
+    [1.05, 2.05, 3.0].forEach((y, index) => {
+      const driver = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.06, 24), makeMaterial(index === 1 ? 0x657270 : 0x505b59, 0.22));
+      driver.position.set(0, y, -0.55);
+      driver.rotation.x = Math.PI / 2;
+      tower.add(driver);
+    });
+
+    room.add(tower);
+    addGroupEdges(tower, 0x111622, 0.2);
+  });
+
+  [-14, 0, 14].forEach((x) => {
+    const floorGlow = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.06, 0.08), makeEmissiveMaterial(0xd7c28a, 0.16));
+    floorGlow.position.set(x, 0.22, -23.7);
+    room.add(floorGlow);
+  });
+
+  [-14.8, 14.8].forEach((x) => {
+    const support = new THREE.Mesh(new THREE.BoxGeometry(0.42, 5.5, 0.34), darkMaterial);
+    support.position.set(x, 3.0, -27.75);
+    support.castShadow = true;
+    room.add(support);
+  });
+}
+
+function addStudyRoomAssetLayout(room) {
+  const furnitureFolder = 'furniture-pack';
+  const interiorFolder = 'house-interior-pack';
+
+  [
+    { basePath: 'models/custom', file: 'study-computer.glb', name: 'study-console-computer', position: [-11.35, 0, -8.65], rotation: [0, Math.PI, 0], targetSize: 3.2, outlineOpacity: 0.28 },
+    { folder: furnitureFolder, file: 'Desk.glb', name: 'study-console-desk', position: [-11.4, 0, -8.6], rotation: [0, 0, 0], targetSize: 3.35, outlineOpacity: 0.3 },
+    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'study-console-chair', position: [-11.4, 0, -5.55], rotation: [0, Math.PI, 0], targetSize: 1.25, outlineOpacity: 0.3 },
+    { folder: interiorFolder, file: 'Light Desk.glb', name: 'study-console-lamp', position: [-12.45, 1.25, -8.35], rotation: [0, 0.55, 0], targetSize: 0.62, outlineOpacity: 0.3 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'study-left-library', position: [-25.25, 0, 9], rotation: [0, Math.PI / 2, 0], targetSize: 3.8, outlineOpacity: 0.26 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'study-back-library', position: [-12.5, 0, 24.8], rotation: [0, 0, 0], targetSize: 3.45, outlineOpacity: 0.24 },
+    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'study-right-equipment-shelf', position: [25.1, 0, 5.6], rotation: [0, -Math.PI / 2, 0], targetSize: 3.55, outlineOpacity: 0.26 },
+    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'study-right-storage-shelf', position: [25.1, 0, -8.2], rotation: [0, -Math.PI / 2, 0], targetSize: 3.3, outlineOpacity: 0.24 },
+    { folder: furnitureFolder, file: 'Sofa.glb', name: 'study-left-sofa', position: [-23.0, 0, 19.4], rotation: [0, Math.PI / 2, 0], targetSize: 3.05, outlineOpacity: 0.24 },
+    { folder: interiorFolder, file: 'Couch Large.glb', name: 'study-right-couch', position: [20.3, 0, 19.4], rotation: [0, -2.35, 0], targetSize: 4.05, outlineOpacity: 0.26 },
+    { folder: interiorFolder, file: 'Round Rug.glb', name: 'study-reading-rug', position: [-18.9, 0.04, 17.7], rotation: [0, -0.28, 0], targetSize: 4.1, outlineOpacity: 0.18 },
+    { folder: interiorFolder, file: 'Round Rug.glb', name: 'study-lounge-rug', position: [18.4, 0.04, 17.7], rotation: [0, 0.2, 0], targetSize: 5.0, outlineOpacity: 0.18 },
+    { folder: furnitureFolder, file: 'Table.glb', name: 'study-left-table', position: [-19.9, 0, 15.7], rotation: [0, 0.35, 0], targetSize: 1.35, outlineOpacity: 0.26 },
+    { folder: furnitureFolder, file: 'Table.glb', name: 'study-right-table', position: [14.4, 0, 16.2], rotation: [0, -0.28, 0], targetSize: 1.5, outlineOpacity: 0.26 },
+    { folder: interiorFolder, file: 'Table Lamp.glb', name: 'study-table-lamp', position: [14.4, 1.05, 16.2], rotation: [0, -0.15, 0], targetSize: 0.7, outlineOpacity: 0.28 },
+    { folder: interiorFolder, file: 'Light Floor.glb', name: 'study-left-floor-light', position: [-24.2, 0, 16.6], rotation: [0, 0.65, 0], targetSize: 1.85, outlineOpacity: 0.28 },
+    { folder: interiorFolder, file: 'Light Floor.glb', name: 'study-right-floor-light', position: [23.8, 0, 7.1], rotation: [0, -0.75, 0], targetSize: 1.75, outlineOpacity: 0.26 },
+    { folder: interiorFolder, file: 'Light Ceiling.glb', name: 'study-ceiling-light-center', position: [0, 12.9, -2], rotation: [0, 0, 0], targetSize: 2.0, outlineOpacity: 0.18 },
+    { folder: interiorFolder, file: 'Houseplant.glb', name: 'study-plant-left-screen', position: [-25.4, 0, -23.2], rotation: [0, 0.45, 0], targetSize: 0.9, outlineOpacity: 0.26 },
+    { folder: interiorFolder, file: 'Houseplant.glb', name: 'study-plant-back-left', position: [-25.2, 0, 23.0], rotation: [0, -0.35, 0], targetSize: 0.85, outlineOpacity: 0.22 },
+    { folder: interiorFolder, file: 'Cactus.glb', name: 'study-cactus-right-screen', position: [25.3, 0, -23.2], rotation: [0, -0.45, 0], targetSize: 0.85, outlineOpacity: 0.26 },
+    { folder: interiorFolder, file: 'Cactus.glb', name: 'study-cactus-back-right', position: [25.0, 0, 22.6], rotation: [0, 0.3, 0], targetSize: 0.72, outlineOpacity: 0.22 },
+    { folder: interiorFolder, file: 'Trashcan.glb', name: 'study-trashcan', position: [-17.4, 0, -6.2], rotation: [0, 0.1, 0], targetSize: 0.68, outlineOpacity: 0.26 }
+  ].forEach((asset) => addImportedAsset(room, asset));
+}
+
+function addStudyRoomStudyDetails(room, textures) {
+  addStudyBookStack(room, -19.9, 1.12, 15.7, 0.2);
+  addStudyBookStack(room, 14.4, 1.1, 16.2, -0.35);
+  addStudyBookStack(room, -12.9, 1.22, -8.15, 0.1);
+  addWallTechRail(room, -27.36, -15.5, Math.PI / 2);
+  addWallTechRail(room, 27.36, -15.5, -Math.PI / 2);
+
+  const cableMaterial = makeMaterial(0x293232, 0.18, 0, textures.blackStripe);
+  [
+    { pos: [-13.9, 0.13, -8.6], size: [0.08, 0.06, 2.0] },
+    { pos: [-9.7, 0.13, -8.6], size: [0.08, 0.06, 1.7] }
+  ].forEach((cable) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...cable.size), cableMaterial);
+    mesh.position.set(...cable.pos);
+    mesh.receiveShadow = true;
+    room.add(mesh);
+  });
+
+  [
+    { position: [-10.3, 2.15, -8.55], size: [0.18, 0.18, 0.08], color: 0x6fa484 },
+    { position: [-10.7, 2.15, -8.55], size: [0.18, 0.18, 0.08], color: 0xd7c28a },
+    { position: [-11.1, 2.15, -8.55], size: [0.18, 0.18, 0.08], color: 0x4f6f78 }
+  ].forEach((light) => {
+    const status = new THREE.Mesh(new THREE.BoxGeometry(...light.size), makeEmissiveMaterial(light.color, 0.36));
+    status.position.set(...light.position);
+    room.add(status);
+  });
 }
 
 function addInteriorSetPieces(room) {
@@ -2922,44 +3186,66 @@ function createSkyBackgroundTexture() {
   canvas.height = 512;
   const ctx = canvas.getContext('2d');
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, '#83b8cc');
-  gradient.addColorStop(0.42, '#b9d7df');
-  gradient.addColorStop(0.7, '#e5dcc9');
-  gradient.addColorStop(1, '#b7c2ae');
+  gradient.addColorStop(0, '#79adc7');
+  gradient.addColorStop(0.36, '#b3d0d8');
+  gradient.addColorStop(0.66, '#e6dcc8');
+  gradient.addColorStop(0.86, '#c4c8ad');
+  gradient.addColorStop(1, '#8fa083');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const sunGradient = ctx.createRadialGradient(750, 105, 18, 750, 105, 140);
-  sunGradient.addColorStop(0, 'rgba(255, 243, 211, 0.75)');
-  sunGradient.addColorStop(0.38, 'rgba(255, 243, 211, 0.28)');
+  const sunGradient = ctx.createRadialGradient(742, 104, 16, 742, 104, 172);
+  sunGradient.addColorStop(0, 'rgba(255, 244, 213, 0.78)');
+  sunGradient.addColorStop(0.32, 'rgba(255, 235, 190, 0.28)');
   sunGradient.addColorStop(1, 'rgba(255, 243, 211, 0)');
   ctx.fillStyle = sunGradient;
-  ctx.fillRect(600, 0, 300, 240);
+  ctx.fillRect(560, 0, 360, 285);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.22)';
-  for (let i = 0; i < 14; i += 1) {
-    const x = (i * 173) % canvas.width;
-    const y = 64 + ((i * 47) % 130);
-    const width = 88 + (i % 4) * 42;
+  const drawCloudCluster = (x, y, scale, opacity) => {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    [
+      [-58, 6, 64, 19],
+      [-16, -8, 78, 26],
+      [34, 2, 82, 22],
+      [86, 10, 58, 18],
+      [8, 15, 118, 18]
+    ].forEach(([ox, oy, rx, ry]) => {
+      ctx.beginPath();
+      ctx.ellipse(x + ox * scale, y + oy * scale, rx * scale, ry * scale, -0.03, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.fillStyle = 'rgba(126, 151, 159, 0.18)';
     ctx.beginPath();
-    ctx.ellipse(x, y, width, 15 + (i % 3) * 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 12 * scale, y + 22 * scale, 116 * scale, 13 * scale, -0.02, 0, Math.PI * 2);
     ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(x + width * 0.28, y + 10, width * 0.56, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
+    ctx.restore();
+  };
 
-  ctx.fillStyle = 'rgba(80, 101, 88, 0.18)';
-  ctx.fillRect(0, canvas.height * 0.74, canvas.width, canvas.height * 0.26);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-  ctx.fillRect(0, canvas.height * 0.735, canvas.width, 4);
-  ctx.strokeStyle = 'rgba(17, 22, 34, 0.07)';
-  ctx.lineWidth = 2;
-  for (let x = 0; x < canvas.width; x += 64) {
+  [
+    [130, 92, 0.9, 0.72],
+    [345, 148, 0.62, 0.5],
+    [578, 82, 0.82, 0.54],
+    [860, 158, 0.76, 0.5],
+    [1010, 108, 0.88, 0.56]
+  ].forEach((cloud) => drawCloudCluster(...cloud));
+
+  ctx.fillStyle = 'rgba(80, 101, 88, 0.2)';
+  ctx.fillRect(0, canvas.height * 0.76, canvas.width, canvas.height * 0.24);
+  const treeLine = ctx.createLinearGradient(0, canvas.height * 0.68, 0, canvas.height);
+  treeLine.addColorStop(0, 'rgba(77, 99, 81, 0.05)');
+  treeLine.addColorStop(0.36, 'rgba(77, 99, 81, 0.24)');
+  treeLine.addColorStop(1, 'rgba(56, 75, 59, 0.38)');
+  ctx.fillStyle = treeLine;
+  for (let x = -12; x < canvas.width + 20; x += 18) {
+    const h = 18 + (Math.abs(x * 13) % 32);
     ctx.beginPath();
-    ctx.moveTo(x, canvas.height * 0.74);
-    ctx.lineTo(x + 54, canvas.height);
-    ctx.stroke();
+    ctx.moveTo(x, canvas.height * 0.76);
+    ctx.lineTo(x + 10, canvas.height * 0.76 - h);
+    ctx.lineTo(x + 22, canvas.height * 0.76);
+    ctx.closePath();
+    ctx.fill();
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -3026,32 +3312,45 @@ function createToonGradient() {
 }
 
 function drawGrassTexture(ctx) {
-  ctx.fillStyle = '#6f8f61';
+  const base = ctx.createLinearGradient(0, 0, 128, 128);
+  base.addColorStop(0, '#6f875e');
+  base.addColorStop(0.48, '#637f55');
+  base.addColorStop(1, '#526f4d');
+  ctx.fillStyle = base;
   ctx.fillRect(0, 0, 128, 128);
 
-  for (let x = -40; x < 168; x += 18) {
-    ctx.fillStyle = x % 36 === 0 ? 'rgba(91, 124, 80, 0.34)' : 'rgba(142, 164, 112, 0.22)';
+  for (let x = -48; x < 176; x += 16) {
+    ctx.fillStyle = x % 32 === 0 ? 'rgba(73, 105, 65, 0.24)' : 'rgba(147, 164, 112, 0.18)';
     ctx.beginPath();
     ctx.moveTo(x, 128);
-    ctx.lineTo(x + 42, 0);
-    ctx.lineTo(x + 54, 0);
-    ctx.lineTo(x + 12, 128);
+    ctx.lineTo(x + 38, 0);
+    ctx.lineTo(x + 47, 0);
+    ctx.lineTo(x + 11, 128);
     ctx.closePath();
     ctx.fill();
   }
 
-  for (let i = 0; i < 420; i++) {
-    const shade = i % 4 === 0 ? '#55764f' : i % 4 === 1 ? '#7d986a' : i % 4 === 2 ? '#9cae82' : '#668458';
+  for (let i = 0; i < 720; i++) {
+    const shade = i % 5 === 0 ? '#425f43' : i % 5 === 1 ? '#75905f' : i % 5 === 2 ? '#9eab7d' : i % 5 === 3 ? '#5e7d53' : '#809466';
     ctx.fillStyle = shade;
-    ctx.fillRect((i * 47) % 128, (i * 29) % 128, 2 + (i % 4), 1);
+    const x = (i * 47) % 128;
+    const y = (i * 29) % 128;
+    ctx.fillRect(x, y, 1 + (i % 3), 1);
+    if (i % 8 === 0) {
+      ctx.strokeStyle = 'rgba(229, 220, 174, 0.12)';
+      ctx.beginPath();
+      ctx.moveTo(x, y + 3);
+      ctx.lineTo(x + 2 + (i % 4), y - 3);
+      ctx.stroke();
+    }
   }
 
-  ctx.strokeStyle = 'rgba(29, 53, 38, 0.18)';
+  ctx.strokeStyle = 'rgba(29, 53, 38, 0.14)';
   ctx.lineWidth = 1;
-  for (let y = 8; y < 128; y += 16) {
+  for (let y = 10; y < 128; y += 18) {
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.bezierCurveTo(34, y + 3, 78, y - 4, 128, y + 2);
+    ctx.bezierCurveTo(34, y + 4, 78, y - 5, 128, y + 2);
     ctx.stroke();
   }
 }
