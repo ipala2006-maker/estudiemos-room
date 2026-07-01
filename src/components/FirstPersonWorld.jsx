@@ -372,19 +372,7 @@ function createWorldColliders() {
     ],
     interior: [
       interiorCollider(0, -28.3, 39, 3.6),
-      interiorCollider(-10.8, -10.2, 5.2, 3.4),
-      interiorCollider(-23.8, -23.6, 3.2, 2.2),
-      interiorCollider(23.8, -23.6, 3.2, 2.2),
-      interiorCollider(-25.6, -11.6, 1.8, 25.6),
-      interiorCollider(25.6, -11.6, 1.8, 25.6),
-      interiorCollider(-25.6, 16.2, 1.8, 17.4),
-      interiorCollider(25.6, 16.2, 1.8, 17.4),
-      interiorCollider(0, 24.7, 24.6, 1.8),
-      interiorCollider(-9.4, 13.6, 4.8, 3.0),
-      interiorCollider(9.4, 13.6, 4.8, 3.0),
-      interiorCollider(0, 19.8, 7.2, 3.2),
-      interiorCollider(-17.4, 19.2, 4.2, 3.0),
-      interiorCollider(17.4, 19.2, 4.2, 3.0)
+      interiorCollider(-11.4, -8.6, 5.2, 3.4)
     ]
   };
 }
@@ -1680,7 +1668,7 @@ function addCasa1Interior(scene, textures) {
     room.add(wall);
   });
 
-  addImmersiveStudyRoom(room, textures);
+  addFunctionalComputerStation(room);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0x2f271f, 0.42, 0, createTexture('quietCeiling')));
   ceiling.position.set(0, 16, 0);
@@ -1731,6 +1719,18 @@ function addImmersiveStudyRoom(room, textures) {
   addAssetLibraryWalls(room);
   addAssetCinemaLounge(room);
   addAssetStudyDecor(room);
+}
+
+function addFunctionalComputerStation(room) {
+  const furnitureFolder = 'furniture-pack';
+  const kenneyPath = 'models/vendor/kenney/furniture-kit';
+  [
+    { folder: furnitureFolder, file: 'Desk.glb', name: 'functional-computer-desk', position: [-11.4, 0, -8.6], rotation: [0, Math.PI, 0], targetSize: 3.35, outlineOpacity: 0.26 },
+    { basePath: 'models/custom', file: 'study-computer.glb', name: 'functional-study-computer', position: [-11.4, 0, -8.82], rotation: [0, 0, 0], targetSize: 3.0, outlineOpacity: 0.26 },
+    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'functional-computer-chair', position: [-11.4, 0, -5.8], rotation: [0, 0, 0], targetSize: 1.05, outlineOpacity: 0.22 },
+    { basePath: kenneyPath, file: 'computerKeyboard.glb', name: 'functional-computer-keyboard', position: [-11.3, 1.12, -7.75], rotation: [0, 0, 0], targetSize: 0.58, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'computerMouse.glb', name: 'functional-computer-mouse', position: [-10.45, 1.12, -7.7], rotation: [0, 0.1, 0], targetSize: 0.3, outlineOpacity: 0.16 }
+  ].forEach((asset) => addImportedAsset(room, asset));
 }
 
 function addAssetRoomStructure(room, textures) {
