@@ -13,6 +13,10 @@ const textureCache = new Map();
 const materialCache = new Map();
 const emissiveMaterialCache = new Map();
 const edgeMaterialCache = new Map();
+const PLAYER_RADIUS = 0.58;
+const WALK_SPEED = 9.6;
+const WALK_ACCELERATION = 18;
+const WALK_DECELERATION = 24;
 
 export function FirstPersonWorld({
   onDoorOpenChange,
@@ -44,8 +48,8 @@ export function FirstPersonWorld({
   useEffect(() => {
     const mount = mountRef.current;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xb9d7df);
-    scene.fog = new THREE.Fog(0xb9d7df, 48, 96);
+    scene.background = createSkyBackgroundTexture();
+    scene.fog = new THREE.Fog(0xc0d7d6, 52, 104);
 
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 120);
     camera.position.copy(startPosition);
@@ -84,7 +88,7 @@ export function FirstPersonWorld({
     softFill.position.set(-18, 12, -8);
     scene.add(softFill);
 
-    const { giantScreen } = buildWorldScene(scene);
+    const { giantScreen, colliders } = buildWorldScene(scene);
 
     const keys = {
       forward: false,
@@ -95,6 +99,9 @@ export function FirstPersonWorld({
     const inputDirection = new THREE.Vector3();
     const cameraForwardHorizontal = new THREE.Vector3();
     const cameraRightHorizontal = new THREE.Vector3();
+    const movementVelocity = new THREE.Vector3();
+    const targetVelocity = new THREE.Vector3();
+    const movementStep = new THREE.Vector3();
     let yaw = 0;
     let pitch = 0;
     let pointerLocked = false;
@@ -111,6 +118,7 @@ export function FirstPersonWorld({
 
     function resetCamera() {
       camera.position.copy(startPosition);
+      movementVelocity.set(0, 0, 0);
       verticalVelocity = 0;
       isGrounded = true;
       yaw = 0;
@@ -128,6 +136,7 @@ export function FirstPersonWorld({
     toggleDoorRef.current = () => {
       doorOpenRef.current = !doorOpenRef.current;
       camera.position.copy(doorOpenRef.current ? activeMap.interiorSpawnPosition : startPosition);
+      movementVelocity.set(0, 0, 0);
       yaw = doorOpenRef.current ? Math.PI : 0;
       pitch = 0;
       camera.rotation.set(pitch, yaw, 0);
@@ -207,6 +216,7 @@ export function FirstPersonWorld({
       const delta = Math.min(timer.getDelta(), 0.04);
       if (!controlsEnabledRef.current) {
         clearMovementInput();
+        movementVelocity.set(0, 0, 0);
       }
 
       camera.getWorldDirection(cameraForwardHorizontal);
@@ -220,12 +230,32 @@ export function FirstPersonWorld({
       inputDirection.addScaledVector(cameraForwardHorizontal, inputVertical);
       inputDirection.addScaledVector(cameraRightHorizontal, inputHorizontal);
 
-      if (controlsEnabledRef.current && inputDirection.lengthSq() > 0) {
+      const hasMovementInput = controlsEnabledRef.current && inputDirection.lengthSq() > 0;
+      targetVelocity.set(0, 0, 0);
+      if (hasMovementInput) {
         inputDirection.normalize();
-        camera.position.addScaledVector(inputDirection, 9.8 * delta);
-        const bounds = doorOpenRef.current ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
-        camera.position.x = clamp(camera.position.x, bounds.minX, bounds.maxX);
-        camera.position.z = clamp(camera.position.z, bounds.minZ, bounds.maxZ);
+        targetVelocity.addScaledVector(inputDirection, WALK_SPEED);
+      }
+
+      const response = 1 - Math.exp(-(hasMovementInput ? WALK_ACCELERATION : WALK_DECELERATION) * delta);
+      movementVelocity.lerp(targetVelocity, response);
+      if (!hasMovementInput && movementVelocity.lengthSq() < 0.0025) {
+        movementVelocity.set(0, 0, 0);
+      }
+
+      if (controlsEnabledRef.current && movementVelocity.lengthSq() > 0) {
+        movementStep.copy(movementVelocity).multiplyScalar(delta);
+        const isInterior = doorOpenRef.current;
+        const bounds = isInterior ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
+        const collisionResult = movePlayerWithCollisions(
+          camera.position,
+          movementStep,
+          bounds,
+          isInterior ? colliders.interior : colliders.exterior,
+          PLAYER_RADIUS
+        );
+        if (collisionResult.blockedX) movementVelocity.x = 0;
+        if (collisionResult.blockedZ) movementVelocity.z = 0;
       }
 
       if (controlsEnabledRef.current || !isGrounded) {
@@ -297,7 +327,94 @@ function buildWorldScene(scene) {
 
   addNeighborhood(scene, { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures });
   const giantScreen = addCasa1Interior(scene, textures);
-  return { giantScreen };
+  const colliders = createWorldColliders();
+  return { giantScreen, colliders };
+}
+
+function createWorldColliders() {
+  const interiorCollider = (x, z, width, depth) => createCollider(90 + x, -6 + z, width, depth);
+
+  return {
+    exterior: [
+      createCollider(0, -20.8, 15.2, 8.7),
+      createCollider(-18, -19, 12.5, 8.5),
+      createCollider(18, -19, 12.5, 8.5),
+      createCollider(-4.35, -7.4, 0.8, 12.1),
+      createCollider(4.35, -7.4, 0.8, 12.1),
+      createCollider(-6.6, 4.8, 3.4, 1.1),
+      createCollider(5.7, -12.8, 2.3, 1.1),
+      createCollider(-19.5, -9.8, 2.7, 2.7),
+      createCollider(20.4, -9.4, 2.7, 2.7),
+      createCollider(-23.4, 7.6, 2.4, 2.4),
+      createCollider(23.2, 12.8, 2.4, 2.4),
+      createCollider(-25.2, 23, 2.1, 2.1),
+      createCollider(25.1, 22.5, 2.1, 2.1),
+      createCollider(-5.6, 8.6, 2.8, 1.9),
+      createCollider(5.5, 7.9, 2.2, 1.6),
+      createCollider(22.8, 5.2, 2.6, 1.8),
+      createCollider(-23, 17, 2.1, 1.5)
+    ],
+    interior: [
+      interiorCollider(0, -28.3, 40, 5.4),
+      interiorCollider(-11.4, -8.6, 7.8, 5.9),
+      interiorCollider(-20.8, -18.8, 7.1, 3.2),
+      interiorCollider(20.2, -18.6, 7.1, 3.2),
+      interiorCollider(-21.8, -24.6, 2.8, 1.9),
+      interiorCollider(21.8, -24.6, 2.8, 1.9),
+      interiorCollider(-25.1, 11.4, 2.4, 7.4),
+      interiorCollider(-12.7, 24.8, 6.2, 2.4),
+      interiorCollider(24.8, 8.2, 2.4, 7.2),
+      interiorCollider(24.8, -5.7, 2.4, 6.7),
+      interiorCollider(18.9, 20, 6.1, 3.6),
+      interiorCollider(-21.3, 20, 3.2, 5.4),
+      interiorCollider(-20.7, 15.7, 2.4, 2.1),
+      interiorCollider(14.3, 16.3, 2.4, 2.1),
+      interiorCollider(0, 13.4, 3.4, 2.4),
+      interiorCollider(-23, 21, 2.2, 2.2),
+      interiorCollider(23, 21, 2.2, 2.2),
+      interiorCollider(-23, -24, 2.2, 2.2),
+      interiorCollider(23, -24, 2.2, 2.2)
+    ]
+  };
+}
+
+function createCollider(centerX, centerZ, width, depth) {
+  return {
+    minX: centerX - width / 2,
+    maxX: centerX + width / 2,
+    minZ: centerZ - depth / 2,
+    maxZ: centerZ + depth / 2
+  };
+}
+
+function movePlayerWithCollisions(position, movementStep, bounds, colliders, radius) {
+  let blockedX = false;
+  let blockedZ = false;
+
+  const nextX = clamp(position.x + movementStep.x, bounds.minX, bounds.maxX);
+  if (!isPlayerColliding(nextX, position.z, colliders, radius)) {
+    position.x = nextX;
+  } else {
+    blockedX = true;
+  }
+
+  const nextZ = clamp(position.z + movementStep.z, bounds.minZ, bounds.maxZ);
+  if (!isPlayerColliding(position.x, nextZ, colliders, radius)) {
+    position.z = nextZ;
+  } else {
+    blockedZ = true;
+  }
+
+  return { blockedX, blockedZ };
+}
+
+function isPlayerColliding(x, z, colliders, radius) {
+  return colliders.some((collider) =>
+    x + radius > collider.minX &&
+    x - radius < collider.maxX &&
+    z + radius > collider.minZ &&
+    z - radius < collider.maxZ
+  );
 }
 
 function addNeighborhood(scene, materials) {
@@ -2845,6 +2962,48 @@ function addEdges(mesh, color, opacity) {
   edges.renderOrder = 2;
   mesh.parent?.add(edges);
   return edges;
+}
+
+function createSkyBackgroundTexture() {
+  if (textureCache.has('skyBackground')) return textureCache.get('skyBackground');
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#9fc6d0');
+  gradient.addColorStop(0.48, '#c7dcd8');
+  gradient.addColorStop(0.72, '#e0d4bd');
+  gradient.addColorStop(1, '#b7c2ae');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  for (let i = 0; i < 18; i += 1) {
+    const x = (i * 157) % canvas.width;
+    const y = 70 + ((i * 41) % 150);
+    const width = 70 + (i % 4) * 38;
+    ctx.beginPath();
+    ctx.ellipse(x, y, width, 18 + (i % 3) * 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = 'rgba(88, 108, 96, 0.16)';
+  ctx.fillRect(0, canvas.height * 0.74, canvas.width, canvas.height * 0.26);
+  ctx.strokeStyle = 'rgba(17, 22, 34, 0.08)';
+  ctx.lineWidth = 2;
+  for (let x = 0; x < canvas.width; x += 64) {
+    ctx.beginPath();
+    ctx.moveTo(x, canvas.height * 0.74);
+    ctx.lineTo(x + 54, canvas.height);
+    ctx.stroke();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  textureCache.set('skyBackground', texture);
+  return texture;
 }
 
 function createTexture(type) {
