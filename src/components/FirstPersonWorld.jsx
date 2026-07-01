@@ -372,19 +372,19 @@ function createWorldColliders() {
     ],
     interior: [
       interiorCollider(0, -28.3, 39, 3.6),
-      interiorCollider(-11.4, -8.6, 5.2, 3.7),
-      interiorCollider(-22.6, -24.3, 2.4, 2.2),
-      interiorCollider(22.6, -24.3, 2.4, 2.2),
-      interiorCollider(-25.0, -15.2, 1.5, 5.0),
-      interiorCollider(25.0, -15.2, 1.5, 5.0),
-      interiorCollider(-25.0, 11.6, 1.5, 16.0),
-      interiorCollider(25.0, 1.8, 1.5, 14.4),
-      interiorCollider(-13.5, 24.8, 6.2, 1.5),
-      interiorCollider(4.0, 5.8, 3.0, 2.5),
-      interiorCollider(-22.4, 20.2, 2.3, 4.6),
-      interiorCollider(20.1, 20.1, 5.2, 3.2),
-      interiorCollider(-18.7, 16.0, 1.8, 1.6),
-      interiorCollider(14.2, 16.1, 1.8, 1.6)
+      interiorCollider(-10.8, -10.2, 5.2, 3.4),
+      interiorCollider(-23.8, -23.6, 3.2, 2.2),
+      interiorCollider(23.8, -23.6, 3.2, 2.2),
+      interiorCollider(-25.6, -11.6, 1.8, 25.6),
+      interiorCollider(25.6, -11.6, 1.8, 25.6),
+      interiorCollider(-25.6, 16.2, 1.8, 17.4),
+      interiorCollider(25.6, 16.2, 1.8, 17.4),
+      interiorCollider(0, 24.7, 24.6, 1.8),
+      interiorCollider(-9.4, 13.6, 4.8, 3.0),
+      interiorCollider(9.4, 13.6, 4.8, 3.0),
+      interiorCollider(0, 19.8, 7.2, 3.2),
+      interiorCollider(-17.4, 19.2, 4.2, 3.0),
+      interiorCollider(17.4, 19.2, 4.2, 3.0)
     ]
   };
 }
@@ -1660,13 +1660,13 @@ function addCasa1Interior(scene, textures) {
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(56, 0.4, 58),
-    makeMaterial(0xa7835e, 0.38, 0.02, createTexture('hardwoodFloor'))
+    makeMaterial(0x4f3827, 0.34, 0.02, createTexture('hardwoodFloor'))
   );
   floor.position.set(0, -0.2, 0);
   floor.receiveShadow = true;
   room.add(floor);
 
-  const wallMaterial = makeMaterial(0xd4cabc, 0.34, 0.01, createTexture('paintedWall'));
+  const wallMaterial = makeMaterial(0x594431, 0.36, 0.01, createTexture('paintedWall'));
   [
     { position: [0, 8, -29], size: [56, 16, 0.5] },
     { position: [-28, 8, 0], size: [0.5, 16, 58] },
@@ -1682,7 +1682,7 @@ function addCasa1Interior(scene, textures) {
 
   addImmersiveStudyRoom(room, textures);
 
-  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xe3ded2, 0.42, 0, createTexture('quietCeiling')));
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0x2f271f, 0.42, 0, createTexture('quietCeiling')));
   ceiling.position.set(0, 16, 0);
   ceiling.receiveShadow = true;
   room.add(ceiling);
@@ -1712,9 +1712,13 @@ function addCasa1Interior(scene, textures) {
   screenSurface.position.set(0, 8.5, -28.25);
   room.add(screenSurface);
 
-  const keyLight = new THREE.PointLight(0xffffff, 1.85, 42, 1.9);
-  keyLight.position.set(0, 12, 0);
+  const keyLight = new THREE.PointLight(0xffd29c, 1.55, 42, 1.9);
+  keyLight.position.set(0, 11, -4);
   room.add(keyLight);
+
+  const screenBounce = new THREE.PointLight(0xb9d7df, 0.75, 34, 2.1);
+  screenBounce.position.set(0, 7.5, -18);
+  room.add(screenBounce);
 
   scene.add(room);
   return { canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentPlatformId: '' };
@@ -1724,13 +1728,13 @@ function addImmersiveStudyRoom(room, textures) {
   addAssetRoomStructure(room, textures);
   addAssetScreenZone(room);
   addAssetControlConsole(room);
-  addAssetStudyLibrary(room);
-  addAssetFocusLounge(room);
-  addAssetLightingPlantsAndProps(room);
+  addAssetLibraryWalls(room);
+  addAssetCinemaLounge(room);
+  addAssetStudyDecor(room);
 }
 
 function addAssetRoomStructure(room, textures) {
-  const baseboardMaterial = makeMaterial(0x3c3f38, 0.24, 0.02, textures.blackStripe);
+  const baseboardMaterial = makeMaterial(0x241b15, 0.22, 0.02, textures.wood);
   [
     { position: [0, 0.55, -28.68], size: [52, 0.34, 0.16] },
     { position: [0, 0.55, 28.68], size: [52, 0.34, 0.16] },
@@ -1749,18 +1753,19 @@ function addAssetScreenZone(room) {
   const interiorFolder = 'house-interior-pack';
   const kenneyPath = 'models/vendor/kenney/furniture-kit';
   [
-    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'screen-left-equipment-rack', position: [-22.6, 0, -24.3], rotation: [0, Math.PI * 0.08, 0], targetSize: 3.1, outlineOpacity: 0.24 },
-    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'screen-right-equipment-rack', position: [22.6, 0, -24.3], rotation: [0, -Math.PI * 0.08, 0], targetSize: 3.1, outlineOpacity: 0.24 },
-    { basePath: kenneyPath, file: 'speaker.glb', name: 'kenney-screen-left-speaker', position: [-18.4, 0, -22.8], rotation: [0, 0.25, 0], targetSize: 1.65, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'speaker.glb', name: 'kenney-screen-right-speaker', position: [18.4, 0, -22.8], rotation: [0, -0.25, 0], targetSize: 1.65, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'speakerSmall.glb', name: 'kenney-screen-left-small-speaker', position: [-15.9, 0, -23.0], rotation: [0, 0.12, 0], targetSize: 1.0, outlineOpacity: 0.2 },
-    { basePath: kenneyPath, file: 'speakerSmall.glb', name: 'kenney-screen-right-small-speaker', position: [15.9, 0, -23.0], rotation: [0, -0.12, 0], targetSize: 1.0, outlineOpacity: 0.2 },
-    { folder: interiorFolder, file: 'Round Rug.glb', name: 'screen-presentation-rug', position: [0, 0.04, -22.4], rotation: [0, 0.08, 0], targetSize: 6.2, outlineOpacity: 0.16 },
-    { basePath: kenneyPath, file: 'rugRectangle.glb', name: 'kenney-screen-runner-rug', position: [0, 0.05, -18.0], rotation: [0, Math.PI / 2, 0], targetSize: 5.1, scale: 1.3, outlineOpacity: 0.14 },
-    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'screen-left-reference-case', position: [-25.0, 0, -15.2], rotation: [0, Math.PI / 2, 0], targetSize: 3.25, outlineOpacity: 0.24 },
-    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'screen-right-reference-case', position: [25.0, 0, -15.2], rotation: [0, -Math.PI / 2, 0], targetSize: 3.25, outlineOpacity: 0.24 },
-    { basePath: kenneyPath, file: 'paneling.glb', name: 'kenney-left-screen-wall-panel', position: [-17.8, 5.3, -28.55], rotation: [0, 0, 0], targetSize: 3.8, scale: 1.25, outlineOpacity: 0.16 },
-    { basePath: kenneyPath, file: 'paneling.glb', name: 'kenney-right-screen-wall-panel', position: [17.8, 5.3, -28.55], rotation: [0, 0, 0], targetSize: 3.8, scale: 1.25, outlineOpacity: 0.16 }
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'library-screen-left-tower', position: [-23.7, 0, -25.2], rotation: [0, 0, 0], targetSize: 4.35, outlineOpacity: 0.22 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'library-screen-right-tower', position: [23.7, 0, -25.2], rotation: [0, 0, 0], targetSize: 4.35, outlineOpacity: 0.22 },
+    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'screen-left-equipment-rack', position: [-19.0, 0, -23.4], rotation: [0, 0.05, 0], targetSize: 2.65, outlineOpacity: 0.22 },
+    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'screen-right-equipment-rack', position: [19.0, 0, -23.4], rotation: [0, -0.05, 0], targetSize: 2.65, outlineOpacity: 0.22 },
+    { basePath: kenneyPath, file: 'speaker.glb', name: 'screen-left-floor-speaker', position: [-16.4, 0, -23.2], rotation: [0, 0.1, 0], targetSize: 1.35, outlineOpacity: 0.2 },
+    { basePath: kenneyPath, file: 'speaker.glb', name: 'screen-right-floor-speaker', position: [16.4, 0, -23.2], rotation: [0, -0.1, 0], targetSize: 1.35, outlineOpacity: 0.2 },
+    { basePath: kenneyPath, file: 'speakerSmall.glb', name: 'screen-left-nearfield-speaker', position: [-12.8, 0, -23.55], rotation: [0, 0.08, 0], targetSize: 0.86, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'speakerSmall.glb', name: 'screen-right-nearfield-speaker', position: [12.8, 0, -23.55], rotation: [0, -0.08, 0], targetSize: 0.86, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'cabinetTelevision.glb', name: 'screen-low-media-console', position: [0, 0, -23.85], rotation: [0, 0, 0], targetSize: 2.4, outlineOpacity: 0.2 },
+    { basePath: kenneyPath, file: 'rugRectangle.glb', name: 'screen-room-main-rug', position: [0, 0.05, -15.4], rotation: [0, Math.PI / 2, 0], targetSize: 8.4, scale: 1.25, outlineOpacity: 0.14 },
+    { folder: interiorFolder, file: 'Round Rug.glb', name: 'screen-front-round-rug', position: [0, 0.04, -21.1], rotation: [0, 0.02, 0], targetSize: 5.4, outlineOpacity: 0.14 },
+    { basePath: kenneyPath, file: 'paneling.glb', name: 'screen-left-wall-panel-a', position: [-17.5, 5.3, -28.55], rotation: [0, 0, 0], targetSize: 3.6, scale: 1.2, outlineOpacity: 0.14 },
+    { basePath: kenneyPath, file: 'paneling.glb', name: 'screen-right-wall-panel-a', position: [17.5, 5.3, -28.55], rotation: [0, 0, 0], targetSize: 3.6, scale: 1.2, outlineOpacity: 0.14 }
   ].forEach((asset) => addImportedAsset(room, asset));
 }
 
@@ -1769,76 +1774,78 @@ function addAssetControlConsole(room) {
   const interiorFolder = 'house-interior-pack';
   const kenneyPath = 'models/vendor/kenney/furniture-kit';
   [
-    { folder: furnitureFolder, file: 'Desk.glb', name: 'asset-control-desk', position: [-11.4, 0, -8.6], rotation: [0, 0, 0], targetSize: 3.45, outlineOpacity: 0.28 },
-    { basePath: 'models/custom', file: 'study-computer.glb', name: 'asset-control-computer', position: [-11.35, 0, -8.65], rotation: [0, Math.PI, 0], targetSize: 3.25, outlineOpacity: 0.28 },
-    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'asset-control-chair', position: [-11.4, 0, -5.55], rotation: [0, Math.PI, 0], targetSize: 1.25, outlineOpacity: 0.28 },
-    { basePath: kenneyPath, file: 'laptop.glb', name: 'kenney-control-laptop', position: [-13.1, 1.18, -8.15], rotation: [0, Math.PI, 0], targetSize: 0.95, outlineOpacity: 0.24 },
-    { basePath: kenneyPath, file: 'computerKeyboard.glb', name: 'kenney-control-keyboard', position: [-10.45, 1.18, -8.05], rotation: [0, Math.PI, 0], targetSize: 0.62, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'computerMouse.glb', name: 'kenney-control-mouse', position: [-9.65, 1.18, -8.05], rotation: [0, Math.PI, 0], targetSize: 0.34, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'radio.glb', name: 'kenney-control-radio', position: [-13.65, 1.18, -8.85], rotation: [0, -0.15, 0], targetSize: 0.7, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Trashcan.glb', name: 'asset-control-trashcan', position: [-17.2, 0, -6.4], rotation: [0, 0.1, 0], targetSize: 0.68, outlineOpacity: 0.24 },
-    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'asset-control-equipment-shelf', position: [-24.7, 0, -6.4], rotation: [0, Math.PI / 2, 0], targetSize: 3.25, outlineOpacity: 0.24 }
+    { folder: furnitureFolder, file: 'Desk.glb', name: 'control-desk-facing-screen', position: [-10.8, 0, -10.2], rotation: [0, Math.PI, 0], targetSize: 3.45, outlineOpacity: 0.26 },
+    { basePath: 'models/custom', file: 'study-computer.glb', name: 'control-computer-facing-screen', position: [-10.8, 0, -10.45], rotation: [0, 0, 0], targetSize: 3.0, outlineOpacity: 0.26 },
+    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'control-chair-facing-screen', position: [-10.8, 0, -7.15], rotation: [0, 0, 0], targetSize: 1.1, outlineOpacity: 0.22 },
+    { basePath: kenneyPath, file: 'computerKeyboard.glb', name: 'control-keyboard', position: [-10.7, 1.12, -9.25], rotation: [0, 0, 0], targetSize: 0.58, outlineOpacity: 0.2 },
+    { basePath: kenneyPath, file: 'computerMouse.glb', name: 'control-mouse', position: [-9.82, 1.12, -9.2], rotation: [0, 0.1, 0], targetSize: 0.3, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'laptop.glb', name: 'control-side-laptop', position: [-12.3, 1.12, -9.45], rotation: [0, 0.2, 0], targetSize: 0.74, outlineOpacity: 0.2 },
+    { basePath: kenneyPath, file: 'radio.glb', name: 'control-radio', position: [-12.9, 1.12, -10.35], rotation: [0, 0.1, 0], targetSize: 0.56, outlineOpacity: 0.18 },
+    { folder: interiorFolder, file: 'Trashcan.glb', name: 'control-trashcan-under-wall', position: [-16.0, 0, -8.0], rotation: [0, 0.1, 0], targetSize: 0.56, outlineOpacity: 0.18 },
+    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'control-side-equipment-shelf', position: [-25.6, 0, -4.6], rotation: [0, Math.PI / 2, 0], targetSize: 3.2, outlineOpacity: 0.22 },
+    { basePath: kenneyPath, file: 'books.glb', name: 'control-shelf-books', position: [-24.9, 2.1, -4.6], rotation: [0, Math.PI / 2, 0], targetSize: 0.55, outlineOpacity: 0.18 }
   ].forEach((asset) => addImportedAsset(room, asset));
 }
 
-function addAssetStudyLibrary(room) {
+function addAssetLibraryWalls(room) {
   const furnitureFolder = 'furniture-pack';
   const interiorFolder = 'house-interior-pack';
   const kenneyPath = 'models/vendor/kenney/furniture-kit';
   [
-    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'asset-library-left-a', position: [-25.0, 0, 7.2], rotation: [0, Math.PI / 2, 0], targetSize: 3.9, outlineOpacity: 0.24 },
-    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'asset-library-left-b', position: [-25.0, 0, 16.1], rotation: [0, Math.PI / 2, 0], targetSize: 3.65, outlineOpacity: 0.22 },
-    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'asset-library-back-a', position: [-13.5, 0, 24.8], rotation: [0, 0, 0], targetSize: 3.55, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'asset-library-right-a', position: [25.0, 0, 7.4], rotation: [0, -Math.PI / 2, 0], targetSize: 3.6, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'asset-library-right-b', position: [25.0, 0, -3.8], rotation: [0, -Math.PI / 2, 0], targetSize: 3.3, outlineOpacity: 0.22 },
-    { folder: furnitureFolder, file: 'Table.glb', name: 'asset-study-table-center', position: [4.0, 0, 5.8], rotation: [0, 0.16, 0], targetSize: 2.45, outlineOpacity: 0.24 },
-    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'asset-study-chair-center-a', position: [2.6, 0, 7.6], rotation: [0, 0.08, 0], targetSize: 1.05, outlineOpacity: 0.24 },
-    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'asset-study-chair-center-b', position: [5.7, 0, 4.1], rotation: [0, Math.PI, 0], targetSize: 1.05, outlineOpacity: 0.24 },
-    { basePath: kenneyPath, file: 'books.glb', name: 'kenney-study-books-center', position: [4.1, 1.08, 5.8], rotation: [0, -0.18, 0], targetSize: 0.62, outlineOpacity: 0.2 },
-    { basePath: kenneyPath, file: 'laptop.glb', name: 'kenney-study-laptop-center', position: [3.2, 1.08, 5.4], rotation: [0, -0.45, 0], targetSize: 0.82, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'sideTableDrawers.glb', name: 'kenney-library-drawers', position: [22.3, 0, 13.8], rotation: [0, -0.6, 0], targetSize: 1.6, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'coatRackStanding.glb', name: 'kenney-library-coat-rack', position: [-22.2, 0, 23.0], rotation: [0, 0.4, 0], targetSize: 1.25, outlineOpacity: 0.22 }
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'left-library-front-case', position: [-25.7, 0, -15.8], rotation: [0, Math.PI / 2, 0], targetSize: 3.75, outlineOpacity: 0.22 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'left-library-mid-case', position: [-25.7, 0, -5.6], rotation: [0, Math.PI / 2, 0], targetSize: 3.75, outlineOpacity: 0.22 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'left-library-back-case', position: [-25.7, 0, 7.1], rotation: [0, Math.PI / 2, 0], targetSize: 3.75, outlineOpacity: 0.22 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'left-library-lounge-case', position: [-25.7, 0, 18.6], rotation: [0, Math.PI / 2, 0], targetSize: 3.55, outlineOpacity: 0.2 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'right-library-front-case', position: [25.7, 0, -15.8], rotation: [0, -Math.PI / 2, 0], targetSize: 3.75, outlineOpacity: 0.22 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'right-library-mid-case', position: [25.7, 0, -5.6], rotation: [0, -Math.PI / 2, 0], targetSize: 3.75, outlineOpacity: 0.22 },
+    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'right-library-back-shelf', position: [25.7, 0, 7.1], rotation: [0, -Math.PI / 2, 0], targetSize: 3.45, outlineOpacity: 0.2 },
+    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'right-library-lounge-shelf', position: [25.7, 0, 18.6], rotation: [0, -Math.PI / 2, 0], targetSize: 3.35, outlineOpacity: 0.2 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'back-library-left-case', position: [-12.0, 0, 25.0], rotation: [0, Math.PI, 0], targetSize: 3.5, outlineOpacity: 0.2 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'back-library-center-case', position: [0, 0, 25.0], rotation: [0, Math.PI, 0], targetSize: 3.5, outlineOpacity: 0.2 },
+    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'back-library-right-case', position: [12.0, 0, 25.0], rotation: [0, Math.PI, 0], targetSize: 3.5, outlineOpacity: 0.2 },
+    { basePath: kenneyPath, file: 'sideTableDrawers.glb', name: 'left-library-drawer-unit', position: [-22.2, 0, 12.2], rotation: [0, Math.PI / 2, 0], targetSize: 1.45, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'sideTableDrawers.glb', name: 'right-library-drawer-unit', position: [22.2, 0, 12.2], rotation: [0, -Math.PI / 2, 0], targetSize: 1.45, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'coatRackStanding.glb', name: 'back-library-coat-rack', position: [-21.8, 0, 23.0], rotation: [0, 0.55, 0], targetSize: 1.1, outlineOpacity: 0.18 }
   ].forEach((asset) => addImportedAsset(room, asset));
 }
 
-function addAssetFocusLounge(room) {
+function addAssetCinemaLounge(room) {
   const furnitureFolder = 'furniture-pack';
   const interiorFolder = 'house-interior-pack';
   const kenneyPath = 'models/vendor/kenney/furniture-kit';
   [
-    { folder: furnitureFolder, file: 'Sofa.glb', name: 'asset-left-sofa', position: [-22.4, 0, 20.2], rotation: [0, Math.PI / 2, 0], targetSize: 3.15, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Couch Large.glb', name: 'asset-right-couch', position: [20.1, 0, 20.1], rotation: [0, -2.35, 0], targetSize: 4.1, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Round Rug.glb', name: 'asset-left-lounge-rug', position: [-18.6, 0.04, 18.3], rotation: [0, -0.25, 0], targetSize: 4.4, outlineOpacity: 0.16 },
-    { folder: interiorFolder, file: 'Round Rug.glb', name: 'asset-right-lounge-rug', position: [18.0, 0.04, 18.0], rotation: [0, 0.22, 0], targetSize: 5.0, outlineOpacity: 0.16 },
-    { basePath: kenneyPath, file: 'rugRounded.glb', name: 'kenney-center-lounge-rug', position: [0.8, 0.05, 16.2], rotation: [0, 0.06, 0], targetSize: 4.3, outlineOpacity: 0.14 },
-    { folder: furnitureFolder, file: 'Table.glb', name: 'asset-left-lounge-table', position: [-18.7, 0, 16.0], rotation: [0, 0.35, 0], targetSize: 1.35, outlineOpacity: 0.22 },
-    { folder: furnitureFolder, file: 'Table.glb', name: 'asset-right-lounge-table', position: [14.2, 0, 16.1], rotation: [0, -0.28, 0], targetSize: 1.5, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'books.glb', name: 'kenney-left-lounge-books', position: [-18.7, 1.05, 16.0], rotation: [0, 0.35, 0], targetSize: 0.56, outlineOpacity: 0.2 },
-    { basePath: kenneyPath, file: 'tableCoffeeGlass.glb', name: 'kenney-center-coffee-table', position: [0.8, 0, 16.2], rotation: [0, 0.16, 0], targetSize: 1.85, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'loungeSofaOttoman.glb', name: 'kenney-center-ottoman', position: [0.8, 0, 19.2], rotation: [0, -0.18, 0], targetSize: 1.45, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'loungeDesignChair.glb', name: 'kenney-left-design-chair', position: [-7.2, 0, 15.4], rotation: [0, -0.45, 0], targetSize: 1.45, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'loungeDesignChair.glb', name: 'kenney-right-design-chair', position: [7.5, 0, 15.4], rotation: [0, 0.45, 0], targetSize: 1.45, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'loungeDesignSofa.glb', name: 'kenney-back-design-sofa', position: [3.4, 0, 23.0], rotation: [0, Math.PI, 0], targetSize: 2.25, outlineOpacity: 0.22 },
-    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'asset-reading-chair-a', position: [-16.2, 0, 14.5], rotation: [0, -0.72, 0], targetSize: 1.1, outlineOpacity: 0.22 },
-    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'asset-reading-chair-b', position: [12.2, 0, 13.8], rotation: [0, 0.65, 0], targetSize: 1.05, outlineOpacity: 0.22 }
+    { basePath: kenneyPath, file: 'rugRounded.glb', name: 'main-library-rug', position: [0, 0.05, 16.0], rotation: [0, 0, 0], targetSize: 7.4, scale: 1.2, outlineOpacity: 0.12 },
+    { basePath: kenneyPath, file: 'tableCoffeeGlass.glb', name: 'center-coffee-table', position: [0, 0, 17.4], rotation: [0, 0, 0], targetSize: 2.05, outlineOpacity: 0.2 },
+    { basePath: kenneyPath, file: 'loungeDesignSofa.glb', name: 'back-sofa-facing-screen', position: [0, 0, 22.0], rotation: [0, Math.PI, 0], targetSize: 3.2, outlineOpacity: 0.2 },
+    { folder: furnitureFolder, file: 'Sofa.glb', name: 'left-sofa-facing-screen', position: [-9.4, 0, 13.6], rotation: [0, -0.32, 0], targetSize: 3.0, outlineOpacity: 0.2 },
+    { folder: interiorFolder, file: 'Couch Large.glb', name: 'right-couch-facing-screen', position: [9.4, 0, 13.6], rotation: [0, 0.32, 0], targetSize: 3.45, outlineOpacity: 0.2 },
+    { basePath: kenneyPath, file: 'loungeDesignChair.glb', name: 'left-reading-chair-facing-screen', position: [-17.4, 0, 19.2], rotation: [0, -0.78, 0], targetSize: 1.35, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'loungeDesignChair.glb', name: 'right-reading-chair-facing-screen', position: [17.4, 0, 19.2], rotation: [0, 0.78, 0], targetSize: 1.35, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'loungeSofaOttoman.glb', name: 'center-ottoman', position: [0, 0, 20.0], rotation: [0, 0.06, 0], targetSize: 1.45, outlineOpacity: 0.18 },
+    { folder: furnitureFolder, file: 'Table.glb', name: 'left-side-study-table', position: [-16.2, 0, 15.4], rotation: [0, -0.35, 0], targetSize: 1.25, outlineOpacity: 0.18 },
+    { folder: furnitureFolder, file: 'Table.glb', name: 'right-side-study-table', position: [16.2, 0, 15.4], rotation: [0, 0.35, 0], targetSize: 1.25, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'books.glb', name: 'coffee-table-books', position: [-0.45, 1.0, 17.2], rotation: [0, -0.16, 0], targetSize: 0.5, outlineOpacity: 0.16 },
+    { basePath: kenneyPath, file: 'laptop.glb', name: 'right-side-table-laptop', position: [16.0, 1.05, 15.2], rotation: [0, -0.35, 0], targetSize: 0.62, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'books.glb', name: 'left-side-table-books', position: [-16.0, 1.05, 15.2], rotation: [0, 0.35, 0], targetSize: 0.48, outlineOpacity: 0.16 }
   ].forEach((asset) => addImportedAsset(room, asset));
 }
 
-function addAssetLightingPlantsAndProps(room) {
+function addAssetStudyDecor(room) {
   const interiorFolder = 'house-interior-pack';
   const kenneyPath = 'models/vendor/kenney/furniture-kit';
   [
-    { folder: interiorFolder, file: 'Houseplant.glb', name: 'asset-plant-screen-left', position: [-25.4, 0, -23.0], rotation: [0, 0.45, 0], targetSize: 0.9, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Cactus.glb', name: 'asset-plant-screen-right', position: [25.2, 0, -23.0], rotation: [0, -0.45, 0], targetSize: 0.82, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Houseplant.glb', name: 'asset-plant-back-left', position: [-25.0, 0, 23.0], rotation: [0, -0.35, 0], targetSize: 0.82, outlineOpacity: 0.2 },
-    { folder: interiorFolder, file: 'Cactus.glb', name: 'asset-plant-back-right', position: [25.0, 0, 22.5], rotation: [0, 0.3, 0], targetSize: 0.72, outlineOpacity: 0.2 },
-    { basePath: kenneyPath, file: 'pottedPlant.glb', name: 'kenney-potted-plant-left', position: [-8.6, 0, 22.6], rotation: [0, 0.28, 0], targetSize: 0.95, outlineOpacity: 0.2 },
-    { basePath: kenneyPath, file: 'plantSmall2.glb', name: 'kenney-small-plant-right', position: [10.2, 0, 22.3], rotation: [0, -0.35, 0], targetSize: 0.82, outlineOpacity: 0.2 },
-    { basePath: kenneyPath, file: 'plantSmall1.glb', name: 'kenney-console-plant', position: [-15.8, 0, -10.5], rotation: [0, 0.2, 0], targetSize: 0.72, outlineOpacity: 0.2 },
-    { basePath: kenneyPath, file: 'plantSmall3.glb', name: 'kenney-library-plant', position: [22.6, 0, -9.2], rotation: [0, -0.2, 0], targetSize: 0.8, outlineOpacity: 0.2 },
-    { basePath: kenneyPath, file: 'paneling.glb', name: 'kenney-left-wall-decor-panel', position: [-27.5, 6.1, 9.8], rotation: [0, Math.PI / 2, 0], targetSize: 3.4, outlineOpacity: 0.14 },
-    { basePath: kenneyPath, file: 'paneling.glb', name: 'kenney-right-wall-decor-panel', position: [27.5, 6.1, 10.4], rotation: [0, -Math.PI / 2, 0], targetSize: 3.4, outlineOpacity: 0.14 },
-    { basePath: kenneyPath, file: 'cabinetTelevision.glb', name: 'kenney-media-cabinet', position: [17.6, 0, -9.6], rotation: [0, -0.45, 0], targetSize: 1.9, outlineOpacity: 0.22 }
+    { basePath: kenneyPath, file: 'pottedPlant.glb', name: 'left-front-plant', position: [-22.6, 0, -23.0], rotation: [0, 0.34, 0], targetSize: 0.82, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'plantSmall3.glb', name: 'right-front-plant', position: [22.6, 0, -23.0], rotation: [0, -0.34, 0], targetSize: 0.74, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'plantSmall1.glb', name: 'control-wall-plant', position: [-20.5, 0, -8.3], rotation: [0, 0.3, 0], targetSize: 0.64, outlineOpacity: 0.16 },
+    { basePath: kenneyPath, file: 'plantSmall2.glb', name: 'right-library-floor-plant', position: [21.7, 0, -9.0], rotation: [0, -0.28, 0], targetSize: 0.7, outlineOpacity: 0.16 },
+    { folder: interiorFolder, file: 'Houseplant.glb', name: 'back-left-small-houseplant', position: [-20.5, 0, 22.6], rotation: [0, -0.28, 0], targetSize: 0.68, outlineOpacity: 0.16 },
+    { folder: interiorFolder, file: 'Houseplant.glb', name: 'back-right-small-houseplant', position: [20.5, 0, 22.6], rotation: [0, 0.28, 0], targetSize: 0.68, outlineOpacity: 0.16 },
+    { basePath: kenneyPath, file: 'paneling.glb', name: 'left-wall-study-panel-front', position: [-27.5, 5.8, -16.6], rotation: [0, Math.PI / 2, 0], targetSize: 3.2, outlineOpacity: 0.12 },
+    { basePath: kenneyPath, file: 'paneling.glb', name: 'left-wall-study-panel-back', position: [-27.5, 5.8, 13.0], rotation: [0, Math.PI / 2, 0], targetSize: 3.2, outlineOpacity: 0.12 },
+    { basePath: kenneyPath, file: 'paneling.glb', name: 'right-wall-study-panel-front', position: [27.5, 5.8, -16.6], rotation: [0, -Math.PI / 2, 0], targetSize: 3.2, outlineOpacity: 0.12 },
+    { basePath: kenneyPath, file: 'paneling.glb', name: 'right-wall-study-panel-back', position: [27.5, 5.8, 13.0], rotation: [0, -Math.PI / 2, 0], targetSize: 3.2, outlineOpacity: 0.12 },
+    { basePath: kenneyPath, file: 'computerScreen.glb', name: 'right-library-status-screen', position: [24.0, 1.05, -3.8], rotation: [0, -Math.PI / 2, 0], targetSize: 0.9, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'radio.glb', name: 'left-lounge-radio', position: [-16.5, 1.05, 15.8], rotation: [0, 0.2, 0], targetSize: 0.48, outlineOpacity: 0.16 }
   ].forEach((asset) => addImportedAsset(room, asset));
 }
 
