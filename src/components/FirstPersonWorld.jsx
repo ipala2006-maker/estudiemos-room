@@ -9,6 +9,10 @@ const houseDoorPosition = activeMap.entrancePosition;
 const computerPosition = activeMap.computerPosition;
 const toonGradient = createToonGradient();
 const modelLoader = new GLTFLoader();
+const textureCache = new Map();
+const materialCache = new Map();
+const emissiveMaterialCache = new Map();
+const edgeMaterialCache = new Map();
 
 export function FirstPersonWorld({
   onDoorOpenChange,
@@ -48,13 +52,13 @@ export function FirstPersonWorld({
     camera.rotation.order = 'YXZ';
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.NoToneMapping;
     renderer.toneMappingExposure = 1;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     mount.appendChild(renderer.domElement);
 
     const ambient = new THREE.HemisphereLight(0xfffbf1, 0x4e5f52, 1.45);
@@ -63,9 +67,9 @@ export function FirstPersonWorld({
     const sun = new THREE.DirectionalLight(0xfff3d0, 3.6);
     sun.position.set(18, 24, 16);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.mapSize.set(768, 768);
     sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 70;
+    sun.shadow.camera.far = 56;
     sun.shadow.camera.left = -34;
     sun.shadow.camera.right = 34;
     sun.shadow.camera.top = 34;
@@ -702,44 +706,99 @@ function addModelNeighborhoodHouses(scene) {
 }
 
 function addModelNatureAssets(scene) {
-  const natureFolder = 'stylized-nature-megakit';
-  const treePlacements = [
-    { file: 'Tree.glb', position: [-19.5, 0, -9.8], targetSize: 6.2, rotation: [0, -0.45, 0] },
-    { file: 'Tree-aVOxaHRPWe.glb', position: [20.4, 0, -9.4], targetSize: 6.1, rotation: [0, 0.4, 0] },
-    { file: 'Pine.glb', position: [-23.4, 0, 7.6], targetSize: 5.8, rotation: [0, 0.2, 0] },
-    { file: 'Twisted Tree.glb', position: [23.2, 0, 12.8], targetSize: 6.2, rotation: [0, -0.65, 0] },
-    { file: 'Tree.glb', position: [-25.2, 0, 23], targetSize: 5.1, rotation: [0, 0.9, 0] },
-    { file: 'Pine.glb', position: [25.1, 0, 22.5], targetSize: 5.3, rotation: [0, -0.3, 0] }
-  ];
-
-  treePlacements.forEach((asset, index) => {
-    addImportedAsset(scene, {
-      ...asset,
-      folder: natureFolder,
-      name: `cc0-stylized-tree-${index + 1}`,
-      outlineOpacity: 0.36
-    });
-  });
+  [
+    { x: -19.5, z: -9.8, height: 5.9, lean: -0.08, crown: 1.05 },
+    { x: 20.4, z: -9.4, height: 5.8, lean: 0.06, crown: 1 },
+    { x: -23.4, z: 7.6, height: 5.4, lean: 0.04, crown: 0.9 },
+    { x: 23.2, z: 12.8, height: 5.7, lean: -0.1, crown: 0.98 },
+    { x: -25.2, z: 23, height: 4.9, lean: 0.05, crown: 0.82 },
+    { x: 25.1, z: 22.5, height: 5.1, lean: -0.04, crown: 0.86 }
+  ].forEach((tree) => addLightweightTree(scene, tree));
 
   [
-    { file: 'Bush with Flowers.glb', position: [-8.7, 0, 13.1], targetSize: 2.8, rotation: [0, 0.15, 0] },
-    { file: 'Bush.glb', position: [8.8, 0, 13.3], targetSize: 2.5, rotation: [0, -0.5, 0] },
-    { file: 'Flower Group.glb', position: [-3.9, 0, -13.2], targetSize: 1.55, rotation: [0, 0.3, 0] },
-    { file: 'Flower Group.glb', position: [3.9, 0, -13.1], targetSize: 1.45, rotation: [0, -0.35, 0] },
-    { file: 'Grass.glb', position: [5.2, 0, -14.4], targetSize: 1.7, rotation: [0, -0.2, 0] },
-    { file: 'Tall Grass.glb', position: [-25.8, 0, -3.6], targetSize: 2, rotation: [0, 0.4, 0] },
-    { file: 'Rock Path Round Wide.glb', position: [-5.6, 0, 8.6], targetSize: 1.8, rotation: [0, 0.2, 0] },
-    { file: 'Pebble Round.glb', position: [5.5, 0, 7.9], targetSize: 1.35, rotation: [0, -0.25, 0] },
-    { file: 'Rock Medium.glb', position: [22.8, 0, 5.2], targetSize: 2, rotation: [0, -0.4, 0] },
-    { file: 'Pebble Round.glb', position: [-23, 0, 17], targetSize: 1.45, rotation: [0, 0.1, 0] }
-  ].forEach((asset, index) => {
-    addImportedAsset(scene, {
-      ...asset,
-      folder: natureFolder,
-      name: `cc0-nature-detail-${index + 1}`,
-      outlineOpacity: 0.3
-    });
+    { x: -8.7, z: 13.1, scale: 1.25, flowers: true },
+    { x: 8.8, z: 13.3, scale: 1.1, flowers: false },
+    { x: -3.9, z: -13.2, scale: 0.82, flowers: true },
+    { x: 3.9, z: -13.1, scale: 0.76, flowers: true },
+    { x: -25.8, z: -3.6, scale: 0.95, flowers: false }
+  ].forEach((bush) => addLightweightBush(scene, bush));
+
+  [
+    { x: -5.6, z: 8.6, scale: 1.05 },
+    { x: 5.5, z: 7.9, scale: 0.8 },
+    { x: 22.8, z: 5.2, scale: 1 },
+    { x: -23, z: 17, scale: 0.82 }
+  ].forEach((rock) => addLightweightRock(scene, rock));
+}
+
+function addLightweightTree(scene, { x, z, height, lean, crown }) {
+  const trunkMaterial = makeMaterial(0x4b3c32, 0.34);
+  const leafMaterial = makeMaterial(0x5e7f63, 0.28);
+  const leafAccentMaterial = makeMaterial(0x819879, 0.3);
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+
+  const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.72, height * 0.62, 0.72), trunkMaterial);
+  trunk.position.y = height * 0.31;
+  trunk.rotation.z = lean;
+  trunk.castShadow = true;
+  group.add(trunk);
+
+  [
+    { pos: [-0.35, height * 0.68, 0], scale: [1.6, 1.05, 1.45], material: leafMaterial },
+    { pos: [0.42, height * 0.82, -0.15], scale: [1.45, 1, 1.35], material: leafAccentMaterial },
+    { pos: [0, height * 0.98, 0.12], scale: [1.2, 0.88, 1.12], material: leafMaterial }
+  ].forEach((leaf) => {
+    const crownMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(crown, 0), leaf.material);
+    crownMesh.position.set(...leaf.pos);
+    crownMesh.scale.set(...leaf.scale);
+    crownMesh.castShadow = true;
+    group.add(crownMesh);
   });
+
+  scene.add(group);
+  addGroupEdges(group, 0x111622, 0.22);
+}
+
+function addLightweightBush(scene, { x, z, scale, flowers }) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  const bushMaterial = makeMaterial(0x667f5d, 0.32);
+  const accentMaterial = makeMaterial(0x84936d, 0.34);
+  [
+    { pos: [-0.42, 0.55, 0], s: [0.9, 0.55, 0.8], material: bushMaterial },
+    { pos: [0.38, 0.62, 0.12], s: [0.78, 0.62, 0.72], material: accentMaterial },
+    { pos: [0.02, 0.88, -0.18], s: [0.65, 0.48, 0.58], material: bushMaterial }
+  ].forEach((part) => {
+    const mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(scale, 0), part.material);
+    mesh.position.set(...part.pos);
+    mesh.scale.set(...part.s);
+    mesh.castShadow = true;
+    group.add(mesh);
+  });
+
+  if (flowers) {
+    [-0.42, 0.12, 0.48].forEach((offset, index) => {
+      const flower = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), makeMaterial(index % 2 === 0 ? 0xb88c7a : 0xd7c28a, 0.4));
+      flower.position.set(offset, 1.05 + index * 0.03, 0.28 - index * 0.2);
+      flower.castShadow = true;
+      group.add(flower);
+    });
+  }
+
+  scene.add(group);
+  addGroupEdges(group, 0x111622, 0.2);
+}
+
+function addLightweightRock(scene, { x, z, scale }) {
+  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(scale, 0), makeMaterial(0x8f8777, 0.42));
+  rock.position.set(x, scale * 0.34, z);
+  rock.scale.set(1.35, 0.46, 0.9);
+  rock.rotation.set(0.1, x * 0.05, -0.05);
+  rock.castShadow = true;
+  rock.receiveShadow = true;
+  scene.add(rock);
+  addEdges(rock, 0x5d5a52, 0.2);
 }
 
 function addExteriorApproachDressing(scene, textures) {
@@ -1433,14 +1492,17 @@ function addCasa1Interior(scene, textures) {
   screenSurface.position.set(0, 8.5, -28.25);
   room.add(screenSurface);
 
-  const keyLight = new THREE.PointLight(0xffffff, 2.8, 46, 1.7);
+  const keyLight = new THREE.PointLight(0xffffff, 1.85, 42, 1.9);
   keyLight.position.set(0, 12, 0);
   room.add(keyLight);
 
   [-18, 0, 18].forEach((x) => {
-    const stripLight = new THREE.PointLight(x === 0 ? 0xf0dfbf : 0xcfd8d2, 0.85, 22, 2.2);
-    stripLight.position.set(x, 13.8, -14);
-    room.add(stripLight);
+    const stripGlow = new THREE.Mesh(
+      new THREE.BoxGeometry(5.8, 0.08, 0.42),
+      makeEmissiveMaterial(x === 0 ? 0xf0dfbf : 0xcfd8d2, 0.18)
+    );
+    stripGlow.position.set(x, 13.8, -14);
+    room.add(stripGlow);
   });
 
   scene.add(room);
@@ -1975,14 +2037,14 @@ function addImportedCasa1InteriorAssets(room) {
   ].forEach((asset) => addImportedAsset(room, asset));
 
   [
-    { position: [-11.4, 2.65, -8.6], color: 0xd9c7a6, intensity: 0.95 },
-    { position: [-23.4, 4.2, 17.2], color: 0xf0dfbf, intensity: 0.7 },
-    { position: [14.3, 2.35, 16.3], color: 0xcfd8d2, intensity: 0.55 },
-    { position: [18.8, 3.1, 20], color: 0xf0dfbf, intensity: 0.55 }
+    { position: [-11.4, 2.65, -8.6], color: 0xd9c7a6, size: [1.3, 0.06, 0.32] },
+    { position: [-23.4, 4.2, 17.2], color: 0xf0dfbf, size: [0.72, 0.06, 0.32] },
+    { position: [14.3, 2.35, 16.3], color: 0xcfd8d2, size: [0.64, 0.06, 0.3] },
+    { position: [18.8, 3.1, 20], color: 0xf0dfbf, size: [0.72, 0.06, 0.32] }
   ].forEach((light) => {
-    const point = new THREE.PointLight(light.color, light.intensity, 10, 2.4);
-    point.position.set(...light.position);
-    room.add(point);
+    const glow = new THREE.Mesh(new THREE.BoxGeometry(...light.size), makeEmissiveMaterial(light.color, 0.26));
+    glow.position.set(...light.position);
+    room.add(glow);
   });
 }
 
@@ -2118,8 +2180,10 @@ function addTechMonitor(group, x, y, z, rotationZ, scale) {
   display.scale.setScalar(scale);
   group.add(display);
 
-  const glow = new THREE.PointLight(0x38d8ff, 0.38, 6, 2);
-  glow.position.set(x, y, z + 0.8);
+  const glow = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.08, 0.05), makeEmissiveMaterial(0x38d8ff, 0.3));
+  glow.position.set(x, y - 0.72, z + 0.12);
+  glow.rotation.z = rotationZ;
+  glow.scale.setScalar(scale);
   group.add(glow);
 
   for (let i = 0; i < 4; i += 1) {
@@ -2724,22 +2788,32 @@ function createGroundShapeMesh(points, color) {
 }
 
 function makeMaterial(color, roughness, metalness = 0, texture = null) {
-  return new THREE.MeshToonMaterial({
+  const key = `${color}-${roughness}-${metalness}-${texture?.uuid ?? 'flat'}`;
+  if (materialCache.has(key)) return materialCache.get(key);
+
+  const material = new THREE.MeshToonMaterial({
     color,
     gradientMap: toonGradient,
     map: texture,
     dithering: true
   });
+  materialCache.set(key, material);
+  return material;
 }
 
 function makeEmissiveMaterial(color, intensity = 0.6) {
-  return new THREE.MeshStandardMaterial({
+  const key = `${color}-${intensity}`;
+  if (emissiveMaterialCache.has(key)) return emissiveMaterialCache.get(key);
+
+  const material = new THREE.MeshStandardMaterial({
     color,
     emissive: color,
     emissiveIntensity: intensity,
     roughness: 0.18,
     metalness: 0
   });
+  emissiveMaterialCache.set(key, material);
+  return material;
 }
 
 function addGroupEdges(group, color, opacity) {
@@ -2750,12 +2824,17 @@ function addGroupEdges(group, color, opacity) {
 
 function addEdges(mesh, color, opacity) {
   const geometry = new THREE.EdgesGeometry(mesh.geometry, 25);
-  const material = new THREE.LineBasicMaterial({
-    color,
-    transparent: true,
-    opacity,
-    depthWrite: false
-  });
+  const key = `${color}-${opacity}`;
+  let material = edgeMaterialCache.get(key);
+  if (!material) {
+    material = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      depthWrite: false
+    });
+    edgeMaterialCache.set(key, material);
+  }
   const edges = new THREE.LineSegments(geometry, material);
   edges.position.copy(mesh.position);
   edges.rotation.copy(mesh.rotation);
@@ -2766,6 +2845,8 @@ function addEdges(mesh, color, opacity) {
 }
 
 function createTexture(type) {
+  if (textureCache.has(type)) return textureCache.get(type);
+
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 128;
@@ -2800,6 +2881,7 @@ function createTexture(type) {
   }[type] ?? [4, 4];
   texture.repeat.set(repeat[0], repeat[1]);
   texture.anisotropy = 4;
+  textureCache.set(type, texture);
   return texture;
 }
 
