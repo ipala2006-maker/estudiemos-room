@@ -6,13 +6,28 @@ import { Hud } from './components/Hud.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import './styles/app.css';
 
+function createEmptyScreenZone() {
+  return {
+    videoId: '',
+    inputUrl: '',
+    watchUrl: '',
+    embedUrl: '',
+    muted: true,
+    volume: 70,
+    updatedAt: 0
+  };
+}
+
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
   const [computerOpen, setComputerOpen] = useState(false);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
-  const [screenPlatformId, setScreenPlatformId] = useState('youtube');
+  const [screenZones, setScreenZones] = useState({
+    upper: createEmptyScreenZone(),
+    lower: createEmptyScreenZone()
+  });
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
 
@@ -49,6 +64,40 @@ function App() {
     setIsDoorOpen(false);
   }
 
+  function assignVideoToZone(zoneId, video) {
+    setScreenZones((current) => ({
+      ...current,
+      [zoneId]: {
+        ...current[zoneId],
+        ...video,
+        updatedAt: Date.now()
+      }
+    }));
+  }
+
+  function updateScreenZone(zoneId, patch) {
+    setScreenZones((current) => ({
+      ...current,
+      [zoneId]: {
+        ...current[zoneId],
+        ...patch,
+        updatedAt: Date.now()
+      }
+    }));
+  }
+
+  function clearScreenZone(zoneId) {
+    setScreenZones((current) => ({
+      ...current,
+      [zoneId]: {
+        ...createEmptyScreenZone(),
+        muted: current[zoneId].muted,
+        volume: current[zoneId].volume,
+        updatedAt: Date.now()
+      }
+    }));
+  }
+
   if (!hasStarted) {
     return <StartScreen onEnter={() => setHasStarted(true)} />;
   }
@@ -62,7 +111,7 @@ function App() {
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
         controlsEnabled={!computerOpen}
-        screenPlatformId={screenPlatformId}
+        screenZones={screenZones}
       />
 
       <Hud
@@ -83,8 +132,10 @@ function App() {
 
       {computerOpen && (
         <ComputerUI
-          selectedPlatformId={screenPlatformId}
-          onPlatformSelect={setScreenPlatformId}
+          screenZones={screenZones}
+          onAssignVideo={assignVideoToZone}
+          onUpdateZone={updateScreenZone}
+          onClearZone={clearScreenZone}
           onClose={() => setComputerOpen(false)}
         />
       )}

@@ -1,88 +1,167 @@
-import { CheckCircle2, Clock3, Lock, Monitor, Play, ShieldCheck, X } from 'lucide-react';
-import { useMemo } from 'react';
-import { videoPlatforms } from '../data/videoPlatforms.js';
+import { CheckCircle2, Eraser, MonitorUp, ShieldCheck, Volume2, VolumeX, X } from 'lucide-react';
+import { useState } from 'react';
+import { parseYouTubeUrl } from '../utils/youtube.js';
 
-export function ComputerUI({ onClose, onPlatformSelect, selectedPlatformId = videoPlatforms[0].id }) {
-  const selectedPlatform = useMemo(
-    () => videoPlatforms.find((platform) => platform.id === selectedPlatformId) ?? videoPlatforms[0],
-    [selectedPlatformId]
-  );
-  const isLocked = selectedPlatform.status === 'locked';
+const ZONES = [
+  {
+    id: 'upper',
+    label: 'Pantalla superior',
+    ratio: '70%',
+    description: 'Contenido principal de la sala'
+  },
+  {
+    id: 'lower',
+    label: 'Pantalla inferior',
+    ratio: '30%',
+    description: 'Apoyo, playlist o referencia secundaria'
+  }
+];
+
+export function ComputerUI({ onClose, screenZones, onAssignVideo, onClearZone, onUpdateZone }) {
+  const [drafts, setDrafts] = useState({ upper: '', lower: '' });
+  const [errors, setErrors] = useState({ upper: '', lower: '' });
+
+  function updateDraft(zoneId, value) {
+    setDrafts((current) => ({ ...current, [zoneId]: value }));
+    setErrors((current) => ({ ...current, [zoneId]: '' }));
+  }
+
+  function loadZone(zoneId) {
+    const result = parseYouTubeUrl(drafts[zoneId]);
+    if (!result.ok) {
+      setErrors((current) => ({ ...current, [zoneId]: result.error }));
+      return;
+    }
+
+    onAssignVideo(zoneId, result.video);
+    setDrafts((current) => ({ ...current, [zoneId]: '' }));
+    setErrors((current) => ({ ...current, [zoneId]: '' }));
+  }
+
+  function onSubmit(event, zoneId) {
+    event.preventDefault();
+    loadZone(zoneId);
+  }
 
   return (
     <section className="computer-overlay" aria-label="Computadora de Casa 1">
       <div className="computer-window">
         <header className="computer-topbar">
           <div>
-            <span>Casa 1 Workstation</span>
-            <h1>Centro de estudio</h1>
+            <span>Casa 1 Control Console</span>
+            <h1>Centro audiovisual</h1>
           </div>
           <button type="button" className="computer-close" onClick={onClose} aria-label="Cerrar computadora">
             <X size={22} aria-hidden="true" />
           </button>
         </header>
 
-        <div className="computer-desktop">
-          <nav className="computer-dock" aria-label="Plataformas de video">
-            <p>Fuentes</p>
-            {videoPlatforms.map((platform) => (
-              <button
-                key={platform.id}
-                type="button"
-                className={platform.id === selectedPlatform.id ? 'is-selected' : ''}
-                onClick={() => onPlatformSelect(platform.id)}
-                style={{ '--platform-accent': platform.accent }}
-              >
-                <Monitor size={22} aria-hidden="true" />
-                <span>{platform.name}</span>
-              </button>
-            ))}
-          </nav>
+        <div className="computer-desktop computer-desktop-control">
+          <aside className="control-status-panel" aria-label="Estado general">
+            <div className="control-status-card">
+              <MonitorUp size={28} aria-hidden="true" />
+              <div>
+                <span>Sistema</span>
+                <strong>Pantalla 70/30</strong>
+              </div>
+            </div>
+            <div className="control-status-list">
+              {ZONES.map((zone) => {
+                const current = screenZones[zone.id];
+                return (
+                  <div className="control-status-row" key={zone.id}>
+                    <span>{zone.label}</span>
+                    <strong>{current.videoId ? 'Video asignado' : 'Sin video'}</strong>
+                  </div>
+                );
+              })}
+            </div>
+            <p>
+              Pegá un link de YouTube, elegí la zona y la sala proyecta cada video de forma independiente.
+            </p>
+          </aside>
 
-          <main className="computer-app" style={{ '--platform-accent': selectedPlatform.accent }}>
+          <main className="computer-app computer-control-app">
             <div className="app-title">
-              <span>{isLocked ? 'Acceso restringido' : 'Fuente preparada'}</span>
-              <h2>{selectedPlatform.name}</h2>
-              <p>{selectedPlatform.description}</p>
+              <span>Consola de sala</span>
+              <h2>Control de pantalla gigante</h2>
+              <p>
+                Dos canales independientes para armar una sesión de estudio con contenido principal y apoyo visual.
+              </p>
             </div>
 
-            <div className="video-app-panel">
-              <div className="video-app-summary">
-                <div className="video-app-icon">
-                  {isLocked ? <Lock size={44} aria-hidden="true" /> : <Play size={44} aria-hidden="true" />}
-                </div>
-                <div>
-                  <h3>{isLocked ? 'Integracion no disponible' : 'Sesion lista para configurar'}</h3>
-                  <p>{selectedPlatform.note}</p>
-                </div>
-              </div>
+            <div className="screen-zone-grid">
+              {ZONES.map((zone) => {
+                const current = screenZones[zone.id];
+                const hasVideo = Boolean(current.videoId);
 
-              <div className="source-details" aria-label="Estado de la fuente">
-                <div className="source-detail">
-                  <Monitor size={18} aria-hidden="true" />
-                  <span>Fuente</span>
-                  <strong>{selectedPlatform.name}</strong>
-                </div>
-                <div className="source-detail">
-                  {isLocked ? <Lock size={18} aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
-                  <span>Estado</span>
-                  <strong>{isLocked ? 'Restringido' : 'Preparado'}</strong>
-                </div>
-                <div className="source-detail">
-                  <Clock3 size={18} aria-hidden="true" />
-                  <span>Uso sugerido</span>
-                  <strong>{isLocked ? 'Solo referencia' : 'Sesion de foco'}</strong>
-                </div>
-                <div className="source-detail">
-                  <ShieldCheck size={18} aria-hidden="true" />
-                  <span>Control</span>
-                  <strong>Contenido curado</strong>
-                </div>
-              </div>
+                return (
+                  <form className="screen-zone-card" key={zone.id} onSubmit={(event) => onSubmit(event, zone.id)}>
+                    <header className="screen-zone-header">
+                      <div>
+                        <span>{zone.ratio}</span>
+                        <h3>{zone.label}</h3>
+                        <p>{zone.description}</p>
+                      </div>
+                      <div className={hasVideo ? 'zone-state is-ready' : 'zone-state'}>
+                        {hasVideo ? <CheckCircle2 size={16} aria-hidden="true" /> : <ShieldCheck size={16} aria-hidden="true" />}
+                        <span>{hasVideo ? 'Activo' : 'Libre'}</span>
+                      </div>
+                    </header>
 
-              <button type="button" className="video-app-action" disabled={isLocked}>
-                {isLocked ? 'No disponible' : 'Preparar sesion'}
-              </button>
+                    <label className="youtube-input-label" htmlFor={`${zone.id}-youtube-url`}>
+                      Link de YouTube
+                    </label>
+                    <div className="youtube-input-row">
+                      <input
+                        id={`${zone.id}-youtube-url`}
+                        type="text"
+                        inputMode="url"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        value={drafts[zone.id]}
+                        onChange={(event) => updateDraft(zone.id, event.target.value)}
+                      />
+                      <button type="submit" className="video-app-action">
+                        Cargar
+                      </button>
+                    </div>
+                    {errors[zone.id] && <p className="screen-zone-error">{errors[zone.id]}</p>}
+
+                    <div className="zone-current-video" aria-live="polite">
+                      <span>Video asignado</span>
+                      <strong>{hasVideo ? current.videoId : 'Ninguno'}</strong>
+                      {hasVideo && <small>{current.watchUrl}</small>}
+                    </div>
+
+                    <div className="zone-controls" aria-label={`Controles de ${zone.label}`}>
+                      <label>
+                        <span>Volumen</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={current.volume}
+                          onChange={(event) => onUpdateZone(zone.id, { volume: Number(event.target.value) })}
+                        />
+                        <strong>{current.volume}%</strong>
+                      </label>
+                      <button
+                        type="button"
+                        className="zone-icon-button"
+                        onClick={() => onUpdateZone(zone.id, { muted: !current.muted })}
+                        aria-pressed={current.muted}
+                      >
+                        {current.muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
+                        <span>{current.muted ? 'Muted' : 'Audio'}</span>
+                      </button>
+                      <button type="button" className="zone-icon-button" onClick={() => onClearZone(zone.id)}>
+                        <Eraser size={18} aria-hidden="true" />
+                        <span>Limpiar</span>
+                      </button>
+                    </div>
+                  </form>
+                );
+              })}
             </div>
           </main>
         </div>

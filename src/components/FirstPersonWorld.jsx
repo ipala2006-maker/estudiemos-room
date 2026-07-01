@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Casa1 } from '../maps/Casa1.js';
+import { buildYouTubeEmbedUrl } from '../utils/youtube.js';
 
 const activeMap = Casa1;
 const startPosition = activeMap.startPosition;
@@ -17,6 +18,15 @@ const PLAYER_RADIUS = 0.58;
 const WALK_SPEED = 9.6;
 const WALK_ACCELERATION = 18;
 const WALK_DECELERATION = 24;
+const GIANT_SCREEN_WORLD = {
+  center: new THREE.Vector3(90, 8.5, -34.25),
+  width: 34.6,
+  height: 12.8
+};
+const DEFAULT_SCREEN_ZONES = {
+  upper: { videoId: '', embedUrl: '', muted: true, volume: 70, updatedAt: 0 },
+  lower: { videoId: '', embedUrl: '', muted: true, volume: 70, updatedAt: 0 }
+};
 
 export function FirstPersonWorld({
   onDoorOpenChange,
@@ -25,14 +35,16 @@ export function FirstPersonWorld({
   resetRef,
   toggleDoorRef,
   controlsEnabled = true,
-  screenPlatformId = 'youtube'
+  screenZones = DEFAULT_SCREEN_ZONES
 }) {
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
   const nearComputerRef = useRef(false);
   const doorOpenRef = useRef(false);
   const controlsEnabledRef = useRef(controlsEnabled);
-  const screenPlatformRef = useRef(screenPlatformId);
+  const screenZonesRef = useRef(screenZones);
+  const screenOverlayRef = useRef({ visible: false, rect: null });
+  const [screenOverlay, setScreenOverlay] = useState({ visible: false, rect: null });
 
   useEffect(() => {
     controlsEnabledRef.current = controlsEnabled;
@@ -42,8 +54,12 @@ export function FirstPersonWorld({
   }, [controlsEnabled]);
 
   useEffect(() => {
-    screenPlatformRef.current = screenPlatformId;
-  }, [screenPlatformId]);
+    screenZonesRef.current = screenZones;
+  }, [screenZones]);
+
+  useEffect(() => {
+    screenOverlayRef.current = screenOverlay;
+  }, [screenOverlay]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -269,7 +285,12 @@ export function FirstPersonWorld({
         }
       }
 
-      updateGiantScreen(giantScreen, screenPlatformRef.current);
+      updateGiantScreen(giantScreen, screenZonesRef.current);
+      syncScreenOverlay(
+        calculateGiantScreenOverlay(camera, mount, doorOpenRef.current),
+        screenOverlayRef,
+        setScreenOverlay
+      );
 
       const nearDoor = doorOpenRef.current
         ? camera.position.distanceTo(activeMap.interiorExitPosition) < 4.5
@@ -305,7 +326,93 @@ export function FirstPersonWorld({
     };
   }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, resetRef, toggleDoorRef]);
 
-  return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
+  return (
+    <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona">
+      {screenOverlay.visible && (
+        <div className="giant-screen-video-layer" style={screenOverlay.rect} aria-hidden="true">
+          <YouTubeScreenSlot zone={screenZones.upper} className="upper" title="Video superior de YouTube" />
+          <YouTubeScreenSlot zone={screenZones.lower} className="lower" title="Video inferior de YouTube" />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function YouTubeScreenSlot({ zone, className, title }) {
+  const src = buildYouTubeEmbedUrl(zone);
+  if (!src) return <div className={`giant-screen-video-slot ${className}`} />;
+
+  return (
+    <iframe
+      key={`${zone.videoId}-${zone.muted}`}
+      className={`giant-screen-video-slot ${className}`}
+      src={src}
+      title={title}
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerPolicy="strict-origin-when-cross-origin"
+      allowFullScreen
+    />
+  );
+}
+
+function calculateGiantScreenOverlay(camera, mount, isInterior) {
+  if (!isInterior || !mount) return { visible: false, rect: null };
+
+  const centerToCamera = GIANT_SCREEN_WORLD.center.clone().sub(camera.position);
+  const cameraForward = new THREE.Vector3();
+  camera.getWorldDirection(cameraForward);
+  if (centerToCamera.dot(cameraForward) <= 0) return { visible: false, rect: null };
+
+  const halfWidth = GIANT_SCREEN_WORLD.width / 2;
+  const halfHeight = GIANT_SCREEN_WORLD.height / 2;
+  const corners = [
+    new THREE.Vector3(GIANT_SCREEN_WORLD.center.x - halfWidth, GIANT_SCREEN_WORLD.center.y + halfHeight, GIANT_SCREEN_WORLD.center.z),
+    new THREE.Vector3(GIANT_SCREEN_WORLD.center.x + halfWidth, GIANT_SCREEN_WORLD.center.y + halfHeight, GIANT_SCREEN_WORLD.center.z),
+    new THREE.Vector3(GIANT_SCREEN_WORLD.center.x + halfWidth, GIANT_SCREEN_WORLD.center.y - halfHeight, GIANT_SCREEN_WORLD.center.z),
+    new THREE.Vector3(GIANT_SCREEN_WORLD.center.x - halfWidth, GIANT_SCREEN_WORLD.center.y - halfHeight, GIANT_SCREEN_WORLD.center.z)
+  ].map((point) => point.project(camera));
+
+  if (corners.every((point) => point.z < -1 || point.z > 1)) return { visible: false, rect: null };
+
+  const viewportWidth = mount.clientWidth;
+  const viewportHeight = mount.clientHeight;
+  const xs = corners.map((point) => (point.x * 0.5 + 0.5) * viewportWidth);
+  const ys = corners.map((point) => (-point.y * 0.5 + 0.5) * viewportHeight);
+  const left = Math.round(Math.max(0, Math.min(...xs)));
+  const top = Math.round(Math.max(0, Math.min(...ys)));
+  const right = Math.round(Math.min(viewportWidth, Math.max(...xs)));
+  const bottom = Math.round(Math.min(viewportHeight, Math.max(...ys)));
+  const width = right - left;
+  const height = bottom - top;
+
+  if (width < 120 || height < 70) return { visible: false, rect: null };
+
+  return {
+    visible: true,
+    rect: {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${width}px`,
+      height: `${height}px`
+    }
+  };
+}
+
+function syncScreenOverlay(nextOverlay, overlayRef, setScreenOverlay) {
+  const previous = overlayRef.current;
+  const previousRect = previous.rect ?? {};
+  const nextRect = nextOverlay.rect ?? {};
+  const changed =
+    previous.visible !== nextOverlay.visible ||
+    previousRect.left !== nextRect.left ||
+    previousRect.top !== nextRect.top ||
+    previousRect.width !== nextRect.width ||
+    previousRect.height !== nextRect.height;
+
+  if (!changed) return;
+
+  overlayRef.current = nextOverlay;
+  setScreenOverlay(nextOverlay);
 }
 
 function buildWorldScene(scene) {
@@ -372,7 +479,7 @@ function createWorldColliders() {
     ],
     interior: [
       interiorCollider(0, -28.3, 39, 3.6),
-      interiorCollider(-11.4, -8.6, 5.2, 3.4)
+      interiorCollider(-11.4, -8.6, 4.8, 2.6)
     ]
   };
 }
@@ -1709,18 +1816,17 @@ function addCasa1Interior(scene, textures) {
   room.add(screenBounce);
 
   scene.add(room);
-  return { canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentPlatformId: '' };
+  return { canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentScreenStateKey: '' };
 }
 
 function addFunctionalComputerStation(room) {
   const furnitureFolder = 'furniture-pack';
   const kenneyPath = 'models/vendor/kenney/furniture-kit';
   [
-    { folder: furnitureFolder, file: 'Desk.glb', name: 'functional-computer-desk', position: [-11.4, 0, -8.6], rotation: [0, Math.PI, 0], targetSize: 3.35, outlineOpacity: 0.26 },
-    { basePath: 'models/custom', file: 'study-computer.glb', name: 'functional-study-computer', position: [-11.4, 0, -8.82], rotation: [0, 0, 0], targetSize: 3.0, outlineOpacity: 0.26 },
-    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'functional-computer-chair', position: [-11.4, 0, -5.8], rotation: [0, 0, 0], targetSize: 1.05, outlineOpacity: 0.22 },
-    { basePath: kenneyPath, file: 'computerKeyboard.glb', name: 'functional-computer-keyboard', position: [-11.3, 1.12, -7.75], rotation: [0, 0, 0], targetSize: 0.58, outlineOpacity: 0.18 },
-    { basePath: kenneyPath, file: 'computerMouse.glb', name: 'functional-computer-mouse', position: [-10.45, 1.12, -7.7], rotation: [0, 0.1, 0], targetSize: 0.3, outlineOpacity: 0.16 }
+    { folder: furnitureFolder, file: 'Desk.glb', name: 'functional-computer-desk', position: [-11.4, 0, -8.6], rotation: [0, Math.PI, 0], targetSize: 3.18, outlineOpacity: 0.26 },
+    { basePath: 'models/custom', file: 'study-computer.glb', name: 'functional-study-computer', position: [-11.4, 0, -8.8], rotation: [0, 0, 0], targetSize: 2.82, outlineOpacity: 0.26 },
+    { basePath: kenneyPath, file: 'computerKeyboard.glb', name: 'functional-computer-keyboard', position: [-11.3, 1.08, -7.72], rotation: [0, 0, 0], targetSize: 0.54, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'computerMouse.glb', name: 'functional-computer-mouse', position: [-10.48, 1.08, -7.68], rotation: [0, 0.1, 0], targetSize: 0.28, outlineOpacity: 0.16 }
   ].forEach((asset) => addImportedAsset(room, asset));
 }
 
@@ -1820,128 +1926,128 @@ function addWindowFrame(group, x, y, z) {
   });
 }
 
-function updateGiantScreen(giantScreen, platformId) {
-  if (giantScreen.currentPlatformId === platformId) return;
-  giantScreen.currentPlatformId = platformId;
+function updateGiantScreen(giantScreen, screenZones) {
+  const stateKey = JSON.stringify({
+    upper: {
+      videoId: screenZones.upper.videoId,
+      muted: screenZones.upper.muted,
+      volume: screenZones.upper.volume,
+      updatedAt: screenZones.upper.updatedAt
+    },
+    lower: {
+      videoId: screenZones.lower.videoId,
+      muted: screenZones.lower.muted,
+      volume: screenZones.lower.volume,
+      updatedAt: screenZones.lower.updatedAt
+    }
+  });
+
+  if (giantScreen.currentScreenStateKey === stateKey) return;
+  giantScreen.currentScreenStateKey = stateKey;
 
   const ctx = giantScreen.context;
   const width = giantScreen.canvas.width;
   const height = giantScreen.canvas.height;
-  const platform = getPlatformScreenState(platformId);
-  const primaryContent = platform.primaryContent ?? activeMap.screenChannels.primaryContent;
-  const secondaryContent = platform.secondaryContent ?? activeMap.screenChannels.secondaryContent;
   const splitY = Math.round(height * 0.7);
 
-  ctx.fillStyle = platform.background;
+  ctx.fillStyle = '#111817';
   ctx.fillRect(0, 0, width, height);
 
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, 'rgba(255,255,255,0.28)');
-  gradient.addColorStop(0.42, 'rgba(255,255,255,0.04)');
-  gradient.addColorStop(1, 'rgba(0,0,0,0.42)');
+  gradient.addColorStop(0, 'rgba(185,215,223,0.18)');
+  gradient.addColorStop(0.52, 'rgba(255,255,255,0.03)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0.52)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.save();
-  ctx.translate(width * 0.62, -36);
-  ctx.rotate(-0.22);
-  ctx.fillStyle = 'rgba(255, 217, 92, 0.28)';
-  for (let i = 0; i < 9; i += 1) {
-    ctx.fillRect(i * 74, 0, 22, splitY + 110);
-  }
-  ctx.restore();
+  drawGiantScreenZone(ctx, {
+    zone: screenZones.upper,
+    x: 0,
+    y: 0,
+    width,
+    height: splitY,
+    label: activeMap.screenChannels.primaryContent.label,
+    slotLabel: 'SUPERIOR 70%',
+    accent: '#b9d7df',
+    isPrimary: true
+  });
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-  ctx.lineWidth = 3;
-  for (let x = 42; x < width; x += 96) {
-    ctx.beginPath();
-    ctx.moveTo(x, 38);
-    ctx.lineTo(x + 42, splitY - 40);
-    ctx.stroke();
-  }
+  drawGiantScreenZone(ctx, {
+    zone: screenZones.lower,
+    x: 0,
+    y: splitY,
+    width,
+    height: height - splitY,
+    label: activeMap.screenChannels.secondaryContent.label,
+    slotLabel: 'INFERIOR 30%',
+    accent: '#d7c28a',
+    isPrimary: false
+  });
 
-  ctx.fillStyle = 'rgba(17,22,34,0.62)';
-  ctx.fillRect(38, 56, 540, 86);
-  ctx.fillStyle = platform.accent;
-  ctx.fillRect(38, 56, 12, 86);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 52px system-ui, sans-serif';
-  ctx.fillText(primaryContent.label, 64, 118);
-
-  ctx.fillStyle = 'rgba(17,22,34,0.42)';
-  ctx.font = '900 86px system-ui, sans-serif';
-  ctx.fillText(platform.title, 70, 228);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 86px system-ui, sans-serif';
-  ctx.fillText(platform.title, 64, 220);
-
-  ctx.font = '700 30px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillText(platform.subtitle, 68, 270);
-
-  ctx.fillStyle = platform.accent;
+  ctx.fillStyle = '#d7c28a';
   ctx.fillRect(0, splitY - 5, width, 10);
   ctx.fillStyle = 'rgba(17,22,34,0.72)';
   ctx.fillRect(0, splitY - 2, width, 4);
 
-  ctx.fillStyle = 'rgba(17,22,34,0.44)';
-  ctx.fillRect(0, splitY, width, height - splitY);
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  for (let x = 0; x < width; x += 48) {
-    ctx.fillRect(x, splitY, 10, height - splitY);
-  }
-  ctx.fillStyle = platform.accent;
-  ctx.fillRect(0, splitY, 18, height - splitY);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 32px system-ui, sans-serif';
-  ctx.fillText(secondaryContent.label, 44, splitY + 44);
-  ctx.font = '700 24px system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.82)';
-  ctx.fillText(platform.secondaryText, 44, splitY + 78);
-
-  ctx.fillStyle = '#ffd95c';
-  ctx.fillRect(width - 178, splitY + 34, 112, 12);
-  ctx.fillStyle = platform.accent;
-  ctx.fillRect(width - 122, splitY + 58, 72, 12);
-
   giantScreen.texture.needsUpdate = true;
 }
 
-function getPlatformScreenState(platformId) {
-  if (platformId === 'netflix') {
-    return {
-      title: 'Netflix',
-      subtitle: 'Placeholder bloqueado: requiere soporte DRM',
-      secondaryText: 'Canal secundario: estado de plataforma / aviso DRM',
-      primaryContent: { label: 'Contenido principal', slot: 'upper' },
-      secondaryContent: { label: 'Contenido secundario', slot: 'lower' },
-      background: '#2b1014',
-      accent: '#e50914'
-    };
+function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel, accent, isPrimary }) {
+  const hasVideo = Boolean(zone.videoId);
+  const innerX = x + 34;
+  const innerY = y + (isPrimary ? 36 : 24);
+  const titleSize = isPrimary ? 64 : 34;
+  const bodySize = isPrimary ? 28 : 21;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, width, height);
+  ctx.clip();
+
+  ctx.fillStyle = hasVideo ? 'rgba(10,18,20,0.28)' : 'rgba(255,255,255,0.035)';
+  ctx.fillRect(x, y, width, height);
+
+  ctx.save();
+  ctx.translate(width * 0.62, y - 28);
+  ctx.rotate(-0.18);
+  ctx.fillStyle = hasVideo ? 'rgba(185, 215, 223, 0.16)' : 'rgba(215, 194, 138, 0.12)';
+  for (let i = 0; i < 10; i += 1) {
+    ctx.fillRect(i * 76, 0, 18, height + 120);
+  }
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(17,22,34,0.66)';
+  ctx.fillRect(innerX, innerY, isPrimary ? 520 : 420, isPrimary ? 74 : 48);
+  ctx.fillStyle = accent;
+  ctx.fillRect(innerX, innerY, 10, isPrimary ? 74 : 48);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `900 ${isPrimary ? 38 : 22}px system-ui, sans-serif`;
+  ctx.fillText(label, innerX + 24, innerY + (isPrimary ? 48 : 32));
+
+  ctx.fillStyle = hasVideo ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)';
+  ctx.font = `900 ${titleSize}px system-ui, sans-serif`;
+  ctx.fillText(hasVideo ? 'YOUTUBE' : 'SIN VIDEO', innerX + 3, innerY + (isPrimary ? 165 : 105));
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `900 ${titleSize}px system-ui, sans-serif`;
+  ctx.fillText(hasVideo ? 'YOUTUBE' : 'SIN VIDEO', innerX, innerY + (isPrimary ? 158 : 100));
+
+  ctx.font = `750 ${bodySize}px system-ui, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.86)';
+  if (hasVideo) {
+    ctx.fillText(`Video ID: ${zone.videoId}`, innerX, innerY + (isPrimary ? 205 : 136));
+    ctx.fillText(`${zone.muted ? 'Mute activo' : 'Audio activo'} · Volumen ${zone.volume}%`, innerX, innerY + (isPrimary ? 242 : 164));
+  } else {
+    ctx.fillText(`Canal ${slotLabel} listo para recibir YouTube`, innerX, innerY + (isPrimary ? 205 : 136));
   }
 
-  if (platformId === 'custom-video') {
-    return {
-      title: 'Video externo',
-      subtitle: 'Placeholder para futuras fuentes aprobadas',
-      secondaryText: 'Canal secundario: cola futura / metadatos / controles',
-      primaryContent: { label: 'Contenido principal', slot: 'upper' },
-      secondaryContent: { label: 'Contenido secundario', slot: 'lower' },
-      background: '#10243f',
-      accent: '#4f8cff'
-    };
-  }
+  ctx.fillStyle = accent;
+  ctx.fillRect(width - 196, y + height - 48, hasVideo ? 128 : 76, 10);
+  ctx.fillStyle = 'rgba(255,255,255,0.36)';
+  ctx.fillRect(width - 196, y + height - 28, hasVideo ? 88 : 122, 10);
 
-  return {
-    title: 'YouTube',
-    subtitle: 'Placeholder de app preparada para integracion',
-    secondaryText: 'Canal secundario: playlist, subtitulos o controles futuros',
-    primaryContent: { label: 'Contenido principal', slot: 'upper' },
-    secondaryContent: { label: 'Contenido secundario', slot: 'lower' },
-    background: '#2c1111',
-    accent: '#ff3b30'
-  };
+  ctx.restore();
 }
 
 function createBoltMesh(color, scale = 1) {
