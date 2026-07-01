@@ -3,7 +3,7 @@ const YOUTUBE_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/;
 export function parseYouTubeUrl(rawUrl) {
   const input = rawUrl.trim();
   if (!input) {
-    return { ok: false, error: 'Pegá un link de YouTube antes de cargar.' };
+    return { ok: false, error: 'Pega un link de YouTube antes de cargar.' };
   }
 
   const normalizedInput = /^https?:\/\//i.test(input) ? input : `https://${input}`;
@@ -12,7 +12,7 @@ export function parseYouTubeUrl(rawUrl) {
   try {
     url = new URL(normalizedInput);
   } catch {
-    return { ok: false, error: 'El link no tiene un formato válido.' };
+    return { ok: false, error: 'El link no tiene un formato valido.' };
   }
 
   const host = url.hostname.replace(/^www\./, '').replace(/^m\./, '').replace(/^music\./, '');
@@ -30,7 +30,7 @@ export function parseYouTubeUrl(rawUrl) {
   }
 
   if (!YOUTUBE_ID_PATTERN.test(videoId)) {
-    return { ok: false, error: 'Solo se aceptan links válidos de YouTube.' };
+    return { ok: false, error: 'Solo se aceptan links validos de YouTube.' };
   }
 
   return {

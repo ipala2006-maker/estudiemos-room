@@ -160,6 +160,8 @@ button {
 .computer-tab-list button:focus-visible,
 .library-actions button:focus-visible,
 .favorite-button:focus-visible,
+.search-suggestion-row button:focus-visible,
+.youtube-search-link:focus-visible,
 .zone-icon-button:focus-visible,
 .zone-controls input:focus-visible {
   outline: 3px solid rgba(79, 111, 120, 0.5);
@@ -433,6 +435,10 @@ button {
   position: relative;
 }
 
+.computer-window-wide {
+  width: min(1320px, 100%);
+}
+
 .computer-window::before {
   display: none;
 }
@@ -683,7 +689,7 @@ button {
 }
 
 .computer-desktop-control {
-  grid-template-columns: minmax(230px, 290px) 1fr;
+  grid-template-columns: minmax(245px, 305px) 1fr;
   gap: 18px;
   background:
     linear-gradient(180deg, rgba(244, 246, 242, 0.92), rgba(207, 219, 214, 0.88)),
@@ -870,10 +876,15 @@ button {
   overflow: hidden;
 }
 
+.computer-console-title {
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(17, 22, 34, 0.08);
+}
+
 .content-control-grid {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
   gap: 16px;
   overflow: hidden;
 }
@@ -889,6 +900,114 @@ button {
   align-content: start;
   gap: 14px;
   padding-right: 2px;
+}
+
+.source-hero-panel,
+.youtube-mode-panel,
+.estudiemos-placeholder-panel,
+.empty-source-state {
+  border: 1px solid rgba(17, 22, 34, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 12px 28px rgba(17, 22, 34, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
+.source-hero-panel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+  background:
+    linear-gradient(135deg, rgba(185, 215, 223, 0.24), rgba(215, 194, 138, 0.12)),
+    rgba(255, 255, 255, 0.8);
+}
+
+.source-hero-icon {
+  width: 52px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #172426;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(23, 36, 38, 0.16);
+}
+
+.source-hero-panel span,
+.youtube-mode-panel span,
+.estudiemos-placeholder-panel span {
+  color: #60736e;
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.source-hero-panel h3 {
+  margin: 3px 0 0;
+  color: #172426;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.youtube-mode-panel,
+.estudiemos-placeholder-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+}
+
+.estudiemos-placeholder-panel {
+  grid-template-columns: auto 1fr;
+  background:
+    linear-gradient(135deg, rgba(215, 194, 138, 0.2), rgba(185, 215, 223, 0.16)),
+    rgba(255, 255, 255, 0.78);
+}
+
+.youtube-mode-panel strong,
+.estudiemos-placeholder-panel strong {
+  display: block;
+  margin-top: 3px;
+  color: #172426;
+  font-size: 0.98rem;
+}
+
+.youtube-mode-panel p,
+.estudiemos-placeholder-panel p {
+  margin: 6px 0 0;
+  color: #536468;
+  line-height: 1.46;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.youtube-search-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid rgba(17, 22, 34, 0.14);
+  border-radius: 8px;
+  background: #172426;
+  color: #ffffff;
+  font-weight: 830;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 150ms ease, background 150ms ease, opacity 150ms ease;
+}
+
+.youtube-search-link:hover {
+  transform: translateY(-2px);
+  background: #223230;
+}
+
+.youtube-search-link.is-disabled {
+  opacity: 0.48;
+  pointer-events: none;
 }
 
 .screen-zone-sidebar {
@@ -922,6 +1041,30 @@ button {
 
 .content-search input::placeholder {
   color: rgba(83, 100, 104, 0.68);
+}
+
+.search-suggestion-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.search-suggestion-row button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(17, 22, 34, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #172426;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.search-suggestion-row button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(79, 111, 120, 0.3);
+  background: #ffffff;
 }
 
 .content-section-title {
@@ -961,6 +1104,10 @@ button {
   gap: 12px;
 }
 
+.compact-preset-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .video-library-card,
 .preset-card,
 .manual-zone-card,
@@ -974,9 +1121,13 @@ button {
 .video-library-card {
   position: relative;
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) auto;
+  grid-template-columns: 72px minmax(0, 1fr) minmax(150px, auto);
   gap: 13px;
   padding: 13px;
+}
+
+.content-card {
+  align-items: stretch;
 }
 
 .video-library-thumb {
@@ -1112,6 +1263,26 @@ button {
   border: 1px solid rgba(17, 22, 34, 0.1);
   border-radius: 8px;
   background: rgba(244, 246, 242, 0.68);
+}
+
+.empty-source-state {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  padding: 28px 18px;
+  text-align: center;
+  color: #60736e;
+}
+
+.empty-source-state strong {
+  color: #172426;
+  font-size: 1rem;
+}
+
+.empty-source-state span {
+  max-width: 420px;
+  line-height: 1.45;
+  font-weight: 650;
 }
 
 .screen-zone-grid {
@@ -1616,7 +1787,8 @@ select {
 
   .computer-desktop-control,
   .screen-zone-grid,
-  .content-control-grid {
+  .content-control-grid,
+  .compact-preset-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1647,6 +1819,11 @@ select {
   .content-browser,
   .screen-zone-sidebar {
     overflow: visible;
+  }
+
+  .youtube-mode-panel {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .game-shell {
@@ -1695,6 +1872,8 @@ select {
   .source-details,
   .video-app-summary,
   .youtube-input-row,
+  .source-hero-panel,
+  .estudiemos-placeholder-panel,
   .zone-controls,
   .screen-zone-header,
   .video-library-card {
@@ -1712,6 +1891,6 @@ select {
   }
 
   .library-actions {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
