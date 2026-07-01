@@ -371,16 +371,18 @@ function createWorldColliders() {
       createCollider(-23, 17, 2.1, 1.5)
     ],
     interior: [
-      interiorCollider(0, -28.3, 38, 3.4),
-      interiorCollider(-11.4, -8.6, 4.8, 3.2),
-      interiorCollider(-25.1, 9, 1.5, 5.5),
-      interiorCollider(-12.5, 24.8, 5.2, 1.4),
-      interiorCollider(25.1, 5.6, 1.5, 5.4),
-      interiorCollider(25.1, -8.2, 1.5, 5.0),
-      interiorCollider(-23, 19.4, 2.1, 4.2),
-      interiorCollider(20.3, 19.4, 5.2, 3.2),
-      interiorCollider(-19.9, 15.7, 2.0, 1.7),
-      interiorCollider(14.4, 16.2, 2.0, 1.7)
+      interiorCollider(0, -28.3, 39, 3.6),
+      interiorCollider(-11.4, -8.6, 5.2, 3.7),
+      interiorCollider(-25.9, 11.5, 1.5, 18),
+      interiorCollider(25.9, 5.8, 1.5, 8.8),
+      interiorCollider(-9.6, 25.9, 10, 1.5),
+      interiorCollider(-21.2, -15.7, 5.8, 3.7),
+      interiorCollider(21.8, -15.7, 5.8, 3.7),
+      interiorCollider(5.6, -15.2, 16.2, 2.0),
+      interiorCollider(5.6, -10.7, 13.8, 2.0),
+      interiorCollider(5.6, -6.3, 11.4, 2.0),
+      interiorCollider(-20.4, 18.8, 2.3, 4.8),
+      interiorCollider(20.2, 18.8, 2.3, 4.8)
     ]
   };
 }
@@ -1676,7 +1678,6 @@ function addCasa1Interior(scene, textures) {
     room.add(wall);
   });
 
-  addMinimalRoomDetails(room);
   addImmersiveStudyRoom(room, textures);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xe3ded2, 0.42, 0, createTexture('quietCeiling')));
@@ -1727,173 +1728,403 @@ function addCasa1Interior(scene, textures) {
 }
 
 function addImmersiveStudyRoom(room, textures) {
-  addStudyRoomWallSystem(room, textures);
-  addStudyRoomScreenZone(room, textures);
-  addStudyRoomAssetLayout(room);
-  addStudyRoomStudyDetails(room, textures);
+  addExperienceRoomShell(room, textures);
+  addImmersiveScreenArchitecture(room, textures);
+  addFunctionalControlConsole(room, textures);
+  addTieredFocusSeating(room, textures);
+  addReferenceLibraryWalls(room, textures);
+  addStudyBoothsAndLounge(room, textures);
+  addCeilingAndAmbientDetails(room, textures);
+  addNewStudyProps(room, textures);
 }
 
-function addStudyRoomWallSystem(room, textures) {
-  const woodMaterial = makeMaterial(0x7b6a57, 0.32, 0, textures.wood);
-  const acousticMaterial = makeMaterial(0xd8d0c0, 0.34, 0.01, createTexture('paintedWall'));
-  const railMaterial = makeMaterial(0x2c3332, 0.2, 0, textures.blackStripe);
+function addExperienceRoomShell(room, textures) {
+  const baseboardMaterial = makeMaterial(0x3c3f38, 0.24, 0.02, textures.blackStripe);
+  const acousticMaterial = makeMaterial(0xd7d0c0, 0.36, 0.01, createTexture('paintedWall'));
+  const woodMaterial = makeMaterial(0x74634f, 0.32, 0, textures.wood);
+  const carpetMaterial = makeMaterial(0x56685d, 0.42, 0, textures.grass);
+  const railMaterial = makeMaterial(0x242d2d, 0.22, 0, textures.blackStripe);
 
   [
-    { pos: [-18, 7.7, -28.7], size: [8.5, 8.8, 0.14] },
-    { pos: [18, 7.7, -28.7], size: [8.5, 8.8, 0.14] },
-    { pos: [-27.66, 7.3, -12], size: [0.14, 7.8, 9.5] },
-    { pos: [27.66, 7.3, -12], size: [0.14, 7.8, 9.5] },
-    { pos: [-27.66, 7.3, 10.5], size: [0.14, 7.2, 10.5] },
-    { pos: [27.66, 7.3, 10.5], size: [0.14, 7.2, 10.5] }
-  ].forEach((panel, index) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...panel.size), index < 2 ? acousticMaterial : woodMaterial);
-    mesh.position.set(...panel.pos);
-    mesh.castShadow = true;
-    room.add(mesh);
+    { pos: [0, 0.55, -28.68], size: [52, 0.34, 0.16] },
+    { pos: [0, 0.55, 28.68], size: [52, 0.34, 0.16] },
+    { pos: [-27.68, 0.55, 0], size: [0.16, 0.34, 54] },
+    { pos: [27.68, 0.55, 0], size: [0.16, 0.34, 54] }
+  ].forEach((part) => {
+    const baseboard = new THREE.Mesh(new THREE.BoxGeometry(...part.size), baseboardMaterial);
+    baseboard.position.set(...part.pos);
+    baseboard.castShadow = true;
+    room.add(baseboard);
   });
 
-  [-18, -6, 6, 18].forEach((x) => {
-    const baffle = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.22, 1.15), railMaterial);
-    baffle.position.set(x, 14.7, -3);
-    baffle.castShadow = true;
-    room.add(baffle);
+  [
+    { pos: [-17.8, 7.4, -28.7], size: [8.8, 8.6, 0.14], material: acousticMaterial },
+    { pos: [17.8, 7.4, -28.7], size: [8.8, 8.6, 0.14], material: acousticMaterial },
+    { pos: [-27.66, 7.1, -12.2], size: [0.14, 7.8, 10.8], material: woodMaterial },
+    { pos: [27.66, 7.1, -12.2], size: [0.14, 7.8, 10.8], material: woodMaterial },
+    { pos: [-27.66, 7.0, 12.8], size: [0.14, 7.2, 12.4], material: acousticMaterial },
+    { pos: [27.66, 7.0, 12.8], size: [0.14, 7.2, 12.4], material: acousticMaterial }
+  ].forEach((panel, index) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...panel.size), panel.material);
+    mesh.position.set(...panel.pos);
+    mesh.rotation.z = index % 2 === 0 ? 0.015 : -0.015;
+    mesh.castShadow = true;
+    room.add(mesh);
+    addEdges(mesh, 0x6d685d, 0.1);
   });
+
+  const roomCarpet = new THREE.Mesh(new THREE.BoxGeometry(31, 0.06, 32), carpetMaterial);
+  roomCarpet.position.set(0, 0.06, 3.2);
+  roomCarpet.receiveShadow = true;
+  room.add(roomCarpet);
 
   addWallCanvasPanel(room, {
     position: [0, 14.35, -28.16],
     rotation: [0, 0, 0],
     scale: [7.8, 1.35, 1],
     title: 'ESTUDIEMOS ROOM',
-    subtitle: 'Sala inmersiva de estudio',
+    subtitle: 'Experience room de estudio',
     background: '#172426',
     accent: '#b9d7df'
   });
 
   addWallCanvasPanel(room, {
-    position: [-27.42, 8.9, -3],
+    position: [-27.42, 8.8, -2.2],
     rotation: [0, Math.PI / 2, 0],
-    scale: [4.2, 2.1, 1],
-    title: 'FOCO',
-    subtitle: 'Estudio profundo',
+    scale: [4.1, 2.05, 1],
+    title: 'BIBLIOTECA',
+    subtitle: 'Notas y referencias',
     background: '#f4f0e5',
     accent: '#4f6f78'
   });
 
   addWallCanvasPanel(room, {
-    position: [27.42, 8.9, -3],
+    position: [27.42, 8.8, -2.2],
     rotation: [0, -Math.PI / 2, 0],
-    scale: [4.2, 2.1, 1],
-    title: 'CONTROL',
-    subtitle: 'Fuentes y pantalla',
+    scale: [4.1, 2.05, 1],
+    title: 'MODO FOCO',
+    subtitle: 'Sesion guiada',
     background: '#172426',
     accent: '#d7d0c0'
   });
+
+  [-18, -6, 6, 18].forEach((x) => {
+    const baffle = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.22, 1.15), railMaterial);
+    baffle.position.set(x, 14.75, -3);
+    baffle.castShadow = true;
+    room.add(baffle);
+  });
 }
 
-function addStudyRoomScreenZone(room, textures) {
-  const stageMaterial = makeMaterial(0x6f604f, 0.28, 0, textures.wood);
-  const darkMaterial = makeMaterial(0x1f2627, 0.18, 0, textures.blackStripe);
-  const speakerMaterial = makeMaterial(0x303939, 0.18);
+function addImmersiveScreenArchitecture(room, textures) {
+  const darkMaterial = makeMaterial(0x202728, 0.18, 0, textures.blackStripe);
+  const deckMaterial = makeMaterial(0x6f604f, 0.28, 0, textures.wood);
+  const brassMaterial = makeMaterial(0xb49a6c, 0.28);
+  const screenHalo = new THREE.Mesh(
+    new THREE.BoxGeometry(39.4, 15.9, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0xe7e4d8, emissive: 0xded6c4, emissiveIntensity: 0.1, roughness: 0.38 })
+  );
+  screenHalo.position.set(0, 8.5, -28.72);
+  room.add(screenHalo);
 
-  const stage = new THREE.Mesh(new THREE.BoxGeometry(38.5, 0.18, 4.2), stageMaterial);
+  const stage = new THREE.Mesh(new THREE.BoxGeometry(39, 0.2, 4.4), deckMaterial);
   stage.position.set(0, 0.12, -25.6);
   stage.receiveShadow = true;
   room.add(stage);
   addEdges(stage, 0x3f3a33, 0.14);
 
-  [-19.2, 19.2].forEach((x) => {
-    const tower = new THREE.Group();
-    tower.position.set(x, 0, -24.9);
-    tower.rotation.y = x < 0 ? 0.08 : -0.08;
-
-    const cabinet = new THREE.Mesh(new THREE.BoxGeometry(1.4, 3.8, 1.05), speakerMaterial);
-    cabinet.position.y = 1.9;
-    cabinet.castShadow = true;
-    tower.add(cabinet);
-
-    [1.05, 2.05, 3.0].forEach((y, index) => {
-      const driver = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.06, 24), makeMaterial(index === 1 ? 0x657270 : 0x505b59, 0.22));
-      driver.position.set(0, y, -0.55);
-      driver.rotation.x = Math.PI / 2;
-      tower.add(driver);
-    });
-
-    room.add(tower);
-    addGroupEdges(tower, 0x111622, 0.2);
-  });
-
-  [-14, 0, 14].forEach((x) => {
-    const floorGlow = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.06, 0.08), makeEmissiveMaterial(0xd7c28a, 0.16));
-    floorGlow.position.set(x, 0.22, -23.7);
-    room.add(floorGlow);
-  });
-
-  [-14.8, 14.8].forEach((x) => {
-    const support = new THREE.Mesh(new THREE.BoxGeometry(0.42, 5.5, 0.34), darkMaterial);
-    support.position.set(x, 3.0, -27.75);
-    support.castShadow = true;
-    room.add(support);
-  });
-}
-
-function addStudyRoomAssetLayout(room) {
-  const furnitureFolder = 'furniture-pack';
-  const interiorFolder = 'house-interior-pack';
-
   [
-    { basePath: 'models/custom', file: 'study-computer.glb', name: 'study-console-computer', position: [-11.35, 0, -8.65], rotation: [0, Math.PI, 0], targetSize: 3.2, outlineOpacity: 0.28 },
-    { folder: furnitureFolder, file: 'Desk.glb', name: 'study-console-desk', position: [-11.4, 0, -8.6], rotation: [0, 0, 0], targetSize: 3.35, outlineOpacity: 0.3 },
-    { folder: furnitureFolder, file: 'Office Chair.glb', name: 'study-console-chair', position: [-11.4, 0, -5.55], rotation: [0, Math.PI, 0], targetSize: 1.25, outlineOpacity: 0.3 },
-    { folder: interiorFolder, file: 'Light Desk.glb', name: 'study-console-lamp', position: [-12.45, 1.25, -8.35], rotation: [0, 0.55, 0], targetSize: 0.62, outlineOpacity: 0.3 },
-    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'study-left-library', position: [-25.25, 0, 9], rotation: [0, Math.PI / 2, 0], targetSize: 3.8, outlineOpacity: 0.26 },
-    { folder: furnitureFolder, file: 'Bookcase with Books.glb', name: 'study-back-library', position: [-12.5, 0, 24.8], rotation: [0, 0, 0], targetSize: 3.45, outlineOpacity: 0.24 },
-    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'study-right-equipment-shelf', position: [25.1, 0, 5.6], rotation: [0, -Math.PI / 2, 0], targetSize: 3.55, outlineOpacity: 0.26 },
-    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'study-right-storage-shelf', position: [25.1, 0, -8.2], rotation: [0, -Math.PI / 2, 0], targetSize: 3.3, outlineOpacity: 0.24 },
-    { folder: furnitureFolder, file: 'Sofa.glb', name: 'study-left-sofa', position: [-23.0, 0, 19.4], rotation: [0, Math.PI / 2, 0], targetSize: 3.05, outlineOpacity: 0.24 },
-    { folder: interiorFolder, file: 'Couch Large.glb', name: 'study-right-couch', position: [20.3, 0, 19.4], rotation: [0, -2.35, 0], targetSize: 4.05, outlineOpacity: 0.26 },
-    { folder: interiorFolder, file: 'Round Rug.glb', name: 'study-reading-rug', position: [-18.9, 0.04, 17.7], rotation: [0, -0.28, 0], targetSize: 4.1, outlineOpacity: 0.18 },
-    { folder: interiorFolder, file: 'Round Rug.glb', name: 'study-lounge-rug', position: [18.4, 0.04, 17.7], rotation: [0, 0.2, 0], targetSize: 5.0, outlineOpacity: 0.18 },
-    { folder: furnitureFolder, file: 'Table.glb', name: 'study-left-table', position: [-19.9, 0, 15.7], rotation: [0, 0.35, 0], targetSize: 1.35, outlineOpacity: 0.26 },
-    { folder: furnitureFolder, file: 'Table.glb', name: 'study-right-table', position: [14.4, 0, 16.2], rotation: [0, -0.28, 0], targetSize: 1.5, outlineOpacity: 0.26 },
-    { folder: interiorFolder, file: 'Table Lamp.glb', name: 'study-table-lamp', position: [14.4, 1.05, 16.2], rotation: [0, -0.15, 0], targetSize: 0.7, outlineOpacity: 0.28 },
-    { folder: interiorFolder, file: 'Light Floor.glb', name: 'study-left-floor-light', position: [-24.2, 0, 16.6], rotation: [0, 0.65, 0], targetSize: 1.85, outlineOpacity: 0.28 },
-    { folder: interiorFolder, file: 'Light Floor.glb', name: 'study-right-floor-light', position: [23.8, 0, 7.1], rotation: [0, -0.75, 0], targetSize: 1.75, outlineOpacity: 0.26 },
-    { folder: interiorFolder, file: 'Light Ceiling.glb', name: 'study-ceiling-light-center', position: [0, 12.9, -2], rotation: [0, 0, 0], targetSize: 2.0, outlineOpacity: 0.18 },
-    { folder: interiorFolder, file: 'Houseplant.glb', name: 'study-plant-left-screen', position: [-25.4, 0, -23.2], rotation: [0, 0.45, 0], targetSize: 0.9, outlineOpacity: 0.26 },
-    { folder: interiorFolder, file: 'Houseplant.glb', name: 'study-plant-back-left', position: [-25.2, 0, 23.0], rotation: [0, -0.35, 0], targetSize: 0.85, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Cactus.glb', name: 'study-cactus-right-screen', position: [25.3, 0, -23.2], rotation: [0, -0.45, 0], targetSize: 0.85, outlineOpacity: 0.26 },
-    { folder: interiorFolder, file: 'Cactus.glb', name: 'study-cactus-back-right', position: [25.0, 0, 22.6], rotation: [0, 0.3, 0], targetSize: 0.72, outlineOpacity: 0.22 },
-    { folder: interiorFolder, file: 'Trashcan.glb', name: 'study-trashcan', position: [-17.4, 0, -6.2], rotation: [0, 0.1, 0], targetSize: 0.68, outlineOpacity: 0.26 }
-  ].forEach((asset) => addImportedAsset(room, asset));
-}
-
-function addStudyRoomStudyDetails(room, textures) {
-  addStudyBookStack(room, -19.9, 1.12, 15.7, 0.2);
-  addStudyBookStack(room, 14.4, 1.1, 16.2, -0.35);
-  addStudyBookStack(room, -12.9, 1.22, -8.15, 0.1);
-  addWallTechRail(room, -27.36, -15.5, Math.PI / 2);
-  addWallTechRail(room, 27.36, -15.5, -Math.PI / 2);
-
-  const cableMaterial = makeMaterial(0x293232, 0.18, 0, textures.blackStripe);
-  [
-    { pos: [-13.9, 0.13, -8.6], size: [0.08, 0.06, 2.0] },
-    { pos: [-9.7, 0.13, -8.6], size: [0.08, 0.06, 1.7] }
-  ].forEach((cable) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...cable.size), cableMaterial);
-    mesh.position.set(...cable.pos);
-    mesh.receiveShadow = true;
+    { pos: [-19.35, 8.45, -28.12], size: [0.34, 15.2, 0.24], mat: darkMaterial },
+    { pos: [19.35, 8.45, -28.12], size: [0.34, 15.2, 0.24], mat: darkMaterial },
+    { pos: [0, 16.15, -28.1], size: [38.8, 0.28, 0.24], mat: darkMaterial },
+    { pos: [0, 0.88, -28.1], size: [38.8, 0.28, 0.24], mat: brassMaterial }
+  ].forEach((part) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), part.mat);
+    mesh.position.set(...part.pos);
+    mesh.castShadow = true;
     room.add(mesh);
   });
 
-  [
-    { position: [-10.3, 2.15, -8.55], size: [0.18, 0.18, 0.08], color: 0x6fa484 },
-    { position: [-10.7, 2.15, -8.55], size: [0.18, 0.18, 0.08], color: 0xd7c28a },
-    { position: [-11.1, 2.15, -8.55], size: [0.18, 0.18, 0.08], color: 0x4f6f78 }
-  ].forEach((light) => {
-    const status = new THREE.Mesh(new THREE.BoxGeometry(...light.size), makeEmissiveMaterial(light.color, 0.36));
-    status.position.set(...light.position);
-    room.add(status);
+  [-16, -8, 0, 8, 16].forEach((x, index) => {
+    const guide = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.08, 0.1), makeEmissiveMaterial(index === 2 ? 0xd7c28a : 0xb9d7df, 0.14));
+    guide.position.set(x, 0.24, -23.45);
+    room.add(guide);
   });
+}
+
+function addFunctionalControlConsole(room, textures) {
+  const group = new THREE.Group();
+  group.position.set(-11.4, 0, -8.6);
+  group.rotation.y = -0.04;
+
+  const shellMaterial = makeMaterial(0x343b39, 0.2, 0, textures.blackStripe);
+  const deskMaterial = makeMaterial(0x5e5548, 0.24, 0, textures.wood);
+  const glassMaterial = new THREE.MeshStandardMaterial({
+    color: 0xc7d7d6,
+    roughness: 0.16,
+    metalness: 0.04,
+    emissive: 0x9ab5b5,
+    emissiveIntensity: 0.42
+  });
+
+  [
+    { pos: [0, 0.56, 0], size: [4.7, 0.92, 2.05], mat: deskMaterial },
+    { pos: [0, 1.2, -0.76], size: [4.95, 0.28, 0.62], mat: shellMaterial },
+    { pos: [-2.18, 0.42, 0.66], size: [0.28, 0.84, 0.34], mat: shellMaterial },
+    { pos: [2.18, 0.42, 0.66], size: [0.28, 0.84, 0.34], mat: shellMaterial }
+  ].forEach((part) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), part.mat);
+    mesh.position.set(...part.pos);
+    mesh.castShadow = true;
+    group.add(mesh);
+  });
+
+  const monitorFrame = new THREE.Mesh(new THREE.BoxGeometry(2.75, 1.52, 0.18), shellMaterial);
+  monitorFrame.position.set(0, 2.05, -1.08);
+  monitorFrame.castShadow = true;
+  group.add(monitorFrame);
+
+  const monitorGlow = new THREE.Mesh(new THREE.BoxGeometry(2.35, 1.08, 0.06), glassMaterial);
+  monitorGlow.position.set(0, 2.05, -0.94);
+  group.add(monitorGlow);
+
+  [-1.5, -0.55, 0.4, 1.28].forEach((x, index) => {
+    const button = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 0.22), makeEmissiveMaterial(index % 2 === 0 ? 0x4f6f78 : 0xd7c28a, 0.28));
+    button.position.set(x, 1.45, -0.42);
+    group.add(button);
+  });
+
+  const chair = new THREE.Group();
+  chair.position.set(0, 0, 2.45);
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.28, 1.0), makeMaterial(0x67756a, 0.32));
+  seat.position.y = 0.8;
+  chair.add(seat);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1.15, 1.15, 0.24), makeMaterial(0x59685e, 0.32));
+  back.position.set(0, 1.35, 0.45);
+  back.rotation.x = -0.12;
+  chair.add(back);
+  const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.78, 16), makeMaterial(0x242d2d, 0.2));
+  pedestal.position.y = 0.4;
+  chair.add(pedestal);
+  group.add(chair);
+
+  room.add(group);
+  addGroupEdges(group, 0x111622, 0.24);
+}
+
+function addTieredFocusSeating(room, textures) {
+  const benchMaterial = makeMaterial(0x766b5d, 0.3, 0, textures.wood);
+  const cushionMaterial = makeMaterial(0x5f746c, 0.36);
+  const tableMaterial = makeMaterial(0xd7c28a, 0.26);
+  [
+    { z: -15.2, width: 15.5, y: 0.44 },
+    { z: -10.7, width: 13.2, y: 0.36 },
+    { z: -6.3, width: 10.8, y: 0.28 }
+  ].forEach((row, rowIndex) => {
+    const bench = new THREE.Mesh(new THREE.BoxGeometry(row.width, 0.44, 1.35), benchMaterial);
+    bench.position.set(5.6, row.y, row.z);
+    bench.castShadow = true;
+    bench.receiveShadow = true;
+    room.add(bench);
+    addEdges(bench, 0x4e463d, 0.18);
+
+    [-0.32, 0.32].forEach((offset) => {
+      const cushion = new THREE.Mesh(new THREE.BoxGeometry(row.width * 0.42, 0.22, 0.82), cushionMaterial);
+      cushion.position.set(5.6 + offset * row.width, row.y + 0.34, row.z - 0.05);
+      cushion.castShadow = true;
+      room.add(cushion);
+    });
+
+    const table = new THREE.Mesh(new THREE.BoxGeometry(row.width * 0.55, 0.18, 0.78), tableMaterial);
+    table.position.set(5.6, row.y + 0.58, row.z + 1.35);
+    table.castShadow = true;
+    room.add(table);
+
+    if (rowIndex < 2) {
+      [-2.8, 0, 2.8].forEach((xOffset) => addNotebook(room, 5.6 + xOffset, row.y + 0.72, row.z + 1.34, xOffset * 0.02));
+    }
+  });
+}
+
+function addReferenceLibraryWalls(room, textures) {
+  const shelfMaterial = makeMaterial(0x4f463d, 0.28, 0, textures.wood);
+  const frameMaterial = makeMaterial(0x242d2d, 0.2, 0, textures.blackStripe);
+  [
+    { x: -25.9, z: 5.8, rot: Math.PI / 2, bays: 4 },
+    { x: -25.9, z: 16.8, rot: Math.PI / 2, bays: 3 },
+    { x: 25.9, z: 5.8, rot: -Math.PI / 2, bays: 4 },
+    { x: -9.6, z: 25.9, rot: 0, bays: 4 }
+  ].forEach((spec) => {
+    const group = new THREE.Group();
+    group.position.set(spec.x, 0, spec.z);
+    group.rotation.y = spec.rot;
+    const width = spec.bays * 2.25;
+    const back = new THREE.Mesh(new THREE.BoxGeometry(width, 5.6, 0.26), shelfMaterial);
+    back.position.y = 2.8;
+    group.add(back);
+    for (let i = 0; i <= spec.bays; i += 1) {
+      const divider = new THREE.Mesh(new THREE.BoxGeometry(0.12, 5.7, 0.42), frameMaterial);
+      divider.position.set(-width / 2 + i * 2.25, 2.85, -0.04);
+      group.add(divider);
+    }
+    [1.15, 2.6, 4.05].forEach((y) => {
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(width, 0.14, 0.55), frameMaterial);
+      shelf.position.set(0, y, -0.08);
+      group.add(shelf);
+    });
+    for (let i = 0; i < spec.bays * 5; i += 1) {
+      const book = new THREE.Mesh(
+        new THREE.BoxGeometry(0.24 + (i % 3) * 0.05, 0.76 + (i % 4) * 0.12, 0.32),
+        makeMaterial([0x4f6f78, 0x8f4c46, 0xd7c28a, 0xb48a72, 0x5e6b63][i % 5], 0.32)
+      );
+      book.position.set(-width / 2 + 0.45 + (i % (spec.bays * 5)) * 0.39, 1.58 + (i % 3) * 1.4, -0.34);
+      book.rotation.z = (i % 5 - 2) * 0.025;
+      group.add(book);
+    }
+    room.add(group);
+    addGroupEdges(group, 0x111622, 0.16);
+  });
+}
+
+function addStudyBoothsAndLounge(room, textures) {
+  const boothMaterial = makeMaterial(0xe0d7c8, 0.34, 0.01, createTexture('paintedWall'));
+  const deskMaterial = makeMaterial(0x735f4c, 0.28, 0, textures.wood);
+  const seatMaterial = makeMaterial(0x5e7168, 0.34);
+  [
+    { x: -21.2, z: -15.7, rot: 0.18 },
+    { x: 21.8, z: -15.7, rot: -0.18 }
+  ].forEach((spec) => {
+    const booth = new THREE.Group();
+    booth.position.set(spec.x, 0, spec.z);
+    booth.rotation.y = spec.rot;
+    const back = new THREE.Mesh(new THREE.BoxGeometry(5.2, 3.2, 0.32), boothMaterial);
+    back.position.set(0, 1.75, -1.25);
+    booth.add(back);
+    const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 2.7, 2.2), boothMaterial);
+    sideL.position.set(-2.45, 1.35, -0.18);
+    booth.add(sideL);
+    const sideR = sideL.clone();
+    sideR.position.x = 2.45;
+    booth.add(sideR);
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.25, 1.25), deskMaterial);
+    desk.position.set(0, 1.02, 0.35);
+    booth.add(desk);
+    [-1.2, 1.2].forEach((x) => {
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.22, 0.92), seatMaterial);
+      pad.position.set(x, 0.56, 1.25);
+      booth.add(pad);
+    });
+    room.add(booth);
+    addGroupEdges(booth, 0x111622, 0.18);
+  });
+
+  [
+    { x: -20.4, z: 18.8, rot: Math.PI / 2 },
+    { x: 20.2, z: 18.8, rot: -Math.PI / 2 }
+  ].forEach((spec) => addModularSofa(room, spec.x, spec.z, spec.rot));
+}
+
+function addCeilingAndAmbientDetails(room, textures) {
+  const railMaterial = makeMaterial(0x242d2d, 0.2, 0, textures.blackStripe);
+  [-18, -9, 0, 9, 18].forEach((x, index) => {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.12, 0.36), index === 2 ? makeEmissiveMaterial(0xf0dfbf, 0.16) : railMaterial);
+    rail.position.set(x, 14.1, 6);
+    rail.castShadow = true;
+    room.add(rail);
+  });
+
+  [
+    { x: -24.8, z: -23.2, color: 0x6c8066 },
+    { x: 24.8, z: -23.2, color: 0x687b63 },
+    { x: -24.6, z: 23, color: 0x70876b },
+    { x: 24.6, z: 23, color: 0x667f5d }
+  ].forEach((plant) => addProceduralPlanter(room, plant.x, plant.z, plant.color));
+}
+
+function addNewStudyProps(room, textures) {
+  const boardMaterial = makeMaterial(0xf4f0e5, 0.34);
+  const corkMaterial = makeMaterial(0xb89b72, 0.36, 0, textures.wood);
+  [
+    { pos: [-27.48, 6.2, 9.6], rot: Math.PI / 2 },
+    { pos: [27.48, 6.2, 10.2], rot: -Math.PI / 2 }
+  ].forEach((board) => {
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.2, 4.8), corkMaterial);
+    frame.position.set(...board.pos);
+    frame.rotation.y = board.rot;
+    room.add(frame);
+    const surface = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.68, 4.1), boardMaterial);
+    surface.position.set(...board.pos);
+    surface.rotation.y = board.rot;
+    surface.position.x += board.rot > 0 ? 0.05 : -0.05;
+    room.add(surface);
+  });
+
+  [
+    [-2.8, 0.22, 14.6],
+    [2.8, 0.22, 14.6],
+    [0, 0.22, 19.8]
+  ].forEach(([x, y, z], index) => {
+    const ottoman = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.25, 0.5, 24), makeMaterial(index === 1 ? 0x8f4c46 : 0x4f6f78, 0.34));
+    ottoman.position.set(x, y + 0.25, z);
+    ottoman.castShadow = true;
+    room.add(ottoman);
+    addEdges(ottoman, 0x111622, 0.18);
+  });
+}
+
+function addNotebook(room, x, y, z, rotationY) {
+  const book = new THREE.Group();
+  book.position.set(x, y, z);
+  book.rotation.y = rotationY;
+  const cover = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.035, 0.62), makeMaterial(0xf4f0e5, 0.34));
+  book.add(cover);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.04, 0.045), makeMaterial(0x4f6f78, 0.28));
+  stripe.position.set(0, 0.025, -0.18);
+  book.add(stripe);
+  room.add(book);
+}
+
+function addModularSofa(room, x, z, rotationY) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  group.rotation.y = rotationY;
+  const baseMaterial = makeMaterial(0x5f746c, 0.34);
+  const backMaterial = makeMaterial(0x4d6159, 0.34);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.48, 1.55), baseMaterial);
+  base.position.y = 0.54;
+  group.add(base);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.35, 0.34), backMaterial);
+  back.position.set(0, 1.12, -0.62);
+  group.add(back);
+  [-1.35, 1.35].forEach((px) => {
+    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.48, 0.22), makeMaterial(0xd7c28a, 0.3));
+    pillow.position.set(px, 1.18, -0.4);
+    pillow.rotation.z = px < 0 ? -0.08 : 0.08;
+    group.add(pillow);
+  });
+  room.add(group);
+  addGroupEdges(group, 0x111622, 0.18);
+}
+
+function addProceduralPlanter(room, x, z, color) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.58, 0.62, 18), makeMaterial(0x735f4c, 0.32));
+  pot.position.y = 0.31;
+  group.add(pot);
+  [
+    { pos: [-0.2, 1.0, 0], scale: [0.72, 0.48, 0.68] },
+    { pos: [0.28, 1.12, -0.08], scale: [0.62, 0.54, 0.58] },
+    { pos: [0.02, 1.42, 0.08], scale: [0.5, 0.42, 0.52] }
+  ].forEach((leaf) => {
+    const mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.68, 0), makeMaterial(color, 0.34));
+    mesh.position.set(...leaf.pos);
+    mesh.scale.set(...leaf.scale);
+    mesh.castShadow = true;
+    group.add(mesh);
+  });
+  room.add(group);
+  addGroupEdges(group, 0x111622, 0.16);
 }
 
 function addInteriorSetPieces(room) {
