@@ -48,8 +48,9 @@ export function FirstPersonWorld({
   useEffect(() => {
     const mount = mountRef.current;
     const scene = new THREE.Scene();
-    scene.background = createSkyBackgroundTexture();
+    scene.background = new THREE.Color(0x9ec7d3);
     scene.fog = new THREE.Fog(0xbfd7d7, 54, 108);
+    addStaticSkyDome(scene);
 
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 120);
     camera.position.copy(startPosition);
@@ -331,6 +332,21 @@ function buildWorldScene(scene) {
   return { giantScreen, colliders };
 }
 
+function addStaticSkyDome(scene) {
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(180, 48, 24),
+    new THREE.MeshBasicMaterial({
+      map: createSkyBackgroundTexture(),
+      side: THREE.BackSide,
+      depthWrite: false,
+      fog: false
+    })
+  );
+  sky.position.set(0, 8, 0);
+  sky.renderOrder = -20;
+  scene.add(sky);
+}
+
 function createWorldColliders() {
   const interiorCollider = (x, z, width, depth) => createCollider(90 + x, -6 + z, width, depth);
 
@@ -355,25 +371,12 @@ function createWorldColliders() {
       createCollider(-23, 17, 2.1, 1.5)
     ],
     interior: [
-      interiorCollider(0, -28.3, 40, 5.4),
-      interiorCollider(-11.4, -8.6, 7.8, 5.9),
-      interiorCollider(-20.8, -18.8, 7.1, 3.2),
-      interiorCollider(20.2, -18.6, 7.1, 3.2),
-      interiorCollider(-21.8, -24.6, 2.8, 1.9),
-      interiorCollider(21.8, -24.6, 2.8, 1.9),
-      interiorCollider(-25.1, 11.4, 2.4, 7.4),
-      interiorCollider(-12.7, 24.8, 6.2, 2.4),
-      interiorCollider(24.8, 8.2, 2.4, 7.2),
-      interiorCollider(24.8, -5.7, 2.4, 6.7),
-      interiorCollider(18.9, 20, 6.1, 3.6),
-      interiorCollider(-21.3, 20, 3.2, 5.4),
-      interiorCollider(-20.7, 15.7, 2.4, 2.1),
-      interiorCollider(14.3, 16.3, 2.4, 2.1),
-      interiorCollider(0, 13.4, 3.4, 2.4),
-      interiorCollider(-23, 21, 2.2, 2.2),
-      interiorCollider(23, 21, 2.2, 2.2),
-      interiorCollider(-23, -24, 2.2, 2.2),
-      interiorCollider(23, -24, 2.2, 2.2)
+      interiorCollider(0, -28.3, 38, 3.4),
+      interiorCollider(-11.4, -8.6, 4.8, 3.2),
+      interiorCollider(-25.1, 11.4, 1.5, 5.5),
+      interiorCollider(-12.7, 24.8, 5.4, 1.4),
+      interiorCollider(24.8, 8.2, 1.5, 5.4),
+      interiorCollider(24.8, -5.7, 1.5, 5.2)
     ]
   };
 }
@@ -1711,19 +1714,11 @@ function addInteriorWorkstationSet(room, textures) {
 }
 
 function addInteriorZoneDressing(room, textures) {
-  const runnerMaterial = makeMaterial(0x8b958d, 0.38, 0, textures.path);
   const screenStageMaterial = makeMaterial(0x5c554b, 0.28, 0, textures.wood);
-  const consolePadMaterial = makeMaterial(0x6d766e, 0.32, 0, textures.path);
   const darkMaterial = makeMaterial(0x1c2525, 0.18, 0, textures.blackStripe);
-  const cableMaterial = makeMaterial(0x252a2b, 0.18);
 
   [
-    { position: [0, 0.075, 4.2], size: [3.7, 0.08, 34.6], material: runnerMaterial, edge: 0x5d655f },
-    { position: [0, 0.09, 23.6], size: [7.4, 0.08, 2.15], material: consolePadMaterial, edge: 0x5d655f },
-    { position: [0, 0.12, -25.6], size: [39, 0.12, 4], material: screenStageMaterial, edge: 0x3f3a33 },
-    { position: [-11.4, 0.115, -8.6], size: [7.2, 0.1, 4.9], material: consolePadMaterial, edge: 0x5d655f },
-    { position: [-19.2, 0.095, 18], size: [7.2, 0.08, 6.2], material: consolePadMaterial, edge: 0x5d655f },
-    { position: [18.4, 0.095, 18.4], size: [8, 0.08, 6.8], material: consolePadMaterial, edge: 0x5d655f }
+    { position: [0, 0.12, -25.6], size: [39, 0.12, 4], material: screenStageMaterial, edge: 0x3f3a33 }
   ].forEach((part) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(...part.size), part.material);
     mesh.position.set(...part.position);
@@ -1753,36 +1748,6 @@ function addInteriorZoneDressing(room, textures) {
 
     room.add(group);
     addGroupEdges(group, 0x111622, 0.28);
-  });
-
-  [
-    { position: [-14.8, 0.16, -8.6], size: [0.14, 0.08, 4.1], rot: 0 },
-    { position: [-18.4, 0.16, -10.6], size: [7.2, 0.08, 0.14], rot: 0 },
-    { position: [-22, 0.16, -13.4], size: [0.14, 0.08, 5.6], rot: 0 }
-  ].forEach((run) => {
-    const cable = new THREE.Mesh(new THREE.BoxGeometry(...run.size), cableMaterial);
-    cable.position.set(...run.position);
-    cable.receiveShadow = true;
-    room.add(cable);
-  });
-
-  [-6.4, 6.4].forEach((x) => {
-    const sightline = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 14), makeMaterial(0xc5bda9, 0.32));
-    sightline.position.set(x, 0.13, -13.5);
-    sightline.receiveShadow = true;
-    room.add(sightline);
-  });
-
-  [
-    { x: -13.9, z: -8.6, h: 1.05 },
-    { x: -8.9, z: -8.6, h: 1.05 },
-    { x: -11.4, z: -11.1, h: 1.25 }
-  ].forEach((marker) => {
-    const bollard = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, marker.h, 16), darkMaterial);
-    bollard.position.set(marker.x, marker.h / 2, marker.z);
-    bollard.castShadow = true;
-    room.add(bollard);
-    addEdges(bollard, 0x111622, 0.18);
   });
 }
 
@@ -1942,8 +1907,8 @@ function addImportedCasa1InteriorAssets(room) {
       basePath: 'models/custom',
       file: 'study-computer.glb',
       name: 'custom-study-computer',
-      position: [-11.4, 0, -8.6],
-      rotation: [0, 0, 0],
+      position: [-11.35, 0, -8.65],
+      rotation: [0, Math.PI, 0],
       targetSize: 3.25,
       outlineOpacity: 0.3
     },
@@ -1952,7 +1917,7 @@ function addImportedCasa1InteriorAssets(room) {
       file: 'Desk.glb',
       name: 'cc0-computer-desk',
       position: [-11.4, 0, -8.6],
-      rotation: [0, Math.PI, 0],
+      rotation: [0, 0, 0],
       targetSize: 3.35,
       outlineOpacity: 0.34
     },
@@ -1969,8 +1934,8 @@ function addImportedCasa1InteriorAssets(room) {
       folder: furnitureFolder,
       file: 'Office Chair.glb',
       name: 'cc0-reading-chair',
-      position: [-16.7, 0, 15.5],
-      rotation: [0, -0.55, 0],
+      position: [-17.9, 0, 15.9],
+      rotation: [0, -0.95, 0],
       targetSize: 1.15,
       outlineOpacity: 0.32
     },
@@ -1978,9 +1943,9 @@ function addImportedCasa1InteriorAssets(room) {
       folder: furnitureFolder,
       file: 'Table.glb',
       name: 'cc0-reading-side-table',
-      position: [-20.7, 0, 15.7],
+      position: [-21.5, 0, 16.2],
       rotation: [0, 0.35, 0],
-      targetSize: 1.65,
+      targetSize: 1.35,
       outlineOpacity: 0.3
     },
     {
@@ -2023,18 +1988,18 @@ function addImportedCasa1InteriorAssets(room) {
       folder: interiorFolder,
       file: 'Couch Large.glb',
       name: 'cc0-couch-corner',
-      position: [18.9, 0, 20],
-      rotation: [0, -2.55, 0],
-      targetSize: 4.45,
+      position: [20.4, 0, 20.8],
+      rotation: [0, -2.35, 0],
+      targetSize: 4.1,
       outlineOpacity: 0.32
     },
     {
       folder: furnitureFolder,
       file: 'Sofa.glb',
       name: 'cc0-reading-sofa',
-      position: [-21.3, 0, 20],
+      position: [-23.1, 0, 20.4],
       rotation: [0, Math.PI / 2, 0],
-      targetSize: 3.35,
+      targetSize: 3.05,
       outlineOpacity: 0.28
     },
     {
@@ -2077,9 +2042,9 @@ function addImportedCasa1InteriorAssets(room) {
       folder: interiorFolder,
       file: 'Light Desk.glb',
       name: 'cc0-desk-light',
-      position: [-9.95, 1.25, -8.4],
-      rotation: [0, -0.55, 0],
-      targetSize: 0.7,
+      position: [-12.45, 1.25, -8.35],
+      rotation: [0, 0.55, 0],
+      targetSize: 0.62,
       outlineOpacity: 0.34
     },
     {
@@ -2095,45 +2060,45 @@ function addImportedCasa1InteriorAssets(room) {
       folder: interiorFolder,
       file: 'Houseplant.glb',
       name: 'cc0-houseplant-screen-left',
-      position: [-24.8, 0, -23.2],
+      position: [-25.6, 0, -23.6],
       rotation: [0, 0.45, 0],
-      targetSize: 1.8,
+      targetSize: 0.95,
       outlineOpacity: 0.34
     },
     {
       folder: interiorFolder,
       file: 'Houseplant.glb',
       name: 'cc0-houseplant-back-left',
-      position: [-24.6, 0, 23.1],
+      position: [-25.4, 0, 23.2],
       rotation: [0, -0.35, 0],
-      targetSize: 1.65,
+      targetSize: 0.85,
       outlineOpacity: 0.28
     },
     {
       folder: interiorFolder,
       file: 'Cactus.glb',
       name: 'cc0-cactus-screen-right',
-      position: [24.7, 0, -23],
+      position: [25.5, 0, -23.4],
       rotation: [0, -0.45, 0],
-      targetSize: 1.7,
+      targetSize: 0.9,
       outlineOpacity: 0.34
     },
     {
       folder: interiorFolder,
       file: 'Cactus.glb',
       name: 'cc0-cactus-lounge',
-      position: [24.1, 0, 22.7],
+      position: [25.1, 0, 22.8],
       rotation: [0, 0.3, 0],
-      targetSize: 1.35,
+      targetSize: 0.75,
       outlineOpacity: 0.28
     },
     {
       folder: interiorFolder,
       file: 'Trashcan.glb',
       name: 'cc0-trashcan',
-      position: [-15.5, 0, -10.9],
+      position: [-17.6, 0, -6.2],
       rotation: [0, 0.1, 0],
-      targetSize: 0.82,
+      targetSize: 0.72,
       outlineOpacity: 0.34
     },
     {
@@ -2491,22 +2456,7 @@ function addScreenHeroFrame(room) {
 }
 
 function addMinimalRoomDetails(room) {
-  const seamMaterial = makeMaterial(0xd8d8d0, 0.56);
   const baseboardMaterial = makeMaterial(0x4a463f, 0.24, 0.02);
-
-  for (let x = -21; x <= 21; x += 7) {
-    const seam = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.035, 56), seamMaterial);
-    seam.position.set(x, 0.035, 0);
-    seam.receiveShadow = true;
-    room.add(seam);
-  }
-
-  for (let z = -21; z <= 21; z += 7) {
-    const seam = new THREE.Mesh(new THREE.BoxGeometry(54, 0.04, 0.045), seamMaterial);
-    seam.position.set(0, 0.04, z);
-    seam.receiveShadow = true;
-    room.add(seam);
-  }
 
   [
     { position: [0, 0.55, -28.68], size: [52, 0.34, 0.16] },
