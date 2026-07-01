@@ -24,6 +24,7 @@ function App() {
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
+  const [screenLayout, setScreenLayout] = useState('split-70-30');
   const [screenZones, setScreenZones] = useState({
     upper: createEmptyScreenZone(),
     lower: createEmptyScreenZone()
@@ -112,6 +113,7 @@ function App() {
         resetRef={resetWorldRef}
         controlsEnabled={!computerOpen}
         screenZones={screenZones}
+        screenLayout={screenLayout}
       />
 
       <Hud
@@ -133,9 +135,11 @@ function App() {
       {computerOpen && (
         <ComputerUI
           screenZones={screenZones}
+          screenLayout={screenLayout}
           onAssignVideo={assignVideoToZone}
           onUpdateZone={updateScreenZone}
           onClearZone={clearScreenZone}
+          onScreenLayoutChange={setScreenLayout}
           onClose={() => setComputerOpen(false)}
         />
       )}

@@ -234,26 +234,79 @@ button {
   cursor: crosshair;
 }
 
-.giant-screen-video-layer {
+.css3d-world-layer {
   position: absolute;
+  inset: 0;
   z-index: 2;
-  display: grid;
-  grid-template-rows: 70% 30%;
+  pointer-events: none;
   overflow: hidden;
-  border-radius: 3px;
-  background: #070d0f;
-  box-shadow: 0 0 0 1px rgba(185, 215, 223, 0.14), 0 18px 44px rgba(0, 0, 0, 0.35);
+}
+
+.physical-screen-content {
+  display: grid;
+  overflow: hidden;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 22% 14%, rgba(185, 215, 223, 0.13), transparent 32%),
+    linear-gradient(135deg, #050809, #0b1112 58%, #030506);
+  box-shadow:
+    inset 0 0 0 3px rgba(185, 215, 223, 0.08),
+    inset 0 0 46px rgba(0, 0, 0, 0.72),
+    0 0 22px rgba(185, 215, 223, 0.12);
   pointer-events: none;
 }
 
-.giant-screen-video-slot {
+.physical-screen-slot {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-top: 2px solid rgba(215, 194, 138, 0.62);
+  background: #070d0f;
+}
+
+.physical-screen-slot:first-child {
+  border-top: 0;
+}
+
+.physical-screen-slot iframe {
   width: 100%;
   height: 100%;
   border: 0;
   display: block;
+  pointer-events: none;
+}
+
+.physical-screen-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
   background:
-    linear-gradient(135deg, rgba(185, 215, 223, 0.08), rgba(215, 194, 138, 0.06)),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0 18px, transparent 18px 42px),
+    radial-gradient(circle at 50% 40%, rgba(185, 215, 223, 0.16), transparent 36%),
     #070d0f;
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+}
+
+.physical-screen-placeholder span,
+.physical-screen-placeholder strong {
+  display: block;
+  letter-spacing: 0;
+}
+
+.physical-screen-placeholder span {
+  color: rgba(215, 194, 138, 0.9);
+  font-size: 38px;
+  font-weight: 900;
+}
+
+.physical-screen-placeholder strong {
+  margin-top: 12px;
+  color: #ffffff;
+  font-size: 76px;
+  font-weight: 900;
 }
 
 .hud {
@@ -645,6 +698,7 @@ button {
 }
 
 .control-status-card,
+.screen-layout-panel,
 .control-status-row,
 .screen-zone-card,
 .zone-current-video {
@@ -683,6 +737,76 @@ button {
   display: block;
   margin-top: 2px;
   font-size: 1.04rem;
+}
+
+.screen-layout-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.screen-layout-summary {
+  display: grid;
+  gap: 4px;
+}
+
+.screen-layout-summary span,
+.screen-layout-buttons small {
+  color: #60736e;
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.screen-layout-summary strong {
+  color: #172426;
+  font-size: 0.98rem;
+}
+
+.screen-layout-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.screen-layout-buttons button {
+  min-height: 58px;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  padding: 9px;
+  border: 1px solid rgba(17, 22, 34, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #172426;
+  text-align: left;
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.screen-layout-buttons button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(79, 111, 120, 0.28);
+  background: #ffffff;
+}
+
+.screen-layout-buttons button:focus-visible {
+  outline: 3px solid rgba(79, 111, 120, 0.34);
+  outline-offset: 2px;
+}
+
+.screen-layout-buttons button.is-selected {
+  border-color: rgba(215, 194, 138, 0.46);
+  background: #172426;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(23, 36, 38, 0.16);
+}
+
+.screen-layout-buttons button.is-selected small {
+  color: rgba(215, 194, 138, 0.92);
+}
+
+.screen-layout-buttons span {
+  font-weight: 900;
 }
 
 .control-status-list {

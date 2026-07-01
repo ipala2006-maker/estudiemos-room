@@ -37,13 +37,50 @@ const TABS = [
   { id: 'advanced', label: 'Link avanzado', icon: Link }
 ];
 
-export function ComputerUI({ onClose, screenZones, onAssignVideo, onClearZone, onUpdateZone }) {
+const SCREEN_LAYOUTS = [
+  {
+    id: 'single',
+    label: '1 video',
+    ratio: '100%',
+    description: 'Pantalla completa'
+  },
+  {
+    id: 'split-70-30',
+    label: '70/30',
+    ratio: '70 + 30',
+    description: 'Superior principal'
+  },
+  {
+    id: 'split-50-50',
+    label: '50/50',
+    ratio: '50 + 50',
+    description: 'Doble foco'
+  },
+  {
+    id: 'split-30-70',
+    label: '30/70',
+    ratio: '30 + 70',
+    description: 'Inferior principal'
+  }
+];
+
+export function ComputerUI({
+  onClose,
+  screenZones,
+  screenLayout = 'split-70-30',
+  onAssignVideo,
+  onClearZone,
+  onUpdateZone,
+  onScreenLayoutChange
+}) {
   const [activeTab, setActiveTab] = useState('library');
   const [query, setQuery] = useState('');
   const [drafts, setDrafts] = useState({ upper: '', lower: '' });
   const [errors, setErrors] = useState({ upper: '', lower: '' });
   const [history, setHistory] = useState([]);
   const [favorites, setFavorites] = useState(['math-visual-thinking', 'focus-music']);
+  const activeLayout = SCREEN_LAYOUTS.find((layout) => layout.id === screenLayout) ?? SCREEN_LAYOUTS[1];
+  const zoneRatios = getZoneRatios(activeLayout.id);
 
   const filteredVideos = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -131,7 +168,28 @@ export function ComputerUI({ onClose, screenZones, onAssignVideo, onClearZone, o
               <MonitorUp size={28} aria-hidden="true" />
               <div>
                 <span>Sistema</span>
-                <strong>Pantalla 70/30</strong>
+                <strong>Pantalla {activeLayout.label}</strong>
+              </div>
+            </div>
+
+            <div className="screen-layout-panel" aria-label="Modo de pantalla">
+              <div className="screen-layout-summary">
+                <span>Layout activo</span>
+                <strong>{activeLayout.description}</strong>
+              </div>
+              <div className="screen-layout-buttons">
+                {SCREEN_LAYOUTS.map((layout) => (
+                  <button
+                    key={layout.id}
+                    type="button"
+                    className={layout.id === activeLayout.id ? 'is-selected' : ''}
+                    onClick={() => onScreenLayoutChange?.(layout.id)}
+                    aria-pressed={layout.id === activeLayout.id}
+                  >
+                    <span>{layout.label}</span>
+                    <small>{layout.ratio}</small>
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -291,7 +349,7 @@ export function ComputerUI({ onClose, screenZones, onAssignVideo, onClearZone, o
                     <div className="screen-zone-card" key={zone.id}>
                       <header className="screen-zone-header">
                         <div>
-                          <span>{zone.ratio}</span>
+                          <span>{zoneRatios[zone.id] ?? zone.ratio}</span>
                           <h3>{zone.label}</h3>
                           <p>{zone.description}</p>
                         </div>
@@ -343,6 +401,13 @@ export function ComputerUI({ onClose, screenZones, onAssignVideo, onClearZone, o
       </div>
     </section>
   );
+}
+
+function getZoneRatios(screenLayout) {
+  if (screenLayout === 'single') return { upper: '100%', lower: 'Oculta' };
+  if (screenLayout === 'split-50-50') return { upper: '50%', lower: '50%' };
+  if (screenLayout === 'split-30-70') return { upper: '30%', lower: '70%' };
+  return { upper: '70%', lower: '30%' };
 }
 
 function VideoLibraryCard({ item, isFavorite, onToggleFavorite, onAssignUpper, onAssignLower }) {

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { CSS3DObject, CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { Casa1 } from '../maps/Casa1.js';
 import { buildYouTubeEmbedUrl } from '../utils/youtube.js';
 
@@ -23,6 +24,11 @@ const GIANT_SCREEN_WORLD = {
   width: 34.6,
   height: 12.8
 };
+const GIANT_SCREEN_DOM_SIZE = {
+  width: 1730,
+  height: 640
+};
+const DEFAULT_SCREEN_LAYOUT = 'split-70-30';
 const DEFAULT_SCREEN_ZONES = {
   upper: { videoId: '', embedUrl: '', muted: true, volume: 70, updatedAt: 0 },
   lower: { videoId: '', embedUrl: '', muted: true, volume: 70, updatedAt: 0 }
@@ -35,7 +41,8 @@ export function FirstPersonWorld({
   resetRef,
   toggleDoorRef,
   controlsEnabled = true,
-  screenZones = DEFAULT_SCREEN_ZONES
+  screenZones = DEFAULT_SCREEN_ZONES,
+  screenLayout = DEFAULT_SCREEN_LAYOUT
 }) {
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
@@ -43,8 +50,7 @@ export function FirstPersonWorld({
   const doorOpenRef = useRef(false);
   const controlsEnabledRef = useRef(controlsEnabled);
   const screenZonesRef = useRef(screenZones);
-  const screenOverlayRef = useRef({ visible: false, rect: null });
-  const [screenOverlay, setScreenOverlay] = useState({ visible: false, rect: null });
+  const screenLayoutRef = useRef(screenLayout);
 
   useEffect(() => {
     controlsEnabledRef.current = controlsEnabled;
@@ -58,8 +64,8 @@ export function FirstPersonWorld({
   }, [screenZones]);
 
   useEffect(() => {
-    screenOverlayRef.current = screenOverlay;
-  }, [screenOverlay]);
+    screenLayoutRef.current = screenLayout;
+  }, [screenLayout]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -81,6 +87,19 @@ export function FirstPersonWorld({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     mount.appendChild(renderer.domElement);
+
+    const cssScene = new THREE.Scene();
+    const cssRenderer = new CSS3DRenderer();
+    cssRenderer.setSize(mount.clientWidth, mount.clientHeight);
+    cssRenderer.domElement.className = 'css3d-world-layer';
+    cssRenderer.domElement.style.position = 'absolute';
+    cssRenderer.domElement.style.inset = '0';
+    cssRenderer.domElement.style.pointerEvents = 'none';
+    mount.appendChild(cssRenderer.domElement);
+
+    const cssGiantScreen = createCssGiantScreenObject();
+    cssGiantScreen.visible = false;
+    cssScene.add(cssGiantScreen);
 
     const ambient = new THREE.HemisphereLight(0xfffbf1, 0x506653, 1.6);
     scene.add(ambient);
@@ -215,6 +234,7 @@ export function FirstPersonWorld({
       camera.aspect = mount.clientWidth / mount.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(mount.clientWidth, mount.clientHeight);
+      cssRenderer.setSize(mount.clientWidth, mount.clientHeight);
     }
 
     window.addEventListener('keydown', onKeyDown);
@@ -285,12 +305,9 @@ export function FirstPersonWorld({
         }
       }
 
-      updateGiantScreen(giantScreen, screenZonesRef.current);
-      syncScreenOverlay(
-        calculateGiantScreenOverlay(camera, mount, doorOpenRef.current),
-        screenOverlayRef,
-        setScreenOverlay
-      );
+      updateGiantScreen(giantScreen, screenZonesRef.current, screenLayoutRef.current);
+      updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
+      cssGiantScreen.visible = doorOpenRef.current;
 
       const nearDoor = doorOpenRef.current
         ? camera.position.distanceTo(activeMap.interiorExitPosition) < 4.5
@@ -307,6 +324,7 @@ export function FirstPersonWorld({
       }
 
       renderer.render(scene, camera);
+      cssRenderer.render(cssScene, camera);
       frameId = requestAnimationFrame(animate);
     }
 
@@ -322,97 +340,134 @@ export function FirstPersonWorld({
       document.removeEventListener('pointerlockchange', onPointerLockChange);
       renderer.domElement.removeEventListener('click', onCanvasClick);
       renderer.dispose();
+      mount.removeChild(cssRenderer.domElement);
       mount.removeChild(renderer.domElement);
     };
   }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, resetRef, toggleDoorRef]);
 
-  return (
-    <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona">
-      {screenOverlay.visible && (
-        <div className="giant-screen-video-layer" style={screenOverlay.rect} aria-hidden="true">
-          <YouTubeScreenSlot zone={screenZones.upper} className="upper" title="Video superior de YouTube" />
-          <YouTubeScreenSlot zone={screenZones.lower} className="lower" title="Video inferior de YouTube" />
-        </div>
-      )}
-    </section>
-  );
+  return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
 }
 
-function YouTubeScreenSlot({ zone, className, title }) {
-  const src = buildYouTubeEmbedUrl(zone);
-  if (!src) return <div className={`giant-screen-video-slot ${className}`} />;
+function createCssGiantScreenObject() {
+  const root = document.createElement('div');
+  root.className = 'physical-screen-content';
+  root.style.width = `${GIANT_SCREEN_DOM_SIZE.width}px`;
+  root.style.height = `${GIANT_SCREEN_DOM_SIZE.height}px`;
 
-  return (
-    <iframe
-      key={`${zone.videoId}-${zone.muted}`}
-      className={`giant-screen-video-slot ${className}`}
-      src={src}
-      title={title}
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      referrerPolicy="strict-origin-when-cross-origin"
-      allowFullScreen
-    />
-  );
+  const object = new CSS3DObject(root);
+  object.position.copy(GIANT_SCREEN_WORLD.center);
+  object.position.z += 0.16;
+  object.scale.setScalar(GIANT_SCREEN_WORLD.width / GIANT_SCREEN_DOM_SIZE.width);
+  object.userData.contentRoot = root;
+  object.userData.screenStateKey = '';
+
+  return object;
 }
 
-function calculateGiantScreenOverlay(camera, mount, isInterior) {
-  if (!isInterior || !mount) return { visible: false, rect: null };
+function getScreenLayoutDefinition(screenLayout, screenZones = DEFAULT_SCREEN_ZONES) {
+  const upperHasVideo = Boolean(screenZones.upper?.videoId);
+  const lowerHasVideo = Boolean(screenZones.lower?.videoId);
 
-  const centerToCamera = GIANT_SCREEN_WORLD.center.clone().sub(camera.position);
-  const cameraForward = new THREE.Vector3();
-  camera.getWorldDirection(cameraForward);
-  if (centerToCamera.dot(cameraForward) <= 0) return { visible: false, rect: null };
+  if (screenLayout === 'single') {
+    const zoneId = upperHasVideo || !lowerHasVideo ? 'upper' : 'lower';
+    return {
+      id: 'single',
+      label: '1 video',
+      rows: ['1fr'],
+      slots: [
+        {
+          zoneId,
+          label: 'Pantalla completa',
+          slotLabel: '100%',
+          accent: '#b9d7df',
+          isPrimary: true
+        }
+      ]
+    };
+  }
 
-  const halfWidth = GIANT_SCREEN_WORLD.width / 2;
-  const halfHeight = GIANT_SCREEN_WORLD.height / 2;
-  const corners = [
-    new THREE.Vector3(GIANT_SCREEN_WORLD.center.x - halfWidth, GIANT_SCREEN_WORLD.center.y + halfHeight, GIANT_SCREEN_WORLD.center.z),
-    new THREE.Vector3(GIANT_SCREEN_WORLD.center.x + halfWidth, GIANT_SCREEN_WORLD.center.y + halfHeight, GIANT_SCREEN_WORLD.center.z),
-    new THREE.Vector3(GIANT_SCREEN_WORLD.center.x + halfWidth, GIANT_SCREEN_WORLD.center.y - halfHeight, GIANT_SCREEN_WORLD.center.z),
-    new THREE.Vector3(GIANT_SCREEN_WORLD.center.x - halfWidth, GIANT_SCREEN_WORLD.center.y - halfHeight, GIANT_SCREEN_WORLD.center.z)
-  ].map((point) => point.project(camera));
-
-  if (corners.every((point) => point.z < -1 || point.z > 1)) return { visible: false, rect: null };
-
-  const viewportWidth = mount.clientWidth;
-  const viewportHeight = mount.clientHeight;
-  const xs = corners.map((point) => (point.x * 0.5 + 0.5) * viewportWidth);
-  const ys = corners.map((point) => (-point.y * 0.5 + 0.5) * viewportHeight);
-  const left = Math.round(Math.max(0, Math.min(...xs)));
-  const top = Math.round(Math.max(0, Math.min(...ys)));
-  const right = Math.round(Math.min(viewportWidth, Math.max(...xs)));
-  const bottom = Math.round(Math.min(viewportHeight, Math.max(...ys)));
-  const width = right - left;
-  const height = bottom - top;
-
-  if (width < 120 || height < 70) return { visible: false, rect: null };
+  const layouts = {
+    'split-50-50': { label: '50/50', upper: 50, lower: 50 },
+    'split-30-70': { label: '30/70', upper: 30, lower: 70 },
+    'split-70-30': { label: '70/30', upper: 70, lower: 30 }
+  };
+  const selected = layouts[screenLayout] ?? layouts[DEFAULT_SCREEN_LAYOUT];
 
   return {
-    visible: true,
-    rect: {
-      left: `${left}px`,
-      top: `${top}px`,
-      width: `${width}px`,
-      height: `${height}px`
-    }
+    id: screenLayout,
+    label: selected.label,
+    rows: [`${selected.upper}fr`, `${selected.lower}fr`],
+    slots: [
+      {
+        zoneId: 'upper',
+        label: activeMap.screenChannels.primaryContent.label,
+        slotLabel: `SUPERIOR ${selected.upper}%`,
+        accent: '#b9d7df',
+        isPrimary: selected.upper >= selected.lower
+      },
+      {
+        zoneId: 'lower',
+        label: activeMap.screenChannels.secondaryContent.label,
+        slotLabel: `INFERIOR ${selected.lower}%`,
+        accent: '#d7c28a',
+        isPrimary: selected.lower > selected.upper
+      }
+    ]
   };
 }
 
-function syncScreenOverlay(nextOverlay, overlayRef, setScreenOverlay) {
-  const previous = overlayRef.current;
-  const previousRect = previous.rect ?? {};
-  const nextRect = nextOverlay.rect ?? {};
-  const changed =
-    previous.visible !== nextOverlay.visible ||
-    previousRect.left !== nextRect.left ||
-    previousRect.top !== nextRect.top ||
-    previousRect.width !== nextRect.width ||
-    previousRect.height !== nextRect.height;
+function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) {
+  const layout = getScreenLayoutDefinition(screenLayout, screenZones);
+  const stateKey = JSON.stringify({
+    layout: layout.id,
+    upper: {
+      videoId: screenZones.upper.videoId,
+      muted: screenZones.upper.muted,
+      volume: screenZones.upper.volume,
+      updatedAt: screenZones.upper.updatedAt
+    },
+    lower: {
+      videoId: screenZones.lower.videoId,
+      muted: screenZones.lower.muted,
+      volume: screenZones.lower.volume,
+      updatedAt: screenZones.lower.updatedAt
+    }
+  });
 
-  if (!changed) return;
+  if (cssGiantScreen.userData.screenStateKey === stateKey) return;
+  cssGiantScreen.userData.screenStateKey = stateKey;
 
-  overlayRef.current = nextOverlay;
-  setScreenOverlay(nextOverlay);
+  const root = cssGiantScreen.userData.contentRoot;
+  root.textContent = '';
+  root.style.gridTemplateRows = layout.rows.join(' ');
+
+  layout.slots.forEach((slotConfig) => {
+    const zone = screenZones[slotConfig.zoneId];
+    const src = buildYouTubeEmbedUrl(zone);
+    const slot = document.createElement('div');
+    slot.className = 'physical-screen-slot';
+
+    if (src) {
+      const iframe = document.createElement('iframe');
+      iframe.src = src;
+      iframe.title = `${slotConfig.label} - YouTube`;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+      iframe.allowFullscreen = true;
+      slot.appendChild(iframe);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'physical-screen-placeholder';
+      const slotLabel = document.createElement('span');
+      slotLabel.textContent = slotConfig.slotLabel;
+      const emptyLabel = document.createElement('strong');
+      emptyLabel.textContent = 'Sin video';
+      placeholder.append(slotLabel, emptyLabel);
+      slot.appendChild(placeholder);
+    }
+
+    root.appendChild(slot);
+  });
 }
 
 function buildWorldScene(scene) {
@@ -1926,8 +1981,10 @@ function addWindowFrame(group, x, y, z) {
   });
 }
 
-function updateGiantScreen(giantScreen, screenZones) {
+function updateGiantScreen(giantScreen, screenZones, screenLayout) {
+  const layout = getScreenLayoutDefinition(screenLayout, screenZones);
   const stateKey = JSON.stringify({
+    layout: layout.id,
     upper: {
       videoId: screenZones.upper.videoId,
       muted: screenZones.upper.muted,
@@ -1948,7 +2005,6 @@ function updateGiantScreen(giantScreen, screenZones) {
   const ctx = giantScreen.context;
   const width = giantScreen.canvas.width;
   const height = giantScreen.canvas.height;
-  const splitY = Math.round(height * 0.7);
 
   ctx.fillStyle = '#111817';
   ctx.fillRect(0, 0, width, height);
@@ -1960,34 +2016,31 @@ function updateGiantScreen(giantScreen, screenZones) {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  drawGiantScreenZone(ctx, {
-    zone: screenZones.upper,
-    x: 0,
-    y: 0,
-    width,
-    height: splitY,
-    label: activeMap.screenChannels.primaryContent.label,
-    slotLabel: 'SUPERIOR 70%',
-    accent: '#b9d7df',
-    isPrimary: true
-  });
+  let cursorY = 0;
+  layout.slots.forEach((slotConfig, index) => {
+    const ratio = layout.rows[index] === '1fr' ? 1 : Number.parseFloat(layout.rows[index]) / 100;
+    const slotHeight = index === layout.slots.length - 1 ? height - cursorY : Math.round(height * ratio);
 
-  drawGiantScreenZone(ctx, {
-    zone: screenZones.lower,
-    x: 0,
-    y: splitY,
-    width,
-    height: height - splitY,
-    label: activeMap.screenChannels.secondaryContent.label,
-    slotLabel: 'INFERIOR 30%',
-    accent: '#d7c28a',
-    isPrimary: false
-  });
+    drawGiantScreenZone(ctx, {
+      zone: screenZones[slotConfig.zoneId],
+      x: 0,
+      y: cursorY,
+      width,
+      height: slotHeight,
+      label: slotConfig.label,
+      slotLabel: slotConfig.slotLabel,
+      accent: slotConfig.accent,
+      isPrimary: slotConfig.isPrimary || layout.slots.length === 1
+    });
 
-  ctx.fillStyle = '#d7c28a';
-  ctx.fillRect(0, splitY - 5, width, 10);
-  ctx.fillStyle = 'rgba(17,22,34,0.72)';
-  ctx.fillRect(0, splitY - 2, width, 4);
+    cursorY += slotHeight;
+    if (index < layout.slots.length - 1) {
+      ctx.fillStyle = '#d7c28a';
+      ctx.fillRect(0, cursorY - 5, width, 10);
+      ctx.fillStyle = 'rgba(17,22,34,0.72)';
+      ctx.fillRect(0, cursorY - 2, width, 4);
+    }
+  });
 
   giantScreen.texture.needsUpdate = true;
 }
@@ -2037,7 +2090,7 @@ function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel,
   ctx.fillStyle = 'rgba(255,255,255,0.86)';
   if (hasVideo) {
     ctx.fillText(`Video ID: ${zone.videoId}`, innerX, innerY + (isPrimary ? 205 : 136));
-    ctx.fillText(`${zone.muted ? 'Mute activo' : 'Audio activo'} · Volumen ${zone.volume}%`, innerX, innerY + (isPrimary ? 242 : 164));
+    ctx.fillText(`${zone.muted ? 'Mute activo' : 'Audio activo'} - Volumen ${zone.volume}%`, innerX, innerY + (isPrimary ? 242 : 164));
   } else {
     ctx.fillText(`Canal ${slotLabel} listo para recibir YouTube`, innerX, innerY + (isPrimary ? 205 : 136));
   }
