@@ -198,11 +198,13 @@ export function FirstPersonWorld({
     document.addEventListener('pointerlockchange', onPointerLockChange);
     renderer.domElement.addEventListener('click', onCanvasClick);
 
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
     let frameId = 0;
 
-    function animate() {
-      const delta = Math.min(clock.getDelta(), 0.04);
+    function animate(timestamp) {
+      timer.update(timestamp);
+      const delta = Math.min(timer.getDelta(), 0.04);
       if (!controlsEnabledRef.current) {
         clearMovementInput();
       }
@@ -260,6 +262,7 @@ export function FirstPersonWorld({
 
     return () => {
       cancelAnimationFrame(frameId);
+      timer.dispose();
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('resize', onResize);
