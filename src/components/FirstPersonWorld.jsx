@@ -1890,9 +1890,9 @@ function addFunctionalComputerStation(room) {
   const kenneyPath = 'models/vendor/kenney/furniture-kit';
   [
     { folder: furnitureFolder, file: 'Desk.glb', name: 'functional-computer-desk', position: [-11.4, 0, -8.6], rotation: [0, Math.PI, 0], targetSize: 3.18, outlineOpacity: 0.26 },
-    { basePath: 'models/custom', file: 'study-computer.glb', name: 'functional-study-computer', position: [-11.4, 0, -8.8], rotation: [0, 0, 0], targetSize: 2.82, outlineOpacity: 0.26 },
-    { basePath: kenneyPath, file: 'computerKeyboard.glb', name: 'functional-computer-keyboard', position: [-11.3, 1.08, -7.72], rotation: [0, 0, 0], targetSize: 0.54, outlineOpacity: 0.18 },
-    { basePath: kenneyPath, file: 'computerMouse.glb', name: 'functional-computer-mouse', position: [-10.48, 1.08, -7.68], rotation: [0, 0.1, 0], targetSize: 0.28, outlineOpacity: 0.16 }
+    { basePath: 'models/custom', file: 'study-computer.glb', name: 'functional-study-computer', position: [-11.4, 0, -8.8], rotation: [0, Math.PI, 0], targetSize: 2.82, outlineOpacity: 0.26 },
+    { basePath: kenneyPath, file: 'computerKeyboard.glb', name: 'functional-computer-keyboard', position: [-11.3, 0.82, -7.72], rotation: [0, Math.PI, 0], targetSize: 0.54, outlineOpacity: 0.18 },
+    { basePath: kenneyPath, file: 'computerMouse.glb', name: 'functional-computer-mouse', position: [-10.48, 0.82, -7.68], rotation: [0, Math.PI + 0.1, 0], targetSize: 0.28, outlineOpacity: 0.16 }
   ].forEach((asset) => addImportedAsset(room, asset));
 }
 
