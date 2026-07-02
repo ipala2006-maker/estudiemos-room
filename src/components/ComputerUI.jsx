@@ -1,23 +1,23 @@
 import {
   ArrowLeft,
-  BookOpen,
   CheckCircle2,
   Eraser,
+  ExternalLink,
+  FileText,
   Link,
   MonitorUp,
-  Play,
   Settings,
   ShieldCheck,
   Sparkles,
+  Video,
   Volume2,
   VolumeX,
+  Wrench,
   X
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { createScreenContentFromItem, getContentItemsBySource } from '../data/contentSources.js';
-import { studySubjects } from '../data/mockStudyContent.js';
+import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingenieriaRecursos.js';
 import { parseYouTubeUrl } from '../utils/youtube.js';
-import { StudyRoomContent } from './StudyOverlay.jsx';
 
 const ZONES = [
   {
@@ -43,8 +43,8 @@ const LAUNCHER_APPS = [
   {
     id: 'estudiemos',
     title: 'Estudiemos',
-    subtitle: 'Biblioteca de estudio',
-    description: 'Materias, clases demo y recursos preparados para la sala.',
+    subtitle: 'Ingenieria Recursos',
+    description: 'La pagina real de recursos de ingenieria conectada a la sala.',
     icon: Sparkles
   },
   {
@@ -56,11 +56,7 @@ const LAUNCHER_APPS = [
   }
 ];
 
-const STUDY_RECOMMENDATIONS = {
-  'analisis-matematico-i': 'est-calculus',
-  algebra: 'est-static',
-  'fisica-i': 'est-static'
-};
+const carrera = ingenieriaRecursosData.carreras[0];
 
 export function ComputerUI({
   onClose,
@@ -74,14 +70,19 @@ export function ComputerUI({
   const [activeApp, setActiveApp] = useState('launcher');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState(null);
-  const [subjectId, setSubjectId] = useState(studySubjects[0].id);
-  const [videoId, setVideoId] = useState(studySubjects[0].videos[0].id);
+  const [materiaSlug, setMateriaSlug] = useState(carrera.materias[0].slug);
+  const [temaSlug, setTemaSlug] = useState(carrera.materias[0].temas[0].slug);
   const [linkDraft, setLinkDraft] = useState('');
   const [linkError, setLinkError] = useState('');
 
-  const subject = studySubjects.find((item) => item.id === subjectId) ?? studySubjects[0];
-  const video = subject.videos.find((item) => item.id === videoId) ?? subject.videos[0];
-  const studyItems = useMemo(() => getContentItemsBySource('estudiemos'), []);
+  const materia = useMemo(
+    () => carrera.materias.find((item) => item.slug === materiaSlug) ?? carrera.materias[0],
+    [materiaSlug]
+  );
+  const tema = useMemo(
+    () => materia.temas.find((item) => item.slug === temaSlug) ?? materia.temas[0],
+    [materia, temaSlug]
+  );
   const activeLayout = SCREEN_LAYOUTS.find((layout) => layout.id === screenLayout) ?? SCREEN_LAYOUTS[1];
 
   function openApp(appId) {
@@ -96,27 +97,46 @@ export function ComputerUI({
     setDrawerOpen(false);
   }
 
-  function handleSubjectChange(nextSubjectId) {
-    const nextSubject = studySubjects.find((item) => item.id === nextSubjectId) ?? studySubjects[0];
-    setSubjectId(nextSubject.id);
-    setVideoId(nextSubject.videos[0].id);
+  function changeMateria(nextMateriaSlug) {
+    const nextMateria = carrera.materias.find((item) => item.slug === nextMateriaSlug) ?? carrera.materias[0];
+    setMateriaSlug(nextMateria.slug);
+    setTemaSlug(nextMateria.temas[0].slug);
     setSelectedContent(null);
   }
 
-  function selectItem(item) {
+  function changeTema(nextTemaSlug) {
+    setTemaSlug(nextTemaSlug);
+    setSelectedContent(null);
+  }
+
+  function selectVideo(videoItem, index) {
+    const result = parseYouTubeUrl(videoItem.url);
+    if (!result.ok) return;
+
     setSelectedContent({
-      ...createScreenContentFromItem(item),
-      title: item.title,
-      creator: item.creator,
-      description: item.description,
-      category: item.category
+      ...result.video,
+      contentType: 'youtube',
+      resourceUrl: '',
+      title: videoItem.title ?? `${tema.title} - video ${index + 1}`,
+      creator: ingenieriaRecursosSource.name,
+      description: `${materia.title} / ${tema.title}`,
+      category: 'Video'
     });
   }
 
-  function selectCurrentStudyLesson() {
-    const recommendedId = STUDY_RECOMMENDATIONS[subject.id] ?? studyItems[0]?.id;
-    const item = studyItems.find((entry) => entry.id === recommendedId) ?? studyItems[0];
-    if (item) selectItem(item);
+  function selectPdf(pdfItem) {
+    setSelectedContent({
+      videoId: '',
+      inputUrl: pdfItem.url,
+      watchUrl: pdfItem.url,
+      embedUrl: '',
+      contentType: 'pdf',
+      resourceUrl: pdfItem.url,
+      title: pdfItem.title,
+      creator: ingenieriaRecursosSource.name,
+      description: `${materia.title} / ${tema.title}`,
+      category: 'PDF'
+    });
   }
 
   function prepareManualLink(event) {
@@ -131,6 +151,8 @@ export function ComputerUI({
     setLinkError('');
     setSelectedContent({
       ...result.video,
+      contentType: 'youtube',
+      resourceUrl: '',
       title: 'Link de YouTube',
       creator: 'Contenido externo',
       description: 'Video preparado desde Links. Elegi donde mostrarlo.',
@@ -181,17 +203,13 @@ export function ComputerUI({
 
           {activeApp === 'estudiemos' && (
             <EstudiemosApp
-              subject={subject}
-              video={video}
-              studyItems={studyItems}
+              materia={materia}
+              tema={tema}
               selectedContent={selectedContent}
-              onSubjectChange={handleSubjectChange}
-              onVideoChange={(nextVideoId) => {
-                setVideoId(nextVideoId);
-                setSelectedContent(null);
-              }}
-              onSelectLesson={selectCurrentStudyLesson}
-              onSelectItem={selectItem}
+              onMateriaChange={changeMateria}
+              onTemaChange={changeTema}
+              onSelectVideo={selectVideo}
+              onSelectPdf={selectPdf}
               onAssignContent={assignContent}
               onCloseContent={() => setSelectedContent(null)}
             />
@@ -258,59 +276,138 @@ function ComputerLauncher({ onOpenApp }) {
 }
 
 function EstudiemosApp({
-  subject,
-  video,
-  studyItems,
+  materia,
+  tema,
   selectedContent,
-  onSubjectChange,
-  onVideoChange,
-  onSelectLesson,
-  onSelectItem,
+  onMateriaChange,
+  onTemaChange,
+  onSelectVideo,
+  onSelectPdf,
   onAssignContent,
   onCloseContent
 }) {
   return (
-    <div className="mediahub-app-shell">
-      <section className="mediahub-main-panel">
-        <StudyRoomContent
-          subject={subject}
-          video={video}
-          onSubjectChange={onSubjectChange}
-          onVideoChange={onVideoChange}
-          className="computer-study-grid"
-          actions={
-            <div className="study-action-row">
-              <button type="button" className="mediahub-primary-button" onClick={onSelectLesson}>
-                <Play size={17} aria-hidden="true" />
-                <span>Preparar en pantalla</span>
+    <div className="mediahub-app-shell estudiemos-resource-shell">
+      <section className="mediahub-main-panel recursos-main-panel">
+        <div className="context-section-title">
+          <span>{ingenieriaRecursosSource.repository}</span>
+          <h3>{carrera.title}</h3>
+          <p>{carrera.description}</p>
+        </div>
+
+        <div className="resource-browser-grid">
+          <section className="resource-column">
+            <span>Materias</span>
+            {carrera.materias.map((item) => (
+              <button
+                key={item.slug}
+                type="button"
+                className={item.slug === materia.slug ? 'resource-nav-card is-selected' : 'resource-nav-card'}
+                onClick={() => onMateriaChange(item.slug)}
+              >
+                <strong>{item.title}</strong>
+                <small>{item.description}</small>
               </button>
-            </div>
-          }
+            ))}
+          </section>
+
+          <section className="resource-column">
+            <span>Temas</span>
+            {materia.temas.map((item) => (
+              <button
+                key={item.slug}
+                type="button"
+                className={item.slug === tema.slug ? 'resource-nav-card is-selected' : 'resource-nav-card'}
+                onClick={() => onTemaChange(item.slug)}
+              >
+                <strong>{item.title}</strong>
+                <small>{item.meta}</small>
+              </button>
+            ))}
+          </section>
+        </div>
+
+        <ResourceSection
+          title="Videos"
+          emptyText="Este tema todavia no tiene videos cargados en ingenieria-recursos."
+          items={tema.videos}
+          icon={Video}
+          onSelect={onSelectVideo}
         />
+
+        <ResourceSection
+          title="PDFs"
+          emptyText="Este tema todavia no tiene PDFs cargados en ingenieria-recursos."
+          items={tema.pdfs}
+          icon={FileText}
+          onSelect={onSelectPdf}
+        />
+
+        <ToolSection tools={tema.herramientas} />
       </section>
 
       <aside className="mediahub-context-panel">
-        <div className="context-section-title">
-          <span>Recursos</span>
-          <h3>Estudiemos</h3>
-        </div>
-        <div className="compact-content-list">
-          {studyItems.map((item) => (
-            <button key={item.id} type="button" className="compact-content-card" onClick={() => onSelectItem(item)}>
-              <strong>{item.title}</strong>
-              <span>{item.category} - {item.duration}</span>
-            </button>
-          ))}
-        </div>
-
         <ContentActionPanel
           content={selectedContent}
-          emptyText="Selecciona una clase o recurso para ver acciones de pantalla."
+          emptyText="Selecciona un video o PDF de Estudiemos para enviarlo a la pantalla."
           onAssignContent={onAssignContent}
           onClose={onCloseContent}
         />
       </aside>
     </div>
+  );
+}
+
+function ResourceSection({ title, emptyText, items = [], icon: Icon, onSelect }) {
+  return (
+    <section className="resource-content-section">
+      <div className="content-section-title">
+        <h3>{title}</h3>
+        <span>{items.length} disponibles</span>
+      </div>
+      {items.length > 0 ? (
+        <div className="resource-card-list">
+          {items.map((item, index) => (
+            <button key={`${item.title}-${index}`} type="button" className="resource-action-card" onClick={() => onSelect(item, index)}>
+              <Icon size={20} aria-hidden="true" />
+              <div>
+                <strong>{item.title ?? `${title} ${index + 1}`}</strong>
+                <span>{title === 'PDFs' ? 'Material de lectura' : 'Video de clase'}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="resource-empty-note">{emptyText}</p>
+      )}
+    </section>
+  );
+}
+
+function ToolSection({ tools = [] }) {
+  return (
+    <section className="resource-content-section">
+      <div className="content-section-title">
+        <h3>Herramientas</h3>
+        <span>{tools.length} disponibles</span>
+      </div>
+      {tools.length > 0 ? (
+        <div className="resource-card-list">
+          {tools.map((tool) => (
+            <a key={tool.url} className="resource-action-card" href={tool.url} target="_blank" rel="noreferrer">
+              <Wrench size={20} aria-hidden="true" />
+              <div>
+                <strong>{tool.title}</strong>
+                <span>{tool.type}</span>
+              </div>
+              <ExternalLink size={16} aria-hidden="true" />
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p className="resource-empty-note">Este tema todavia no tiene herramientas cargadas.</p>
+      )}
+    </section>
   );
 }
 
@@ -447,17 +544,17 @@ function ScreenControlDrawer({
           <div className="drawer-zone-list">
             {ZONES.map((zone) => {
               const current = screenZones[zone.id];
-              const hasVideo = Boolean(current.videoId);
+              const hasContent = Boolean(current.videoId || current.resourceUrl);
               return (
                 <div className="drawer-zone-card" key={zone.id}>
                   <div className="drawer-zone-title">
                     <div>
                       <strong>{zone.label}</strong>
-                      <small>{hasVideo ? current.title ?? current.videoId : 'Sin contenido'}</small>
+                      <small>{hasContent ? current.title ?? current.videoId ?? current.resourceUrl : 'Sin contenido'}</small>
                     </div>
-                    <div className={hasVideo ? 'zone-state is-ready' : 'zone-state'}>
-                      {hasVideo ? <CheckCircle2 size={15} aria-hidden="true" /> : <ShieldCheck size={15} aria-hidden="true" />}
-                      <span>{hasVideo ? 'Activo' : 'Libre'}</span>
+                    <div className={hasContent ? 'zone-state is-ready' : 'zone-state'}>
+                      {hasContent ? <CheckCircle2 size={15} aria-hidden="true" /> : <ShieldCheck size={15} aria-hidden="true" />}
+                      <span>{hasContent ? 'Activo' : 'Libre'}</span>
                     </div>
                   </div>
 

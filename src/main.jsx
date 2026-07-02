@@ -12,6 +12,10 @@ function createEmptyScreenZone() {
     inputUrl: '',
     watchUrl: '',
     embedUrl: '',
+    contentType: 'empty',
+    resourceUrl: '',
+    title: '',
+    creator: '',
     muted: true,
     volume: 70,
     updatedAt: 0

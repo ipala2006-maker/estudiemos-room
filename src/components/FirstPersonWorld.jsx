@@ -30,8 +30,8 @@ const GIANT_SCREEN_DOM_SIZE = {
 };
 const DEFAULT_SCREEN_LAYOUT = 'split-70-30';
 const DEFAULT_SCREEN_ZONES = {
-  upper: { videoId: '', embedUrl: '', muted: true, volume: 70, updatedAt: 0 },
-  lower: { videoId: '', embedUrl: '', muted: true, volume: 70, updatedAt: 0 }
+  upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, updatedAt: 0 },
+  lower: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, updatedAt: 0 }
 };
 
 export function FirstPersonWorld({
@@ -422,12 +422,18 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
     layout: layout.id,
     upper: {
       videoId: screenZones.upper.videoId,
+      contentType: screenZones.upper.contentType,
+      resourceUrl: screenZones.upper.resourceUrl,
+      title: screenZones.upper.title,
       muted: screenZones.upper.muted,
       volume: screenZones.upper.volume,
       updatedAt: screenZones.upper.updatedAt
     },
     lower: {
       videoId: screenZones.lower.videoId,
+      contentType: screenZones.lower.contentType,
+      resourceUrl: screenZones.lower.resourceUrl,
+      title: screenZones.lower.title,
       muted: screenZones.lower.muted,
       volume: screenZones.lower.volume,
       updatedAt: screenZones.lower.updatedAt
@@ -443,14 +449,14 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
 
   layout.slots.forEach((slotConfig) => {
     const zone = screenZones[slotConfig.zoneId];
-    const src = buildYouTubeEmbedUrl(zone);
+    const src = zone.contentType === 'pdf' ? buildPdfEmbedUrl(zone.resourceUrl) : buildYouTubeEmbedUrl(zone);
     const slot = document.createElement('div');
     slot.className = 'physical-screen-slot';
 
     if (src) {
       const iframe = document.createElement('iframe');
       iframe.src = src;
-      iframe.title = `${slotConfig.label} - YouTube`;
+      iframe.title = `${slotConfig.label} - ${zone.title || zone.contentType || 'Contenido'}`;
       iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
       iframe.referrerPolicy = 'strict-origin-when-cross-origin';
       iframe.allowFullscreen = true;
@@ -468,6 +474,11 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
 
     root.appendChild(slot);
   });
+}
+
+function buildPdfEmbedUrl(resourceUrl) {
+  if (!resourceUrl) return '';
+  return `${resourceUrl}#toolbar=0&navpanes=0&view=FitH`;
 }
 
 function buildWorldScene(scene) {
@@ -1987,12 +1998,18 @@ function updateGiantScreen(giantScreen, screenZones, screenLayout) {
     layout: layout.id,
     upper: {
       videoId: screenZones.upper.videoId,
+      contentType: screenZones.upper.contentType,
+      resourceUrl: screenZones.upper.resourceUrl,
+      title: screenZones.upper.title,
       muted: screenZones.upper.muted,
       volume: screenZones.upper.volume,
       updatedAt: screenZones.upper.updatedAt
     },
     lower: {
       videoId: screenZones.lower.videoId,
+      contentType: screenZones.lower.contentType,
+      resourceUrl: screenZones.lower.resourceUrl,
+      title: screenZones.lower.title,
       muted: screenZones.lower.muted,
       volume: screenZones.lower.volume,
       updatedAt: screenZones.lower.updatedAt
@@ -2046,7 +2063,8 @@ function updateGiantScreen(giantScreen, screenZones, screenLayout) {
 }
 
 function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel, accent, isPrimary }) {
-  const hasVideo = Boolean(zone.videoId);
+  const hasContent = Boolean(zone.videoId || zone.resourceUrl);
+  const contentLabel = zone.contentType === 'pdf' ? 'PDF' : 'YOUTUBE';
   const innerX = x + 34;
   const innerY = y + (isPrimary ? 36 : 24);
   const titleSize = isPrimary ? 64 : 34;
@@ -2057,13 +2075,13 @@ function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel,
   ctx.rect(x, y, width, height);
   ctx.clip();
 
-  ctx.fillStyle = hasVideo ? 'rgba(10,18,20,0.28)' : 'rgba(255,255,255,0.035)';
+  ctx.fillStyle = hasContent ? 'rgba(10,18,20,0.28)' : 'rgba(255,255,255,0.035)';
   ctx.fillRect(x, y, width, height);
 
   ctx.save();
   ctx.translate(width * 0.62, y - 28);
   ctx.rotate(-0.18);
-  ctx.fillStyle = hasVideo ? 'rgba(185, 215, 223, 0.16)' : 'rgba(215, 194, 138, 0.12)';
+  ctx.fillStyle = hasContent ? 'rgba(185, 215, 223, 0.16)' : 'rgba(215, 194, 138, 0.12)';
   for (let i = 0; i < 10; i += 1) {
     ctx.fillRect(i * 76, 0, 18, height + 120);
   }
@@ -2078,27 +2096,31 @@ function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel,
   ctx.font = `900 ${isPrimary ? 38 : 22}px system-ui, sans-serif`;
   ctx.fillText(label, innerX + 24, innerY + (isPrimary ? 48 : 32));
 
-  ctx.fillStyle = hasVideo ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)';
+  ctx.fillStyle = hasContent ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)';
   ctx.font = `900 ${titleSize}px system-ui, sans-serif`;
-  ctx.fillText(hasVideo ? 'YOUTUBE' : 'SIN VIDEO', innerX + 3, innerY + (isPrimary ? 165 : 105));
+  ctx.fillText(hasContent ? contentLabel : 'SIN VIDEO', innerX + 3, innerY + (isPrimary ? 165 : 105));
 
   ctx.fillStyle = '#ffffff';
   ctx.font = `900 ${titleSize}px system-ui, sans-serif`;
-  ctx.fillText(hasVideo ? 'YOUTUBE' : 'SIN VIDEO', innerX, innerY + (isPrimary ? 158 : 100));
+  ctx.fillText(hasContent ? contentLabel : 'SIN VIDEO', innerX, innerY + (isPrimary ? 158 : 100));
 
   ctx.font = `750 ${bodySize}px system-ui, sans-serif`;
   ctx.fillStyle = 'rgba(255,255,255,0.86)';
-  if (hasVideo) {
-    ctx.fillText(`Video ID: ${zone.videoId}`, innerX, innerY + (isPrimary ? 205 : 136));
-    ctx.fillText(`${zone.muted ? 'Mute activo' : 'Audio activo'} - Volumen ${zone.volume}%`, innerX, innerY + (isPrimary ? 242 : 164));
+  if (hasContent) {
+    ctx.fillText(zone.title ? `Recurso: ${zone.title}` : `Video ID: ${zone.videoId}`, innerX, innerY + (isPrimary ? 205 : 136));
+    ctx.fillText(
+      zone.contentType === 'pdf' ? 'Documento de Estudiemos' : `${zone.muted ? 'Mute activo' : 'Audio activo'} - Volumen ${zone.volume}%`,
+      innerX,
+      innerY + (isPrimary ? 242 : 164)
+    );
   } else {
     ctx.fillText(`Canal ${slotLabel} listo para recibir YouTube`, innerX, innerY + (isPrimary ? 205 : 136));
   }
 
   ctx.fillStyle = accent;
-  ctx.fillRect(width - 196, y + height - 48, hasVideo ? 128 : 76, 10);
+  ctx.fillRect(width - 196, y + height - 48, hasContent ? 128 : 76, 10);
   ctx.fillStyle = 'rgba(255,255,255,0.36)';
-  ctx.fillRect(width - 196, y + height - 28, hasVideo ? 88 : 122, 10);
+  ctx.fillRect(width - 196, y + height - 28, hasContent ? 88 : 122, 10);
 
   ctx.restore();
 }

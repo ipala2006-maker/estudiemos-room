@@ -169,6 +169,8 @@ button {
 .mediahub-secondary-button:focus-visible,
 .mediahub-text-button:focus-visible,
 .compact-content-card:focus-visible,
+.resource-nav-card:focus-visible,
+.resource-action-card:focus-visible,
 .links-input-row input:focus-visible,
 .drawer-layout-grid button:focus-visible,
 .drawer-zone-actions button:focus-visible,
@@ -2251,6 +2253,116 @@ select {
   font-weight: 820;
 }
 
+.estudiemos-resource-shell {
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 380px);
+}
+
+.recursos-main-panel {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.resource-browser-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+  gap: 14px;
+}
+
+.resource-column,
+.resource-content-section {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.resource-column > span {
+  color: #60736e;
+  font-size: 0.76rem;
+  font-weight: 860;
+  text-transform: uppercase;
+}
+
+.resource-nav-card,
+.resource-action-card {
+  border: 1px solid rgba(17, 22, 34, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #172426;
+  text-align: left;
+  box-shadow: 0 10px 22px rgba(17, 22, 34, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.resource-nav-card {
+  min-height: 70px;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.resource-nav-card:hover,
+.resource-action-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(79, 111, 120, 0.28);
+  background: #ffffff;
+}
+
+.resource-nav-card.is-selected {
+  border-color: rgba(215, 194, 138, 0.42);
+  background: #172426;
+  color: #ffffff;
+}
+
+.resource-nav-card small {
+  color: #60736e;
+  font-weight: 700;
+}
+
+.resource-nav-card.is-selected small {
+  color: rgba(215, 194, 138, 0.92);
+}
+
+.resource-card-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.resource-action-card {
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  text-decoration: none;
+}
+
+.resource-action-card svg {
+  color: #4f6f78;
+}
+
+.resource-action-card strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.resource-action-card span,
+.resource-empty-note {
+  color: #60736e;
+  font-size: 0.84rem;
+  font-weight: 720;
+}
+
+.resource-empty-note {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed rgba(17, 22, 34, 0.14);
+  border-radius: 8px;
+  background: rgba(244, 246, 242, 0.72);
+}
+
 @keyframes prompt-pulse {
   from {
     transform: translateX(-50%) translateY(0);
@@ -2302,6 +2414,9 @@ select {
   .launcher-app-grid,
   .mediahub-app-shell,
   .links-app-shell,
+  .estudiemos-resource-shell,
+  .resource-browser-grid,
+  .resource-card-list,
   .computer-study-grid {
     grid-template-columns: 1fr;
   }
