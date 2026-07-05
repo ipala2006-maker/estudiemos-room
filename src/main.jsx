@@ -7,6 +7,7 @@ import { StartScreen } from './components/StartScreen.jsx';
 import './styles/app.css';
 import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
+import './styles/camera-controls.css';
 
 function createEmptyScreenZone() {
   return {
@@ -30,6 +31,7 @@ function App() {
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
+  const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [screenLayout, setScreenLayout] = useState('split-70-30');
   const [screenZones, setScreenZones] = useState({
     upper: createEmptyScreenZone(),
@@ -37,6 +39,15 @@ function App() {
   });
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
+
+  useEffect(() => {
+    function onPointerLockChange() {
+      setIsPointerLocked(Boolean(document.pointerLockElement));
+    }
+
+    document.addEventListener('pointerlockchange', onPointerLockChange);
+    return () => document.removeEventListener('pointerlockchange', onPointerLockChange);
+  }, []);
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -137,6 +148,13 @@ function App() {
       )}
 
       {isNearComputer && <div className="interaction-prompt">Presiona E para usar la computadora</div>}
+
+      {!computerOpen && !isPointerLocked && (
+        <div className="camera-lock-prompt">
+          <strong>Click para tomar la camara</strong>
+          <span>Mover el mouse para mirar. Presiona Esc para liberar.</span>
+        </div>
+      )}
 
       {computerOpen && (
         <ComputerUI
