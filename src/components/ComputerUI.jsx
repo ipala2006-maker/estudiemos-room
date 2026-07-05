@@ -1,12 +1,15 @@
 import {
   ArrowLeft,
+  BookOpen,
   CheckCircle2,
+  ChevronRight,
   Eraser,
   ExternalLink,
   FileText,
   Link,
   MonitorUp,
-  Settings,
+  PanelRightOpen,
+  Search,
   ShieldCheck,
   Sparkles,
   Video,
@@ -43,20 +46,28 @@ const LAUNCHER_APPS = [
   {
     id: 'estudiemos',
     title: 'Estudiemos',
-    subtitle: 'Ingenieria Recursos',
-    description: 'La pagina real de recursos de ingenieria conectada a la sala.',
-    icon: Sparkles
+    subtitle: 'Biblioteca principal',
+    description: 'Entrar a la pagina real de recursos y elegir material para estudiar.',
+    icon: Sparkles,
+    accent: 'primary'
   },
   {
     id: 'links',
     title: 'Links',
-    subtitle: 'Contenido externo',
-    description: 'Pega un link compatible y envialo a la pantalla.',
-    icon: Link
+    subtitle: 'Carga manual',
+    description: 'Pegar un link compatible y enviarlo a una de las pantallas.',
+    icon: Link,
+    accent: 'secondary'
   }
 ];
 
-const carrera = ingenieriaRecursosData.carreras[0];
+const EMPTY_ROUTE = {
+  carreraSlug: '',
+  materiaSlug: '',
+  temaSlug: ''
+};
+
+const carreraInicial = ingenieriaRecursosData.carreras[0];
 
 export function ComputerUI({
   onClose,
@@ -70,25 +81,34 @@ export function ComputerUI({
   const [activeApp, setActiveApp] = useState('launcher');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState(null);
-  const [materiaSlug, setMateriaSlug] = useState(carrera.materias[0].slug);
-  const [temaSlug, setTemaSlug] = useState(carrera.materias[0].temas[0].slug);
+  const [estudiemosRoute, setEstudiemosRoute] = useState(EMPTY_ROUTE);
+  const [resourceView, setResourceView] = useState('categories');
   const [linkDraft, setLinkDraft] = useState('');
   const [linkError, setLinkError] = useState('');
 
+  const carreras = ingenieriaRecursosData.carreras;
+  const carrera = useMemo(
+    () => carreras.find((item) => item.slug === estudiemosRoute.carreraSlug) ?? carreras[0] ?? carreraInicial,
+    [carreras, estudiemosRoute.carreraSlug]
+  );
   const materia = useMemo(
-    () => carrera.materias.find((item) => item.slug === materiaSlug) ?? carrera.materias[0],
-    [materiaSlug]
+    () => carrera.materias.find((item) => item.slug === estudiemosRoute.materiaSlug) ?? carrera.materias[0],
+    [carrera, estudiemosRoute.materiaSlug]
   );
   const tema = useMemo(
-    () => materia.temas.find((item) => item.slug === temaSlug) ?? materia.temas[0],
-    [materia, temaSlug]
+    () => materia.temas.find((item) => item.slug === estudiemosRoute.temaSlug) ?? materia.temas[0],
+    [materia, estudiemosRoute.temaSlug]
   );
   const activeLayout = SCREEN_LAYOUTS.find((layout) => layout.id === screenLayout) ?? SCREEN_LAYOUTS[1];
 
   function openApp(appId) {
     setActiveApp(appId);
-    setSelectedContent(null);
     setDrawerOpen(false);
+    setSelectedContent(null);
+    setResourceView('categories');
+    if (appId === 'estudiemos') {
+      setEstudiemosRoute(EMPTY_ROUTE);
+    }
   }
 
   function backToLauncher() {
@@ -97,16 +117,28 @@ export function ComputerUI({
     setDrawerOpen(false);
   }
 
-  function changeMateria(nextMateriaSlug) {
-    const nextMateria = carrera.materias.find((item) => item.slug === nextMateriaSlug) ?? carrera.materias[0];
-    setMateriaSlug(nextMateria.slug);
-    setTemaSlug(nextMateria.temas[0].slug);
+  function openEstudiemosHome() {
+    setEstudiemosRoute(EMPTY_ROUTE);
     setSelectedContent(null);
+    setResourceView('categories');
   }
 
-  function changeTema(nextTemaSlug) {
-    setTemaSlug(nextTemaSlug);
+  function openCarrera(carreraSlug) {
+    setEstudiemosRoute({ carreraSlug, materiaSlug: '', temaSlug: '' });
     setSelectedContent(null);
+    setResourceView('categories');
+  }
+
+  function openMateria(materiaSlug) {
+    setEstudiemosRoute({ carreraSlug: carrera.slug, materiaSlug, temaSlug: '' });
+    setSelectedContent(null);
+    setResourceView('categories');
+  }
+
+  function openTema(temaSlug) {
+    setEstudiemosRoute({ carreraSlug: carrera.slug, materiaSlug: materia.slug, temaSlug });
+    setSelectedContent(null);
+    setResourceView('categories');
   }
 
   function selectVideo(videoItem, index) {
@@ -170,12 +202,13 @@ export function ComputerUI({
   }
 
   return (
-    <section className="computer-overlay" aria-label="Computadora de Casa 1">
-      <div className="computer-window computer-window-wide mediahub-window">
-        <header className="computer-topbar mediahub-topbar">
+    <section className="computer-overlay mediahub-boot-overlay" aria-label="Computadora de Casa 1">
+      <div className="computer-window computer-window-wide mediahub-window game-computer-window">
+        <div className="computer-boot-glow" aria-hidden="true" />
+        <header className="computer-topbar mediahub-topbar game-os-topbar">
           <div className="mediahub-titlebar">
             {activeApp !== 'launcher' && (
-              <button type="button" className="mediahub-icon-button" onClick={backToLauncher} aria-label="Volver al launcher">
+              <button type="button" className="mediahub-icon-button" onClick={backToLauncher} aria-label="Volver al inicio">
                 <ArrowLeft size={20} aria-hidden="true" />
               </button>
             )}
@@ -188,7 +221,7 @@ export function ComputerUI({
           <div className="mediahub-top-actions">
             {activeApp !== 'launcher' && (
               <button type="button" className="mediahub-ghost-button" onClick={() => setDrawerOpen(true)}>
-                <Settings size={18} aria-hidden="true" />
+                <PanelRightOpen size={18} aria-hidden="true" />
                 <span>Pantalla</span>
               </button>
             )}
@@ -198,16 +231,23 @@ export function ComputerUI({
           </div>
         </header>
 
-        <div className="computer-desktop mediahub-desktop">
+        <div className="computer-desktop mediahub-desktop game-os-desktop">
           {activeApp === 'launcher' && <ComputerLauncher onOpenApp={openApp} />}
 
           {activeApp === 'estudiemos' && (
             <EstudiemosApp
+              carreras={carreras}
+              carrera={carrera}
               materia={materia}
               tema={tema}
+              route={estudiemosRoute}
+              resourceView={resourceView}
               selectedContent={selectedContent}
-              onMateriaChange={changeMateria}
-              onTemaChange={changeTema}
+              onHome={openEstudiemosHome}
+              onCarrera={openCarrera}
+              onMateria={openMateria}
+              onTema={openTema}
+              onResourceView={setResourceView}
               onSelectVideo={selectVideo}
               onSelectPdf={selectPdf}
               onAssignContent={assignContent}
@@ -248,18 +288,24 @@ export function ComputerUI({
 
 function ComputerLauncher({ onOpenApp }) {
   return (
-    <div className="computer-launcher" aria-label="Launcher de computadora">
-      <div className="launcher-heading">
-        <span>Launcher</span>
-        <h2>Elegir app</h2>
+    <div className="computer-launcher game-launcher" aria-label="Launcher de computadora">
+      <div className="launcher-heading game-launcher-heading">
+        <span>Sistema listo</span>
+        <h2>Elegir espacio de trabajo</h2>
+        <p>Dos accesos principales, sin controles tecnicos a la vista.</p>
       </div>
 
-      <div className="launcher-app-grid">
+      <div className="launcher-app-grid game-launcher-grid">
         {LAUNCHER_APPS.map((app) => {
           const Icon = app.icon;
           return (
-            <button key={app.id} type="button" className="launcher-app-card" onClick={() => onOpenApp(app.id)}>
-              <div className="launcher-app-icon">
+            <button
+              key={app.id}
+              type="button"
+              className={`launcher-app-card game-app-card game-app-card-${app.accent}`}
+              onClick={() => onOpenApp(app.id)}
+            >
+              <div className="launcher-app-icon game-app-icon">
                 <Icon size={34} aria-hidden="true" />
               </div>
               <div>
@@ -267,6 +313,7 @@ function ComputerLauncher({ onOpenApp }) {
                 <strong>{app.title}</strong>
                 <p>{app.description}</p>
               </div>
+              <ChevronRight size={24} aria-hidden="true" className="game-card-arrow" />
             </button>
           );
         })}
@@ -276,77 +323,96 @@ function ComputerLauncher({ onOpenApp }) {
 }
 
 function EstudiemosApp({
+  carreras,
+  carrera,
   materia,
   tema,
+  route,
+  resourceView,
   selectedContent,
-  onMateriaChange,
-  onTemaChange,
+  onHome,
+  onCarrera,
+  onMateria,
+  onTema,
+  onResourceView,
   onSelectVideo,
   onSelectPdf,
   onAssignContent,
   onCloseContent
 }) {
+  const isHome = !route.carreraSlug;
+  const isCarrera = Boolean(route.carreraSlug) && !route.materiaSlug;
+  const isMateria = Boolean(route.materiaSlug) && !route.temaSlug;
+  const isTema = Boolean(route.temaSlug);
+  const browserPath = buildBrowserPath(route);
+
   return (
-    <div className="mediahub-app-shell estudiemos-resource-shell">
-      <section className="mediahub-main-panel recursos-main-panel">
-        <div className="context-section-title">
-          <span>{ingenieriaRecursosSource.repository}</span>
-          <h3>{carrera.title}</h3>
-          <p>{carrera.description}</p>
-        </div>
+    <div className="mediahub-app-shell estudiemos-resource-shell estudiemos-os-shell">
+      <section className="estudiemos-browser-frame" aria-label="Estudiemos integrado">
+        <header className="estudiemos-browser-bar">
+          <div className="browser-dots" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="browser-address">
+            <Search size={15} aria-hidden="true" />
+            <span>{browserPath}</span>
+          </div>
+        </header>
 
-        <div className="resource-browser-grid">
-          <section className="resource-column">
-            <span>Materias</span>
-            {carrera.materias.map((item) => (
-              <button
-                key={item.slug}
-                type="button"
-                className={item.slug === materia.slug ? 'resource-nav-card is-selected' : 'resource-nav-card'}
-                onClick={() => onMateriaChange(item.slug)}
-              >
-                <strong>{item.title}</strong>
-                <small>{item.description}</small>
+        <div className="estudiemos-real-page">
+          <header className="estudiemos-real-topbar">
+            <button type="button" className="estudiemos-brand" onClick={onHome}>
+              Estudiemos
+            </button>
+            <nav className="estudiemos-breadcrumbs" aria-label="Ruta actual">
+              <button type="button" onClick={onHome}>
+                Carreras
               </button>
-            ))}
-          </section>
+              {!isHome && (
+                <>
+                  <span>/</span>
+                  <button type="button" onClick={() => onCarrera(carrera.slug)}>
+                    {carrera.title}
+                  </button>
+                </>
+              )}
+              {(isMateria || isTema) && (
+                <>
+                  <span>/</span>
+                  <button type="button" onClick={() => onMateria(materia.slug)}>
+                    {materia.title}
+                  </button>
+                </>
+              )}
+              {isTema && (
+                <>
+                  <span>/</span>
+                  <span>{tema.title}</span>
+                </>
+              )}
+            </nav>
+          </header>
 
-          <section className="resource-column">
-            <span>Temas</span>
-            {materia.temas.map((item) => (
-              <button
-                key={item.slug}
-                type="button"
-                className={item.slug === tema.slug ? 'resource-nav-card is-selected' : 'resource-nav-card'}
-                onClick={() => onTemaChange(item.slug)}
-              >
-                <strong>{item.title}</strong>
-                <small>{item.meta}</small>
-              </button>
-            ))}
-          </section>
+          <main className="estudiemos-container">
+            {isHome && <EstudiemosHome carreras={carreras} onCarrera={onCarrera} />}
+            {isCarrera && <CarreraPage carrera={carrera} onMateria={onMateria} />}
+            {isMateria && <MateriaPage materia={materia} onTema={onTema} />}
+            {isTema && (
+              <TemaPage
+                tema={tema}
+                resourceView={resourceView}
+                onResourceView={onResourceView}
+                onSelectVideo={onSelectVideo}
+                onSelectPdf={onSelectPdf}
+              />
+            )}
+          </main>
         </div>
-
-        <ResourceSection
-          title="Videos"
-          emptyText="Este tema todavia no tiene videos cargados en ingenieria-recursos."
-          items={tema.videos}
-          icon={Video}
-          onSelect={onSelectVideo}
-        />
-
-        <ResourceSection
-          title="PDFs"
-          emptyText="Este tema todavia no tiene PDFs cargados en ingenieria-recursos."
-          items={tema.pdfs}
-          icon={FileText}
-          onSelect={onSelectPdf}
-        />
-
-        <ToolSection tools={tema.herramientas} />
       </section>
 
-      <aside className="mediahub-context-panel">
+      <aside className="mediahub-context-panel game-context-panel">
         <ContentActionPanel
           content={selectedContent}
           emptyText="Selecciona un video o PDF de Estudiemos para enviarlo a la pantalla."
@@ -358,55 +424,204 @@ function EstudiemosApp({
   );
 }
 
-function ResourceSection({ title, emptyText, items = [], icon: Icon, onSelect }) {
+function EstudiemosHome({ carreras, onCarrera }) {
   return (
-    <section className="resource-content-section">
-      <div className="content-section-title">
-        <h3>{title}</h3>
-        <span>{items.length} disponibles</span>
-      </div>
-      {items.length > 0 ? (
-        <div className="resource-card-list">
-          {items.map((item, index) => (
-            <button key={`${item.title}-${index}`} type="button" className="resource-action-card" onClick={() => onSelect(item, index)}>
-              <Icon size={20} aria-hidden="true" />
+    <>
+      <section className="estudiemos-hero">
+        <h1>Estudiemos</h1>
+      </section>
+
+      <section className="estudiemos-section">
+        <div className="estudiemos-section-head">
+          <h2>Carreras</h2>
+          <p>Haz clic para ver las materias.</p>
+        </div>
+
+        <div className="estudiemos-cards-grid">
+          {carreras.map((item) => (
+            <button key={item.slug} type="button" className="estudiemos-card estudiemos-card-compact" onClick={() => onCarrera(item.slug)}>
               <div>
-                <strong>{item.title ?? `${title} ${index + 1}`}</strong>
-                <span>{title === 'PDFs' ? 'Material de lectura' : 'Video de clase'}</span>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
               </div>
+              <ChevronRight size={20} aria-hidden="true" />
             </button>
           ))}
         </div>
-      ) : (
-        <p className="resource-empty-note">{emptyText}</p>
+      </section>
+    </>
+  );
+}
+
+function CarreraPage({ carrera, onMateria }) {
+  return (
+    <section className="estudiemos-section">
+      <div className="estudiemos-section-head">
+        <h2>{carrera.title}</h2>
+        <p>{carrera.description}</p>
+      </div>
+
+      <div className="estudiemos-cards-grid">
+        {carrera.materias.map((item) => (
+          <button key={item.slug} type="button" className="estudiemos-card" onClick={() => onMateria(item.slug)}>
+            <BookOpen size={22} aria-hidden="true" />
+            <div>
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+            </div>
+            <ChevronRight size={20} aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MateriaPage({ materia, onTema }) {
+  return (
+    <section className="estudiemos-section">
+      <div className="estudiemos-section-head">
+        <h2>{materia.title}</h2>
+        <p>{materia.description}</p>
+      </div>
+
+      <div className="estudiemos-topic-grid">
+        {materia.temas.map((item) => (
+          <button key={item.slug} type="button" className="estudiemos-topic-card" onClick={() => onTema(item.slug)}>
+            <div>
+              <p>{item.title}</p>
+              <span>{item.meta}</span>
+            </div>
+            <ChevronRight size={18} aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TemaPage({ tema, resourceView, onResourceView, onSelectVideo, onSelectPdf }) {
+  const videos = tema.videos ?? [];
+  const pdfs = tema.pdfs ?? [];
+  const tools = tema.herramientas ?? [];
+
+  return (
+    <section className="estudiemos-topic-panel">
+      <div className="topic-page-head">
+        <div>
+          <h1>{tema.title}</h1>
+          <p>{tema.meta}</p>
+        </div>
+      </div>
+
+      <div className="resource-categories-game">
+        <ResourceCategoryButton
+          icon={Video}
+          title="Videos"
+          description="Explicaciones y clases"
+          count={videos.length}
+          selected={resourceView === 'videos'}
+          onClick={() => onResourceView('videos')}
+        />
+        <ResourceCategoryButton
+          icon={FileText}
+          title="Material"
+          description="Apuntes y guias"
+          count={pdfs.length}
+          selected={resourceView === 'pdfs'}
+          onClick={() => onResourceView('pdfs')}
+        />
+        <ResourceCategoryButton
+          icon={Wrench}
+          title="Herramientas"
+          description="Simuladores"
+          count={tools.length}
+          selected={resourceView === 'tools'}
+          onClick={() => onResourceView('tools')}
+        />
+      </div>
+
+      {resourceView === 'categories' && (
+        <p className="resource-empty-note game-empty-note">Elegir una categoria para ver el contenido cargado en Estudiemos.</p>
+      )}
+
+      {resourceView === 'videos' && (
+        <ResourceSection
+          title="Videos"
+          emptyText="No hay videos disponibles todavia."
+          items={videos}
+          renderItem={(item, index) => (
+            <button key={`${item.url}-${index}`} type="button" className="estudiemos-video-card" onClick={() => onSelectVideo(item, index)}>
+              <img src={buildThumbnail(item.url)} alt="" />
+              <div>
+                <strong>{item.title ?? `Video ${index + 1}`}</strong>
+                <span>Enviar a pantalla</span>
+              </div>
+            </button>
+          )}
+        />
+      )}
+
+      {resourceView === 'pdfs' && (
+        <ResourceSection
+          title="Material"
+          emptyText="No hay material disponible todavia."
+          items={pdfs}
+          renderItem={(item, index) => (
+            <button key={`${item.url}-${index}`} type="button" className="resource-action-card game-resource-action" onClick={() => onSelectPdf(item)}>
+              <FileText size={22} aria-hidden="true" />
+              <div>
+                <strong>{item.title}</strong>
+                <span>PDF de Estudiemos</span>
+              </div>
+              <MonitorUp size={17} aria-hidden="true" />
+            </button>
+          )}
+        />
+      )}
+
+      {resourceView === 'tools' && (
+        <ResourceSection
+          title="Herramientas"
+          emptyText="No hay herramientas disponibles todavia."
+          items={tools}
+          renderItem={(item) => (
+            <a key={item.url} className="resource-action-card game-resource-action" href={item.url} target="_blank" rel="noreferrer">
+              <Wrench size={22} aria-hidden="true" />
+              <div>
+                <strong>{item.title}</strong>
+                <span>{item.type}</span>
+              </div>
+              <ExternalLink size={16} aria-hidden="true" />
+            </a>
+          )}
+        />
       )}
     </section>
   );
 }
 
-function ToolSection({ tools = [] }) {
+function ResourceCategoryButton({ icon: Icon, title, description, count, selected, onClick }) {
   return (
-    <section className="resource-content-section">
-      <div className="content-section-title">
-        <h3>Herramientas</h3>
-        <span>{tools.length} disponibles</span>
+    <button type="button" className={selected ? 'resource-category-game is-selected' : 'resource-category-game'} onClick={onClick}>
+      <Icon size={22} aria-hidden="true" />
+      <div>
+        <h3>{title}</h3>
+        <p>{description}</p>
       </div>
-      {tools.length > 0 ? (
-        <div className="resource-card-list">
-          {tools.map((tool) => (
-            <a key={tool.url} className="resource-action-card" href={tool.url} target="_blank" rel="noreferrer">
-              <Wrench size={20} aria-hidden="true" />
-              <div>
-                <strong>{tool.title}</strong>
-                <span>{tool.type}</span>
-              </div>
-              <ExternalLink size={16} aria-hidden="true" />
-            </a>
-          ))}
-        </div>
-      ) : (
-        <p className="resource-empty-note">Este tema todavia no tiene herramientas cargadas.</p>
-      )}
+      <span>{count}</span>
+    </button>
+  );
+}
+
+function ResourceSection({ title, emptyText, items = [], renderItem }) {
+  return (
+    <section className="resource-content-section game-resource-section">
+      <div className="content-section-title">
+        <h3>{title}</h3>
+        <span>{items.length} disponibles</span>
+      </div>
+      {items.length > 0 ? <div className="resource-card-list game-resource-list">{items.map(renderItem)}</div> : <p className="resource-empty-note">{emptyText}</p>}
     </section>
   );
 }
@@ -421,15 +636,15 @@ function LinksApp({
   onCloseContent
 }) {
   return (
-    <div className="mediahub-app-shell links-app-shell">
-      <section className="links-card-panel">
+    <div className="mediahub-app-shell links-app-shell game-links-shell">
+      <section className="links-card-panel game-links-panel">
         <div className="context-section-title">
           <span>Links</span>
           <h3>Cargar contenido externo</h3>
-          <p>Pega un link de YouTube compatible. El sistema lo valida antes de mostrar acciones.</p>
+          <p>El input vive aca para mantener limpio el inicio de la computadora.</p>
         </div>
 
-        <form className="links-input-card" onSubmit={onPrepareLink}>
+        <form className="links-input-card game-links-input-card" onSubmit={onPrepareLink}>
           <label htmlFor="manual-youtube-link">Link embebible</label>
           <div className="links-input-row">
             <input
@@ -447,13 +662,13 @@ function LinksApp({
           {linkError && <p className="screen-zone-error">{linkError}</p>}
         </form>
 
-        <div className="links-format-note">
+        <div className="links-format-note game-links-note">
           <CheckCircle2 size={18} aria-hidden="true" />
           <span>Compatibles: youtube.com/watch, youtu.be y youtube.com/embed.</span>
         </div>
       </section>
 
-      <aside className="mediahub-context-panel">
+      <aside className="mediahub-context-panel game-context-panel">
         <ContentActionPanel
           content={selectedContent}
           emptyText="Prepara un link para elegir pantalla, layout o pantalla completa."
@@ -468,15 +683,15 @@ function LinksApp({
 function ContentActionPanel({ content, emptyText, onAssignContent, onClose }) {
   if (!content) {
     return (
-      <div className="content-action-panel is-empty">
-        <MonitorUp size={28} aria-hidden="true" />
+      <div className="content-action-panel is-empty game-action-panel">
+        <MonitorUp size={30} aria-hidden="true" />
         <p>{emptyText}</p>
       </div>
     );
   }
 
   return (
-    <div className="content-action-panel">
+    <div className="content-action-panel game-action-panel">
       <div>
         <span>{content.category ?? 'Contenido'}</span>
         <h3>{content.title}</h3>
@@ -511,7 +726,7 @@ function ScreenControlDrawer({
   return (
     <>
       <button type="button" className="screen-drawer-backdrop" onClick={onClose} aria-label="Cerrar controles de pantalla" />
-      <aside className="screen-control-drawer" aria-label="Controles de pantalla">
+      <aside className="screen-control-drawer game-screen-drawer" aria-label="Controles de pantalla">
         <header>
           <div>
             <span>Ahora reproduciendo</span>
@@ -587,6 +802,19 @@ function ScreenControlDrawer({
       </aside>
     </>
   );
+}
+
+function buildBrowserPath(route) {
+  if (!route.carreraSlug) return 'estudiemos.local/';
+  if (!route.materiaSlug) return `estudiemos.local/pages/carrera/${route.carreraSlug}.html`;
+  if (!route.temaSlug) return `estudiemos.local/pages/materia/${route.materiaSlug}.html`;
+  return `estudiemos.local/pages/tema/${route.temaSlug}.html`;
+}
+
+function buildThumbnail(url) {
+  const result = parseYouTubeUrl(url);
+  if (!result.ok) return '';
+  return `https://img.youtube.com/vi/${result.video.videoId}/hqdefault.jpg`;
 }
 
 function getAppTitle(activeApp) {
