@@ -1,0 +1,123 @@
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+#root,
+.game-shell,
+.three-world {
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.game-shell,
+.three-world {
+  overflow: hidden;
+}
+
+.three-world {
+  inset: 0;
+}
+
+.three-world canvas,
+.css3d-world-layer {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.mediahub-boot-overlay {
+  padding: 0;
+}
+
+.game-computer-window {
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.game-os-topbar {
+  min-height: clamp(72px, 8vh, 92px);
+  padding: clamp(14px, 2vh, 22px) clamp(20px, 2.8vw, 34px);
+}
+
+.game-os-desktop {
+  min-height: 0;
+}
+
+.game-launcher {
+  padding: clamp(30px, 5vw, 72px);
+}
+
+.game-launcher-heading h2 {
+  font-size: clamp(2.8rem, 6vw, 5.6rem);
+}
+
+.game-launcher-grid {
+  max-width: min(1080px, 90vw);
+}
+
+.estudiemos-os-shell {
+  height: 100%;
+  padding: clamp(14px, 1.7vw, 24px);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 410px);
+  gap: clamp(14px, 1.6vw, 24px);
+}
+
+.estudiemos-browser-frame {
+  height: 100%;
+}
+
+.estudiemos-container {
+  width: min(1180px, calc(100% - 36px));
+}
+
+.game-links-shell {
+  height: 100%;
+  padding: clamp(18px, 2vw, 34px);
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
+}
+
+.game-context-panel {
+  min-height: 0;
+}
+
+.game-screen-drawer {
+  top: clamp(72px, 8vh, 92px);
+  width: min(500px, 100%);
+}
+
+@media (max-width: 920px) {
+  .estudiemos-os-shell,
+  .game-links-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .game-context-panel {
+    min-height: 180px;
+    overflow: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .game-launcher {
+    padding: 18px;
+  }
+
+  .estudiemos-os-shell,
+  .game-links-shell {
+    padding: 10px;
+  }
+}
