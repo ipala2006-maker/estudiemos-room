@@ -81,7 +81,9 @@ function installCasa1RuntimeEnhancements(map) {
   };
 
   THREE.Scene.prototype.add = function addWithCasa1Enhancements(...objects) {
-    enhanceExteriorOnce(this, originalSceneAdd);
+    if (!objects.some((object) => object?.isCSS3DObject || object?.element)) {
+      enhanceExteriorOnce(this, originalSceneAdd);
+    }
     objects.forEach((object) => {
       if (isCasa1InteriorGroup(object)) {
         enhanceCasa1InteriorOnce(object);
