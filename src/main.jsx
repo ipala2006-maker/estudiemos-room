@@ -6,6 +6,7 @@ import { Hud } from './components/Hud.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import './styles/app.css';
 import './styles/computer-os.css';
+import './styles/fullscreen-layout.css';
 
 function createEmptyScreenZone() {
   return {
