@@ -11,6 +11,7 @@ import {
   Wifi
 } from 'lucide-react';
 import { useState } from 'react';
+import { studyAgendaItems } from '../data/studyAgenda.js';
 import { ComputerUI } from './ComputerUI.jsx';
 
 const DESKTOP_APPS = [
@@ -40,7 +41,7 @@ const DESKTOP_APPS = [
     id: 'agenda',
     title: 'Agenda',
     subtitle: 'Plan semanal',
-    state: 'Proximo',
+    state: 'Hoy',
     icon: CalendarDays
   },
   {
@@ -149,8 +150,16 @@ export function VirtualComputerShell(props) {
                 <div>
                   <CalendarDays size={18} aria-hidden="true" />
                   <strong>Agenda</strong>
-                  <span>Plan semanal</span>
+                  <span>{studyAgendaItems[0]?.title ?? 'Plan semanal'}</span>
                 </div>
+              </div>
+              <div className="virtual-agenda-list" aria-label="Agenda sincronizada">
+                {studyAgendaItems.slice(0, 3).map((item) => (
+                  <span key={`${item.time}-${item.title}`}>
+                    <strong>{item.time}</strong>
+                    {item.title}
+                  </span>
+                ))}
               </div>
             </aside>
           </section>

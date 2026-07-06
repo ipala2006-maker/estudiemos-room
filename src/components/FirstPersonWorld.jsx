@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
 import { Casa1 } from '../maps/Casa1.js';
 import { buildYouTubeEmbedUrl } from '../utils/youtube.js';
 
@@ -1879,9 +1880,8 @@ function addCasa1Interior(scene, textures) {
     room.add(wall);
   });
 
-  addStudyRoomArchitecture(room, textures);
-  addFunctionalComputerStation(room);
-  addStudyRoomSetDressing(room, textures);
+  addAgendaBoard(room, getStudyAgendaBoardLines(), textures);
+  addProceduralComputerStation(room, textures);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0x26231f, 0.88, 0, createTexture('quietCeiling')));
   ceiling.position.set(0, 16, 0);
@@ -1938,247 +1938,211 @@ function addCasa1Interior(scene, textures) {
   return { canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentScreenStateKey: '' };
 }
 
-function addStudyRoomArchitecture(room, textures) {
-  const trimMaterial = makeMaterial(0x211b17, 0.66, 0.02, textures.wood);
-  const panelMaterial = makeMaterial(0x62513f, 0.74, 0.01, createTexture('paintedWall'));
-  const acousticMaterial = makeMaterial(0x2e3331, 0.86, 0, textures.blackStripe);
-  const brassMaterial = makeMaterial(0xb18a45, 0.42, 0.18, textures.brushedMetal);
-
-  [
-    { position: [0, 0.72, -28.68], size: [55, 0.62, 0.34] },
-    { position: [0, 15.12, -28.7], size: [55, 0.42, 0.28] },
-    { position: [-27.7, 0.72, 0], size: [0.34, 0.62, 56] },
-    { position: [27.7, 0.72, 0], size: [0.34, 0.62, 56] },
-    { position: [0, 0.72, 28.68], size: [55, 0.62, 0.34] }
-  ].forEach((part) => {
-    const trim = new THREE.Mesh(new THREE.BoxGeometry(...part.size), trimMaterial);
-    trim.position.set(...part.position);
-    trim.castShadow = true;
-    trim.receiveShadow = true;
-    room.add(trim);
-  });
-
-  [-19.5, 19.5].forEach((x) => {
-    const screenColumn = new THREE.Mesh(new THREE.BoxGeometry(2.2, 13.8, 0.55), panelMaterial);
-    screenColumn.position.set(x, 7.7, -28.45);
-    screenColumn.castShadow = true;
-    screenColumn.receiveShadow = true;
-    room.add(screenColumn);
-
-    const brassLine = new THREE.Mesh(new THREE.BoxGeometry(0.12, 13.4, 0.62), brassMaterial);
-    brassLine.position.set(x + (x < 0 ? 1.22 : -1.22), 7.8, -28.1);
-    brassLine.castShadow = true;
-    room.add(brassLine);
-  });
-
-  [
-    [-23.5, 5.4, -16, Math.PI / 2],
-    [-23.5, 5.4, -9.2, Math.PI / 2],
-    [23.5, 5.4, -16, -Math.PI / 2],
-    [23.5, 5.4, -9.2, -Math.PI / 2],
-    [-11.5, 5.4, 28.42, Math.PI],
-    [11.5, 5.4, 28.42, Math.PI]
-  ].forEach(([x, y, z, rotY], index) => {
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.28, 5.6, 4.4), acousticMaterial);
-    panel.position.set(x, y, z);
-    panel.rotation.y = rotY;
-    panel.castShadow = true;
-    panel.receiveShadow = true;
-    room.add(panel);
-    if (index < 4) addEdges(panel, 0x9a7a4d, 0.14);
-  });
-
-  for (let x = -22; x <= 22; x += 8.8) {
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.62, 57), trimMaterial);
-    beam.position.set(x, 15.55, 0);
-    beam.castShadow = true;
-    room.add(beam);
-  }
-
-  [-16, 0, 16].forEach((z) => {
-    const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(55, 0.42, 0.38), trimMaterial);
-    crossBeam.position.set(0, 15.48, z);
-    crossBeam.castShadow = true;
-    room.add(crossBeam);
-  });
-
-  const screenStage = new THREE.Mesh(new THREE.BoxGeometry(41, 0.24, 4.2), makeMaterial(0x2d2721, 0.62, 0.02, textures.wood));
-  screenStage.position.set(0, 0.14, -25.9);
-  screenStage.receiveShadow = true;
-  room.add(screenStage);
-
-  const wallWash = new THREE.Mesh(new THREE.BoxGeometry(42, 0.12, 0.12), makeEmissiveMaterial(0xd7c28a, 0.38));
-  wallWash.position.set(0, 1.1, -28.05);
-  room.add(wallWash);
-
-  const whiteboard = createCanvasSign({
-    width: 640,
-    height: 360,
-    background: '#ece7dc',
-    accent: '#b18a45',
-    title: 'PLAN DE ESTUDIO',
-    subtitle: 'Foco - recursos - repaso'
-  });
-  whiteboard.position.set(-27.62, 6.2, -4);
-  whiteboard.rotation.y = Math.PI / 2;
-  whiteboard.scale.set(5.8, 3.3, 1);
-  room.add(whiteboard);
-
-  const cork = createCanvasStudyBoard({
+function addAgendaBoard(room, lines, textures) {
+  const board = createCanvasStudyBoard({
     title: 'Agenda',
-    lines: ['Clase pendiente', 'Ejercicios', 'Resumen semanal'],
+    lines,
     background: '#70583c',
     accent: '#e0c47a'
   });
-  cork.position.set(-27.6, 5.6, -12.8);
-  cork.rotation.y = Math.PI / 2;
-  cork.scale.set(3.2, 2.25, 1);
-  room.add(cork);
+  board.position.set(-27.6, 5.6, -12.8);
+  board.rotation.y = Math.PI / 2;
+  board.scale.set(3.35, 2.35, 1);
+  room.add(board);
+
+  const frameMaterial = makeMaterial(0x201913, 0.7, 0.02, textures.wood);
+  [
+    { position: [-27.52, 5.6, -12.8], size: [0.18, 2.62, 3.88] },
+    { position: [-27.5, 6.95, -12.8], size: [0.2, 0.18, 3.96] },
+    { position: [-27.5, 4.25, -12.8], size: [0.2, 0.18, 3.96] }
+  ].forEach((part) => {
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(...part.size), frameMaterial);
+    frame.position.set(...part.position);
+    frame.castShadow = true;
+    room.add(frame);
+  });
 }
 
-function addFunctionalComputerStation(room) {
-  const furnitureFolder = 'furniture-pack';
-  const kenneyPath = 'models/vendor/kenney/furniture-kit';
+function addProceduralComputerStation(room, textures) {
+  const station = new THREE.Group();
+  station.position.set(-11.4, 0, -8.55);
+
+  const deskTopMaterial = makeMaterial(0x3f2f22, 0.68, 0.03, textures.wood);
+  const deskEdgeMaterial = makeMaterial(0x201811, 0.72, 0.02, textures.wood);
+  const metalMaterial = makeMaterial(0x2b3031, 0.56, 0.22, textures.brushedMetal);
+  const blackMaterial = makeMaterial(0x090d0f, 0.62, 0.04);
+  const keyMaterial = makeMaterial(0xd8d2c5, 0.74, 0.01, textures.paper);
+  const padMaterial = makeMaterial(0x141c1d, 0.86, 0.02, textures.paper);
+  const accentMaterial = makeEmissiveMaterial(0x8ed7d2, 0.48);
+  const warmAccentMaterial = makeEmissiveMaterial(0xffc878, 0.62);
+
+  addDeskBox(station, [6.4, 0.26, 2.35], [0, 1.04, 0], deskTopMaterial, true);
+  addDeskBox(station, [6.58, 0.18, 0.16], [0, 1.0, 1.25], deskEdgeMaterial, true);
+  addDeskBox(station, [6.58, 0.18, 0.16], [0, 1.0, -1.25], deskEdgeMaterial, true);
+  addDeskBox(station, [0.16, 0.18, 2.35], [-3.28, 1.0, 0], deskEdgeMaterial, true);
+  addDeskBox(station, [0.16, 0.18, 2.35], [3.28, 1.0, 0], deskEdgeMaterial, true);
+  addDeskBox(station, [1.08, 0.9, 1.55], [-2.42, 0.5, 0.18], deskEdgeMaterial, true);
+  addDeskBox(station, [0.96, 0.08, 1.28], [-2.42, 0.82, 1.01], metalMaterial, true);
+  addDeskBox(station, [0.96, 0.08, 1.28], [-2.42, 0.52, 1.01], metalMaterial, true);
+
   [
-    { folder: furnitureFolder, file: 'Desk.glb', name: 'functional-computer-desk', position: [-11.4, 0, -8.6], rotation: [0, Math.PI, 0], targetSize: 3.18, outlineOpacity: 0.26 },
-    { basePath: 'models/custom', file: 'study-computer.glb', name: 'functional-study-computer', position: [-11.4, 0, -8.8], rotation: [0, Math.PI, 0], targetSize: 2.82, outlineOpacity: 0.26 },
-    { basePath: kenneyPath, file: 'computerKeyboard.glb', name: 'functional-computer-keyboard', position: [-11.3, 0.82, -7.72], rotation: [0, Math.PI, 0], targetSize: 0.54, outlineOpacity: 0.18 },
-    { basePath: kenneyPath, file: 'computerMouse.glb', name: 'functional-computer-mouse', position: [-10.48, 0.82, -7.68], rotation: [0, Math.PI + 0.1, 0], targetSize: 0.28, outlineOpacity: 0.16 }
-  ].forEach((asset) => addImportedAsset(room, asset));
+    [-3.0, 0.52, -0.86],
+    [-3.0, 0.52, 0.92],
+    [3.0, 0.52, -0.86],
+    [3.0, 0.52, 0.92]
+  ].forEach((position) => addDeskCylinder(station, 0.09, 0.09, 1.0, position, metalMaterial));
+
+  addDeskBox(station, [1.28, 0.08, 0.72], [0, 1.16, 0.2], metalMaterial, true);
+  addDeskBox(station, [0.2, 0.86, 0.16], [0, 1.62, -0.24], metalMaterial, true);
+  addDeskBox(station, [2.72, 1.58, 0.2], [0, 2.42, -0.52], blackMaterial, true);
+
+  const monitorTexture = createDeskMonitorTexture(studyAgendaItems);
+  const monitorScreen = new THREE.Mesh(
+    new THREE.BoxGeometry(2.42, 1.28, 0.04),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: monitorTexture,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.28,
+      roughness: 0.34,
+      metalness: 0.02
+    })
+  );
+  monitorScreen.position.set(0, 2.42, -0.39);
+  station.add(monitorScreen);
+
+  addDeskBox(station, [0.76, 1.28, 0.95], [2.42, 0.78, -0.18], blackMaterial, true);
+  addDeskBox(station, [0.58, 1.04, 0.035], [2.42, 0.84, 0.32], metalMaterial, true);
+  addDeskBox(station, [0.08, 0.82, 0.045], [2.09, 0.86, 0.34], accentMaterial, false);
+  addDeskBox(station, [0.38, 0.035, 0.05], [2.42, 1.38, 0.35], warmAccentMaterial, false);
+
+  addDeskBox(station, [1.86, 0.08, 0.48], [-0.58, 1.22, 0.72], blackMaterial, true);
+  addKeyboardKeys(station, keyMaterial);
+  addDeskBox(station, [1.08, 0.035, 0.68], [1.32, 1.19, 0.72], padMaterial, true);
+
+  const mouse = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 12), makeMaterial(0xc9c1b3, 0.58, 0.02));
+  mouse.scale.set(0.86, 0.32, 1.3);
+  mouse.position.set(1.32, 1.29, 0.72);
+  mouse.castShadow = true;
+  station.add(mouse);
+  addDeskBox(station, [0.025, 0.018, 0.28], [1.32, 1.37, 0.55], blackMaterial, false);
+
+  addDeskBox(station, [0.9, 0.08, 0.52], [-2.74, 1.18, -0.7], metalMaterial, true);
+  addDeskCylinder(station, 0.055, 0.055, 0.92, [-2.82, 1.62, -0.62], metalMaterial, [0, 0, -0.22]);
+  addDeskCylinder(station, 0.045, 0.045, 1.04, [-2.3, 2.04, -0.4], metalMaterial, [0, 0, Math.PI / 2.7]);
+  addDeskCylinder(station, 0.26, 0.18, 0.28, [-1.76, 2.2, -0.14], makeMaterial(0x33291f, 0.58, 0.05), [Math.PI / 2, 0, 0]);
+
+  const lampGlow = new THREE.PointLight(0xffc47a, 1.7, 7.5, 2.1);
+  lampGlow.position.set(-1.7, 2.03, 0.18);
+  station.add(lampGlow);
+
+  addDeskCableCurve(station, [
+    [0.36, 1.18, -0.24],
+    [0.46, 1.06, -0.54],
+    [1.5, 0.98, -0.82],
+    [2.1, 0.92, -0.42]
+  ], blackMaterial);
+  addDeskCableCurve(station, [
+    [-0.65, 1.22, 0.46],
+    [-0.28, 1.12, 0.18],
+    [-0.08, 1.08, -0.22]
+  ], blackMaterial);
+
+  addGroupEdges(station, 0x0b0d0e, 0.09);
+  room.add(station);
 }
 
-function addStudyRoomSetDressing(room, textures) {
-  const kenneyPath = 'models/vendor/kenney/furniture-kit';
-  const interiorFolder = 'house-interior-pack';
-
-  [
-    { folder: interiorFolder, file: 'Round Rug.glb', name: 'warm-study-rug', position: [0.5, 0.03, -8.5], rotation: [0, 0.05, 0], targetSize: 8.8, outlineOpacity: 0.08 },
-    { folder: 'furniture-pack', file: 'Office Chair.glb', name: 'study-office-chair', position: [-11.4, 0, -5.55], rotation: [0, Math.PI, 0], targetSize: 1.75, outlineOpacity: 0.1 },
-    { folder: interiorFolder, file: 'Light Desk.glb', name: 'desk-task-lamp', position: [-8.7, 0.78, -7.98], rotation: [0, -0.65, 0], targetSize: 0.88, outlineOpacity: 0.08 },
-    { folder: interiorFolder, file: 'Shelf Large.glb', name: 'right-study-shelf', position: [24.2, 0, -15.8], rotation: [0, -Math.PI / 2, 0], targetSize: 5.4, outlineOpacity: 0.08 },
-    { folder: interiorFolder, file: 'Light Floor.glb', name: 'reading-floor-lamp', position: [18.6, 0, -12.6], rotation: [0, -0.35, 0], targetSize: 1.4, outlineOpacity: 0.08 },
-    { folder: interiorFolder, file: 'Couch Large.glb', name: 'quiet-study-sofa', position: [16.2, 0, -3.8], rotation: [0, -Math.PI / 2, 0], targetSize: 4.7, outlineOpacity: 0.08 },
-    { folder: interiorFolder, file: 'Houseplant.glb', name: 'study-room-plant', position: [23.2, 0, 11.6], rotation: [0, -0.2, 0], targetSize: 1.7, outlineOpacity: 0.08 },
-    { basePath: kenneyPath, file: 'books.glb', name: 'desk-book-stack-left', position: [-13.35, 0.92, -8.22], rotation: [0, 0.35, 0], targetSize: 0.72, outlineOpacity: 0.08 },
-    { basePath: kenneyPath, file: 'books.glb', name: 'shelf-book-stack', position: [23.6, 2.3, -17.2], rotation: [0, -Math.PI / 2, 0], targetSize: 0.9, outlineOpacity: 0.08 },
-    { basePath: kenneyPath, file: 'speakerSmall.glb', name: 'small-desk-speaker-left', position: [-13.35, 0.84, -7.36], rotation: [0, Math.PI, 0], targetSize: 0.34, outlineOpacity: 0.08 },
-    { basePath: kenneyPath, file: 'speakerSmall.glb', name: 'small-desk-speaker-right', position: [-9.52, 0.84, -7.22], rotation: [0, Math.PI, 0], targetSize: 0.34, outlineOpacity: 0.08 },
-    { basePath: kenneyPath, file: 'rugRectangle.glb', name: 'desk-chair-mat', position: [-11.4, 0.05, -6.25], rotation: [0, 0, 0], targetSize: 3.3, outlineOpacity: 0.05 }
-  ].forEach((asset) => addImportedAsset(room, asset));
-
-  addDeskPaperworkCluster(room, textures);
-  addDeskCableRuns(room);
-  addStudyShelfDetails(room, textures);
-  addFramedDeskPhoto(room, textures);
+function addDeskBox(group, size, position, material, receivesShadow = true) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+  mesh.position.set(...position);
+  mesh.castShadow = true;
+  mesh.receiveShadow = receivesShadow;
+  group.add(mesh);
+  return mesh;
 }
 
-function addDeskPaperworkCluster(room, textures) {
-  const paperMaterial = makeMaterial(0xe8dfcf, 0.88, 0, textures.paper);
-  const folderMaterial = makeMaterial(0xb98a56, 0.72, 0, textures.paper);
-  const darkFolderMaterial = makeMaterial(0x3f4b48, 0.74, 0, textures.paper);
-  const notebookMaterial = makeMaterial(0x21312f, 0.68, 0.02, textures.paper);
+function addDeskCylinder(group, radiusTop, radiusBottom, height, position, material, rotation = [0, 0, 0]) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 20), material);
+  mesh.position.set(...position);
+  mesh.rotation.set(...rotation);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  return mesh;
+}
 
-  [
-    { position: [-9.75, 0.91, -8.12], size: [1.12, 0.035, 0.78], rotation: -0.18, material: paperMaterial },
-    { position: [-9.08, 0.94, -8.25], size: [1.2, 0.035, 0.82], rotation: 0.11, material: paperMaterial },
-    { position: [-12.7, 0.94, -7.62], size: [1.34, 0.07, 0.92], rotation: -0.28, material: folderMaterial },
-    { position: [-12.18, 1.02, -7.48], size: [1.14, 0.08, 0.82], rotation: -0.2, material: darkFolderMaterial },
-    { position: [-10.42, 0.9, -8.72], size: [0.92, 0.09, 0.68], rotation: 0.28, material: notebookMaterial }
-  ].forEach((sheet) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...sheet.size), sheet.material);
-    mesh.position.set(...sheet.position);
-    mesh.rotation.y = sheet.rotation;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    room.add(mesh);
+function addKeyboardKeys(group, material) {
+  for (let row = 0; row < 4; row += 1) {
+    for (let col = 0; col < 9; col += 1) {
+      const width = row === 3 && col > 5 ? 0.2 : 0.14;
+      addDeskBox(
+        group,
+        [width, 0.025, 0.08],
+        [-1.28 + col * 0.18, 1.28 + row * 0.002, 0.56 + row * 0.1],
+        material,
+        false
+      );
+    }
+  }
+  addDeskBox(group, [0.76, 0.025, 0.08], [-0.56, 1.29, 0.94], material, false);
+}
+
+function addDeskCableCurve(group, points, material) {
+  const curve = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+  const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 18, 0.018, 6, false), material);
+  cable.castShadow = true;
+  group.add(cable);
+}
+
+function createDeskMonitorTexture(agendaItems) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 768;
+  canvas.height = 432;
+  const ctx = canvas.getContext('2d');
+
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, '#111a1a');
+  gradient.addColorStop(0.52, '#1d302e');
+  gradient.addColorStop(1, '#0d1113');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'rgba(255, 211, 132, 0.12)';
+  ctx.fillRect(0, 0, canvas.width, 74);
+  ctx.fillStyle = '#f5ead1';
+  ctx.font = '900 42px system-ui, sans-serif';
+  ctx.fillText('Estudiemos OS', 44, 52);
+  ctx.fillStyle = 'rgba(245,234,209,0.66)';
+  ctx.font = '700 22px system-ui, sans-serif';
+  ctx.fillText('Agenda sincronizada', 500, 50);
+
+  agendaItems.slice(0, 3).forEach((item, index) => {
+    const y = 134 + index * 84;
+    ctx.fillStyle = index === 0 ? 'rgba(255, 211, 132, 0.22)' : 'rgba(255,255,255,0.08)';
+    ctx.fillRect(44, y - 44, 680, 62);
+    ctx.fillStyle = '#ffd384';
+    ctx.font = '900 24px system-ui, sans-serif';
+    ctx.fillText(item.time, 68, y - 4);
+    ctx.fillStyle = '#f5ead1';
+    ctx.font = '900 25px system-ui, sans-serif';
+    ctx.fillText(item.title, 166, y - 5);
+    ctx.fillStyle = 'rgba(245,234,209,0.62)';
+    ctx.font = '700 17px system-ui, sans-serif';
+    ctx.fillText(item.detail, 166, y + 22);
   });
 
-  for (let i = 0; i < 4; i += 1) {
-    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.012, 0.035), makeMaterial(0x6f645b, 0.86));
-    strip.position.set(-9.07, 0.965 + i * 0.004, -8.52 + i * 0.13);
-    strip.rotation.y = 0.11;
-    room.add(strip);
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 3;
+  for (let x = 44; x < canvas.width; x += 64) {
+    ctx.beginPath();
+    ctx.moveTo(x, 92);
+    ctx.lineTo(x, canvas.height - 30);
+    ctx.stroke();
   }
 
-  [
-    { position: [-13.72, 1.04, -7.82], size: [0.72, 0.09, 0.54], color: 0xe0c47a },
-    { position: [-13.62, 1.14, -7.72], size: [0.68, 0.08, 0.52], color: 0x96b2a5 },
-    { position: [-13.52, 1.23, -7.6], size: [0.7, 0.08, 0.5], color: 0xcab8a0 }
-  ].forEach((book) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...book.size), makeMaterial(book.color, 0.78, 0, textures.paper));
-    mesh.position.set(...book.position);
-    mesh.rotation.y = -0.12;
-    mesh.castShadow = true;
-    room.add(mesh);
-  });
-}
-
-function addDeskCableRuns(room) {
-  const cableMaterial = new THREE.MeshStandardMaterial({
-    color: 0x0a0c0d,
-    roughness: 0.78,
-    metalness: 0.02
-  });
-
-  [
-    [
-      [-11.2, 0.91, -7.45],
-      [-11.1, 0.88, -7.82],
-      [-10.7, 0.86, -8.12],
-      [-10.48, 0.84, -7.72]
-    ],
-    [
-      [-11.5, 0.92, -7.58],
-      [-11.75, 0.9, -7.92],
-      [-12.35, 0.87, -8.25],
-      [-13.0, 0.84, -8.12]
-    ]
-  ].forEach((points) => {
-    const curve = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
-    const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.018, 6, false), cableMaterial);
-    cable.castShadow = true;
-    room.add(cable);
-  });
-}
-
-function addStudyShelfDetails(room, textures) {
-  const boxMaterial = makeMaterial(0x705a42, 0.74, 0, textures.paper);
-  const fileMaterial = makeMaterial(0xd0bd8d, 0.82, 0, textures.paper);
-
-  [
-    { pos: [23.55, 1.2, -14.9], size: [0.72, 0.62, 0.42], rot: -0.08, mat: boxMaterial },
-    { pos: [23.55, 1.95, -15.8], size: [0.86, 0.72, 0.4], rot: 0.1, mat: fileMaterial },
-    { pos: [23.55, 2.82, -14.5], size: [0.7, 0.58, 0.36], rot: -0.14, mat: makeMaterial(0x2f3835, 0.74, 0, textures.paper) }
-  ].forEach((item) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...item.size), item.mat);
-    mesh.position.set(...item.pos);
-    mesh.rotation.y = item.rot;
-    mesh.castShadow = true;
-    room.add(mesh);
-  });
-}
-
-function addFramedDeskPhoto(room, textures) {
-  const frameMaterial = makeMaterial(0x211b17, 0.54, 0.04, textures.wood);
-  const photoMaterial = makeMaterial(0xd9c8a7, 0.66, 0, textures.paper);
-  const group = new THREE.Group();
-  group.position.set(-8.88, 1.02, -8.74);
-  group.rotation.set(-0.18, -0.48, 0);
-
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.52, 0.055), frameMaterial);
-  frame.castShadow = true;
-  group.add(frame);
-
-  const photo = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.38, 0.065), photoMaterial);
-  photo.position.z = -0.016;
-  group.add(photo);
-
-  const stand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.34, 0.04), frameMaterial);
-  stand.position.set(0, -0.31, 0.14);
-  stand.rotation.x = -0.62;
-  group.add(stand);
-
-  room.add(group);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 function createCanvasSign({ width = 512, height = 256, background, accent, title, subtitle }) {

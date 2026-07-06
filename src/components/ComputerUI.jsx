@@ -1,4 +1,4 @@
-import {
+﻿import {
   BarChart3,
   BookOpen,
   CalendarDays,
@@ -31,6 +31,7 @@ import {
   X
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { studyAgendaItems } from '../data/studyAgenda.js';
 import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingenieriaRecursos.js';
 import { parseYouTubeUrl } from '../utils/youtube.js';
 
@@ -88,7 +89,7 @@ const DESKTOP_APPS = [
     subtitle: 'Plan semanal',
     description: 'Bloques de estudio, entregas y repasos.',
     icon: CalendarDays,
-    state: 'Proximo',
+    state: 'Hoy',
     functional: false
   },
   {
@@ -385,6 +386,11 @@ export function ComputerUI({
               <div className="os-glance-row">
                 <MonitorUp size={18} aria-hidden="true" />
                 <span>Pantalla {activeLayout.label}</span>
+              </div>
+              <div className="os-glance-card os-agenda-sync-card">
+                <span>Agenda</span>
+                <strong>{studyAgendaItems[0]?.title ?? 'Plan de estudio'}</strong>
+                <p>{studyAgendaItems[0]?.detail ?? 'Sin pendientes cargados.'}</p>
               </div>
             </section>
 

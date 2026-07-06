@@ -183,6 +183,7 @@
 .virtual-desktop-topbar,
 .virtual-side-panel,
 .virtual-focus-card,
+.virtual-agenda-list,
 .virtual-mini-grid > div,
 .virtual-dock {
   border: 1px solid rgba(255, 255, 255, 0.13);
@@ -261,6 +262,30 @@
   gap: 12px;
   overflow: auto;
   padding: 2px;
+}
+
+.virtual-agenda-list {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.virtual-agenda-list span {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  color: rgba(244, 248, 244, 0.8);
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
+.virtual-agenda-list strong {
+  color: #e0c47a;
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .virtual-app-tile,
