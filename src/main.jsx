@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ComputerUI } from './components/ComputerUI.jsx';
 import { FirstPersonWorld } from './components/FirstPersonWorld.jsx';
 import { Hud } from './components/Hud.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
+import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
 import './styles/app.css';
 import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
@@ -158,7 +158,7 @@ function App() {
       )}
 
       {computerOpen && (
-        <ComputerUI
+        <VirtualComputerShell
           screenZones={screenZones}
           screenLayout={screenLayout}
           onAssignVideo={assignVideoToZone}

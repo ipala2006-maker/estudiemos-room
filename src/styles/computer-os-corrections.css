@@ -99,7 +99,6 @@
 }
 
 .estudiemos-os-live-desktop .browser-dots,
-.estudiemos-os-live-desktop .os-desktop-icons,
 .estudiemos-os-live-desktop .os-system-strip,
 .estudiemos-os-live-desktop .os-system-bar,
 .estudiemos-os-live-desktop .os-window-titlebar,
@@ -128,6 +127,27 @@
   left: 22px;
   top: 22px;
   width: min(280px, calc(100% - 44px));
+  display: grid;
+}
+
+.estudiemos-os-live-desktop .os-desktop-icon.is-quiet {
+  display: none;
+}
+
+.computer-landing-desktop .os-photo-desktop .os-desktop-icons {
+  left: clamp(18px, 4vw, 44px);
+  top: clamp(18px, 4vw, 42px);
+}
+
+.computer-landing-desktop .os-desktop-icon {
+  width: min(300px, calc(100vw - 36px));
+  background: rgba(13, 23, 22, 0.58);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f3f8f2;
+}
+
+.computer-landing-desktop .os-desktop-icon:hover {
+  background: rgba(18, 31, 29, 0.72);
 }
 
 @media (max-width: 980px) {
