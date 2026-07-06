@@ -560,3 +560,32 @@
     padding: 11px;
   }
 }
+
+/* Performance pass: keep the computer fully isolated from the 3D/CSS3D world. */
+.game-shell::before,
+.game-shell::after {
+  display: none;
+}
+
+.game-shell.is-computer-open .three-world,
+.game-shell.is-computer-open .css3d-world-layer {
+  visibility: hidden !important;
+}
+
+.computer-overlay,
+.mediahub-boot-overlay {
+  z-index: 1000;
+  background: #06100f;
+  backdrop-filter: none;
+  animation: none;
+}
+
+.virtual-desktop-topbar,
+.virtual-side-panel,
+.virtual-focus-card,
+.virtual-agenda-list,
+.virtual-mini-grid > div,
+.virtual-dock,
+.virtual-app-tile {
+  backdrop-filter: none;
+}

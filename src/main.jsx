@@ -124,7 +124,7 @@ function App() {
   }
 
   return (
-    <main className="game-shell">
+    <main className={computerOpen ? 'game-shell is-computer-open' : 'game-shell'}>
       <FirstPersonWorld
         onDoorOpenChange={setIsDoorOpen}
         onNearComputerChange={setIsNearComputer}

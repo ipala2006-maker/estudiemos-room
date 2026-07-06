@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
 import { Casa1 } from '../maps/Casa1.js';
@@ -13,11 +14,12 @@ const textureCache = new Map();
 const materialCache = new Map();
 const emissiveMaterialCache = new Map();
 const edgeMaterialCache = new Map();
+const modelLoader = new GLTFLoader();
 const PERFORMANCE_PROFILE = {
-  maxPixelRatio: 1.15,
-  grassBlades: 90,
-  skyWidthSegments: 32,
-  skyHeightSegments: 16
+  maxPixelRatio: 1,
+  grassBlades: 56,
+  skyWidthSegments: 24,
+  skyHeightSegments: 12
 };
 const PLAYER_RADIUS = 0.58;
 const WALK_SPEED = 9.6;
@@ -84,13 +86,13 @@ export function FirstPersonWorld({
     camera.position.copy(startPosition);
     camera.rotation.order = 'YXZ';
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, PERFORMANCE_PROFILE.maxPixelRatio));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
-    renderer.shadowMap.enabled = true;
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.toneMappingExposure = 1;
+    renderer.shadowMap.enabled = false;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.needsUpdate = true;
@@ -112,9 +114,9 @@ export function FirstPersonWorld({
     const ambient = new THREE.HemisphereLight(0xfff0d2, 0x263a36, 0.9);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xffdca6, 2.45);
+    const sun = new THREE.DirectionalLight(0xffdca6, 1.75);
     sun.position.set(28, 31, 16);
-    sun.castShadow = true;
+    sun.castShadow = false;
     sun.shadow.mapSize.set(512, 512);
     sun.shadow.camera.near = 1;
     sun.shadow.camera.far = 74;
@@ -685,10 +687,7 @@ function addNeighborhood(scene, materials) {
 
   addBoundaryWalls(scene, wallMaterial);
   addExteriorHorizon(scene);
-  const fallbackMaterials = createFallbackHouseMaterials();
-  addNeighborhoodHouse(scene, fallbackMaterials, 0, -20, true);
-  addNeighborhoodHouse(scene, fallbackMaterials, -18, -18, false);
-  addNeighborhoodHouse(scene, fallbackMaterials, 18, -18, false);
+  addModelNeighborhoodHouses(scene);
   addModelNatureAssets(scene);
   addProfessionalGrassLayer(scene);
   addGrassEdgeBlends(scene, textures);
@@ -725,6 +724,53 @@ function addBoundaryWalls(scene, wallMaterial) {
     cap.position.set(...spec.position);
     cap.castShadow = true;
     scene.add(cap);
+  });
+}
+
+function addModelNeighborhoodHouses(scene) {
+  const houseModels = [
+    {
+      file: 'Two story house-9N6ROCbmO1.glb',
+      position: [0, 0, -20],
+      targetSize: 19.2,
+      rotationY: Math.PI,
+      isCasa1: true
+    },
+    {
+      file: 'House.glb',
+      position: [-18, 0, -18],
+      targetSize: 16.2,
+      rotationY: Math.PI,
+      isCasa1: false
+    },
+    {
+      file: 'Two story house-sGgL4Nt7I7.glb',
+      position: [18, 0, -18],
+      targetSize: 16.4,
+      rotationY: Math.PI,
+      isCasa1: false
+    }
+  ];
+  const fallbackMaterials = createFallbackHouseMaterials();
+
+  houseModels.forEach((config, index) => {
+    const url = `${import.meta.env.BASE_URL}models/vendor/poly-pizza/suburban-houses/${encodeURIComponent(config.file)}`;
+    modelLoader.load(
+      url,
+      (gltf) => {
+        const root = gltf.scene;
+        root.name = `suburban-house-${index + 1}`;
+        prepareImportedHouseModel(root);
+        fitImportedModel(root, config.targetSize);
+        root.rotation.y = config.rotationY;
+        root.position.set(config.position[0], config.position[1], config.position[2]);
+        scene.add(root);
+      },
+      undefined,
+      () => {
+        addNeighborhoodHouse(scene, fallbackMaterials, config.position[0], config.position[2], config.isCasa1);
+      }
+    );
   });
 }
 
@@ -1343,6 +1389,49 @@ function createFallbackHouseMaterials() {
     doorMaterial: makeMaterial(0x211a3d, 0.28, 0, textures.wood),
     textures
   };
+}
+
+function prepareImportedHouseModel(root) {
+  root.traverse((child) => {
+    if (!child.isMesh) return;
+    child.castShadow = false;
+    child.receiveShadow = false;
+    if (!child.material) return;
+
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach((material) => {
+      softenMaterialColor(material);
+      if ('roughness' in material) material.roughness = Math.max(material.roughness ?? 0.64, 0.72);
+      if ('metalness' in material) material.metalness = Math.min(material.metalness ?? 0, 0.04);
+      if ('envMapIntensity' in material) material.envMapIntensity = 0.16;
+      material.side = THREE.FrontSide;
+      material.needsUpdate = true;
+    });
+  });
+}
+
+function softenMaterialColor(material) {
+  if (!material?.color) return;
+  const hsl = {};
+  material.color.getHSL(hsl);
+  material.color.setHSL(hsl.h, hsl.s * 0.34, Math.min(0.7, hsl.l * 0.9 + 0.03));
+}
+
+function fitImportedModel(root, targetSize) {
+  const box = new THREE.Box3().setFromObject(root);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  const widest = Math.max(size.x, size.z, 0.001);
+  const scale = targetSize / widest;
+  root.scale.setScalar(scale);
+
+  const scaledBox = new THREE.Box3().setFromObject(root);
+  const scaledCenter = new THREE.Vector3();
+  scaledBox.getCenter(scaledCenter);
+  root.position.sub(scaledCenter);
+  root.position.y -= scaledBox.min.y;
 }
 
 function addCartoonCrateStack(scene, x, z, lean, textures) {
