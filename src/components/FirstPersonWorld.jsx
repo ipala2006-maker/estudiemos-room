@@ -36,8 +36,8 @@ const GIANT_SCREEN_DOM_SIZE = {
 };
 const DEFAULT_SCREEN_LAYOUT = 'side-by-side';
 const DEFAULT_SCREEN_ZONES = {
-  upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, updatedAt: 0 },
-  lower: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, updatedAt: 0 }
+  upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, displayScale: 100, updatedAt: 0 },
+  lower: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, displayScale: 100, updatedAt: 0 }
 };
 
 export function FirstPersonWorld({
@@ -487,6 +487,7 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       title: screenZones.upper.title,
       muted: screenZones.upper.muted,
       volume: screenZones.upper.volume,
+      displayScale: screenZones.upper.displayScale,
       updatedAt: screenZones.upper.updatedAt
     },
     lower: {
@@ -496,6 +497,7 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       title: screenZones.lower.title,
       muted: screenZones.lower.muted,
       volume: screenZones.lower.volume,
+      displayScale: screenZones.lower.displayScale,
       updatedAt: screenZones.lower.updatedAt
     }
   });
@@ -512,8 +514,10 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
   layout.slots.forEach((slotConfig) => {
     const zone = screenZones[slotConfig.zoneId];
     const src = zone.contentType === 'pdf' ? buildPdfEmbedUrl(zone.resourceUrl) : buildYouTubeEmbedUrl(zone);
+    const displayScale = clampScreenDisplayScale(zone.displayScale);
     const slot = document.createElement('div');
     slot.className = 'physical-screen-slot';
+    slot.style.setProperty('--screen-content-scale', String(displayScale / 100));
 
     if (src) {
       const iframe = document.createElement('iframe');
@@ -2220,6 +2224,7 @@ function updateGiantScreen(giantScreen, screenZones, screenLayout) {
       title: screenZones.upper.title,
       muted: screenZones.upper.muted,
       volume: screenZones.upper.volume,
+      displayScale: screenZones.upper.displayScale,
       updatedAt: screenZones.upper.updatedAt
     },
     lower: {
@@ -2229,6 +2234,7 @@ function updateGiantScreen(giantScreen, screenZones, screenLayout) {
       title: screenZones.lower.title,
       muted: screenZones.lower.muted,
       volume: screenZones.lower.volume,
+      displayScale: screenZones.lower.displayScale,
       updatedAt: screenZones.lower.updatedAt
     }
   });
@@ -2309,6 +2315,12 @@ function updateGiantScreen(giantScreen, screenZones, screenLayout) {
   giantScreen.texture.needsUpdate = true;
 }
 
+function clampScreenDisplayScale(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 100;
+  return Math.min(100, Math.max(80, Math.round(numeric)));
+}
+
 function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel, accent, isPrimary }) {
   const hasContent = Boolean(zone.videoId || zone.resourceUrl);
   const contentLabel = zone.contentType === 'pdf' ? 'PDF' : 'YOUTUBE';
@@ -2357,7 +2369,9 @@ function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel,
   if (hasContent) {
     ctx.fillText(zone.title ? `Recurso: ${zone.title}` : `Video ID: ${zone.videoId}`, innerX, innerY + (isPrimary ? 205 : 136), textMaxWidth);
     ctx.fillText(
-      zone.contentType === 'pdf' ? 'Documento de Estudiemos' : `${zone.muted ? 'Mute activo' : 'Audio activo'} - Volumen ${zone.volume}%`,
+      zone.contentType === 'pdf'
+        ? `Documento de Estudiemos - Tamano ${clampScreenDisplayScale(zone.displayScale)}%`
+        : `${zone.muted ? 'Mute activo' : 'Audio activo'} - Volumen ${zone.volume}% - Tamano ${clampScreenDisplayScale(zone.displayScale)}%`,
       innerX,
       innerY + (isPrimary ? 242 : 164),
       textMaxWidth

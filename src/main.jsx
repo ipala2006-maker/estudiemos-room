@@ -22,6 +22,7 @@ function createEmptyScreenZone() {
     creator: '',
     muted: true,
     volume: 70,
+    displayScale: 100,
     updatedAt: 0
   };
 }
@@ -112,6 +113,7 @@ function App() {
         ...createEmptyScreenZone(),
         muted: current[zoneId].muted,
         volume: current[zoneId].volume,
+        displayScale: current[zoneId].displayScale,
         updatedAt: Date.now()
       }
     }));

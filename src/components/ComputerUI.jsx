@@ -1031,6 +1031,18 @@ function ScreenControlDrawer({
                     />
                   </label>
 
+                  <label className="drawer-volume">
+                    <span>Tamano {current.displayScale ?? 100}%</span>
+                    <input
+                      type="range"
+                      min="80"
+                      max="100"
+                      step="5"
+                      value={current.displayScale ?? 100}
+                      onChange={(event) => onUpdateZone(zone.id, { displayScale: Number(event.target.value) })}
+                    />
+                  </label>
+
                   <div className="drawer-zone-actions">
                     <button type="button" onClick={() => onUpdateZone(zone.id, { muted: !current.muted })}>
                       {current.muted ? <VolumeX size={17} aria-hidden="true" /> : <Volume2 size={17} aria-hidden="true" />}
