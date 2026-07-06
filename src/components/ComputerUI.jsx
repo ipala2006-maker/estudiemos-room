@@ -1,24 +1,36 @@
 import {
-  ArrowLeft,
+  BarChart3,
   BookOpen,
+  CalendarDays,
   CheckCircle2,
   ChevronRight,
+  Clock3,
   Eraser,
   ExternalLink,
   FileText,
-  Link,
+  FolderOpen,
+  Globe2,
+  Library,
+  Maximize2,
+  Minimize2,
   MonitorUp,
+  NotebookPen,
   PanelRightOpen,
   Search,
+  Settings,
   ShieldCheck,
+  Signal,
   Sparkles,
+  Square,
+  UserCircle,
   Video,
   Volume2,
   VolumeX,
+  Wifi,
   Wrench,
   X
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingenieriaRecursos.js';
 import { parseYouTubeUrl } from '../utils/youtube.js';
 
@@ -42,24 +54,73 @@ const SCREEN_LAYOUTS = [
   { id: 'split-30-70', label: '30/70', description: 'Secundaria grande' }
 ];
 
-const LAUNCHER_APPS = [
+const DESKTOP_APPS = [
   {
     id: 'estudiemos',
     title: 'Estudiemos',
     subtitle: 'Biblioteca principal',
-    description: 'Entrar a la pagina real de recursos y elegir material para estudiar.',
+    description: 'Recursos, carreras, materias y material listo para enviar a la pantalla.',
     icon: Sparkles,
-    accent: 'primary'
+    state: 'Listo',
+    functional: true
+  },
+  {
+    id: 'biblioteca',
+    title: 'Biblioteca',
+    subtitle: 'Coleccion local',
+    description: 'Material guardado para organizar proximas sesiones.',
+    icon: Library,
+    state: 'Proximo',
+    functional: false
+  },
+  {
+    id: 'apuntes',
+    title: 'Mis apuntes',
+    subtitle: 'Cuaderno',
+    description: 'Notas personales del estudiante dentro del Room.',
+    icon: NotebookPen,
+    state: 'Proximo',
+    functional: false
+  },
+  {
+    id: 'agenda',
+    title: 'Agenda',
+    subtitle: 'Plan semanal',
+    description: 'Bloques de estudio, entregas y repasos.',
+    icon: CalendarDays,
+    state: 'Proximo',
+    functional: false
+  },
+  {
+    id: 'progreso',
+    title: 'Progreso',
+    subtitle: 'Actividad',
+    description: 'Resumen visual del avance de la sesion.',
+    icon: BarChart3,
+    state: 'Proximo',
+    functional: false
+  },
+  {
+    id: 'settings',
+    title: 'Configuracion',
+    subtitle: 'Sistema',
+    description: 'Preferencias del escritorio y experiencia de estudio.',
+    icon: Settings,
+    state: 'Proximo',
+    functional: false
   },
   {
     id: 'links',
-    title: 'Links',
+    title: 'Navegador',
     subtitle: 'Carga manual',
-    description: 'Pegar un link compatible y enviarlo a una de las pantallas.',
-    icon: Link,
-    accent: 'secondary'
+    description: 'Preparar links compatibles y enviarlos a una pantalla.',
+    icon: Globe2,
+    state: 'Listo',
+    functional: true
   }
 ];
+
+const FUNCTIONAL_APP_IDS = DESKTOP_APPS.filter((app) => app.functional).map((app) => app.id);
 
 const EMPTY_ROUTE = {
   carreraSlug: '',
@@ -78,13 +139,22 @@ export function ComputerUI({
   onUpdateZone,
   onScreenLayoutChange
 }) {
-  const [activeApp, setActiveApp] = useState('launcher');
+  const [openWindows, setOpenWindows] = useState(['estudiemos']);
+  const [focusedWindow, setFocusedWindow] = useState('estudiemos');
+  const [minimizedWindows, setMinimizedWindows] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState(null);
   const [estudiemosRoute, setEstudiemosRoute] = useState(EMPTY_ROUTE);
   const [resourceView, setResourceView] = useState('categories');
   const [linkDraft, setLinkDraft] = useState('');
   const [linkError, setLinkError] = useState('');
+  const [clockTime, setClockTime] = useState(() => new Date());
+  const [systemNote, setSystemNote] = useState('Sesion enfocada lista');
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockTime(new Date()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const carreras = ingenieriaRecursosData.carreras;
   const carrera = useMemo(
@@ -100,21 +170,63 @@ export function ComputerUI({
     [materia, estudiemosRoute.temaSlug]
   );
   const activeLayout = SCREEN_LAYOUTS.find((layout) => layout.id === screenLayout) ?? SCREEN_LAYOUTS[1];
+  const visibleWindows = openWindows.filter((appId) => !minimizedWindows.includes(appId));
+  const clockLabel = useMemo(
+    () =>
+      clockTime.toLocaleTimeString('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+    [clockTime]
+  );
+  const dateLabel = useMemo(
+    () =>
+      clockTime.toLocaleDateString('es-AR', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short'
+      }),
+    [clockTime]
+  );
 
   function openApp(appId) {
-    setActiveApp(appId);
-    setDrawerOpen(false);
-    setSelectedContent(null);
-    setResourceView('categories');
-    if (appId === 'estudiemos') {
-      setEstudiemosRoute(EMPTY_ROUTE);
+    const app = findDesktopApp(appId);
+    if (!app?.functional) {
+      setSystemNote(`${app?.title ?? 'Modulo'} queda preparado para una proxima version.`);
+      return;
     }
+
+    setOpenWindows((current) => (current.includes(appId) ? current : [...current, appId]));
+    setMinimizedWindows((current) => current.filter((id) => id !== appId));
+    setFocusedWindow(appId);
+    setDrawerOpen(false);
+    setSystemNote(`${app.title} activo`);
   }
 
-  function backToLauncher() {
-    setActiveApp('launcher');
-    setSelectedContent(null);
-    setDrawerOpen(false);
+  function focusWindow(appId) {
+    setFocusedWindow(appId);
+    setMinimizedWindows((current) => current.filter((id) => id !== appId));
+  }
+
+  function minimizeWindow(appId) {
+    setMinimizedWindows((current) => (current.includes(appId) ? current : [...current, appId]));
+    setFocusedWindow((current) => {
+      if (current !== appId) return current;
+      return visibleWindows.find((id) => id !== appId) ?? '';
+    });
+  }
+
+  function closeWindow(appId) {
+    const remainingOpen = openWindows.filter((id) => id !== appId);
+    const remainingVisible = remainingOpen.filter((id) => !minimizedWindows.includes(id));
+
+    setOpenWindows(remainingOpen);
+    setMinimizedWindows((current) => current.filter((id) => id !== appId));
+    setFocusedWindow((current) => {
+      if (current !== appId) return current;
+      return remainingVisible.at(-1) ?? remainingOpen.at(-1) ?? '';
+    });
+    setSystemNote(`${findDesktopApp(appId)?.title ?? 'Ventana'} cerrada`);
   }
 
   function openEstudiemosHome() {
@@ -187,7 +299,7 @@ export function ComputerUI({
       resourceUrl: '',
       title: 'Link de YouTube',
       creator: 'Contenido externo',
-      description: 'Video preparado desde Links. Elegi donde mostrarlo.',
+      description: 'Video preparado desde Navegador. Elegi donde mostrarlo.',
       category: 'Link'
     });
   }
@@ -203,72 +315,194 @@ export function ComputerUI({
 
   return (
     <section className="computer-overlay mediahub-boot-overlay" aria-label="Computadora de Casa 1">
-      <div className="computer-window computer-window-wide mediahub-window game-computer-window">
+      <div className="computer-window computer-window-wide mediahub-window game-computer-window estudiemos-os-live-desktop">
         <div className="computer-boot-glow" aria-hidden="true" />
-        <header className="computer-topbar mediahub-topbar game-os-topbar">
-          <div className="mediahub-titlebar">
-            {activeApp !== 'launcher' && (
-              <button type="button" className="mediahub-icon-button" onClick={backToLauncher} aria-label="Volver al inicio">
-                <ArrowLeft size={20} aria-hidden="true" />
-              </button>
-            )}
+
+        <div className="os-screen-grid">
+          <div className="os-wallpaper" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+
+          <header className="os-system-strip">
             <div>
-              <span>Estudiemos Room OS</span>
-              <h1>{activeApp === 'launcher' ? 'Inicio' : getAppTitle(activeApp)}</h1>
+              <span>Estudiemos OS</span>
+              <strong>Room 1</strong>
             </div>
+            <div className="os-status-cluster" aria-label="Estado del sistema">
+              <span className="os-status-pill">
+                <Wifi size={16} aria-hidden="true" />
+                Red local
+              </span>
+              <span className="os-status-pill">
+                <Signal size={16} aria-hidden="true" />
+                Sincronizado
+              </span>
+              <span className="os-status-pill">
+                <Clock3 size={16} aria-hidden="true" />
+                {clockLabel}
+              </span>
+            </div>
+          </header>
+
+          <div className="computer-desktop mediahub-desktop game-os-desktop os-desktop">
+            <aside className="os-desktop-icons" aria-label="Accesos del escritorio">
+              {DESKTOP_APPS.map((app) => {
+                const Icon = app.icon;
+                const isOpen = openWindows.includes(app.id);
+                return (
+                  <button
+                    key={app.id}
+                    type="button"
+                    className={`os-desktop-icon${app.functional ? '' : ' is-quiet'}${isOpen ? ' is-open' : ''}`}
+                    onClick={() => openApp(app.id)}
+                    title={app.description}
+                  >
+                    <span className="os-icon-tile">
+                      <Icon size={26} aria-hidden="true" />
+                    </span>
+                    <span className="os-icon-copy">
+                      <strong>{app.title}</strong>
+                      <small>{app.subtitle}</small>
+                    </span>
+                    <span className="os-icon-state">{app.state}</span>
+                  </button>
+                );
+              })}
+            </aside>
+
+            <section className="os-notification-stack" aria-label="Actividad del sistema">
+              <div className="os-glance-card">
+                <span>Sesion</span>
+                <strong>{systemNote}</strong>
+                <p>El escritorio queda activo mientras usas la computadora.</p>
+              </div>
+              <div className="os-glance-row">
+                <FolderOpen size={18} aria-hidden="true" />
+                <span>{carreras.length} carreras disponibles</span>
+              </div>
+              <div className="os-glance-row">
+                <MonitorUp size={18} aria-hidden="true" />
+                <span>Pantalla {activeLayout.label}</span>
+              </div>
+            </section>
+
+            <main className="os-window-stage" aria-label="Ventanas abiertas">
+              {visibleWindows.length === 0 && (
+                <div className="os-empty-desktop">
+                  <Sparkles size={32} aria-hidden="true" />
+                  <strong>Escritorio listo</strong>
+                  <span>Abrir una app desde los accesos.</span>
+                </div>
+              )}
+
+              {openWindows.includes('estudiemos') && !minimizedWindows.includes('estudiemos') && (
+                <OSWindow
+                  appId="estudiemos"
+                  title="Estudiemos"
+                  subtitle="Biblioteca principal"
+                  icon={Sparkles}
+                  focused={focusedWindow === 'estudiemos'}
+                  onFocus={focusWindow}
+                  onMinimize={minimizeWindow}
+                  onClose={closeWindow}
+                >
+                  <EstudiemosApp
+                    carreras={carreras}
+                    carrera={carrera}
+                    materia={materia}
+                    tema={tema}
+                    route={estudiemosRoute}
+                    resourceView={resourceView}
+                    selectedContent={selectedContent}
+                    onHome={openEstudiemosHome}
+                    onCarrera={openCarrera}
+                    onMateria={openMateria}
+                    onTema={openTema}
+                    onResourceView={setResourceView}
+                    onSelectVideo={selectVideo}
+                    onSelectPdf={selectPdf}
+                    onAssignContent={assignContent}
+                    onCloseContent={() => setSelectedContent(null)}
+                  />
+                </OSWindow>
+              )}
+
+              {openWindows.includes('links') && !minimizedWindows.includes('links') && (
+                <OSWindow
+                  appId="links"
+                  title="Navegador"
+                  subtitle="Links externos"
+                  icon={Globe2}
+                  focused={focusedWindow === 'links'}
+                  onFocus={focusWindow}
+                  onMinimize={minimizeWindow}
+                  onClose={closeWindow}
+                >
+                  <LinksApp
+                    linkDraft={linkDraft}
+                    linkError={linkError}
+                    selectedContent={selectedContent}
+                    onDraftChange={(value) => {
+                      setLinkDraft(value);
+                      setLinkError('');
+                    }}
+                    onPrepareLink={prepareManualLink}
+                    onAssignContent={assignContent}
+                    onCloseContent={() => setSelectedContent(null)}
+                  />
+                </OSWindow>
+              )}
+            </main>
           </div>
 
-          <div className="mediahub-top-actions">
-            {activeApp !== 'launcher' && (
-              <button type="button" className="mediahub-ghost-button" onClick={() => setDrawerOpen(true)}>
-                <PanelRightOpen size={18} aria-hidden="true" />
-                <span>Pantalla</span>
-              </button>
-            )}
-            <button type="button" className="computer-close" onClick={onClose} aria-label="Cerrar computadora">
-              <X size={22} aria-hidden="true" />
+          <footer className="os-system-bar" aria-label="Barra del sistema">
+            <button type="button" className="os-main-button" onClick={() => openApp('estudiemos')}>
+              <Square size={15} aria-hidden="true" />
+              <span>Estudiemos OS</span>
             </button>
-          </div>
-        </header>
 
-        <div className="computer-desktop mediahub-desktop game-os-desktop">
-          {activeApp === 'launcher' && <ComputerLauncher onOpenApp={openApp} />}
+            <div className="os-running-apps" aria-label="Aplicaciones abiertas">
+              {FUNCTIONAL_APP_IDS.map((appId) => {
+                const app = findDesktopApp(appId);
+                const Icon = app.icon;
+                const isOpen = openWindows.includes(appId);
+                const isMinimized = minimizedWindows.includes(appId);
+                return (
+                  <button
+                    key={appId}
+                    type="button"
+                    className={`${focusedWindow === appId ? 'is-focused' : ''}${isMinimized ? ' is-minimized' : ''}`}
+                    onClick={() => openApp(appId)}
+                    aria-pressed={isOpen && !isMinimized}
+                  >
+                    <Icon size={17} aria-hidden="true" />
+                    <span>{app.title}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-          {activeApp === 'estudiemos' && (
-            <EstudiemosApp
-              carreras={carreras}
-              carrera={carrera}
-              materia={materia}
-              tema={tema}
-              route={estudiemosRoute}
-              resourceView={resourceView}
-              selectedContent={selectedContent}
-              onHome={openEstudiemosHome}
-              onCarrera={openCarrera}
-              onMateria={openMateria}
-              onTema={openTema}
-              onResourceView={setResourceView}
-              onSelectVideo={selectVideo}
-              onSelectPdf={selectPdf}
-              onAssignContent={assignContent}
-              onCloseContent={() => setSelectedContent(null)}
-            />
-          )}
+            <button type="button" className="os-screen-button" onClick={() => setDrawerOpen(true)}>
+              <PanelRightOpen size={18} aria-hidden="true" />
+              <span>Pantallas</span>
+            </button>
 
-          {activeApp === 'links' && (
-            <LinksApp
-              linkDraft={linkDraft}
-              linkError={linkError}
-              selectedContent={selectedContent}
-              onDraftChange={(value) => {
-                setLinkDraft(value);
-                setLinkError('');
-              }}
-              onPrepareLink={prepareManualLink}
-              onAssignContent={assignContent}
-              onCloseContent={() => setSelectedContent(null)}
-            />
-          )}
+            <div className="os-clock" aria-label={`Hora del sistema ${clockLabel}`}>
+              <strong>{clockLabel}</strong>
+              <span>{dateLabel}</span>
+            </div>
+
+            <div className="os-user-chip">
+              <UserCircle size={19} aria-hidden="true" />
+              <span>Perfil</span>
+            </div>
+
+            <button type="button" className="computer-close os-close-button" onClick={onClose} aria-label="Cerrar computadora">
+              <X size={20} aria-hidden="true" />
+            </button>
+          </footer>
         </div>
 
         {drawerOpen && (
@@ -286,40 +520,44 @@ export function ComputerUI({
   );
 }
 
-function ComputerLauncher({ onOpenApp }) {
+function OSWindow({ appId, title, subtitle, icon: Icon, focused, children, onFocus, onMinimize, onClose }) {
   return (
-    <div className="computer-launcher game-launcher" aria-label="Launcher de computadora">
-      <div className="launcher-heading game-launcher-heading">
-        <span>Sistema listo</span>
-        <h2>Elegir espacio de trabajo</h2>
-        <p>Dos accesos principales, sin controles tecnicos a la vista.</p>
-      </div>
+    <section
+      className={`os-window os-window-${appId}${focused ? ' is-focused' : ''}`}
+      onMouseDown={() => onFocus(appId)}
+      aria-label={`Ventana ${title}`}
+    >
+      <header className="os-window-titlebar">
+        <div className="os-window-title">
+          <span className="os-window-icon">
+            <Icon size={18} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>{title}</strong>
+            <span>{subtitle}</span>
+          </div>
+        </div>
 
-      <div className="launcher-app-grid game-launcher-grid">
-        {LAUNCHER_APPS.map((app) => {
-          const Icon = app.icon;
-          return (
-            <button
-              key={app.id}
-              type="button"
-              className={`launcher-app-card game-app-card game-app-card-${app.accent}`}
-              onClick={() => onOpenApp(app.id)}
-            >
-              <div className="launcher-app-icon game-app-icon">
-                <Icon size={34} aria-hidden="true" />
-              </div>
-              <div>
-                <span>{app.subtitle}</span>
-                <strong>{app.title}</strong>
-                <p>{app.description}</p>
-              </div>
-              <ChevronRight size={24} aria-hidden="true" className="game-card-arrow" />
-            </button>
-          );
-        })}
-      </div>
-    </div>
+        <div className="os-window-actions">
+          <button type="button" onClick={() => onMinimize(appId)} aria-label={`Minimizar ${title}`}>
+            <Minimize2 size={16} aria-hidden="true" />
+          </button>
+          <button type="button" onClick={() => onFocus(appId)} aria-label={`Enfocar ${title}`}>
+            <Maximize2 size={15} aria-hidden="true" />
+          </button>
+          <button type="button" onClick={() => onClose(appId)} aria-label={`Cerrar ${title}`}>
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </header>
+
+      <div className="os-window-content">{children}</div>
+    </section>
   );
+}
+
+function findDesktopApp(appId) {
+  return DESKTOP_APPS.find((app) => app.id === appId);
 }
 
 function EstudiemosApp({
@@ -567,8 +805,8 @@ function TemaPage({ tema, resourceView, onResourceView, onSelectVideo, onSelectP
           title="Material"
           emptyText="No hay material disponible todavia."
           items={pdfs}
-          renderItem={(item, index) => (
-            <button key={`${item.url}-${index}`} type="button" className="resource-action-card game-resource-action" onClick={() => onSelectPdf(item)}>
+          renderItem={(item) => (
+            <button key={item.url} type="button" className="resource-action-card game-resource-action" onClick={() => onSelectPdf(item)}>
               <FileText size={22} aria-hidden="true" />
               <div>
                 <strong>{item.title}</strong>
@@ -639,9 +877,9 @@ function LinksApp({
     <div className="mediahub-app-shell links-app-shell game-links-shell">
       <section className="links-card-panel game-links-panel">
         <div className="context-section-title">
-          <span>Links</span>
+          <span>Navegador</span>
           <h3>Cargar contenido externo</h3>
-          <p>El input vive aca para mantener limpio el inicio de la computadora.</p>
+          <p>Prepara un link compatible para enviarlo a las pantallas de la sala.</p>
         </div>
 
         <form className="links-input-card game-links-input-card" onSubmit={onPrepareLink}>
@@ -807,7 +1045,7 @@ function ScreenControlDrawer({
 function buildBrowserPath(route) {
   if (!route.carreraSlug) return 'estudiemos.local/';
   if (!route.materiaSlug) return `estudiemos.local/pages/carrera/${route.carreraSlug}.html`;
-  if (!route.temaSlug) return `estudiemos.local/pages/materia/${route.materiaSlug}.html`;
+  if (!route.temaSlug) return `estudiemos.local/pages/materia/${route.temaSlug}.html`;
   return `estudiemos.local/pages/tema/${route.temaSlug}.html`;
 }
 
@@ -815,9 +1053,4 @@ function buildThumbnail(url) {
   const result = parseYouTubeUrl(url);
   if (!result.ok) return '';
   return `https://img.youtube.com/vi/${result.video.videoId}/hqdefault.jpg`;
-}
-
-function getAppTitle(activeApp) {
-  if (activeApp === 'links') return 'Links';
-  return 'Estudiemos';
 }
