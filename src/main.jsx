@@ -7,6 +7,7 @@ import { StartScreen } from './components/StartScreen.jsx';
 import './styles/app.css';
 import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
+import './styles/computer-os-corrections.css';
 import './styles/camera-controls.css';
 
 function createEmptyScreenZone() {
