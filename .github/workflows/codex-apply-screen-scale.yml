@@ -25,7 +25,7 @@ jobs:
       - name: Apply payload
         run: |
           unzip -o codex-payload.zip -d codex-payload
-          rsync -av codex-payload/ ./
+          cp -R codex-payload/. ./
           rm -rf codex-payload codex-payload.zip
           rm -f .github/workflows/codex-apply-screen-scale.yml
 
