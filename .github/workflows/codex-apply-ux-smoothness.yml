@@ -25,7 +25,15 @@ jobs:
 
       - name: Apply files
         run: |
+          set +e
           unzip -o codex-payload.zip -d codex-payload
+          unzip_status=$?
+          set -e
+          if [ "$unzip_status" -gt 1 ]; then
+            exit "$unzip_status"
+          fi
+          test -f codex-payload/src/main.jsx
+          test -f codex-payload/src/components/FirstPersonWorld.jsx
           cp -R codex-payload/. ./
           rm -rf codex-payload codex-payload.zip
           rm -f .github/workflows/codex-apply-ux-smoothness.yml
