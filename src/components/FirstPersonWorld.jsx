@@ -43,6 +43,14 @@ const GIANT_SCREEN_DOM_SIZE = {
   width: 1730,
   height: 640
 };
+const COMPUTER_MONITOR_OCCLUDER_WORLD = {
+  center: new THREE.Vector3(78.6, 2.15, -14.86),
+  width: 3.35
+};
+const COMPUTER_MONITOR_OCCLUDER_DOM_SIZE = {
+  width: 420,
+  height: 270
+};
 const DEFAULT_SCREEN_LAYOUT = 'side-by-side';
 const DEFAULT_SCREEN_ZONES = {
   upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, displayScale: 100, updatedAt: 0 },
@@ -125,6 +133,9 @@ export function FirstPersonWorld({
     const cssGiantScreen = createCssGiantScreenObject();
     cssGiantScreen.visible = false;
     cssScene.add(cssGiantScreen);
+    const cssComputerMonitorOccluder = createCssComputerMonitorOccluderObject();
+    cssComputerMonitorOccluder.visible = false;
+    cssScene.add(cssComputerMonitorOccluder);
 
     const ambient = new THREE.HemisphereLight(0xfff0d2, 0x263a36, 0.9);
     scene.add(ambient);
@@ -365,6 +376,7 @@ export function FirstPersonWorld({
       updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
       const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
       cssGiantScreen.visible = showPhysicalScreenContent;
+      cssComputerMonitorOccluder.visible = showPhysicalScreenContent;
       cssRenderer.domElement.style.visibility = showPhysicalScreenContent ? 'visible' : 'hidden';
 
       const nearDoor = doorOpenRef.current
@@ -415,6 +427,59 @@ export function FirstPersonWorld({
   }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, onScreenAimChange, resetRef, toggleDoorRef]);
 
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
+}
+
+function createCssComputerMonitorOccluderObject() {
+  const root = document.createElement('div');
+  root.className = 'computer-monitor-occluder';
+  root.style.width = `${COMPUTER_MONITOR_OCCLUDER_DOM_SIZE.width}px`;
+  root.style.height = `${COMPUTER_MONITOR_OCCLUDER_DOM_SIZE.height}px`;
+
+  const monitor = document.createElement('div');
+  monitor.className = 'computer-monitor-occluder-frame';
+
+  const screen = document.createElement('div');
+  screen.className = 'computer-monitor-occluder-screen';
+
+  const header = document.createElement('div');
+  header.className = 'computer-monitor-occluder-header';
+  const title = document.createElement('strong');
+  title.textContent = 'Estudiemos OS';
+  const status = document.createElement('span');
+  status.textContent = 'Agenda sincronizada';
+  header.append(title, status);
+
+  const list = document.createElement('div');
+  list.className = 'computer-monitor-occluder-list';
+  studyAgendaItems.slice(0, 3).forEach((item) => {
+    const row = document.createElement('div');
+    const time = document.createElement('span');
+    time.textContent = item.time;
+    const copy = document.createElement('p');
+    const task = document.createElement('strong');
+    task.textContent = item.title;
+    const detail = document.createElement('small');
+    detail.textContent = item.detail;
+    copy.append(task, detail);
+    row.append(time, copy);
+    list.appendChild(row);
+  });
+
+  screen.append(header, list);
+  monitor.appendChild(screen);
+
+  const neck = document.createElement('div');
+  neck.className = 'computer-monitor-occluder-neck';
+  const base = document.createElement('div');
+  base.className = 'computer-monitor-occluder-base';
+
+  root.append(monitor, neck, base);
+
+  const object = new CSS3DObject(root);
+  object.position.copy(COMPUTER_MONITOR_OCCLUDER_WORLD.center);
+  object.scale.setScalar(COMPUTER_MONITOR_OCCLUDER_WORLD.width / COMPUTER_MONITOR_OCCLUDER_DOM_SIZE.width);
+
+  return object;
 }
 
 function createCssGiantScreenObject() {
