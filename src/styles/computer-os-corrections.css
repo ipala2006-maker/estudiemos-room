@@ -1,7 +1,7 @@
 /* Final Estudiemos OS corrections: full monitor app, cleaner chrome, photo desktop. */
 
 .estudiemos-os-live-desktop .os-screen-grid {
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
 }
 
 .estudiemos-os-live-desktop .os-wallpaper {
@@ -100,11 +100,27 @@
 
 .estudiemos-os-live-desktop .browser-dots,
 .estudiemos-os-live-desktop .os-system-strip,
-.estudiemos-os-live-desktop .os-system-bar,
 .estudiemos-os-live-desktop .os-window-titlebar,
 .estudiemos-os-live-desktop .os-window-actions,
 .estudiemos-os-live-desktop .os-notification-stack,
 .estudiemos-os-live-desktop .os-empty-desktop {
+  display: none;
+}
+
+.estudiemos-os-live-desktop .os-system-bar {
+  position: relative;
+  z-index: 12;
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  gap: 8px;
+  padding: 7px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 15, 15, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.estudiemos-os-live-desktop .os-user-chip {
   display: none;
 }
 

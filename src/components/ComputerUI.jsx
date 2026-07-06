@@ -38,20 +38,21 @@ import { parseYouTubeUrl } from '../utils/youtube.js';
 const ZONES = [
   {
     id: 'upper',
-    label: 'Pantalla principal',
-    description: 'Contenido central de la sala'
+    label: 'Pantalla izquierda',
+    description: 'Contenido principal de la sala'
   },
   {
     id: 'lower',
-    label: 'Pantalla secundaria',
+    label: 'Pantalla derecha',
     description: 'Apoyo, ambiente o referencia'
   }
 ];
 
 const SCREEN_LAYOUTS = [
+  { id: 'side-by-side', label: '2 x 16:9', description: 'Dos videos lado a lado' },
   { id: 'single', label: '100%', description: 'Una pantalla' },
-  { id: 'split-70-30', label: '70/30', description: 'Principal arriba' },
   { id: 'split-50-50', label: '50/50', description: 'Doble foco' },
+  { id: 'split-70-30', label: '70/30', description: 'Principal arriba' },
   { id: 'split-30-70', label: '30/70', description: 'Secundaria grande' }
 ];
 
@@ -134,14 +135,16 @@ const carreraInicial = ingenieriaRecursosData.carreras[0];
 export function ComputerUI({
   onClose,
   screenZones,
-  screenLayout = 'split-70-30',
+  screenLayout = 'side-by-side',
+  initialApp = 'estudiemos',
   onAssignVideo,
   onClearZone,
   onUpdateZone,
   onScreenLayoutChange
 }) {
-  const [openWindows, setOpenWindows] = useState(['estudiemos']);
-  const [focusedWindow, setFocusedWindow] = useState('estudiemos');
+  const normalizedInitialApp = FUNCTIONAL_APP_IDS.includes(initialApp) ? initialApp : 'estudiemos';
+  const [openWindows, setOpenWindows] = useState([normalizedInitialApp]);
+  const [focusedWindow, setFocusedWindow] = useState(normalizedInitialApp);
   const [minimizedWindows, setMinimizedWindows] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState(null);
@@ -170,7 +173,7 @@ export function ComputerUI({
     () => materia.temas.find((item) => item.slug === estudiemosRoute.temaSlug) ?? materia.temas[0],
     [materia, estudiemosRoute.temaSlug]
   );
-  const activeLayout = SCREEN_LAYOUTS.find((layout) => layout.id === screenLayout) ?? SCREEN_LAYOUTS[1];
+  const activeLayout = SCREEN_LAYOUTS.find((layout) => layout.id === screenLayout) ?? SCREEN_LAYOUTS[0];
   const visibleWindows = openWindows.filter((appId) => !minimizedWindows.includes(appId));
   const clockLabel = useMemo(
     () =>
@@ -943,10 +946,10 @@ function ContentActionPanel({ content, emptyText, onAssignContent, onClose }) {
       </div>
       <div className="content-action-buttons">
         <button type="button" className="mediahub-primary-button" onClick={() => onAssignContent('upper')}>
-          Enviar a principal
+          Enviar a izquierda
         </button>
         <button type="button" className="mediahub-secondary-button" onClick={() => onAssignContent('lower')}>
-          Enviar a secundaria
+          Enviar a derecha
         </button>
         <button type="button" className="mediahub-secondary-button" onClick={() => onAssignContent('upper', 'single')}>
           Pantalla completa

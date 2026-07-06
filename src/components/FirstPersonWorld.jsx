@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
 import { Casa1 } from '../maps/Casa1.js';
@@ -10,11 +9,16 @@ const activeMap = Casa1;
 const startPosition = activeMap.startPosition;
 const houseDoorPosition = activeMap.entrancePosition;
 const computerPosition = activeMap.computerPosition;
-const modelLoader = new GLTFLoader();
 const textureCache = new Map();
 const materialCache = new Map();
 const emissiveMaterialCache = new Map();
 const edgeMaterialCache = new Map();
+const PERFORMANCE_PROFILE = {
+  maxPixelRatio: 1.15,
+  grassBlades: 90,
+  skyWidthSegments: 32,
+  skyHeightSegments: 16
+};
 const PLAYER_RADIUS = 0.58;
 const WALK_SPEED = 9.6;
 const WALK_ACCELERATION = 18;
@@ -30,7 +34,7 @@ const GIANT_SCREEN_DOM_SIZE = {
   width: 1730,
   height: 640
 };
-const DEFAULT_SCREEN_LAYOUT = 'split-70-30';
+const DEFAULT_SCREEN_LAYOUT = 'side-by-side';
 const DEFAULT_SCREEN_ZONES = {
   upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, updatedAt: 0 },
   lower: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, updatedAt: 0 }
@@ -80,14 +84,16 @@ export function FirstPersonWorld({
     camera.position.copy(startPosition);
     camera.rotation.order = 'YXZ';
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, PERFORMANCE_PROFILE.maxPixelRatio));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.08;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
     mount.appendChild(renderer.domElement);
 
     const cssScene = new THREE.Scene();
@@ -109,7 +115,7 @@ export function FirstPersonWorld({
     const sun = new THREE.DirectionalLight(0xffdca6, 2.45);
     sun.position.set(28, 31, 16);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.mapSize.set(512, 512);
     sun.shadow.camera.near = 1;
     sun.shadow.camera.far = 74;
     sun.shadow.camera.left = -42;
@@ -252,6 +258,7 @@ export function FirstPersonWorld({
       camera.updateProjectionMatrix();
       renderer.setSize(mount.clientWidth, mount.clientHeight);
       cssRenderer.setSize(mount.clientWidth, mount.clientHeight);
+      renderer.shadowMap.needsUpdate = true;
     }
 
     window.addEventListener('keydown', onKeyDown);
@@ -325,7 +332,9 @@ export function FirstPersonWorld({
 
       updateGiantScreen(giantScreen, screenZonesRef.current, screenLayoutRef.current);
       updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
-      cssGiantScreen.visible = doorOpenRef.current;
+      const showPhysicalScreenContent = doorOpenRef.current && controlsEnabledRef.current;
+      cssGiantScreen.visible = showPhysicalScreenContent;
+      cssRenderer.domElement.style.visibility = showPhysicalScreenContent ? 'visible' : 'hidden';
 
       const nearDoor = doorOpenRef.current
         ? camera.position.distanceTo(activeMap.interiorExitPosition) < 4.5
@@ -342,7 +351,9 @@ export function FirstPersonWorld({
       }
 
       renderer.render(scene, camera);
-      cssRenderer.render(cssScene, camera);
+      if (showPhysicalScreenContent) {
+        cssRenderer.render(cssScene, camera);
+      }
       frameId = requestAnimationFrame(animate);
     }
 
@@ -393,12 +404,40 @@ function getScreenLayoutDefinition(screenLayout, screenZones = DEFAULT_SCREEN_ZO
       id: 'single',
       label: '1 video',
       rows: ['1fr'],
+      columns: ['1fr'],
+      axis: 'rows',
       slots: [
         {
           zoneId,
           label: 'Pantalla completa',
           slotLabel: '100%',
           accent: '#b9d7df',
+          isPrimary: true
+        }
+      ]
+    };
+  }
+
+  if (screenLayout === 'side-by-side') {
+    return {
+      id: 'side-by-side',
+      label: '2 x 16:9',
+      rows: ['1fr'],
+      columns: ['1fr', '1fr'],
+      axis: 'columns',
+      slots: [
+        {
+          zoneId: 'upper',
+          label: 'Pantalla izquierda',
+          slotLabel: 'IZQUIERDA 16:9',
+          accent: '#b9d7df',
+          isPrimary: true
+        },
+        {
+          zoneId: 'lower',
+          label: 'Pantalla derecha',
+          slotLabel: 'DERECHA 16:9',
+          accent: '#d7c28a',
           isPrimary: true
         }
       ]
@@ -416,6 +455,8 @@ function getScreenLayoutDefinition(screenLayout, screenZones = DEFAULT_SCREEN_ZO
     id: screenLayout,
     label: selected.label,
     rows: [`${selected.upper}fr`, `${selected.lower}fr`],
+    columns: ['1fr'],
+    axis: 'rows',
     slots: [
       {
         zoneId: 'upper',
@@ -465,6 +506,8 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
   const root = cssGiantScreen.userData.contentRoot;
   root.textContent = '';
   root.style.gridTemplateRows = layout.rows.join(' ');
+  root.style.gridTemplateColumns = layout.columns.join(' ');
+  root.dataset.layout = layout.id;
 
   layout.slots.forEach((slotConfig) => {
     const zone = screenZones[slotConfig.zoneId];
@@ -529,7 +572,7 @@ function buildWorldScene(scene) {
 
 function addStaticSkyDome(scene) {
   const sky = new THREE.Mesh(
-    new THREE.SphereGeometry(260, 64, 32),
+    new THREE.SphereGeometry(260, PERFORMANCE_PROFILE.skyWidthSegments, PERFORMANCE_PROFILE.skyHeightSegments),
     new THREE.MeshBasicMaterial({
       map: createSkyBackgroundTexture(),
       side: THREE.BackSide,
@@ -638,7 +681,10 @@ function addNeighborhood(scene, materials) {
 
   addBoundaryWalls(scene, wallMaterial);
   addExteriorHorizon(scene);
-  addModelNeighborhoodHouses(scene);
+  const fallbackMaterials = createFallbackHouseMaterials();
+  addNeighborhoodHouse(scene, fallbackMaterials, 0, -20, true);
+  addNeighborhoodHouse(scene, fallbackMaterials, -18, -18, false);
+  addNeighborhoodHouse(scene, fallbackMaterials, 18, -18, false);
   addModelNatureAssets(scene);
   addProfessionalGrassLayer(scene);
   addGrassEdgeBlends(scene, textures);
@@ -1031,49 +1077,6 @@ function addCourtyardProps(scene, textures) {
   addGroundGrate(scene, 18.8, 18.2, -0.15);
 }
 
-function addModelNeighborhoodHouses(scene) {
-  const houseModels = [
-    {
-      file: 'Two story house-9N6ROCbmO1.glb',
-      position: [0, 0, -20],
-      targetSize: 19.2,
-      rotationY: Math.PI
-    },
-    {
-      file: 'House.glb',
-      position: [-18, 0, -18],
-      targetSize: 16.2,
-      rotationY: Math.PI
-    },
-    {
-      file: 'Two story house-sGgL4Nt7I7.glb',
-      position: [18, 0, -18],
-      targetSize: 16.4,
-      rotationY: Math.PI
-    }
-  ];
-
-  houseModels.forEach((config, index) => {
-    const url = `${import.meta.env.BASE_URL}models/vendor/poly-pizza/suburban-houses/${encodeURIComponent(config.file)}`;
-    modelLoader.load(
-      url,
-      (gltf) => {
-        const root = gltf.scene;
-        root.name = `cc0-house-${index + 1}`;
-        prepareImportedModel(root);
-        fitImportedModel(root, config.targetSize);
-        root.rotation.y = config.rotationY;
-        root.position.set(config.position[0], config.position[1], config.position[2]);
-        scene.add(root);
-      },
-      undefined,
-      () => {
-        addNeighborhoodHouse(scene, createFallbackHouseMaterials(), config.position[0], config.position[2], index === 0);
-      }
-    );
-  });
-}
-
 function addModelNatureAssets(scene) {
   [
     { x: -19.5, z: -9.8, height: 5.9, lean: -0.08, crown: 1.05 },
@@ -1103,7 +1106,7 @@ function addModelNatureAssets(scene) {
 function addProfessionalGrassLayer(scene) {
   const geometry = new THREE.BoxGeometry(0.055, 0.34, 0.035);
   const material = makeMaterial(0x789268, 0.48);
-  const bladeCount = 180;
+  const bladeCount = PERFORMANCE_PROFILE.grassBlades;
   const grass = new THREE.InstancedMesh(geometry, material, bladeCount);
   const matrix = new THREE.Matrix4();
   const position = new THREE.Vector3();
@@ -1130,7 +1133,7 @@ function addProfessionalGrassLayer(scene) {
   }
 
   grass.count = index;
-  grass.castShadow = true;
+  grass.castShadow = false;
   grass.receiveShadow = true;
   scene.add(grass);
 }
@@ -1323,87 +1326,6 @@ function addExteriorIdentityDetails(scene, textures) {
   markerPost.castShadow = true;
   scene.add(markerPost);
   addEdges(markerPost, 0x111622, 0.2);
-}
-
-function addImportedAsset(parent, config) {
-  const {
-    folder,
-    file,
-    basePath = 'models/vendor/poly-pizza',
-    name,
-    position = [0, 0, 0],
-    rotation = [0, 0, 0],
-    targetSize = 1,
-    scale = 1,
-    outlineColor = 0x111622,
-    outlineOpacity = 0.28,
-    onError
-  } = config;
-  const url = `${import.meta.env.BASE_URL}${basePath}/${folder ? `${folder}/` : ''}${encodeURIComponent(file)}`;
-
-  modelLoader.load(
-    url,
-    (gltf) => {
-      const root = gltf.scene;
-      root.name = name ?? file.replace('.glb', '');
-      prepareImportedModel(root, outlineColor, outlineOpacity);
-      fitImportedModel(root, targetSize);
-      root.scale.multiplyScalar(scale);
-      root.rotation.set(rotation[0], rotation[1], rotation[2]);
-      root.position.set(position[0], position[1], position[2]);
-      parent.add(root);
-    },
-    undefined,
-    onError
-  );
-}
-
-function prepareImportedModelWithStyle(root, outlineColor = 0x111622, outlineOpacity = 0.32) {
-  root.traverse((child) => {
-    if (!child.isMesh) return;
-    child.castShadow = true;
-    child.receiveShadow = true;
-    if (child.material) {
-      const materials = Array.isArray(child.material) ? child.material : [child.material];
-      materials.forEach((material) => {
-        softenMaterialColor(material);
-        if ('roughness' in material) material.roughness = Math.max(material.roughness ?? 0.64, 0.58);
-        if ('metalness' in material) material.metalness = Math.min(material.metalness ?? 0, 0.08);
-        if ('envMapIntensity' in material) material.envMapIntensity = 0.24;
-        material.side = THREE.FrontSide;
-        material.needsUpdate = true;
-      });
-    }
-    addEdges(child, outlineColor, outlineOpacity);
-  });
-}
-
-function prepareImportedModel(root, outlineColor = 0x111622, outlineOpacity = 0.32) {
-  prepareImportedModelWithStyle(root, outlineColor, outlineOpacity);
-}
-
-function softenMaterialColor(material) {
-  if (!material?.color) return;
-  const hsl = {};
-  material.color.getHSL(hsl);
-  material.color.setHSL(hsl.h, hsl.s * 0.38, Math.min(0.68, hsl.l * 0.86 + 0.04));
-}
-
-function fitImportedModel(root, targetSize) {
-  const box = new THREE.Box3().setFromObject(root);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
-  box.getSize(size);
-  box.getCenter(center);
-  const widest = Math.max(size.x, size.z, 0.001);
-  const scale = targetSize / widest;
-  root.scale.setScalar(scale);
-
-  const scaledBox = new THREE.Box3().setFromObject(root);
-  const scaledCenter = new THREE.Vector3();
-  scaledBox.getCenter(scaledCenter);
-  root.position.sub(scaledCenter);
-  root.position.y -= scaledBox.min.y;
 }
 
 function createFallbackHouseMaterials() {
@@ -2328,6 +2250,36 @@ function updateGiantScreen(giantScreen, screenZones, screenLayout) {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
+  if (layout.axis === 'columns') {
+    const marginX = 34;
+    const gap = 28;
+    const panelWidth = Math.round((width - marginX * 2 - gap) / 2);
+    const panelHeight = Math.min(height - 82, Math.round((panelWidth * 9) / 16));
+    const panelY = Math.round((height - panelHeight) / 2);
+
+    layout.slots.forEach((slotConfig, index) => {
+      drawGiantScreenZone(ctx, {
+        zone: screenZones[slotConfig.zoneId],
+        x: marginX + index * (panelWidth + gap),
+        y: panelY,
+        width: panelWidth,
+        height: panelHeight,
+        label: slotConfig.label,
+        slotLabel: slotConfig.slotLabel,
+        accent: slotConfig.accent,
+        isPrimary: false
+      });
+    });
+
+    const dividerX = Math.round(width / 2);
+    ctx.fillStyle = '#d7c28a';
+    ctx.fillRect(dividerX - 3, panelY - 16, 6, panelHeight + 32);
+    ctx.fillStyle = 'rgba(17,22,34,0.72)';
+    ctx.fillRect(dividerX - 1, panelY - 16, 2, panelHeight + 32);
+    giantScreen.texture.needsUpdate = true;
+    return;
+  }
+
   let cursorY = 0;
   layout.slots.forEach((slotConfig, index) => {
     const ratio = layout.rows[index] === '1fr' ? 1 : Number.parseFloat(layout.rows[index]) / 100;
@@ -2362,8 +2314,9 @@ function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel,
   const contentLabel = zone.contentType === 'pdf' ? 'PDF' : 'YOUTUBE';
   const innerX = x + 34;
   const innerY = y + (isPrimary ? 36 : 24);
-  const titleSize = isPrimary ? 64 : 34;
-  const bodySize = isPrimary ? 28 : 21;
+  const titleSize = isPrimary ? 64 : Math.min(34, Math.max(24, Math.round(width * 0.07)));
+  const bodySize = isPrimary ? 28 : Math.min(21, Math.max(16, Math.round(width * 0.04)));
+  const textMaxWidth = Math.max(160, width - 68);
 
   ctx.save();
   ctx.beginPath();
@@ -2383,39 +2336,40 @@ function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel,
   ctx.restore();
 
   ctx.fillStyle = 'rgba(17,22,34,0.66)';
-  ctx.fillRect(innerX, innerY, isPrimary ? 520 : 420, isPrimary ? 74 : 48);
+  ctx.fillRect(innerX, innerY, Math.min(isPrimary ? 520 : 320, textMaxWidth), isPrimary ? 74 : 48);
   ctx.fillStyle = accent;
   ctx.fillRect(innerX, innerY, 10, isPrimary ? 74 : 48);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = `900 ${isPrimary ? 38 : 22}px system-ui, sans-serif`;
-  ctx.fillText(label, innerX + 24, innerY + (isPrimary ? 48 : 32));
+  ctx.fillText(label, innerX + 24, innerY + (isPrimary ? 48 : 32), textMaxWidth - 32);
 
   ctx.fillStyle = hasContent ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)';
   ctx.font = `900 ${titleSize}px system-ui, sans-serif`;
-  ctx.fillText(hasContent ? contentLabel : 'SIN VIDEO', innerX + 3, innerY + (isPrimary ? 165 : 105));
+  ctx.fillText(hasContent ? contentLabel : 'SIN VIDEO', innerX + 3, innerY + (isPrimary ? 165 : 105), textMaxWidth);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = `900 ${titleSize}px system-ui, sans-serif`;
-  ctx.fillText(hasContent ? contentLabel : 'SIN VIDEO', innerX, innerY + (isPrimary ? 158 : 100));
+  ctx.fillText(hasContent ? contentLabel : 'SIN VIDEO', innerX, innerY + (isPrimary ? 158 : 100), textMaxWidth);
 
   ctx.font = `750 ${bodySize}px system-ui, sans-serif`;
   ctx.fillStyle = 'rgba(255,255,255,0.86)';
   if (hasContent) {
-    ctx.fillText(zone.title ? `Recurso: ${zone.title}` : `Video ID: ${zone.videoId}`, innerX, innerY + (isPrimary ? 205 : 136));
+    ctx.fillText(zone.title ? `Recurso: ${zone.title}` : `Video ID: ${zone.videoId}`, innerX, innerY + (isPrimary ? 205 : 136), textMaxWidth);
     ctx.fillText(
       zone.contentType === 'pdf' ? 'Documento de Estudiemos' : `${zone.muted ? 'Mute activo' : 'Audio activo'} - Volumen ${zone.volume}%`,
       innerX,
-      innerY + (isPrimary ? 242 : 164)
+      innerY + (isPrimary ? 242 : 164),
+      textMaxWidth
     );
   } else {
-    ctx.fillText(`Canal ${slotLabel} listo para recibir YouTube`, innerX, innerY + (isPrimary ? 205 : 136));
+    ctx.fillText(`Canal ${slotLabel} listo para recibir YouTube`, innerX, innerY + (isPrimary ? 205 : 136), textMaxWidth);
   }
 
   ctx.fillStyle = accent;
-  ctx.fillRect(width - 196, y + height - 48, hasContent ? 128 : 76, 10);
+  ctx.fillRect(x + width - 196, y + height - 48, hasContent ? 128 : 76, 10);
   ctx.fillStyle = 'rgba(255,255,255,0.36)';
-  ctx.fillRect(width - 196, y + height - 28, hasContent ? 88 : 122, 10);
+  ctx.fillRect(x + width - 196, y + height - 28, hasContent ? 88 : 122, 10);
 
   ctx.restore();
 }

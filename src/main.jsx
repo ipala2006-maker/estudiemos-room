@@ -33,7 +33,7 @@ function App() {
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
-  const [screenLayout, setScreenLayout] = useState('split-70-30');
+  const [screenLayout, setScreenLayout] = useState('side-by-side');
   const [screenZones, setScreenZones] = useState({
     upper: createEmptyScreenZone(),
     lower: createEmptyScreenZone()

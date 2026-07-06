@@ -1,11 +1,8 @@
 import {
   BarChart3,
-  BookOpen,
   CalendarDays,
-  FolderOpen,
   Globe2,
   MonitorUp,
-  NotebookPen,
   Settings,
   Sparkles,
   Wifi
@@ -21,49 +18,15 @@ const DESKTOP_APPS = [
     subtitle: 'Biblioteca principal',
     state: 'Listo',
     icon: Sparkles,
-    action: 'open'
-  },
-  {
-    id: 'biblioteca',
-    title: 'Biblioteca',
-    subtitle: 'Material guardado',
-    state: 'Proximo',
-    icon: FolderOpen
-  },
-  {
-    id: 'apuntes',
-    title: 'Apuntes',
-    subtitle: 'Cuaderno',
-    state: 'Proximo',
-    icon: NotebookPen
-  },
-  {
-    id: 'agenda',
-    title: 'Agenda',
-    subtitle: 'Plan semanal',
-    state: 'Hoy',
-    icon: CalendarDays
-  },
-  {
-    id: 'progreso',
-    title: 'Progreso',
-    subtitle: 'Actividad',
-    state: 'Proximo',
-    icon: BarChart3
+    action: 'estudiemos'
   },
   {
     id: 'navegador',
     title: 'Navegador',
     subtitle: 'Links externos',
-    state: 'Proximo',
-    icon: Globe2
-  },
-  {
-    id: 'pantallas',
-    title: 'Pantallas',
-    subtitle: 'Sala virtual',
-    state: 'Sistema',
-    icon: MonitorUp
+    state: 'Listo',
+    icon: Globe2,
+    action: 'links'
   },
   {
     id: 'ajustes',
@@ -76,9 +39,15 @@ const DESKTOP_APPS = [
 
 export function VirtualComputerShell(props) {
   const [appOpen, setAppOpen] = useState(false);
+  const [initialApp, setInitialApp] = useState('estudiemos');
 
   if (appOpen) {
-    return <ComputerUI {...props} />;
+    return <ComputerUI {...props} initialApp={initialApp} />;
+  }
+
+  function openComputer(appId) {
+    setInitialApp(appId);
+    setAppOpen(true);
   }
 
   return (
@@ -106,14 +75,14 @@ export function VirtualComputerShell(props) {
             <div className="virtual-app-grid" aria-label="Aplicaciones">
               {DESKTOP_APPS.map((app) => {
                 const Icon = app.icon;
-                const canOpen = app.action === 'open';
+                const canOpen = Boolean(app.action);
 
                 return (
                   <button
                     key={app.id}
                     type="button"
                     className={canOpen ? 'virtual-app-tile is-ready' : 'virtual-app-tile'}
-                    onClick={canOpen ? () => setAppOpen(true) : undefined}
+                    onClick={canOpen ? () => openComputer(app.action) : undefined}
                     aria-disabled={!canOpen}
                   >
                     <span className="virtual-app-icon">
@@ -138,9 +107,9 @@ export function VirtualComputerShell(props) {
 
               <div className="virtual-mini-grid">
                 <div>
-                  <BookOpen size={18} aria-hidden="true" />
-                  <strong>Recursos</strong>
-                  <span>Biblioteca conectada</span>
+                  <MonitorUp size={18} aria-hidden="true" />
+                  <strong>Pantallas</strong>
+                  <span>Controles en la bandeja inferior</span>
                 </div>
                 <div>
                   <BarChart3 size={18} aria-hidden="true" />
@@ -165,17 +134,9 @@ export function VirtualComputerShell(props) {
           </section>
 
           <footer className="virtual-dock" aria-label="Dock">
-            <button type="button" className="virtual-dock-button is-active" onClick={() => setAppOpen(true)}>
+            <button type="button" className="virtual-dock-button is-active" onClick={() => openComputer('estudiemos')}>
               <Sparkles size={20} aria-hidden="true" />
               <span>Estudiemos</span>
-            </button>
-            <button type="button" className="virtual-dock-button">
-              <CalendarDays size={20} aria-hidden="true" />
-              <span>Agenda</span>
-            </button>
-            <button type="button" className="virtual-dock-button">
-              <BarChart3 size={20} aria-hidden="true" />
-              <span>Progreso</span>
             </button>
           </footer>
         </main>
