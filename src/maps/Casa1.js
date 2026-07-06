@@ -5,7 +5,8 @@ export const Casa1 = {
   name: 'Casa 1',
   startPosition: new THREE.Vector3(0, 1.7, 20),
   entrancePosition: new THREE.Vector3(0, 1.7, -13.7),
-  interiorSpawnPosition: new THREE.Vector3(90, 1.7, -31),
+  interiorSpawnPosition: new THREE.Vector3(104, 1.7, -18.5),
+  interiorSpawnLookAt: new THREE.Vector3(84, 2.1, -24),
   interiorExitPosition: new THREE.Vector3(90, 1.7, 20),
   computerPosition: new THREE.Vector3(78.6, 1.7, -14.6),
   screenChannels: {

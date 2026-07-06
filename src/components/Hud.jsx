@@ -13,7 +13,7 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, onBackHome, onRese
       <div>
         <span>
           {isDoorOpen
-            ? 'La puerta esta abierta: entra, mira a la esquina izquierda y acercate a la computadora.'
+            ? 'Estas en Casa 1: la pantalla y la computadora quedan como foco principal de la sala.'
             : 'Segui el camino hasta la puerta de la casita.'}
         </span>
       </div>
