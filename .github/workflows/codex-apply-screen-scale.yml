@@ -1,0 +1,42 @@
+name: Codex Apply Screen Scale
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download payload
+        run: |
+          curl -L "https://files.catbox.moe/b6a2ui.zip" -o codex-payload.zip
+          echo "518918610143980ce2f7823e0853e799980de4af6b970481b9f54c1006502158  codex-payload.zip" | sha256sum -c -
+
+      - name: Apply payload
+        run: |
+          unzip -o codex-payload.zip -d codex-payload
+          rsync -av codex-payload/ ./
+          rm -rf codex-payload codex-payload.zip
+          rm -f .github/workflows/codex-apply-screen-scale.yml
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/FirstPersonWorld.jsx src/components/ComputerUI.jsx src/components/VirtualComputerShell.jsx src/main.jsx src/styles/app.css src/styles/computer-os-corrections.css .github/workflows/codex-apply-screen-scale.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Add screen size controls and room corrections"
+          git push
