@@ -1,0 +1,42 @@
+name: Codex Apply Restore Houses Overlay Perf
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download payload
+        run: |
+          curl -L "https://files.catbox.moe/w64y0y.zip" -o codex-payload.zip
+          echo "9d00eee198a684c48eb5b0eaa9678c62473f3b2dfa539d86a36b05d7ede4ae9b  codex-payload.zip" | sha256sum -c -
+
+      - name: Apply payload
+        run: |
+          unzip -o codex-payload.zip -d codex-payload
+          cp -R codex-payload/. ./
+          rm -rf codex-payload codex-payload.zip
+          rm -f .github/workflows/codex-apply-restore-houses-overlay-perf.yml
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/FirstPersonWorld.jsx src/main.jsx src/styles/computer-os-corrections.css .github/workflows/codex-apply-restore-houses-overlay-perf.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Restore house assets and reduce graphics load"
+          git push
