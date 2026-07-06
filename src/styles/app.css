@@ -175,7 +175,14 @@ button {
 .drawer-layout-grid button:focus-visible,
 .drawer-zone-actions button:focus-visible,
 .zone-icon-button:focus-visible,
-.zone-controls input:focus-visible {
+.zone-controls input:focus-visible,
+.screen-remote-icon-button:focus-visible,
+.screen-remote-targets button:focus-visible,
+.screen-remote-controls button:focus-visible,
+.screen-remote-layouts button:focus-visible,
+.screen-remote-link button:focus-visible,
+.screen-remote-link input:focus-visible,
+.screen-remote-sliders input:focus-visible {
   outline: 3px solid rgba(79, 111, 120, 0.5);
   outline-offset: 3px;
 }
@@ -315,6 +322,27 @@ button {
   display: block;
   background: #000;
   pointer-events: none;
+}
+
+.physical-screen-loading {
+  position: absolute;
+  inset: auto 18px 16px auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(10, 18, 20, 0.76);
+  font-size: 24px;
+  font-weight: 850;
+  opacity: 1;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.physical-screen-slot.is-loaded .physical-screen-loading {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 .physical-screen-placeholder {
@@ -2711,6 +2739,7 @@ select {
   inset: 0;
   background: linear-gradient(90deg, rgba(4, 7, 8, 0.08), rgba(4, 7, 8, 0.52));
   pointer-events: auto;
+  animation: remote-fade-in 130ms ease-out both;
 }
 
 .screen-remote-phone {
@@ -2729,6 +2758,7 @@ select {
     #edf3ef;
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.72);
   pointer-events: auto;
+  animation: remote-phone-in 160ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
 }
 
 .screen-remote-header,
@@ -2778,6 +2808,7 @@ select {
   background: #ffffff;
   color: #172426;
   font-weight: 850;
+  transition: transform 130ms ease, background 130ms ease, border-color 130ms ease, color 130ms ease, opacity 130ms ease;
 }
 
 .screen-remote-icon-button {
@@ -2816,6 +2847,19 @@ select {
   border: 1px solid rgba(17, 24, 23, 0.1);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.78);
+}
+
+.screen-remote-note {
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(79, 111, 120, 0.16);
+  border-radius: 8px;
+  color: #172426;
+  background: rgba(185, 215, 223, 0.36);
+  font-size: 0.82rem;
+  font-weight: 860;
+  text-align: center;
 }
 
 .screen-remote-now span,
@@ -2881,6 +2925,14 @@ select {
   cursor: default;
 }
 
+.screen-remote-icon-button:active,
+.screen-remote-targets button:active,
+.screen-remote-controls button:active,
+.screen-remote-layouts button:active,
+.screen-remote-link button:active {
+  transform: translateY(1px) scale(0.985);
+}
+
 .screen-remote-sliders label {
   display: grid;
   gap: 7px;
@@ -2900,8 +2952,45 @@ select {
   bottom: 96px;
 }
 
+@keyframes remote-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes remote-phone-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .computer-overlay {
   background:
     radial-gradient(circle at 50% 42%, rgba(224, 196, 122, 0.08), transparent 36%),
     rgba(4, 7, 8, 0.88);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-remote-backdrop,
+  .screen-remote-phone,
+  .physical-screen-loading {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .screen-remote-icon-button,
+  .screen-remote-targets button,
+  .screen-remote-controls button,
+  .screen-remote-layouts button,
+  .screen-remote-link button {
+    transition: none !important;
+  }
 }

@@ -577,7 +577,127 @@
   z-index: 1000;
   background: #06100f;
   backdrop-filter: none;
-  animation: none;
+  animation: smooth-computer-overlay-in 140ms ease-out both;
+}
+
+.game-computer-window.estudiemos-os-live-desktop,
+.mediahub-window {
+  animation: smooth-computer-window-in 170ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+}
+
+.estudiemos-os-live-desktop .os-window,
+.estudiemos-os-live-desktop .game-screen-drawer {
+  animation-duration: 150ms;
+}
+
+.os-action-toast {
+  position: absolute;
+  right: clamp(14px, 2vw, 24px);
+  top: clamp(14px, 2vw, 22px);
+  z-index: 30;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: min(360px, calc(100vw - 28px));
+  padding: 0 14px;
+  border: 1px solid rgba(244, 248, 244, 0.16);
+  border-radius: 8px;
+  color: #f7f2df;
+  background: rgba(12, 22, 20, 0.86);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  font-size: 0.88rem;
+  font-weight: 880;
+  pointer-events: none;
+  animation: os-action-toast-in 150ms ease-out both;
+}
+
+.os-action-toast svg {
+  flex: 0 0 auto;
+  color: #e0c47a;
+}
+
+.os-action-toast span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.os-desktop-icon:active,
+.virtual-app-tile.is-ready:active,
+.virtual-dock-button.is-active:active,
+.os-screen-button:active,
+.drawer-layout-grid button:active,
+.drawer-zone-actions button:active,
+.mediahub-primary-button:active,
+.mediahub-secondary-button:active,
+.mediahub-text-button:active,
+.resource-action-card:active,
+.compact-content-card:active,
+.links-input-row button:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.os-screen-button,
+.drawer-layout-grid button,
+.drawer-zone-actions button,
+.mediahub-primary-button,
+.mediahub-secondary-button,
+.mediahub-text-button,
+.resource-action-card,
+.compact-content-card,
+.links-input-row button {
+  transition:
+    transform 130ms ease,
+    background 130ms ease,
+    border-color 130ms ease,
+    color 130ms ease,
+    box-shadow 130ms ease,
+    opacity 130ms ease;
+}
+
+.drawer-layout-grid button:hover,
+.drawer-zone-actions button:hover,
+.os-screen-button:hover,
+.mediahub-primary-button:hover,
+.mediahub-secondary-button:hover,
+.mediahub-text-button:hover {
+  border-color: rgba(126, 172, 154, 0.42);
+}
+
+@keyframes smooth-computer-overlay-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes smooth-computer-window-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes os-action-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .virtual-desktop-topbar,
@@ -588,4 +708,31 @@
 .virtual-dock,
 .virtual-app-tile {
   backdrop-filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .computer-overlay,
+  .mediahub-boot-overlay,
+  .game-computer-window.estudiemos-os-live-desktop,
+  .mediahub-window,
+  .estudiemos-os-live-desktop .os-window,
+  .estudiemos-os-live-desktop .game-screen-drawer,
+  .os-action-toast {
+    animation: none !important;
+  }
+
+  .os-desktop-icon,
+  .virtual-app-tile,
+  .virtual-dock-button,
+  .os-screen-button,
+  .drawer-layout-grid button,
+  .drawer-zone-actions button,
+  .mediahub-primary-button,
+  .mediahub-secondary-button,
+  .mediahub-text-button,
+  .resource-action-card,
+  .compact-content-card,
+  .links-input-row button {
+    transition: none !important;
+  }
 }

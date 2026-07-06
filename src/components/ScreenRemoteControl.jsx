@@ -9,7 +9,7 @@ import {
   VolumeX,
   X
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseYouTubeUrl } from '../utils/youtube.js';
 
 const REMOTE_ZONES = [
@@ -35,6 +35,8 @@ export function ScreenRemoteControl({
   const [activeZoneId, setActiveZoneId] = useState('upper');
   const [linkDraft, setLinkDraft] = useState('');
   const [linkError, setLinkError] = useState('');
+  const [remoteNote, setRemoteNote] = useState('Control listo');
+  const noteTimerRef = useRef(0);
   const activeZone = screenZones[activeZoneId] ?? screenZones.upper;
   const activeZoneLabel = useMemo(
     () => REMOTE_ZONES.find((zone) => zone.id === activeZoneId)?.label ?? 'Pantalla',
@@ -42,12 +44,27 @@ export function ScreenRemoteControl({
   );
   const hasContent = Boolean(activeZone.videoId || activeZone.resourceUrl);
 
+  useEffect(() => () => window.clearTimeout(noteTimerRef.current), []);
+
+  function announce(message) {
+    window.clearTimeout(noteTimerRef.current);
+    setRemoteNote(message);
+    noteTimerRef.current = window.setTimeout(() => setRemoteNote('Control listo'), 2200);
+  }
+
+  function selectZone(zoneId) {
+    setActiveZoneId(zoneId);
+    const label = REMOTE_ZONES.find((zone) => zone.id === zoneId)?.label ?? 'pantalla';
+    announce(`Controlando ${label}`);
+  }
+
   function submitLink(event) {
     event.preventDefault();
     const result = parseYouTubeUrl(linkDraft);
 
     if (!result.ok) {
       setLinkError(result.error);
+      announce('Link no valido');
       return;
     }
 
@@ -60,11 +77,40 @@ export function ScreenRemoteControl({
     });
     setLinkDraft('');
     setLinkError('');
+    announce(`Enviado a ${activeZoneLabel}`);
   }
 
   function restartVideo() {
     if (!hasContent) return;
     onUpdateZone(activeZoneId, { updatedAt: Date.now() });
+    announce(`Reiniciado en ${activeZoneLabel}`);
+  }
+
+  function toggleMute() {
+    onUpdateZone(activeZoneId, { muted: !activeZone.muted });
+    announce(`${activeZone.muted ? 'Audio activo' : 'Mute activo'} en ${activeZoneLabel}`);
+  }
+
+  function updateVolume(value) {
+    onUpdateZone(activeZoneId, { volume: value });
+    announce(`Volumen ${value}% en ${activeZoneLabel}`);
+  }
+
+  function updateDisplayScale(value) {
+    onUpdateZone(activeZoneId, { displayScale: value });
+    announce(`Tamano ${value}% en ${activeZoneLabel}`);
+  }
+
+  function clearActiveZone() {
+    if (!hasContent) return;
+    onClearZone(activeZoneId);
+    announce(`${activeZoneLabel} limpia`);
+  }
+
+  function changeLayout(layoutId) {
+    onScreenLayoutChange(layoutId);
+    const label = REMOTE_LAYOUTS.find((layout) => layout.id === layoutId)?.label ?? layoutId;
+    announce(`Layout ${label}`);
   }
 
   return (
@@ -90,7 +136,7 @@ export function ScreenRemoteControl({
               key={zone.id}
               type="button"
               className={zone.id === activeZoneId ? 'is-selected' : ''}
-              onClick={() => setActiveZoneId(zone.id)}
+              onClick={() => selectZone(zone.id)}
             >
               <MonitorUp size={17} aria-hidden="true" />
               <span>{zone.label}</span>
@@ -103,6 +149,7 @@ export function ScreenRemoteControl({
           <strong>{hasContent ? activeZone.title || activeZone.videoId || 'Contenido cargado' : 'Sin video'}</strong>
           <small>{hasContent ? activeZone.watchUrl || activeZone.resourceUrl || 'Pantalla activa' : 'Pega un link de YouTube'}</small>
         </section>
+        <div className="screen-remote-note" role="status">{remoteNote}</div>
 
         <form className="screen-remote-link" onSubmit={submitLink}>
           <label htmlFor="screen-remote-youtube">YouTube</label>
@@ -121,7 +168,7 @@ export function ScreenRemoteControl({
         </form>
 
         <section className="screen-remote-controls" aria-label="Controles de reproduccion">
-          <button type="button" onClick={() => onUpdateZone(activeZoneId, { muted: !activeZone.muted })}>
+          <button type="button" onClick={toggleMute}>
             {activeZone.muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
             <span>{activeZone.muted ? 'Mute' : 'Audio'}</span>
           </button>
@@ -129,7 +176,7 @@ export function ScreenRemoteControl({
             <RotateCcw size={18} aria-hidden="true" />
             <span>Reiniciar</span>
           </button>
-          <button type="button" onClick={() => onClearZone(activeZoneId)} disabled={!hasContent}>
+          <button type="button" onClick={clearActiveZone} disabled={!hasContent}>
             <Eraser size={18} aria-hidden="true" />
             <span>Limpiar</span>
           </button>
@@ -143,7 +190,7 @@ export function ScreenRemoteControl({
               min="0"
               max="100"
               value={activeZone.volume}
-              onChange={(event) => onUpdateZone(activeZoneId, { volume: Number(event.target.value) })}
+              onChange={(event) => updateVolume(Number(event.target.value))}
             />
           </label>
           <label>
@@ -154,7 +201,7 @@ export function ScreenRemoteControl({
               max="100"
               step="5"
               value={activeZone.displayScale ?? 100}
-              onChange={(event) => onUpdateZone(activeZoneId, { displayScale: Number(event.target.value) })}
+              onChange={(event) => updateDisplayScale(Number(event.target.value))}
             />
           </label>
         </section>
@@ -165,7 +212,7 @@ export function ScreenRemoteControl({
               key={layout.id}
               type="button"
               className={screenLayout === layout.id ? 'is-selected' : ''}
-              onClick={() => onScreenLayoutChange(layout.id)}
+              onClick={() => changeLayout(layout.id)}
             >
               <Maximize2 size={16} aria-hidden="true" />
               <span>{layout.label}</span>

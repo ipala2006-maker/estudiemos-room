@@ -30,7 +30,7 @@
   Wrench,
   X
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { studyAgendaItems } from '../data/studyAgenda.js';
 import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingenieriaRecursos.js';
 import { parseYouTubeUrl } from '../utils/youtube.js';
@@ -154,11 +154,15 @@ export function ComputerUI({
   const [linkError, setLinkError] = useState('');
   const [clockTime, setClockTime] = useState(() => new Date());
   const [systemNote, setSystemNote] = useState('Sesion enfocada lista');
+  const [actionFeedback, setActionFeedback] = useState('');
+  const feedbackTimerRef = useRef(0);
 
   useEffect(() => {
     const timer = window.setInterval(() => setClockTime(new Date()), 30000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => () => window.clearTimeout(feedbackTimerRef.current), []);
 
   const carreras = ingenieriaRecursosData.carreras;
   const carrera = useMemo(
@@ -205,6 +209,12 @@ export function ComputerUI({
     setFocusedWindow(appId);
     setDrawerOpen(false);
     setSystemNote(`${app.title} activo`);
+  }
+
+  function showActionFeedback(message) {
+    window.clearTimeout(feedbackTimerRef.current);
+    setActionFeedback(message);
+    feedbackTimerRef.current = window.setTimeout(() => setActionFeedback(''), 2200);
   }
 
   function focusWindow(appId) {
@@ -270,6 +280,8 @@ export function ComputerUI({
       description: `${materia.title} / ${tema.title}`,
       category: 'Video'
     });
+    setSystemNote('Video listo para enviar a pantalla');
+    showActionFeedback('Video preparado');
   }
 
   function selectPdf(pdfItem) {
@@ -285,6 +297,8 @@ export function ComputerUI({
       description: `${materia.title} / ${tema.title}`,
       category: 'PDF'
     });
+    setSystemNote('PDF listo para enviar a pantalla');
+    showActionFeedback('Material preparado');
   }
 
   function prepareManualLink(event) {
@@ -293,6 +307,8 @@ export function ComputerUI({
     if (!result.ok) {
       setLinkError(result.error);
       setSelectedContent(null);
+      setSystemNote('Link no valido');
+      showActionFeedback('No se pudo preparar el link');
       return;
     }
 
@@ -306,21 +322,61 @@ export function ComputerUI({
       description: 'Video preparado desde Navegador. Elegi donde mostrarlo.',
       category: 'Link'
     });
+    setSystemNote('Link listo para enviar');
+    showActionFeedback('Link preparado');
   }
 
   function assignContent(zoneId, layoutId = null) {
     if (!selectedContent) return;
-    if (layoutId) onScreenLayoutChange?.(layoutId);
+    const zoneLabel = ZONES.find((zone) => zone.id === zoneId)?.label ?? 'pantalla';
+    if (layoutId) changeScreenLayout(layoutId, false);
     onAssignVideo(zoneId, {
       ...selectedContent,
       updatedAt: Date.now()
     });
+    setSystemNote(`Enviado a ${zoneLabel}`);
+    showActionFeedback(`Enviado a ${zoneLabel}`);
+  }
+
+  function changeScreenLayout(layoutId, notify = true) {
+    const layoutLabel = SCREEN_LAYOUTS.find((layout) => layout.id === layoutId)?.label ?? layoutId;
+    onScreenLayoutChange?.(layoutId);
+    setSystemNote(`Layout ${layoutLabel} activo`);
+    if (notify) showActionFeedback(`Layout ${layoutLabel}`);
+  }
+
+  function updateZoneFromComputer(zoneId, patch) {
+    onUpdateZone(zoneId, patch);
+    const zoneLabel = ZONES.find((zone) => zone.id === zoneId)?.label ?? 'pantalla';
+    if ('muted' in patch) {
+      showActionFeedback(`${patch.muted ? 'Mute' : 'Audio'} en ${zoneLabel}`);
+      setSystemNote(`${zoneLabel}: ${patch.muted ? 'mute activo' : 'audio activo'}`);
+    }
+    if ('volume' in patch) {
+      setSystemNote(`${zoneLabel}: volumen ${patch.volume}%`);
+    }
+    if ('displayScale' in patch) {
+      setSystemNote(`${zoneLabel}: tamano ${patch.displayScale}%`);
+    }
+  }
+
+  function clearZoneFromComputer(zoneId) {
+    onClearZone(zoneId);
+    const zoneLabel = ZONES.find((zone) => zone.id === zoneId)?.label ?? 'pantalla';
+    setSystemNote(`${zoneLabel} limpia`);
+    showActionFeedback(`${zoneLabel} limpia`);
   }
 
   return (
     <section className="computer-overlay mediahub-boot-overlay" aria-label="Computadora de Casa 1">
       <div className="computer-window computer-window-wide mediahub-window game-computer-window estudiemos-os-live-desktop">
         <div className="computer-boot-glow" aria-hidden="true" />
+        {actionFeedback && (
+          <div className="os-action-toast" role="status">
+            <CheckCircle2 size={18} aria-hidden="true" />
+            <span>{actionFeedback}</span>
+          </div>
+        )}
 
         <div className="os-screen-grid">
           <div className="os-wallpaper" aria-hidden="true">
@@ -519,9 +575,9 @@ export function ComputerUI({
             activeLayout={activeLayout}
             screenZones={screenZones}
             onClose={() => setDrawerOpen(false)}
-            onClearZone={onClearZone}
-            onUpdateZone={onUpdateZone}
-            onScreenLayoutChange={onScreenLayoutChange}
+            onClearZone={clearZoneFromComputer}
+            onUpdateZone={updateZoneFromComputer}
+            onScreenLayoutChange={changeScreenLayout}
           />
         )}
       </div>

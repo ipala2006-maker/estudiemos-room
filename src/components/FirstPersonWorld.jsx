@@ -25,6 +25,11 @@ const PLAYER_RADIUS = 0.58;
 const WALK_SPEED = 9.6;
 const WALK_ACCELERATION = 18;
 const WALK_DECELERATION = 24;
+const CAMERA_SMOOTHING = 24;
+const CAMERA_SENSITIVITY = {
+  yaw: 0.002,
+  pitch: 0.0017
+};
 const EDGE_OPACITY_SCALE = 0.28;
 const INTERIOR_LOOK_TARGET = activeMap.interiorSpawnLookAt ?? new THREE.Vector3(84, 2.1, -24);
 const GIANT_SCREEN_WORLD = {
@@ -52,6 +57,7 @@ export function FirstPersonWorld({
   resetRef,
   toggleDoorRef,
   controlsEnabled = true,
+  screenContentEnabled = controlsEnabled,
   screenZones = DEFAULT_SCREEN_ZONES,
   screenLayout = DEFAULT_SCREEN_LAYOUT
 }) {
@@ -61,6 +67,7 @@ export function FirstPersonWorld({
   const screenAimRef = useRef(false);
   const doorOpenRef = useRef(false);
   const controlsEnabledRef = useRef(controlsEnabled);
+  const screenContentEnabledRef = useRef(screenContentEnabled);
   const screenZonesRef = useRef(screenZones);
   const screenLayoutRef = useRef(screenLayout);
 
@@ -70,6 +77,10 @@ export function FirstPersonWorld({
       document.exitPointerLock?.();
     }
   }, [controlsEnabled]);
+
+  useEffect(() => {
+    screenContentEnabledRef.current = screenContentEnabled;
+  }, [screenContentEnabled]);
 
   useEffect(() => {
     screenZonesRef.current = screenZones;
@@ -154,6 +165,8 @@ export function FirstPersonWorld({
     const movementStep = new THREE.Vector3();
     let yaw = 0;
     let pitch = 0;
+    let targetYaw = 0;
+    let targetPitch = 0;
     let pointerLocked = false;
     let verticalVelocity = 0;
     let isGrounded = true;
@@ -173,6 +186,8 @@ export function FirstPersonWorld({
       isGrounded = true;
       yaw = 0;
       pitch = 0;
+      targetYaw = yaw;
+      targetPitch = pitch;
       camera.rotation.set(pitch, yaw, 0);
       doorOpenRef.current = false;
       nearDoorRef.current = false;
@@ -187,6 +202,8 @@ export function FirstPersonWorld({
     function faceCameraToward(target) {
       yaw = Math.atan2(camera.position.x - target.x, camera.position.z - target.z);
       pitch = 0;
+      targetYaw = yaw;
+      targetPitch = pitch;
       camera.rotation.set(pitch, yaw, 0);
     }
 
@@ -197,6 +214,8 @@ export function FirstPersonWorld({
       movementVelocity.set(0, 0, 0);
       yaw = 0;
       pitch = 0;
+      targetYaw = yaw;
+      targetPitch = pitch;
       if (doorOpenRef.current) {
         faceCameraToward(INTERIOR_LOOK_TARGET);
       } else {
@@ -256,9 +275,8 @@ export function FirstPersonWorld({
         return;
       }
 
-      yaw -= event.movementX * 0.0022;
-      pitch = clamp(pitch - event.movementY * 0.0019, -0.7, 0.5);
-      camera.rotation.set(pitch, yaw, 0);
+      targetYaw -= event.movementX * CAMERA_SENSITIVITY.yaw;
+      targetPitch = clamp(targetPitch - event.movementY * CAMERA_SENSITIVITY.pitch, -0.7, 0.5);
     }
 
     function onResize() {
@@ -288,6 +306,11 @@ export function FirstPersonWorld({
         clearMovementInput();
         movementVelocity.set(0, 0, 0);
       }
+
+      const cameraResponse = 1 - Math.exp(-CAMERA_SMOOTHING * delta);
+      yaw += (targetYaw - yaw) * cameraResponse;
+      pitch += (targetPitch - pitch) * cameraResponse;
+      camera.rotation.set(pitch, yaw, 0);
 
       camera.getWorldDirection(cameraForwardHorizontal);
       cameraForwardHorizontal.y = 0;
@@ -340,7 +363,7 @@ export function FirstPersonWorld({
 
       updateGiantScreen(giantScreen, screenZonesRef.current, screenLayoutRef.current);
       updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
-      const showPhysicalScreenContent = doorOpenRef.current && controlsEnabledRef.current;
+      const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
       cssGiantScreen.visible = showPhysicalScreenContent;
       cssRenderer.domElement.style.visibility = showPhysicalScreenContent ? 'visible' : 'hidden';
 
@@ -502,8 +525,6 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       resourceUrl: screenZones.upper.resourceUrl,
       title: screenZones.upper.title,
       muted: screenZones.upper.muted,
-      volume: screenZones.upper.volume,
-      displayScale: screenZones.upper.displayScale,
       updatedAt: screenZones.upper.updatedAt
     },
     lower: {
@@ -512,13 +533,14 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       resourceUrl: screenZones.lower.resourceUrl,
       title: screenZones.lower.title,
       muted: screenZones.lower.muted,
-      volume: screenZones.lower.volume,
-      displayScale: screenZones.lower.displayScale,
       updatedAt: screenZones.lower.updatedAt
     }
   });
 
-  if (cssGiantScreen.userData.screenStateKey === stateKey) return;
+  if (cssGiantScreen.userData.screenStateKey === stateKey) {
+    updateCssGiantScreenSlotScales(cssGiantScreen.userData.contentRoot, screenZones);
+    return;
+  }
   cssGiantScreen.userData.screenStateKey = stateKey;
 
   const root = cssGiantScreen.userData.contentRoot;
@@ -533,6 +555,7 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
     const displayScale = clampScreenDisplayScale(zone.displayScale);
     const slot = document.createElement('div');
     slot.className = 'physical-screen-slot';
+    slot.dataset.zoneId = slotConfig.zoneId;
     slot.style.setProperty('--screen-content-scale', String(displayScale / 100));
 
     if (src) {
@@ -543,6 +566,13 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       iframe.referrerPolicy = 'strict-origin-when-cross-origin';
       iframe.allowFullscreen = true;
       slot.appendChild(iframe);
+      const loading = document.createElement('span');
+      loading.className = 'physical-screen-loading';
+      loading.textContent = 'Cargando video';
+      slot.appendChild(loading);
+      iframe.addEventListener('load', () => {
+        slot.classList.add('is-loaded');
+      });
     } else {
       const placeholder = document.createElement('div');
       placeholder.className = 'physical-screen-placeholder';
@@ -555,6 +585,14 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
     }
 
     root.appendChild(slot);
+  });
+}
+
+function updateCssGiantScreenSlotScales(root, screenZones) {
+  root.querySelectorAll('.physical-screen-slot').forEach((slot) => {
+    const zone = screenZones[slot.dataset.zoneId];
+    if (!zone) return;
+    slot.style.setProperty('--screen-content-scale', String(clampScreenDisplayScale(zone.displayScale) / 100));
   });
 }
 
@@ -2348,8 +2386,6 @@ function updateGiantScreen(giantScreen, screenZones, screenLayout) {
       resourceUrl: screenZones.upper.resourceUrl,
       title: screenZones.upper.title,
       muted: screenZones.upper.muted,
-      volume: screenZones.upper.volume,
-      displayScale: screenZones.upper.displayScale,
       updatedAt: screenZones.upper.updatedAt
     },
     lower: {
@@ -2358,8 +2394,6 @@ function updateGiantScreen(giantScreen, screenZones, screenLayout) {
       resourceUrl: screenZones.lower.resourceUrl,
       title: screenZones.lower.title,
       muted: screenZones.lower.muted,
-      volume: screenZones.lower.volume,
-      displayScale: screenZones.lower.displayScale,
       updatedAt: screenZones.lower.updatedAt
     }
   });

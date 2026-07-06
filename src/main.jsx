@@ -112,12 +112,15 @@ function App() {
   }
 
   function updateScreenZone(zoneId, patch) {
+    const hasRefreshStamp = Object.prototype.hasOwnProperty.call(patch, 'updatedAt');
+    const { updatedAt, ...zonePatch } = patch;
+
     setScreenZones((current) => ({
       ...current,
       [zoneId]: {
         ...current[zoneId],
-        ...patch,
-        updatedAt: Date.now()
+        ...zonePatch,
+        ...(hasRefreshStamp ? { updatedAt } : {})
       }
     }));
   }
@@ -140,7 +143,7 @@ function App() {
   }
 
   return (
-    <main className={computerOpen ? 'game-shell is-computer-open' : 'game-shell'}>
+    <main className={`game-shell${computerOpen ? ' is-computer-open' : ''}${screenRemoteOpen ? ' is-screen-remote-open' : ''}`}>
       <FirstPersonWorld
         onDoorOpenChange={setIsDoorOpen}
         onNearComputerChange={setIsNearComputer}
@@ -149,6 +152,7 @@ function App() {
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
         controlsEnabled={!computerOpen && !screenRemoteOpen}
+        screenContentEnabled={!computerOpen}
         screenZones={screenZones}
         screenLayout={screenLayout}
       />
