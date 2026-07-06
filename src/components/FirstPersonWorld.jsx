@@ -32,6 +32,8 @@ const GIANT_SCREEN_WORLD = {
   width: 34.6,
   height: 12.8
 };
+const GIANT_SCREEN_INTERACTION_PADDING = 2.4;
+const GIANT_SCREEN_INTERACTION_DISTANCE = 44;
 const GIANT_SCREEN_DOM_SIZE = {
   width: 1730,
   height: 640
@@ -46,6 +48,7 @@ export function FirstPersonWorld({
   onDoorOpenChange,
   onNearComputerChange,
   onNearDoorChange,
+  onScreenAimChange,
   resetRef,
   toggleDoorRef,
   controlsEnabled = true,
@@ -55,6 +58,7 @@ export function FirstPersonWorld({
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
   const nearComputerRef = useRef(false);
+  const screenAimRef = useRef(false);
   const doorOpenRef = useRef(false);
   const controlsEnabledRef = useRef(controlsEnabled);
   const screenZonesRef = useRef(screenZones);
@@ -173,9 +177,11 @@ export function FirstPersonWorld({
       doorOpenRef.current = false;
       nearDoorRef.current = false;
       nearComputerRef.current = false;
+      screenAimRef.current = false;
       onDoorOpenChange(false);
       onNearDoorChange(false);
       onNearComputerChange(false);
+      onScreenAimChange(false);
     }
 
     function faceCameraToward(target) {
@@ -352,6 +358,13 @@ export function FirstPersonWorld({
         onNearComputerChange(nearComputer);
       }
 
+      const aimingAtScreen =
+        controlsEnabledRef.current && isCameraAimingAtGiantScreen(camera, doorOpenRef.current, cameraForwardHorizontal);
+      if (aimingAtScreen !== screenAimRef.current) {
+        screenAimRef.current = aimingAtScreen;
+        onScreenAimChange(aimingAtScreen);
+      }
+
       renderer.render(scene, camera);
       if (showPhysicalScreenContent) {
         cssRenderer.render(cssScene, camera);
@@ -372,10 +385,11 @@ export function FirstPersonWorld({
       document.removeEventListener('pointerlockerror', onPointerLockError);
       mount.removeEventListener('click', requestCameraLock);
       renderer.dispose();
+      onScreenAimChange(false);
       mount.removeChild(cssRenderer.domElement);
       mount.removeChild(renderer.domElement);
     };
-  }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, resetRef, toggleDoorRef]);
+  }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, onScreenAimChange, resetRef, toggleDoorRef]);
 
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
 }
@@ -547,6 +561,28 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
 function buildPdfEmbedUrl(resourceUrl) {
   if (!resourceUrl) return '';
   return `${resourceUrl}#toolbar=0&navpanes=0&view=FitH`;
+}
+
+function isCameraAimingAtGiantScreen(camera, isInterior, directionScratch) {
+  if (!isInterior) return false;
+
+  camera.getWorldDirection(directionScratch);
+  if (Math.abs(directionScratch.z) < 0.001) return false;
+
+  const distanceToScreenPlane = (GIANT_SCREEN_WORLD.center.z - camera.position.z) / directionScratch.z;
+  if (distanceToScreenPlane < 1.5 || distanceToScreenPlane > GIANT_SCREEN_INTERACTION_DISTANCE) return false;
+
+  const hitX = camera.position.x + directionScratch.x * distanceToScreenPlane;
+  const hitY = camera.position.y + directionScratch.y * distanceToScreenPlane;
+  const halfWidth = GIANT_SCREEN_WORLD.width / 2 + GIANT_SCREEN_INTERACTION_PADDING;
+  const halfHeight = GIANT_SCREEN_WORLD.height / 2 + GIANT_SCREEN_INTERACTION_PADDING;
+
+  return (
+    hitX >= GIANT_SCREEN_WORLD.center.x - halfWidth &&
+    hitX <= GIANT_SCREEN_WORLD.center.x + halfWidth &&
+    hitY >= GIANT_SCREEN_WORLD.center.y - halfHeight &&
+    hitY <= GIANT_SCREEN_WORLD.center.y + halfHeight
+  );
 }
 
 function buildWorldScene(scene) {

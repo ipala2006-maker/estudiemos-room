@@ -2695,6 +2695,211 @@ select {
     0 0 34px rgba(185, 215, 223, 0.18);
 }
 
+.screen-remote-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: clamp(14px, 3vw, 34px);
+  pointer-events: none;
+}
+
+.screen-remote-backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(4, 7, 8, 0.08), rgba(4, 7, 8, 0.52));
+  pointer-events: auto;
+}
+
+.screen-remote-phone {
+  position: relative;
+  z-index: 1;
+  width: min(390px, 100%);
+  max-height: min(760px, calc(100vh - 28px));
+  display: grid;
+  gap: 13px;
+  padding: 14px;
+  border: 8px solid #111817;
+  border-radius: 24px;
+  overflow: auto;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 38%),
+    #edf3ef;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+  pointer-events: auto;
+}
+
+.screen-remote-header,
+.screen-remote-targets,
+.screen-remote-controls,
+.screen-remote-layouts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.screen-remote-header {
+  justify-content: space-between;
+  padding-bottom: 2px;
+}
+
+.screen-remote-header div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.screen-remote-header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #4f6f78;
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.screen-remote-header strong {
+  color: #111817;
+  font-size: 1.25rem;
+  font-weight: 920;
+}
+
+.screen-remote-icon-button,
+.screen-remote-targets button,
+.screen-remote-controls button,
+.screen-remote-layouts button,
+.screen-remote-link button {
+  min-height: 40px;
+  border: 1px solid rgba(17, 24, 23, 0.12);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172426;
+  font-weight: 850;
+}
+
+.screen-remote-icon-button {
+  width: 42px;
+  display: grid;
+  place-items: center;
+}
+
+.screen-remote-targets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.screen-remote-targets button,
+.screen-remote-controls button,
+.screen-remote-layouts button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+}
+
+.screen-remote-targets button.is-selected,
+.screen-remote-layouts button.is-selected {
+  background: #172426;
+  color: #f8f6ed;
+  border-color: #172426;
+}
+
+.screen-remote-now,
+.screen-remote-link,
+.screen-remote-sliders {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(17, 24, 23, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.screen-remote-now span,
+.screen-remote-link label,
+.screen-remote-sliders span {
+  color: #60736e;
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.screen-remote-now strong,
+.screen-remote-now small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screen-remote-now strong {
+  color: #172426;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.screen-remote-now small {
+  color: #536468;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.screen-remote-link div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 8px;
+}
+
+.screen-remote-link input {
+  min-width: 0;
+  height: 42px;
+  border: 1px solid rgba(17, 24, 23, 0.12);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #172426;
+  background: #f8faf7;
+  font-weight: 760;
+}
+
+.screen-remote-link p {
+  margin: 0;
+  color: #b0443e;
+  font-size: 0.78rem;
+  font-weight: 790;
+}
+
+.screen-remote-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.screen-remote-controls button:disabled {
+  opacity: 0.48;
+  cursor: default;
+}
+
+.screen-remote-sliders label {
+  display: grid;
+  gap: 7px;
+}
+
+.screen-remote-sliders input {
+  width: 100%;
+  accent-color: #4f6f78;
+}
+
+.screen-remote-layouts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.screen-remote-prompt {
+  bottom: 96px;
+}
+
 .computer-overlay {
   background:
     radial-gradient(circle at 50% 42%, rgba(224, 196, 122, 0.08), transparent 36%),

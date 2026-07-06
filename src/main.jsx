@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { FirstPersonWorld } from './components/FirstPersonWorld.jsx';
 import { Hud } from './components/Hud.jsx';
+import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
 import './styles/app.css';
@@ -30,9 +31,11 @@ function createEmptyScreenZone() {
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
   const [computerOpen, setComputerOpen] = useState(false);
+  const [screenRemoteOpen, setScreenRemoteOpen] = useState(false);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
+  const [isAimingScreen, setIsAimingScreen] = useState(false);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [screenLayout, setScreenLayout] = useState('side-by-side');
   const [screenZones, setScreenZones] = useState({
@@ -59,10 +62,21 @@ function App() {
         return;
       }
 
-      if (!hasStarted || computerOpen) return;
+      if (screenRemoteOpen && key === 'escape') {
+        setScreenRemoteOpen(false);
+        return;
+      }
+
+      if (!hasStarted || computerOpen || screenRemoteOpen) return;
 
       if (isNearDoor && key === 'e') {
         toggleDoorRef.current();
+        return;
+      }
+
+      if (isAimingScreen && key === 'q') {
+        document.exitPointerLock?.();
+        setScreenRemoteOpen(true);
         return;
       }
 
@@ -74,10 +88,12 @@ function App() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [computerOpen, hasStarted, isNearComputer, isNearDoor]);
+  }, [computerOpen, hasStarted, isAimingScreen, isNearComputer, isNearDoor, screenRemoteOpen]);
 
   function backToStart() {
     setComputerOpen(false);
+    setScreenRemoteOpen(false);
+    setIsAimingScreen(false);
     setHasStarted(false);
     setIsNearComputer(false);
     setIsNearDoor(false);
@@ -129,9 +145,10 @@ function App() {
         onDoorOpenChange={setIsDoorOpen}
         onNearComputerChange={setIsNearComputer}
         onNearDoorChange={setIsNearDoor}
+        onScreenAimChange={setIsAimingScreen}
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
-        controlsEnabled={!computerOpen}
+        controlsEnabled={!computerOpen && !screenRemoteOpen}
         screenZones={screenZones}
         screenLayout={screenLayout}
       />
@@ -152,7 +169,11 @@ function App() {
 
       {isNearComputer && <div className="interaction-prompt">Presiona E para usar la computadora</div>}
 
-      {!computerOpen && !isPointerLocked && (
+      {isAimingScreen && !computerOpen && !screenRemoteOpen && (
+        <div className="interaction-prompt screen-remote-prompt">Presiona Q para abrir el control</div>
+      )}
+
+      {!computerOpen && !screenRemoteOpen && !isPointerLocked && (
         <div className="camera-lock-prompt">
           <strong>Click para tomar la camara</strong>
           <span>Mover el mouse para mirar. Presiona Esc para liberar.</span>
@@ -168,6 +189,18 @@ function App() {
           onClearZone={clearScreenZone}
           onScreenLayoutChange={setScreenLayout}
           onClose={() => setComputerOpen(false)}
+        />
+      )}
+
+      {screenRemoteOpen && (
+        <ScreenRemoteControl
+          screenZones={screenZones}
+          screenLayout={screenLayout}
+          onAssignVideo={assignVideoToZone}
+          onUpdateZone={updateScreenZone}
+          onClearZone={clearScreenZone}
+          onScreenLayoutChange={setScreenLayout}
+          onClose={() => setScreenRemoteOpen(false)}
         />
       )}
     </main>
