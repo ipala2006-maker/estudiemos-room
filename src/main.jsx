@@ -5,7 +5,7 @@ import { Hud } from './components/Hud.jsx';
 import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
-import { studyAgendaItems } from './data/studyAgenda.js';
+import { getAgendaDateValue, studyAgendaItems } from './data/studyAgenda.js';
 import './styles/app.css';
 import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
@@ -31,11 +31,28 @@ function createEmptyScreenZone() {
 
 const AGENDA_STORAGE_KEY = 'estudiemos-room-agenda';
 
+function createAgendaItemId(item, index) {
+  const titleSlug = String(item?.title ?? 'bloque')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 28);
+
+  return `agenda-${String(item?.date ?? getAgendaDateValue())}-${String(item?.time ?? '00:00')}-${titleSlug || 'bloque'}-${index}`;
+}
+
+function normalizeAgendaDate(value) {
+  const dateValue = String(value ?? '');
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateValue) ? dateValue : getAgendaDateValue();
+}
+
 function normalizeAgendaItems(items) {
   if (!Array.isArray(items)) return studyAgendaItems;
 
   const normalized = items
-    .map((item) => ({
+    .map((item, index) => ({
+      id: String(item?.id ?? '').trim() || createAgendaItemId(item, index),
+      date: normalizeAgendaDate(item?.date),
       time: String(item?.time ?? '').slice(0, 5),
       title: String(item?.title ?? '').trim().slice(0, 48),
       detail: String(item?.detail ?? '').trim().slice(0, 96)

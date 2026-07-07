@@ -2,6 +2,7 @@
   BarChart3,
   BookOpen,
   CalendarDays,
+  ChevronLeft,
   CheckCircle2,
   ChevronRight,
   Clock3,
@@ -144,6 +145,31 @@ const DEFAULT_COMPUTER_SETTINGS = {
 
 const carreraInicial = ingenieriaRecursosData.carreras[0];
 
+function getTodayDateValue() {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  return date.toISOString().slice(0, 10);
+}
+
+function parseAgendaDate(value) {
+  const [year, month, day] = String(value ?? getTodayDateValue())
+    .split('-')
+    .map(Number);
+  const date = new Date(year || new Date().getFullYear(), (month || 1) - 1, day || 1);
+  date.setHours(12, 0, 0, 0);
+  return date;
+}
+
+function getDateValue(date) {
+  const normalizedDate = new Date(date);
+  normalizedDate.setHours(12, 0, 0, 0);
+  return normalizedDate.toISOString().slice(0, 10);
+}
+
+function sortAgendaItems(items) {
+  return [...items].sort((a, b) => `${a.date ?? ''} ${a.time ?? ''}`.localeCompare(`${b.date ?? ''} ${b.time ?? ''}`));
+}
+
 function loadComputerSettings() {
   if (typeof window === 'undefined') return DEFAULT_COMPUTER_SETTINGS;
 
@@ -226,6 +252,8 @@ export function ComputerUI({
       }),
     [clockTime]
   );
+  const sortedAgendaItems = useMemo(() => sortAgendaItems(agendaItems), [agendaItems]);
+  const agendaLead = sortedAgendaItems[0];
 
   function openApp(appId) {
     const app = findDesktopApp(appId);
@@ -397,17 +425,19 @@ export function ComputerUI({
     showActionFeedback(`${zoneLabel} limpia`);
   }
 
-  function updateAgendaItem(index, patch) {
+  function updateAgendaItem(itemId, patch) {
     onAgendaItemsChange(
-      agendaItems.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
+      agendaItems.map((item) => (item.id === itemId ? { ...item, ...patch } : item))
     );
     setSystemNote('Agenda sincronizada con el cartel de pared');
   }
 
-  function addAgendaItem() {
+  function addAgendaItem(date = getTodayDateValue()) {
     onAgendaItemsChange([
       ...agendaItems,
       {
+        id: `agenda-${Date.now()}`,
+        date,
         time: '19:00',
         title: 'Nuevo bloque',
         detail: 'Describe el objetivo de estudio'
@@ -417,8 +447,8 @@ export function ComputerUI({
     showActionFeedback('Agenda actualizada');
   }
 
-  function removeAgendaItem(index) {
-    const nextItems = agendaItems.filter((_, itemIndex) => itemIndex !== index);
+  function removeAgendaItem(itemId) {
+    const nextItems = agendaItems.filter((item) => item.id !== itemId);
     onAgendaItemsChange(nextItems.length > 0 ? nextItems : studyAgendaItems);
     setSystemNote('Bloque eliminado de la agenda');
     showActionFeedback('Agenda actualizada');
@@ -539,8 +569,8 @@ export function ComputerUI({
               </div>
               <div className="os-glance-card os-agenda-sync-card">
                 <span>Agenda</span>
-                <strong>{agendaItems[0]?.title ?? 'Plan de estudio'}</strong>
-                <p>{agendaItems[0]?.detail ?? 'Sin pendientes cargados.'}</p>
+                <strong>{agendaLead?.title ?? 'Plan de estudio'}</strong>
+                <p>{agendaLead?.detail ?? 'Sin pendientes cargados.'}</p>
               </div>
             </section>
 
@@ -762,6 +792,53 @@ function findDesktopApp(appId) {
 }
 
 function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onResetAgenda }) {
+  const [selectedDate, setSelectedDate] = useState(() => agendaItems[0]?.date ?? getTodayDateValue());
+  const [calendarCursor, setCalendarCursor] = useState(() => parseAgendaDate(agendaItems[0]?.date ?? getTodayDateValue()));
+  const selectedDateItems = useMemo(
+    () => sortAgendaItems(agendaItems).filter((item) => item.date === selectedDate),
+    [agendaItems, selectedDate]
+  );
+  const agendaCountsByDate = useMemo(
+    () =>
+      agendaItems.reduce((counts, item) => {
+        const date = item.date ?? getTodayDateValue();
+        counts[date] = (counts[date] ?? 0) + 1;
+        return counts;
+      }, {}),
+    [agendaItems]
+  );
+  const calendarDays = useMemo(() => buildCalendarDays(calendarCursor), [calendarCursor]);
+  const monthLabel = useMemo(
+    () =>
+      calendarCursor.toLocaleDateString('es-AR', {
+        month: 'long',
+        year: 'numeric'
+      }),
+    [calendarCursor]
+  );
+  const selectedDateLabel = useMemo(
+    () =>
+      parseAgendaDate(selectedDate).toLocaleDateString('es-AR', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long'
+      }),
+    [selectedDate]
+  );
+
+  function shiftCalendarMonth(offset) {
+    setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1, 12));
+  }
+
+  function selectAgendaDate(dateValue) {
+    setSelectedDate(dateValue);
+    setCalendarCursor(parseAgendaDate(dateValue));
+  }
+
+  function addItemForSelectedDate() {
+    onAddItem(selectedDate);
+  }
+
   return (
     <div className="os-fullscreen-app agenda-app-shell">
       <header className="agenda-app-header">
@@ -775,52 +852,141 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onReset
             <RotateCcw size={17} aria-hidden="true" />
             <span>Restaurar</span>
           </button>
-          <button type="button" className="is-primary" onClick={onAddItem}>
+          <button type="button" className="is-primary" onClick={addItemForSelectedDate}>
             <Plus size={18} aria-hidden="true" />
             <span>Agregar</span>
           </button>
         </div>
       </header>
 
-      <section className="agenda-editor-list" aria-label="Bloques de la agenda">
-        {agendaItems.map((item, index) => (
-          <article className="agenda-editor-row" key={`${index}-${item.time}-${item.title}`}>
-            <label>
-              <span>Hora</span>
-              <input
-                type="time"
-                value={item.time}
-                onChange={(event) => onUpdateItem(index, { time: event.target.value })}
-              />
-            </label>
-
-            <label>
-              <span>Titulo</span>
-              <input
-                type="text"
-                value={item.title}
-                maxLength={48}
-                onChange={(event) => onUpdateItem(index, { title: event.target.value })}
-              />
-            </label>
-
-            <label className="agenda-detail-field">
-              <span>Detalle</span>
-              <textarea
-                value={item.detail}
-                maxLength={96}
-                onChange={(event) => onUpdateItem(index, { detail: event.target.value })}
-              />
-            </label>
-
-            <button type="button" className="agenda-remove-button" onClick={() => onRemoveItem(index)} aria-label={`Eliminar ${item.title}`}>
-              <Trash2 size={18} aria-hidden="true" />
+      <section className="agenda-calendar-layout">
+        <aside className="agenda-calendar-panel" aria-label="Calendario de agenda">
+          <div className="agenda-calendar-head">
+            <button type="button" onClick={() => shiftCalendarMonth(-1)} aria-label="Mes anterior">
+              <ChevronLeft size={18} aria-hidden="true" />
             </button>
-          </article>
-        ))}
+            <strong>{monthLabel}</strong>
+            <button type="button" onClick={() => shiftCalendarMonth(1)} aria-label="Mes siguiente">
+              <ChevronRight size={18} aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="agenda-weekdays" aria-hidden="true">
+            {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, index) => (
+              <span key={`${day}-${index}`}>{day}</span>
+            ))}
+          </div>
+
+          <div className="agenda-calendar-grid">
+            {calendarDays.map((day) => {
+              const count = agendaCountsByDate[day.value] ?? 0;
+              return (
+                <button
+                  key={day.value}
+                  type="button"
+                  className={`${day.isCurrentMonth ? '' : 'is-outside'}${day.value === selectedDate ? ' is-selected' : ''}${day.isToday ? ' is-today' : ''}`}
+                  onClick={() => selectAgendaDate(day.value)}
+                  aria-pressed={day.value === selectedDate}
+                >
+                  <span>{day.day}</span>
+                  {count > 0 && <small>{count}</small>}
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+
+        <section className="agenda-day-panel" aria-label="Bloques del dia seleccionado">
+          <div className="agenda-day-head">
+            <div>
+              <span>Dia seleccionado</span>
+              <strong>{selectedDateLabel}</strong>
+            </div>
+            <input type="date" value={selectedDate} onChange={(event) => selectAgendaDate(event.target.value)} />
+          </div>
+
+          <div className="agenda-editor-list" aria-label="Bloques de la agenda">
+            {selectedDateItems.length === 0 && (
+              <div className="agenda-empty-day">
+                <CalendarDays size={28} aria-hidden="true" />
+                <strong>Sin bloques para este dia</strong>
+                <button type="button" onClick={addItemForSelectedDate}>
+                  <Plus size={17} aria-hidden="true" />
+                  <span>Agregar bloque</span>
+                </button>
+              </div>
+            )}
+
+            {selectedDateItems.map((item) => (
+              <article className="agenda-editor-row" key={item.id}>
+                <label>
+                  <span>Fecha</span>
+                  <input
+                    type="date"
+                    value={item.date ?? selectedDate}
+                    onChange={(event) => onUpdateItem(item.id, { date: event.target.value })}
+                  />
+                </label>
+
+                <label>
+                  <span>Hora</span>
+                  <input
+                    type="time"
+                    value={item.time}
+                    onChange={(event) => onUpdateItem(item.id, { time: event.target.value })}
+                  />
+                </label>
+
+                <label>
+                  <span>Titulo</span>
+                  <input
+                    type="text"
+                    value={item.title}
+                    maxLength={48}
+                    onChange={(event) => onUpdateItem(item.id, { title: event.target.value })}
+                  />
+                </label>
+
+                <label className="agenda-detail-field">
+                  <span>Detalle</span>
+                  <textarea
+                    value={item.detail}
+                    maxLength={96}
+                    onChange={(event) => onUpdateItem(item.id, { detail: event.target.value })}
+                  />
+                </label>
+
+                <button type="button" className="agenda-remove-button" onClick={() => onRemoveItem(item.id)} aria-label={`Eliminar ${item.title}`}>
+                  <Trash2 size={18} aria-hidden="true" />
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
     </div>
   );
+}
+
+function buildCalendarDays(cursorDate) {
+  const year = cursorDate.getFullYear();
+  const month = cursorDate.getMonth();
+  const firstDay = new Date(year, month, 1, 12);
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const startDate = new Date(year, month, 1 - startOffset, 12);
+  const today = getTodayDateValue();
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + index);
+    const value = getDateValue(date);
+    return {
+      value,
+      day: date.getDate(),
+      isCurrentMonth: date.getMonth() === month,
+      isToday: value === today
+    };
+  });
 }
 
 function SettingsApp({

@@ -527,8 +527,8 @@ function updateCssAgendaContent(object, agendaItems, limit) {
   const list = object.userData.agendaList;
   if (!list) return;
 
-  const items = (Array.isArray(agendaItems) && agendaItems.length > 0 ? agendaItems : studyAgendaItems).slice(0, limit);
-  const nextKey = JSON.stringify(items.map((item) => [item.time, item.title, item.detail]));
+  const items = sortAgendaItemsBySchedule(Array.isArray(agendaItems) && agendaItems.length > 0 ? agendaItems : studyAgendaItems).slice(0, limit);
+  const nextKey = JSON.stringify(items.map((item) => [item.date, item.time, item.title, item.detail]));
   if (object.userData.agendaStateKey === nextKey) return;
 
   object.userData.agendaStateKey = nextKey;
@@ -541,12 +541,23 @@ function updateCssAgendaContent(object, agendaItems, limit) {
       const task = document.createElement('strong');
       task.textContent = item.title;
       const detail = document.createElement('small');
-      detail.textContent = item.detail;
+      detail.textContent = item.date ? `${formatAgendaDate(item.date)} - ${item.detail}` : item.detail;
       copy.append(task, detail);
       row.append(time, copy);
       return row;
     })
   );
+}
+
+function sortAgendaItemsBySchedule(items) {
+  return [...items].sort((a, b) => `${a.date ?? ''} ${a.time ?? ''}`.localeCompare(`${b.date ?? ''} ${b.time ?? ''}`));
+}
+
+function formatAgendaDate(dateValue) {
+  const [year, month, day] = String(dateValue).split('-').map(Number);
+  if (!year || !month || !day) return '';
+
+  return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
 }
 
 function createCssGiantScreenObject() {
