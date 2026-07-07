@@ -1,13 +1,17 @@
 import {
   BarChart3,
   CalendarDays,
+  Coins,
   Globe2,
   MonitorUp,
+  PawPrint,
   Settings,
   Sparkles,
   Wifi
 } from 'lucide-react';
 import { useState } from 'react';
+import { DachshundMascot } from './DachshundMascot.jsx';
+import { getEquippedSkinState } from '../data/focusEconomy.js';
 import { studyAgendaItems } from '../data/studyAgenda.js';
 import { ComputerUI } from './ComputerUI.jsx';
 
@@ -37,6 +41,14 @@ const DESKTOP_APPS = [
     action: 'agenda'
   },
   {
+    id: 'focus',
+    title: 'Perfil',
+    subtitle: 'Monedas y skins',
+    state: 'Listo',
+    icon: PawPrint,
+    action: 'focus'
+  },
+  {
     id: 'ajustes',
     title: 'Ajustes',
     subtitle: 'Estudiemos OS',
@@ -47,7 +59,8 @@ const DESKTOP_APPS = [
 ];
 
 export function VirtualComputerShell(props) {
-  const { agendaItems = studyAgendaItems } = props;
+  const { agendaItems = studyAgendaItems, focusEconomy } = props;
+  const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
   const [appOpen, setAppOpen] = useState(false);
   const [initialApp, setInitialApp] = useState('estudiemos');
 
@@ -114,6 +127,16 @@ export function VirtualComputerShell(props) {
                 <strong>Escritorio listo</strong>
                 <p>Estudiemos queda preparado como app principal de la sala.</p>
               </div>
+              {focusEconomy && (
+                <div className="virtual-mascot-card">
+                  <DachshundMascot skinId={equippedSkin.skin.id} rank={equippedSkin.rank} size="desktop" />
+                  <div>
+                    <span>Perfil</span>
+                    <strong>{focusEconomy.progress.coins} Monedas</strong>
+                    <small>{equippedSkin.skin.name} R{equippedSkin.rank}</small>
+                  </div>
+                </div>
+              )}
 
               <div className="virtual-mini-grid">
                 <div>
@@ -125,6 +148,11 @@ export function VirtualComputerShell(props) {
                   <BarChart3 size={18} aria-hidden="true" />
                   <strong>Progreso</strong>
                   <span>Modulo preparado</span>
+                </div>
+                <div>
+                  <Coins size={18} aria-hidden="true" />
+                  <strong>Monedas</strong>
+                  <span>{focusEconomy?.progress.coins ?? 0} disponibles</span>
                 </div>
                 <div>
                   <CalendarDays size={18} aria-hidden="true" />

@@ -1009,6 +1009,303 @@
   font-weight: 690;
 }
 
+.virtual-mascot-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(10, 18, 17, 0.66);
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.virtual-mascot-card div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.virtual-mascot-card span,
+.virtual-mascot-card small {
+  color: rgba(244, 248, 244, 0.68);
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
+.virtual-mascot-card strong {
+  color: #fff4d7;
+  font-size: 1.04rem;
+  font-weight: 900;
+}
+
+.focus-profile-app {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 14px;
+  padding: clamp(18px, 2.4vw, 30px);
+  overflow: auto;
+  color: #20302e;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(224, 196, 122, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(238, 244, 239, 0.97)),
+    #eef4ef;
+}
+
+.focus-hero-panel,
+.focus-progress-panel,
+.focus-skin-card {
+  min-width: 0;
+  border: 1px solid rgba(32, 48, 46, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 16px 34px rgba(31, 45, 40, 0.08);
+}
+
+.focus-hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: 16px;
+  padding: clamp(16px, 2vw, 24px);
+}
+
+.focus-hero-copy {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 9px;
+}
+
+.focus-hero-copy > span,
+.focus-skin-copy > span {
+  color: #2a6f64;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.focus-hero-copy h2 {
+  margin: 0;
+  color: #182522;
+  font-size: clamp(1.8rem, 3.2vw, 2.7rem);
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.focus-hero-copy p,
+.focus-skin-copy p,
+.focus-progress-panel small {
+  margin: 0;
+  color: #58645f;
+  font-size: 0.94rem;
+  font-weight: 660;
+  line-height: 1.45;
+}
+
+.focus-stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.focus-stat-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(244, 248, 244, 0.8);
+}
+
+.focus-stat-row svg {
+  color: #2a6f64;
+}
+
+.focus-stat-row strong {
+  color: #182522;
+  font-size: 1.12rem;
+  font-weight: 950;
+}
+
+.focus-stat-row span {
+  color: #64716b;
+  font-size: 0.76rem;
+  font-weight: 780;
+}
+
+.focus-mascot-stage {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(224, 196, 122, 0.18), transparent 52%),
+    rgba(244, 248, 244, 0.82);
+}
+
+.focus-mascot-stage strong {
+  color: #182522;
+  font-size: 1.05rem;
+  font-weight: 950;
+  text-align: center;
+}
+
+.focus-mascot-stage span {
+  color: #64716b;
+  font-size: 0.86rem;
+  font-weight: 740;
+  text-align: center;
+}
+
+.focus-progress-panel {
+  display: grid;
+  gap: 9px;
+  padding: 14px 16px;
+}
+
+.focus-progress-panel > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.focus-progress-panel strong {
+  color: #182522;
+  font-weight: 950;
+}
+
+.focus-progress-panel span {
+  color: #2a6f64;
+  font-weight: 850;
+}
+
+.focus-progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(42, 111, 100, 0.14);
+}
+
+.focus-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2a6f64, #e0c47a);
+}
+
+.focus-shop-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.focus-skin-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.focus-skin-card.is-equipped {
+  border-color: rgba(42, 111, 100, 0.42);
+  box-shadow: 0 18px 38px rgba(42, 111, 100, 0.14);
+}
+
+.focus-skin-preview {
+  display: grid;
+  place-items: center;
+  min-height: 142px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(42, 111, 100, 0.08), rgba(224, 196, 122, 0.12)),
+    rgba(244, 248, 244, 0.82);
+}
+
+.focus-skin-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.focus-skin-copy h3 {
+  margin: 0;
+  color: #182522;
+  font-size: 1.08rem;
+  font-weight: 950;
+}
+
+.focus-rank-track {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.focus-rank-track span {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(32, 48, 46, 0.12);
+}
+
+.focus-rank-track span.is-active {
+  background: linear-gradient(90deg, #2a6f64, #e0c47a);
+}
+
+.focus-skin-meta {
+  display: grid;
+  gap: 3px;
+}
+
+.focus-skin-meta strong {
+  color: #182522;
+  font-size: 0.98rem;
+  font-weight: 950;
+}
+
+.focus-skin-meta span {
+  color: #64716b;
+  font-size: 0.84rem;
+  font-weight: 720;
+}
+
+.focus-skin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.focus-skin-actions button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid rgba(32, 48, 46, 0.16);
+  border-radius: 8px;
+  color: #20302e;
+  background: rgba(255, 255, 255, 0.76);
+  font-weight: 850;
+}
+
+.focus-skin-actions button.is-primary {
+  color: #13201d;
+  background: #e0c47a;
+  border-color: rgba(85, 71, 36, 0.22);
+}
+
+.focus-skin-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 @media (max-width: 980px) {
   .settings-grid,
   .settings-layout-options {
@@ -1021,6 +1318,12 @@
 
   .agenda-remove-button {
     width: 100%;
+  }
+
+  .focus-hero-panel,
+  .focus-shop-grid,
+  .focus-stat-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

@@ -1,6 +1,11 @@
-import { Home, RotateCcw } from 'lucide-react';
+import { Coins, Home, RotateCcw } from 'lucide-react';
+import { DachshundMascot } from './DachshundMascot.jsx';
+import { formatFocusDuration, getEquippedSkinState } from '../data/focusEconomy.js';
 
-export function Hud({ isDoorOpen, isNearComputer, isNearDoor, onBackHome, onReset }) {
+export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBackHome, onReset }) {
+  const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
+  const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy?.nextRewardProgress ?? 0) * 100)));
+
   return (
     <aside className="hud">
       <div>
@@ -17,6 +22,24 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, onBackHome, onRese
             : 'Segui el camino hasta la puerta de la casita.'}
         </span>
       </div>
+
+      {focusEconomy && (
+        <section className="hud-focus-card" aria-label="Monedas de Enfoque">
+          <DachshundMascot skinId={equippedSkin.skin.id} rank={equippedSkin.rank} size="hud" />
+          <div>
+            <span className="hud-focus-kicker">
+              <Coins size={15} aria-hidden="true" />
+              {focusEconomy.progress.coins} Monedas
+            </span>
+            <strong>{equippedSkin.skin.name}</strong>
+            <span>Rango {equippedSkin.rank} - {equippedSkin.rankLabel}</span>
+            <div className="hud-focus-progress" aria-label={`Progreso a proxima recompensa ${nextRewardPercent}%`}>
+              <span style={{ width: `${nextRewardPercent}%` }} />
+            </div>
+            <small>{focusEconomy.status.label} - {formatFocusDuration(focusEconomy.nextRewardRemainingMs)} para +10</small>
+          </div>
+        </section>
+      )}
 
       <div className="hud-actions">
         <button type="button" onClick={onReset}>

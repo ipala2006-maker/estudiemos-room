@@ -6,6 +6,7 @@
   CheckCircle2,
   ChevronRight,
   Clock3,
+  Coins,
   Eraser,
   ExternalLink,
   FileText,
@@ -17,6 +18,7 @@
   MonitorUp,
   NotebookPen,
   PanelRightOpen,
+  PawPrint,
   Plus,
   RotateCcw,
   Search,
@@ -36,6 +38,18 @@
   X
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { DachshundMascot } from './DachshundMascot.jsx';
+import {
+  DACHSHUND_SKINS,
+  FOCUS_REWARD_CONFIG,
+  SKIN_RANKS,
+  formatFocusDuration,
+  getEquippedSkinState,
+  getPurchaseCost,
+  getSkinRank,
+  getUpgradeCost,
+  isSkinPurchased
+} from '../data/focusEconomy.js';
 import { studyAgendaItems } from '../data/studyAgenda.js';
 import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingenieriaRecursos.js';
 import { parseYouTubeUrl } from '../utils/youtube.js';
@@ -95,6 +109,15 @@ const DESKTOP_APPS = [
     subtitle: 'Plan semanal',
     description: 'Bloques de estudio sincronizados con el cartel de la sala.',
     icon: CalendarDays,
+    state: 'Listo',
+    functional: true
+  },
+  {
+    id: 'focus',
+    title: 'Perfil',
+    subtitle: 'Monedas y skins',
+    description: 'Mascota, Monedas de Enfoque y tienda de skins evolutivas.',
+    icon: PawPrint,
     state: 'Listo',
     functional: true
   },
@@ -191,7 +214,8 @@ export function ComputerUI({
   onUpdateZone,
   onScreenLayoutChange,
   agendaItems = studyAgendaItems,
-  onAgendaItemsChange = () => {}
+  onAgendaItemsChange = () => {},
+  focusEconomy
 }) {
   const normalizedInitialApp = FUNCTIONAL_APP_IDS.includes(initialApp) ? initialApp : 'estudiemos';
   const [openWindows, setOpenWindows] = useState([normalizedInitialApp]);
@@ -254,6 +278,7 @@ export function ComputerUI({
   );
   const sortedAgendaItems = useMemo(() => sortAgendaItems(agendaItems), [agendaItems]);
   const agendaLead = sortedAgendaItems[0];
+  const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
 
   function openApp(appId) {
     const app = findDesktopApp(appId);
@@ -520,6 +545,12 @@ export function ComputerUI({
                 <Signal size={16} aria-hidden="true" />
                 Sincronizado
               </span>
+              {focusEconomy && (
+                <span className="os-status-pill">
+                  <Coins size={16} aria-hidden="true" />
+                  {focusEconomy.progress.coins} Monedas
+                </span>
+              )}
               <span className="os-status-pill">
                 <Clock3 size={16} aria-hidden="true" />
                 {clockLabel}
@@ -662,6 +693,27 @@ export function ComputerUI({
                 </OSWindow>
               )}
 
+              {openWindows.includes('focus') && !minimizedWindows.includes('focus') && focusEconomy && (
+                <OSWindow
+                  appId="focus"
+                  title="Perfil"
+                  subtitle="Monedas y skins"
+                  icon={PawPrint}
+                  focused={focusedWindow === 'focus'}
+                  onFocus={focusWindow}
+                  onMinimize={minimizeWindow}
+                  onClose={closeWindow}
+                >
+                  <FocusProfileApp
+                    focusEconomy={focusEconomy}
+                    equippedSkin={equippedSkin}
+                    onBuySkin={focusEconomy.actions.buySkin}
+                    onUpgradeSkin={focusEconomy.actions.upgradeSkin}
+                    onEquipSkin={focusEconomy.actions.equipSkin}
+                  />
+                </OSWindow>
+              )}
+
               {openWindows.includes('settings') && !minimizedWindows.includes('settings') && (
                 <OSWindow
                   appId="settings"
@@ -789,6 +841,117 @@ function OSWindow({ appId, title, subtitle, icon: Icon, focused, children, onFoc
 
 function findDesktopApp(appId) {
   return DESKTOP_APPS.find((app) => app.id === appId);
+}
+
+function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin, onEquipSkin }) {
+  const progress = focusEconomy.progress;
+  const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy.nextRewardProgress ?? 0) * 100)));
+
+  return (
+    <div className="os-fullscreen-app focus-profile-app">
+      <section className="focus-hero-panel" aria-label="Perfil de enfoque">
+        <div className="focus-hero-copy">
+          <span>Perfil de Enfoque</span>
+          <h2>Monedas de Enfoque</h2>
+          <p>Estudia activo, gana monedas y evoluciona la mascota salchicha de Estudiemos.</p>
+          <div className="focus-stat-row">
+            <div>
+              <Coins size={20} aria-hidden="true" />
+              <strong>{progress.coins}</strong>
+              <span>Monedas</span>
+            </div>
+            <div>
+              <Clock3 size={20} aria-hidden="true" />
+              <strong>{formatFocusDuration(progress.totalActiveMs)}</strong>
+              <span>Tiempo activo</span>
+            </div>
+            <div>
+              <Sparkles size={20} aria-hidden="true" />
+              <strong>{progress.sessionEarned}</strong>
+              <span>Ganadas hoy</span>
+            </div>
+            <div>
+              <ShieldCheck size={20} aria-hidden="true" />
+              <strong>{progress.streak}</strong>
+              <span>Racha</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="focus-mascot-stage">
+          <DachshundMascot skinId={equippedSkin.skin.id} rank={equippedSkin.rank} size="profile" />
+          <strong>{equippedSkin.skin.name}</strong>
+          <span>Rango {equippedSkin.rank}: {equippedSkin.rankLabel}</span>
+        </div>
+      </section>
+
+      <section className="focus-progress-panel" aria-label="Progreso de recompensas">
+        <div>
+          <strong>{focusEconomy.status.label}</strong>
+          <span>{formatFocusDuration(focusEconomy.nextRewardRemainingMs)} para +{FOCUS_REWARD_CONFIG.rewardCoins} monedas</span>
+        </div>
+        <div className="focus-progress-track">
+          <span style={{ width: `${nextRewardPercent}%` }} />
+        </div>
+        <small>Bonus: +{FOCUS_REWARD_CONFIG.bonusCoins} cada 25 minutos activos. Primera sesion del dia: +{FOCUS_REWARD_CONFIG.dailyBonusCoins}.</small>
+      </section>
+
+      <section className="focus-shop-grid" aria-label="Tienda de skins">
+        {DACHSHUND_SKINS.map((skin) => {
+          const purchased = isSkinPurchased(progress, skin.id);
+          const rank = Math.max(0, getSkinRank(progress, skin.id));
+          const visibleRank = Math.max(1, rank);
+          const isEquipped = progress.equippedSkin === skin.id;
+          const purchaseCost = getPurchaseCost(skin.id);
+          const upgradeCost = getUpgradeCost(skin.id, rank);
+          const canBuy = !purchased && progress.coins >= purchaseCost;
+          const canUpgrade = purchased && rank < 7 && progress.coins >= upgradeCost;
+
+          return (
+            <article className={`focus-skin-card${isEquipped ? ' is-equipped' : ''}`} key={skin.id}>
+              <div className="focus-skin-preview">
+                <DachshundMascot skinId={skin.id} rank={visibleRank} size="shop" />
+              </div>
+              <div className="focus-skin-copy">
+                <span>{skin.rarity}</span>
+                <h3>{skin.name}</h3>
+                <p>{skin.description}</p>
+              </div>
+              <div className="focus-rank-track" aria-label={`Rango ${visibleRank} de 7`}>
+                {SKIN_RANKS.map((rankItem) => (
+                  <span key={rankItem.rank} className={rankItem.rank <= visibleRank && purchased ? 'is-active' : ''} title={rankItem.label} />
+                ))}
+              </div>
+              <div className="focus-skin-meta">
+                <strong>{purchased ? `Rango ${visibleRank}/7` : `Comprar: ${purchaseCost}`}</strong>
+                <span>{purchased && rank < 7 ? `Mejora: ${upgradeCost} monedas` : rank >= 7 ? 'Maximo rango' : 'Desbloquea para equipar'}</span>
+              </div>
+              <div className="focus-skin-actions">
+                {!purchased && (
+                  <button type="button" onClick={() => onBuySkin(skin.id)} disabled={!canBuy}>
+                    <Coins size={16} aria-hidden="true" />
+                    <span>Comprar</span>
+                  </button>
+                )}
+                {purchased && (
+                  <>
+                    <button type="button" onClick={() => onUpgradeSkin(skin.id)} disabled={!canUpgrade || rank >= 7}>
+                      <Sparkles size={16} aria-hidden="true" />
+                      <span>Mejorar</span>
+                    </button>
+                    <button type="button" className="is-primary" onClick={() => onEquipSkin(skin.id)} disabled={isEquipped}>
+                      <CheckCircle2 size={16} aria-hidden="true" />
+                      <span>{isEquipped ? 'Equipada' : 'Equipar'}</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </section>
+    </div>
+  );
 }
 
 function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onResetAgenda }) {

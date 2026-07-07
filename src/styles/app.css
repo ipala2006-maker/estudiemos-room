@@ -698,6 +698,248 @@ button {
   color: #136b43;
 }
 
+.dachshund-mascot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 260 / 150;
+  transform: scale(var(--dog-scale, 1));
+  transform-origin: 50% 70%;
+}
+
+.dachshund-mascot svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.dachshund-mascot-hud {
+  width: 96px;
+  flex: 0 0 96px;
+}
+
+.dachshund-mascot-desktop {
+  width: 118px;
+}
+
+.dachshund-mascot-shop {
+  width: 160px;
+}
+
+.dachshund-mascot-profile {
+  max-width: 360px;
+}
+
+.dog-body,
+.dog-head,
+.dog-snout {
+  fill: var(--dog-body);
+}
+
+.dog-belly {
+  fill: var(--dog-belly);
+  opacity: 0.88;
+}
+
+.dog-ear,
+.dog-tail,
+.dog-legs path {
+  fill: var(--dog-ear);
+  stroke: var(--dog-ear);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dog-tail {
+  fill: none;
+}
+
+.dog-eye,
+.dog-nose {
+  fill: #111819;
+}
+
+.dog-eye-shine {
+  fill: #ffffff;
+}
+
+.dog-smile {
+  fill: none;
+  stroke: #111819;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.dog-collar,
+.dog-tag,
+.dog-classic-kit,
+.dog-engineer-kit,
+.dog-cyber-kit {
+  fill: var(--dog-accent);
+  stroke: var(--dog-accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dog-collar {
+  fill: none;
+}
+
+.dog-shine {
+  fill: none;
+  stroke: rgba(255, 255, 255, var(--dog-shine-opacity));
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+.dog-aura {
+  opacity: var(--dog-sparkle-opacity);
+}
+
+.dog-aura ellipse {
+  fill: color-mix(in srgb, var(--dog-glow), transparent 66%);
+}
+
+.dog-aura path,
+.dog-rank-accessory,
+.dog-premium-mark {
+  fill: none;
+  stroke: var(--dog-glow);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dog-rank-accessory {
+  opacity: var(--dog-accessory-opacity);
+}
+
+.dog-rank-accessory circle {
+  fill: var(--dog-glow);
+  stroke: none;
+}
+
+.dog-premium-mark {
+  opacity: var(--dog-premium-opacity);
+}
+
+.dog-legendary-stars {
+  fill: var(--dog-glow);
+  opacity: var(--dog-legendary-opacity);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--dog-glow), transparent 25%));
+}
+
+.dog-cyber-kit path:nth-child(2),
+.dog-cyber-kit circle {
+  fill: none;
+  stroke: var(--dog-glow);
+}
+
+.dog-engineer-kit path:first-child {
+  fill: var(--dog-glow);
+  stroke: #5b4b2a;
+}
+
+.dachshund-rank-badge {
+  position: absolute;
+  right: 4%;
+  top: 7%;
+  min-width: 30px;
+  min-height: 24px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: #182522;
+  background: var(--dog-glow);
+  box-shadow: 0 8px 18px rgba(17, 22, 34, 0.18);
+  font-size: 0.74rem;
+  font-weight: 950;
+}
+
+.hud-focus-card {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px !important;
+  padding: 10px;
+  border: 1px solid rgba(42, 111, 100, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(224, 196, 122, 0.16), transparent 48%),
+    rgba(255, 255, 255, 0.68);
+}
+
+.hud-focus-card > div {
+  min-width: 0;
+}
+
+.hud-focus-kicker {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  color: #2a6f64 !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+}
+
+.hud-focus-card small {
+  color: #60736e;
+  font-size: 0.76rem;
+  font-weight: 720;
+}
+
+.hud-focus-progress {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(42, 111, 100, 0.14);
+}
+
+.hud-focus-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2a6f64, #e0c47a);
+}
+
+.focus-reward-toast {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  z-index: 52;
+  min-width: min(310px, calc(100vw - 36px));
+  display: grid;
+  gap: 3px;
+  padding: 14px 16px;
+  border: 1px solid rgba(224, 196, 122, 0.36);
+  border-radius: 8px;
+  color: #f7fbf6;
+  background:
+    linear-gradient(135deg, rgba(224, 196, 122, 0.22), transparent 44%),
+    rgba(18, 32, 30, 0.94);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  animation: focus-reward-in 220ms ease-out;
+}
+
+.focus-reward-toast strong {
+  color: #fff4d7;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.focus-reward-toast span {
+  color: rgba(247, 251, 246, 0.78);
+  font-size: 0.9rem;
+  font-weight: 720;
+}
+
 .interaction-prompt {
   position: absolute;
   left: 50%;
@@ -711,6 +953,18 @@ button {
   transform: translateX(-50%);
   box-shadow: 0 16px 36px rgba(15, 25, 28, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   animation: prompt-pulse 900ms ease-in-out infinite alternate;
+}
+
+@keyframes focus-reward-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .study-overlay {

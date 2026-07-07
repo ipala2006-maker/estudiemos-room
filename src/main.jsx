@@ -6,6 +6,7 @@ import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
 import { getAgendaDateValue, studyAgendaItems } from './data/studyAgenda.js';
+import { useFocusEconomy } from './hooks/useFocusEconomy.js';
 import './styles/app.css';
 import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
@@ -87,6 +88,12 @@ function App() {
   const [screenZones, setScreenZones] = useState({
     upper: createEmptyScreenZone(),
     lower: createEmptyScreenZone()
+  });
+  const hasScreenContent = Object.values(screenZones).some((zone) => Boolean(zone.videoId || zone.resourceUrl));
+  const focusEconomy = useFocusEconomy({
+    enabled: hasStarted,
+    hasScreenContent,
+    computerOpen
   });
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
@@ -212,9 +219,17 @@ function App() {
         isDoorOpen={isDoorOpen}
         isNearComputer={isNearComputer}
         isNearDoor={isNearDoor}
+        focusEconomy={focusEconomy}
         onBackHome={backToStart}
         onReset={() => resetWorldRef.current()}
       />
+
+      {focusEconomy.rewardToast && (
+        <div className="focus-reward-toast" role="status">
+          <strong>{focusEconomy.rewardToast.title}</strong>
+          <span>{focusEconomy.rewardToast.detail}</span>
+        </div>
+      )}
 
       {isNearDoor && (
         <div className="interaction-prompt">
@@ -245,6 +260,7 @@ function App() {
           onScreenLayoutChange={setScreenLayout}
           agendaItems={agendaItems}
           onAgendaItemsChange={setAgendaItems}
+          focusEconomy={focusEconomy}
           onClose={() => setComputerOpen(false)}
         />
       )}
