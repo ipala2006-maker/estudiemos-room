@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Codex patch package
-        run: curl -fL "https://tmpfiles.org/dl/wIwKvkGL6C5a/codex-profile-calendar-fixes-package.zip" -o codex-profile-calendar-fixes.zip
+        run: curl -fL "https://files.catbox.moe/fqj7t5.zip" -o codex-profile-calendar-fixes.zip
 
       - name: Extract patched files
         run: |
