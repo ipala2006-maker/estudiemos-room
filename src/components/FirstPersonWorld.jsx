@@ -527,11 +527,26 @@ function updateCssAgendaContent(object, agendaItems, limit) {
   const list = object.userData.agendaList;
   if (!list) return;
 
-  const items = sortAgendaItemsBySchedule(Array.isArray(agendaItems) && agendaItems.length > 0 ? agendaItems : studyAgendaItems).slice(0, limit);
+  const items = sortAgendaItemsBySchedule(Array.isArray(agendaItems) ? agendaItems : studyAgendaItems).slice(0, limit);
   const nextKey = JSON.stringify(items.map((item) => [item.date, item.time, item.title, item.detail]));
   if (object.userData.agendaStateKey === nextKey) return;
 
   object.userData.agendaStateKey = nextKey;
+  if (items.length === 0) {
+    const row = document.createElement('div');
+    const time = document.createElement('span');
+    time.textContent = '--:--';
+    const copy = document.createElement('p');
+    const task = document.createElement('strong');
+    task.textContent = 'Agenda vacia';
+    const detail = document.createElement('small');
+    detail.textContent = 'Agrega bloques desde la computadora';
+    copy.append(task, detail);
+    row.append(time, copy);
+    list.replaceChildren(row);
+    return;
+  }
+
   list.replaceChildren(
     ...items.map((item) => {
       const row = document.createElement('div');

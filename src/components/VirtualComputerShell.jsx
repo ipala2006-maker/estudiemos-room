@@ -157,16 +157,23 @@ export function VirtualComputerShell(props) {
                 <div>
                   <CalendarDays size={18} aria-hidden="true" />
                   <strong>Agenda</strong>
-                  <span>{agendaItems[0]?.title ?? 'Plan semanal'}</span>
+                  <span>{agendaItems[0]?.title ?? 'Sin bloques'}</span>
                 </div>
               </div>
               <div className="virtual-agenda-list" aria-label="Agenda sincronizada">
-                {agendaItems.slice(0, 3).map((item) => (
-                  <span key={`${item.time}-${item.title}`}>
-                    <strong>{item.time}</strong>
-                    {item.title}
+                {agendaItems.length > 0 ? (
+                  agendaItems.slice(0, 3).map((item) => (
+                    <span key={`${item.time}-${item.title}`}>
+                      <strong>{item.time}</strong>
+                      {item.title}
+                    </span>
+                  ))
+                ) : (
+                  <span>
+                    <strong>--:--</strong>
+                    Agenda vacia
                   </span>
-                ))}
+                )}
               </div>
             </aside>
           </section>

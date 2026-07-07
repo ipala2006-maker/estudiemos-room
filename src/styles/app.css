@@ -739,9 +739,23 @@ button {
   fill: var(--dog-body);
 }
 
+.dog-body-outline,
+.dog-head-outline,
+.dog-snout-outline {
+  fill: color-mix(in srgb, var(--dog-ear), #111819 16%);
+}
+
 .dog-belly {
   fill: var(--dog-belly);
   opacity: 0.88;
+}
+
+.dog-back-highlight {
+  fill: none;
+  stroke: color-mix(in srgb, var(--dog-belly), white 20%);
+  stroke-width: 6;
+  stroke-linecap: round;
+  opacity: 0.38;
 }
 
 .dog-ear,
@@ -767,6 +781,20 @@ button {
   fill: #ffffff;
 }
 
+.dog-eyebrow,
+.dog-whisker {
+  fill: none;
+  stroke: #111819;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  opacity: 0.82;
+}
+
+.dog-cheek {
+  fill: color-mix(in srgb, var(--dog-belly), #ff8ca0 22%);
+  opacity: 0.6;
+}
+
 .dog-smile {
   fill: none;
   stroke: #111819;
@@ -788,6 +816,19 @@ button {
 
 .dog-collar {
   fill: none;
+}
+
+.dog-nose-shine,
+.dog-paws {
+  fill: rgba(255, 255, 255, 0.64);
+}
+
+.dog-tag-letter {
+  fill: #182522;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 950;
+  pointer-events: none;
 }
 
 .dog-shine {

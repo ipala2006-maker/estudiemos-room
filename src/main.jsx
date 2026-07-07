@@ -50,7 +50,7 @@ function normalizeAgendaDate(value) {
 function normalizeAgendaItems(items) {
   if (!Array.isArray(items)) return studyAgendaItems;
 
-  const normalized = items
+  return items
     .map((item, index) => ({
       id: String(item?.id ?? '').trim() || createAgendaItemId(item, index),
       date: normalizeAgendaDate(item?.date),
@@ -59,8 +59,6 @@ function normalizeAgendaItems(items) {
       detail: String(item?.detail ?? '').trim().slice(0, 96)
     }))
     .filter((item) => item.time && item.title);
-
-  return normalized.length > 0 ? normalized : studyAgendaItems;
 }
 
 function loadStoredAgendaItems() {

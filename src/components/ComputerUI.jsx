@@ -277,7 +277,7 @@ export function ComputerUI({
     [clockTime]
   );
   const sortedAgendaItems = useMemo(() => sortAgendaItems(agendaItems), [agendaItems]);
-  const agendaLead = sortedAgendaItems[0];
+  const agendaLead = sortedAgendaItems[0] ?? null;
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
 
   function openApp(appId) {
@@ -474,7 +474,7 @@ export function ComputerUI({
 
   function removeAgendaItem(itemId) {
     const nextItems = agendaItems.filter((item) => item.id !== itemId);
-    onAgendaItemsChange(nextItems.length > 0 ? nextItems : studyAgendaItems);
+    onAgendaItemsChange(nextItems);
     setSystemNote('Bloque eliminado de la agenda');
     showActionFeedback('Agenda actualizada');
   }
@@ -600,8 +600,8 @@ export function ComputerUI({
               </div>
               <div className="os-glance-card os-agenda-sync-card">
                 <span>Agenda</span>
-                <strong>{agendaLead?.title ?? 'Plan de estudio'}</strong>
-                <p>{agendaLead?.detail ?? 'Sin pendientes cargados.'}</p>
+                <strong>{agendaLead?.title ?? 'Agenda vacia'}</strong>
+                <p>{agendaLead?.detail ?? 'No hay bloques cargados.'}</p>
               </div>
             </section>
 
@@ -843,9 +843,61 @@ function findDesktopApp(appId) {
   return DESKTOP_APPS.find((app) => app.id === appId);
 }
 
+function getFocusCoinAvailability(progress) {
+  return DACHSHUND_SKINS.map((skin) => {
+    const purchased = isSkinPurchased(progress, skin.id);
+    const rank = getSkinRank(progress, skin.id);
+    const isEquipped = progress.equippedSkin === skin.id;
+
+    if (!purchased) {
+      const cost = getPurchaseCost(skin.id);
+      return {
+        id: `${skin.id}-buy`,
+        skin,
+        title: `Comprar ${skin.name}`,
+        description: cost === 0 ? 'Disponible sin costo.' : `Desbloquea esta skin por ${cost} monedas.`,
+        cost,
+        available: progress.coins >= cost,
+        missing: Math.max(0, cost - progress.coins),
+        state: progress.coins >= cost ? 'Disponible' : 'Faltan monedas'
+      };
+    }
+
+    if (rank < 7) {
+      const cost = getUpgradeCost(skin.id, rank);
+      return {
+        id: `${skin.id}-upgrade`,
+        skin,
+        title: `Mejorar ${skin.name}`,
+        description: `Sube de rango ${rank} a rango ${rank + 1}.`,
+        cost,
+        available: progress.coins >= cost,
+        missing: Math.max(0, cost - progress.coins),
+        state: progress.coins >= cost ? 'Disponible' : 'Faltan monedas'
+      };
+    }
+
+    return {
+      id: `${skin.id}-max`,
+      skin,
+      title: `${skin.name} completa`,
+      description: isEquipped ? 'Equipada y en rango maximo.' : 'Rango maximo desbloqueado.',
+      cost: 0,
+      available: isEquipped,
+      missing: 0,
+      state: isEquipped ? 'Equipada' : 'Lista para equipar'
+    };
+  });
+}
+
 function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin, onEquipSkin }) {
   const progress = focusEconomy.progress;
+  const [activeFocusTab, setActiveFocusTab] = useState('overview');
+  const [selectedSkinId, setSelectedSkinId] = useState(equippedSkin.skin.id);
   const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy.nextRewardProgress ?? 0) * 100)));
+  const selectedSkin = DACHSHUND_SKINS.find((skin) => skin.id === selectedSkinId) ?? equippedSkin.skin;
+  const selectedRank = Math.max(1, getSkinRank(progress, selectedSkin.id));
+  const availabilityItems = useMemo(() => getFocusCoinAvailability(progress), [progress]);
 
   return (
     <div className="os-fullscreen-app focus-profile-app">
@@ -896,62 +948,143 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
         <small>Bonus: +{FOCUS_REWARD_CONFIG.bonusCoins} cada 25 minutos activos. Primera sesion del dia: +{FOCUS_REWARD_CONFIG.dailyBonusCoins}.</small>
       </section>
 
-      <section className="focus-shop-grid" aria-label="Tienda de skins">
-        {DACHSHUND_SKINS.map((skin) => {
-          const purchased = isSkinPurchased(progress, skin.id);
-          const rank = Math.max(0, getSkinRank(progress, skin.id));
-          const visibleRank = Math.max(1, rank);
-          const isEquipped = progress.equippedSkin === skin.id;
-          const purchaseCost = getPurchaseCost(skin.id);
-          const upgradeCost = getUpgradeCost(skin.id, rank);
-          const canBuy = !purchased && progress.coins >= purchaseCost;
-          const canUpgrade = purchased && rank < 7 && progress.coins >= upgradeCost;
+      <nav className="focus-profile-tabs" aria-label="Explorar perfil">
+        {[
+          ['overview', 'Resumen'],
+          ['shop', 'Tienda'],
+          ['ranks', 'Rangos']
+        ].map(([tabId, label]) => (
+          <button key={tabId} type="button" className={activeFocusTab === tabId ? 'is-selected' : ''} onClick={() => setActiveFocusTab(tabId)}>
+            {label}
+          </button>
+        ))}
+      </nav>
 
-          return (
-            <article className={`focus-skin-card${isEquipped ? ' is-equipped' : ''}`} key={skin.id}>
-              <div className="focus-skin-preview">
-                <DachshundMascot skinId={skin.id} rank={visibleRank} size="shop" />
+      {activeFocusTab === 'overview' && (
+        <section className="focus-overview-grid">
+          <article className="focus-selected-skin-panel">
+            <div className="focus-selected-stage">
+              <DachshundMascot skinId={selectedSkin.id} rank={selectedRank} size="profile" />
+            </div>
+            <div>
+              <span>{selectedSkin.rarity}</span>
+              <h3>{selectedSkin.name}</h3>
+              <p>{selectedSkin.description}</p>
+              <strong>Vista previa rango {selectedRank}</strong>
+            </div>
+          </article>
+
+          <article className="focus-availability-panel">
+            <div className="focus-panel-title">
+              <Coins size={20} aria-hidden="true" />
+              <div>
+                <strong>Que podes hacer con tus monedas</strong>
+                <span>{progress.coins} disponibles ahora</span>
               </div>
-              <div className="focus-skin-copy">
-                <span>{skin.rarity}</span>
-                <h3>{skin.name}</h3>
-                <p>{skin.description}</p>
-              </div>
-              <div className="focus-rank-track" aria-label={`Rango ${visibleRank} de 7`}>
-                {SKIN_RANKS.map((rankItem) => (
-                  <span key={rankItem.rank} className={rankItem.rank <= visibleRank && purchased ? 'is-active' : ''} title={rankItem.label} />
-                ))}
-              </div>
-              <div className="focus-skin-meta">
-                <strong>{purchased ? `Rango ${visibleRank}/7` : `Comprar: ${purchaseCost}`}</strong>
-                <span>{purchased && rank < 7 ? `Mejora: ${upgradeCost} monedas` : rank >= 7 ? 'Maximo rango' : 'Desbloquea para equipar'}</span>
-              </div>
-              <div className="focus-skin-actions">
-                {!purchased && (
-                  <button type="button" onClick={() => onBuySkin(skin.id)} disabled={!canBuy}>
-                    <Coins size={16} aria-hidden="true" />
-                    <span>Comprar</span>
-                  </button>
-                )}
-                {purchased && (
-                  <>
-                    <button type="button" onClick={() => onUpgradeSkin(skin.id)} disabled={!canUpgrade || rank >= 7}>
-                      <Sparkles size={16} aria-hidden="true" />
-                      <span>Mejorar</span>
+            </div>
+            <div className="focus-availability-list">
+              {availabilityItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={item.available ? 'is-available' : ''}
+                  onClick={() => {
+                    setSelectedSkinId(item.skin.id);
+                    setActiveFocusTab('shop');
+                  }}
+                >
+                  <span>
+                    <strong>{item.title}</strong>
+                    <small>{item.description}</small>
+                  </span>
+                  <em>{item.available ? item.state : `Faltan ${item.missing}`}</em>
+                </button>
+              ))}
+            </div>
+          </article>
+        </section>
+      )}
+
+      {activeFocusTab === 'shop' && (
+        <section className="focus-shop-grid" aria-label="Tienda de skins">
+          {DACHSHUND_SKINS.map((skin) => {
+            const purchased = isSkinPurchased(progress, skin.id);
+            const rank = Math.max(0, getSkinRank(progress, skin.id));
+            const visibleRank = Math.max(1, rank);
+            const isEquipped = progress.equippedSkin === skin.id;
+            const purchaseCost = getPurchaseCost(skin.id);
+            const upgradeCost = getUpgradeCost(skin.id, rank);
+            const canBuy = !purchased && progress.coins >= purchaseCost;
+            const canUpgrade = purchased && rank < 7 && progress.coins >= upgradeCost;
+
+            return (
+              <article className={`focus-skin-card${isEquipped ? ' is-equipped' : ''}${selectedSkinId === skin.id ? ' is-selected' : ''}`} key={skin.id}>
+                <button type="button" className="focus-skin-preview" onClick={() => setSelectedSkinId(skin.id)}>
+                  <DachshundMascot skinId={skin.id} rank={visibleRank} size="shop" />
+                </button>
+                <div className="focus-skin-copy">
+                  <span>{skin.rarity}</span>
+                  <h3>{skin.name}</h3>
+                  <p>{skin.description}</p>
+                </div>
+                <div className="focus-rank-track" aria-label={`Rango ${visibleRank} de 7`}>
+                  {SKIN_RANKS.map((rankItem) => (
+                    <span key={rankItem.rank} className={rankItem.rank <= visibleRank && purchased ? 'is-active' : ''} title={rankItem.label} />
+                  ))}
+                </div>
+                <div className="focus-skin-meta">
+                  <strong>{purchased ? `Rango ${visibleRank}/7` : `Comprar: ${purchaseCost}`}</strong>
+                  <span>{purchased && rank < 7 ? `Mejora: ${upgradeCost} monedas` : rank >= 7 ? 'Maximo rango' : canBuy ? 'Disponible ahora' : `Faltan ${purchaseCost - progress.coins} monedas`}</span>
+                </div>
+                <div className="focus-skin-actions">
+                  {!purchased && (
+                    <button type="button" onClick={() => onBuySkin(skin.id)} disabled={!canBuy}>
+                      <Coins size={16} aria-hidden="true" />
+                      <span>Comprar</span>
                     </button>
-                    <button type="button" className="is-primary" onClick={() => onEquipSkin(skin.id)} disabled={isEquipped}>
-                      <CheckCircle2 size={16} aria-hidden="true" />
-                      <span>{isEquipped ? 'Equipada' : 'Equipar'}</span>
-                    </button>
-                  </>
-                )}
-              </div>
+                  )}
+                  {purchased && (
+                    <>
+                      <button type="button" onClick={() => onUpgradeSkin(skin.id)} disabled={!canUpgrade || rank >= 7}>
+                        <Sparkles size={16} aria-hidden="true" />
+                        <span>Mejorar</span>
+                      </button>
+                      <button type="button" className="is-primary" onClick={() => onEquipSkin(skin.id)} disabled={isEquipped}>
+                        <CheckCircle2 size={16} aria-hidden="true" />
+                        <span>{isEquipped ? 'Equipada' : 'Equipar'}</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      {activeFocusTab === 'ranks' && (
+        <section className="focus-rank-guide">
+          {SKIN_RANKS.map((rankItem) => (
+            <article key={rankItem.rank}>
+              <strong>Rango {rankItem.rank}</strong>
+              <span>{rankItem.label}</span>
+              <p>{getRankGuideCopy(rankItem.rank)}</p>
             </article>
-          );
-        })}
-      </section>
+          ))}
+        </section>
+      )}
     </div>
   );
+}
+
+function getRankGuideCopy(rank) {
+  if (rank === 1) return 'Desbloquea la skin y su identidad base.';
+  if (rank === 2) return 'Mejora colores y lectura visual.';
+  if (rank === 3) return 'Agrega accesorios reconocibles.';
+  if (rank === 4) return 'Suma una variante mas trabajada.';
+  if (rank === 5) return 'Activa brillo suave de enfoque.';
+  if (rank === 6) return 'Marca premium con detalles extra.';
+  return 'Version legendaria con efectos destacados.';
 }
 
 function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onResetAgenda }) {

@@ -41,16 +41,24 @@ export function DachshundMascot({ skinId = 'classic', rank = 1, size = 'medium',
 
         <g className="dog-body-group" filter={`url(#dog-soft-shadow-${skin.id}-${rank})`}>
           <path className="dog-tail" d="M42 77 C24 66 22 46 39 39" />
+          <ellipse className="dog-body-outline" cx="121" cy="78" rx="77" ry="37" />
           <ellipse className="dog-body" cx="121" cy="78" rx="73" ry="33" />
+          <path className="dog-back-highlight" d="M61 66 C91 45 154 44 185 67" />
           <path className="dog-belly" d="M66 83 C91 106 151 109 184 83 C174 101 151 113 121 113 C91 113 73 103 66 83Z" />
+          <circle className="dog-head-outline" cx="197" cy="68" r="33" />
           <circle className="dog-head" cx="197" cy="68" r="29" />
+          <ellipse className="dog-snout-outline" cx="219" cy="76" rx="23" ry="17" />
           <ellipse className="dog-snout" cx="219" cy="76" rx="20" ry="14" />
           <ellipse className="dog-ear dog-ear-back" cx="186" cy="59" rx="15" ry="27" transform="rotate(13 186 59)" />
           <ellipse className="dog-ear dog-ear-front" cx="199" cy="58" rx="12" ry="24" transform="rotate(-10 199 58)" />
+          <path className="dog-eyebrow" d="M199 55 C204 51 211 52 215 56" />
           <circle className="dog-eye" cx="206" cy="62" r="4" />
           <circle className="dog-eye-shine" cx="207.5" cy="60.5" r="1.25" />
+          <ellipse className="dog-cheek" cx="219" cy="83" rx="7" ry="4.6" />
           <circle className="dog-nose" cx="235" cy="75" r="5.5" />
+          <circle className="dog-nose-shine" cx="232.5" cy="72.8" r="1.45" />
           <path className="dog-smile" d="M221 83 C225 88 232 88 236 83" />
+          <path className="dog-whisker" d="M225 79 L235 78 M225 82 L236 84" />
 
           <g className="dog-legs">
             <path d="M78 102 L70 124 L83 124 L89 103" />
@@ -58,9 +66,16 @@ export function DachshundMascot({ skinId = 'classic', rank = 1, size = 'medium',
             <path d="M160 101 L167 124 L180 124 L169 101" />
             <path d="M193 91 L201 118 L214 118 L203 88" />
           </g>
+          <g className="dog-paws">
+            <ellipse cx="76" cy="124" rx="10" ry="4" />
+            <ellipse cx="123" cy="126" rx="10" ry="4" />
+            <ellipse cx="173" cy="124" rx="10" ry="4" />
+            <ellipse cx="208" cy="118" rx="10" ry="4" />
+          </g>
 
           <path className="dog-collar" d="M177 71 C185 83 196 88 210 87" />
           <circle className="dog-tag" cx="190" cy="83" r="5" />
+          <text className="dog-tag-letter" x="190" y="86.4" textAnchor="middle">E</text>
 
           <path className="dog-shine" d="M69 66 C98 45 149 44 178 64" />
         </g>
