@@ -16,12 +16,16 @@
   MonitorUp,
   NotebookPen,
   PanelRightOpen,
+  Plus,
+  RotateCcw,
   Search,
   Settings,
   ShieldCheck,
   Signal,
+  SlidersHorizontal,
   Sparkles,
   Square,
+  Trash2,
   UserCircle,
   Video,
   Volume2,
@@ -88,10 +92,10 @@ const DESKTOP_APPS = [
     id: 'agenda',
     title: 'Agenda',
     subtitle: 'Plan semanal',
-    description: 'Bloques de estudio, entregas y repasos.',
+    description: 'Bloques de estudio sincronizados con el cartel de la sala.',
     icon: CalendarDays,
-    state: 'Hoy',
-    functional: false
+    state: 'Listo',
+    functional: true
   },
   {
     id: 'progreso',
@@ -106,10 +110,10 @@ const DESKTOP_APPS = [
     id: 'settings',
     title: 'Configuracion',
     subtitle: 'Sistema',
-    description: 'Preferencias del escritorio y experiencia de estudio.',
+    description: 'Preferencias del escritorio, pantallas y comodidad visual.',
     icon: Settings,
-    state: 'Proximo',
-    functional: false
+    state: 'Listo',
+    functional: true
   },
   {
     id: 'links',
@@ -130,7 +134,26 @@ const EMPTY_ROUTE = {
   temaSlug: ''
 };
 
+const COMPUTER_SETTINGS_STORAGE_KEY = 'estudiemos-room-computer-settings';
+const DEFAULT_COMPUTER_SETTINGS = {
+  largeText: false,
+  highContrast: false,
+  reduceMotion: false,
+  focusMode: true
+};
+
 const carreraInicial = ingenieriaRecursosData.carreras[0];
+
+function loadComputerSettings() {
+  if (typeof window === 'undefined') return DEFAULT_COMPUTER_SETTINGS;
+
+  try {
+    const savedSettings = JSON.parse(window.localStorage.getItem(COMPUTER_SETTINGS_STORAGE_KEY) ?? '{}');
+    return { ...DEFAULT_COMPUTER_SETTINGS, ...savedSettings };
+  } catch {
+    return DEFAULT_COMPUTER_SETTINGS;
+  }
+}
 
 export function ComputerUI({
   onClose,
@@ -140,7 +163,9 @@ export function ComputerUI({
   onAssignVideo,
   onClearZone,
   onUpdateZone,
-  onScreenLayoutChange
+  onScreenLayoutChange,
+  agendaItems = studyAgendaItems,
+  onAgendaItemsChange = () => {}
 }) {
   const normalizedInitialApp = FUNCTIONAL_APP_IDS.includes(initialApp) ? initialApp : 'estudiemos';
   const [openWindows, setOpenWindows] = useState([normalizedInitialApp]);
@@ -155,6 +180,7 @@ export function ComputerUI({
   const [clockTime, setClockTime] = useState(() => new Date());
   const [systemNote, setSystemNote] = useState('Sesion enfocada lista');
   const [actionFeedback, setActionFeedback] = useState('');
+  const [computerSettings, setComputerSettings] = useState(loadComputerSettings);
   const feedbackTimerRef = useRef(0);
 
   useEffect(() => {
@@ -163,6 +189,10 @@ export function ComputerUI({
   }, []);
 
   useEffect(() => () => window.clearTimeout(feedbackTimerRef.current), []);
+
+  useEffect(() => {
+    window.localStorage.setItem(COMPUTER_SETTINGS_STORAGE_KEY, JSON.stringify(computerSettings));
+  }, [computerSettings]);
 
   const carreras = ingenieriaRecursosData.carreras;
   const carrera = useMemo(
@@ -367,8 +397,69 @@ export function ComputerUI({
     showActionFeedback(`${zoneLabel} limpia`);
   }
 
+  function updateAgendaItem(index, patch) {
+    onAgendaItemsChange(
+      agendaItems.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
+    );
+    setSystemNote('Agenda sincronizada con el cartel de pared');
+  }
+
+  function addAgendaItem() {
+    onAgendaItemsChange([
+      ...agendaItems,
+      {
+        time: '19:00',
+        title: 'Nuevo bloque',
+        detail: 'Describe el objetivo de estudio'
+      }
+    ]);
+    setSystemNote('Nuevo bloque agregado a la agenda');
+    showActionFeedback('Agenda actualizada');
+  }
+
+  function removeAgendaItem(index) {
+    const nextItems = agendaItems.filter((_, itemIndex) => itemIndex !== index);
+    onAgendaItemsChange(nextItems.length > 0 ? nextItems : studyAgendaItems);
+    setSystemNote('Bloque eliminado de la agenda');
+    showActionFeedback('Agenda actualizada');
+  }
+
+  function resetAgendaItems() {
+    onAgendaItemsChange(studyAgendaItems);
+    setSystemNote('Agenda restaurada');
+    showActionFeedback('Agenda restaurada');
+  }
+
+  function updateComputerSetting(key, value) {
+    setComputerSettings((current) => ({ ...current, [key]: value }));
+    setSystemNote('Configuracion actualizada');
+    showActionFeedback('Ajustes aplicados');
+  }
+
+  function clearAllScreens() {
+    ZONES.forEach((zone) => onClearZone(zone.id));
+    setSystemNote('Pantallas limpias');
+    showActionFeedback('Pantallas limpias');
+  }
+
+  function muteAllScreens() {
+    ZONES.forEach((zone) => onUpdateZone(zone.id, { muted: true }));
+    setSystemNote('Audio silenciado en pantallas');
+    showActionFeedback('Pantallas en mute');
+  }
+
+  const computerOverlayClass = [
+    'computer-overlay mediahub-boot-overlay',
+    computerSettings.largeText ? 'is-large-text' : '',
+    computerSettings.highContrast ? 'is-high-contrast' : '',
+    computerSettings.reduceMotion ? 'is-reduced-motion' : '',
+    computerSettings.focusMode ? 'is-focus-mode' : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <section className="computer-overlay mediahub-boot-overlay" aria-label="Computadora de Casa 1">
+    <section className={computerOverlayClass} aria-label="Computadora de Casa 1">
       <div className="computer-window computer-window-wide mediahub-window game-computer-window estudiemos-os-live-desktop">
         <div className="computer-boot-glow" aria-hidden="true" />
         {actionFeedback && (
@@ -448,8 +539,8 @@ export function ComputerUI({
               </div>
               <div className="os-glance-card os-agenda-sync-card">
                 <span>Agenda</span>
-                <strong>{studyAgendaItems[0]?.title ?? 'Plan de estudio'}</strong>
-                <p>{studyAgendaItems[0]?.detail ?? 'Sin pendientes cargados.'}</p>
+                <strong>{agendaItems[0]?.title ?? 'Plan de estudio'}</strong>
+                <p>{agendaItems[0]?.detail ?? 'Sin pendientes cargados.'}</p>
               </div>
             </section>
 
@@ -516,6 +607,51 @@ export function ComputerUI({
                     onPrepareLink={prepareManualLink}
                     onAssignContent={assignContent}
                     onCloseContent={() => setSelectedContent(null)}
+                  />
+                </OSWindow>
+              )}
+
+              {openWindows.includes('agenda') && !minimizedWindows.includes('agenda') && (
+                <OSWindow
+                  appId="agenda"
+                  title="Agenda"
+                  subtitle="Cartel sincronizado"
+                  icon={CalendarDays}
+                  focused={focusedWindow === 'agenda'}
+                  onFocus={focusWindow}
+                  onMinimize={minimizeWindow}
+                  onClose={closeWindow}
+                >
+                  <AgendaApp
+                    agendaItems={agendaItems}
+                    onUpdateItem={updateAgendaItem}
+                    onAddItem={addAgendaItem}
+                    onRemoveItem={removeAgendaItem}
+                    onResetAgenda={resetAgendaItems}
+                  />
+                </OSWindow>
+              )}
+
+              {openWindows.includes('settings') && !minimizedWindows.includes('settings') && (
+                <OSWindow
+                  appId="settings"
+                  title="Configuracion"
+                  subtitle="Comodidad y pantallas"
+                  icon={Settings}
+                  focused={focusedWindow === 'settings'}
+                  onFocus={focusWindow}
+                  onMinimize={minimizeWindow}
+                  onClose={closeWindow}
+                >
+                  <SettingsApp
+                    settings={computerSettings}
+                    activeLayout={activeLayout}
+                    screenZones={screenZones}
+                    onSettingChange={updateComputerSetting}
+                    onScreenLayoutChange={changeScreenLayout}
+                    onClearAllScreens={clearAllScreens}
+                    onMuteAllScreens={muteAllScreens}
+                    onResetAgenda={resetAgendaItems}
                   />
                 </OSWindow>
               )}
@@ -623,6 +759,167 @@ function OSWindow({ appId, title, subtitle, icon: Icon, focused, children, onFoc
 
 function findDesktopApp(appId) {
   return DESKTOP_APPS.find((app) => app.id === appId);
+}
+
+function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onResetAgenda }) {
+  return (
+    <div className="os-fullscreen-app agenda-app-shell">
+      <header className="agenda-app-header">
+        <div>
+          <span>Agenda sincronizada</span>
+          <h2>Plan de estudio de la sala</h2>
+          <p>Los cambios se reflejan en el cartel de pared y en el monitor fisico.</p>
+        </div>
+        <div className="agenda-app-actions">
+          <button type="button" onClick={onResetAgenda}>
+            <RotateCcw size={17} aria-hidden="true" />
+            <span>Restaurar</span>
+          </button>
+          <button type="button" className="is-primary" onClick={onAddItem}>
+            <Plus size={18} aria-hidden="true" />
+            <span>Agregar</span>
+          </button>
+        </div>
+      </header>
+
+      <section className="agenda-editor-list" aria-label="Bloques de la agenda">
+        {agendaItems.map((item, index) => (
+          <article className="agenda-editor-row" key={`${index}-${item.time}-${item.title}`}>
+            <label>
+              <span>Hora</span>
+              <input
+                type="time"
+                value={item.time}
+                onChange={(event) => onUpdateItem(index, { time: event.target.value })}
+              />
+            </label>
+
+            <label>
+              <span>Titulo</span>
+              <input
+                type="text"
+                value={item.title}
+                maxLength={48}
+                onChange={(event) => onUpdateItem(index, { title: event.target.value })}
+              />
+            </label>
+
+            <label className="agenda-detail-field">
+              <span>Detalle</span>
+              <textarea
+                value={item.detail}
+                maxLength={96}
+                onChange={(event) => onUpdateItem(index, { detail: event.target.value })}
+              />
+            </label>
+
+            <button type="button" className="agenda-remove-button" onClick={() => onRemoveItem(index)} aria-label={`Eliminar ${item.title}`}>
+              <Trash2 size={18} aria-hidden="true" />
+            </button>
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function SettingsApp({
+  settings,
+  activeLayout,
+  screenZones,
+  onSettingChange,
+  onScreenLayoutChange,
+  onClearAllScreens,
+  onMuteAllScreens,
+  onResetAgenda
+}) {
+  const activeScreenCount = ZONES.filter((zone) => Boolean(screenZones[zone.id]?.videoId || screenZones[zone.id]?.resourceUrl)).length;
+
+  return (
+    <div className="os-fullscreen-app settings-app-shell">
+      <header className="settings-app-header">
+        <div>
+          <span>Configuracion</span>
+          <h2>Comodidad del Room</h2>
+          <p>{activeScreenCount} pantalla{activeScreenCount === 1 ? '' : 's'} con contenido. Layout actual: {activeLayout.label}.</p>
+        </div>
+        <SlidersHorizontal size={28} aria-hidden="true" />
+      </header>
+
+      <section className="settings-grid" aria-label="Preferencias de comodidad">
+        <SettingToggle
+          title="Texto grande"
+          description="Aumenta la legibilidad de ventanas, bandeja y paneles."
+          checked={settings.largeText}
+          onChange={(checked) => onSettingChange('largeText', checked)}
+        />
+        <SettingToggle
+          title="Contraste alto"
+          description="Refuerza fondos y bordes para leer mejor."
+          checked={settings.highContrast}
+          onChange={(checked) => onSettingChange('highContrast', checked)}
+        />
+        <SettingToggle
+          title="Reducir movimiento"
+          description="Quita transiciones para una experiencia mas estable."
+          checked={settings.reduceMotion}
+          onChange={(checked) => onSettingChange('reduceMotion', checked)}
+        />
+        <SettingToggle
+          title="Modo enfoque"
+          description="Prioriza apps utiles y reduce ruido visual."
+          checked={settings.focusMode}
+          onChange={(checked) => onSettingChange('focusMode', checked)}
+        />
+      </section>
+
+      <section className="settings-panel" aria-label="Pantallas de la sala">
+        <div className="settings-panel-head">
+          <MonitorUp size={19} aria-hidden="true" />
+          <strong>Pantallas</strong>
+        </div>
+        <div className="settings-layout-options">
+          {SCREEN_LAYOUTS.map((layout) => (
+            <button
+              key={layout.id}
+              type="button"
+              className={activeLayout.id === layout.id ? 'is-selected' : ''}
+              onClick={() => onScreenLayoutChange(layout.id)}
+            >
+              <span>{layout.label}</span>
+              <small>{layout.description}</small>
+            </button>
+          ))}
+        </div>
+        <div className="settings-action-grid">
+          <button type="button" onClick={onClearAllScreens}>
+            <Eraser size={17} aria-hidden="true" />
+            <span>Limpiar pantallas</span>
+          </button>
+          <button type="button" onClick={onMuteAllScreens}>
+            <VolumeX size={17} aria-hidden="true" />
+            <span>Silenciar todo</span>
+          </button>
+          <button type="button" onClick={onResetAgenda}>
+            <CalendarDays size={17} aria-hidden="true" />
+            <span>Restaurar agenda</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SettingToggle({ title, description, checked, onChange }) {
+  return (
+    <label className="settings-toggle-card">
+      <span>
+        <strong>{title}</strong>
+        <small>{description}</small>
+      </span>
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    </label>
+  );
 }
 
 function EstudiemosApp({

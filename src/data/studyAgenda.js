@@ -21,6 +21,6 @@ export const studyAgendaItems = [
   }
 ];
 
-export function getStudyAgendaBoardLines(limit = 4) {
-  return studyAgendaItems.slice(0, limit).map((item) => `${item.time}  ${item.title}`);
+export function getStudyAgendaBoardLines(limit = 4, items = studyAgendaItems) {
+  return items.slice(0, limit).map((item) => `${item.time}  ${item.title}`);
 }

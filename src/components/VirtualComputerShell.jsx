@@ -29,15 +29,25 @@ const DESKTOP_APPS = [
     action: 'links'
   },
   {
+    id: 'agenda',
+    title: 'Agenda',
+    subtitle: 'Cartel sincronizado',
+    state: 'Listo',
+    icon: CalendarDays,
+    action: 'agenda'
+  },
+  {
     id: 'ajustes',
     title: 'Ajustes',
     subtitle: 'Estudiemos OS',
     state: 'Sistema',
-    icon: Settings
+    icon: Settings,
+    action: 'settings'
   }
 ];
 
 export function VirtualComputerShell(props) {
+  const { agendaItems = studyAgendaItems } = props;
   const [appOpen, setAppOpen] = useState(false);
   const [initialApp, setInitialApp] = useState('estudiemos');
 
@@ -119,11 +129,11 @@ export function VirtualComputerShell(props) {
                 <div>
                   <CalendarDays size={18} aria-hidden="true" />
                   <strong>Agenda</strong>
-                  <span>{studyAgendaItems[0]?.title ?? 'Plan semanal'}</span>
+                  <span>{agendaItems[0]?.title ?? 'Plan semanal'}</span>
                 </div>
               </div>
               <div className="virtual-agenda-list" aria-label="Agenda sincronizada">
-                {studyAgendaItems.slice(0, 3).map((item) => (
+                {agendaItems.slice(0, 3).map((item) => (
                   <span key={`${item.time}-${item.title}`}>
                     <strong>{item.time}</strong>
                     {item.title}

@@ -5,6 +5,7 @@ import { Hud } from './components/Hud.jsx';
 import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
+import { studyAgendaItems } from './data/studyAgenda.js';
 import './styles/app.css';
 import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
@@ -28,6 +29,33 @@ function createEmptyScreenZone() {
   };
 }
 
+const AGENDA_STORAGE_KEY = 'estudiemos-room-agenda';
+
+function normalizeAgendaItems(items) {
+  if (!Array.isArray(items)) return studyAgendaItems;
+
+  const normalized = items
+    .map((item) => ({
+      time: String(item?.time ?? '').slice(0, 5),
+      title: String(item?.title ?? '').trim().slice(0, 48),
+      detail: String(item?.detail ?? '').trim().slice(0, 96)
+    }))
+    .filter((item) => item.time && item.title);
+
+  return normalized.length > 0 ? normalized : studyAgendaItems;
+}
+
+function loadStoredAgendaItems() {
+  if (typeof window === 'undefined') return studyAgendaItems;
+
+  try {
+    const rawAgenda = window.localStorage.getItem(AGENDA_STORAGE_KEY);
+    return rawAgenda ? normalizeAgendaItems(JSON.parse(rawAgenda)) : studyAgendaItems;
+  } catch {
+    return studyAgendaItems;
+  }
+}
+
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
   const [computerOpen, setComputerOpen] = useState(false);
@@ -38,12 +66,17 @@ function App() {
   const [isAimingScreen, setIsAimingScreen] = useState(false);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [screenLayout, setScreenLayout] = useState('side-by-side');
+  const [agendaItems, setAgendaItems] = useState(loadStoredAgendaItems);
   const [screenZones, setScreenZones] = useState({
     upper: createEmptyScreenZone(),
     lower: createEmptyScreenZone()
   });
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
+
+  useEffect(() => {
+    window.localStorage.setItem(AGENDA_STORAGE_KEY, JSON.stringify(agendaItems));
+  }, [agendaItems]);
 
   useEffect(() => {
     function onPointerLockChange() {
@@ -155,6 +188,7 @@ function App() {
         screenContentEnabled={!computerOpen}
         screenZones={screenZones}
         screenLayout={screenLayout}
+        agendaItems={agendaItems}
       />
 
       <Hud
@@ -192,6 +226,8 @@ function App() {
           onUpdateZone={updateScreenZone}
           onClearZone={clearScreenZone}
           onScreenLayoutChange={setScreenLayout}
+          agendaItems={agendaItems}
+          onAgendaItemsChange={setAgendaItems}
           onClose={() => setComputerOpen(false)}
         />
       )}

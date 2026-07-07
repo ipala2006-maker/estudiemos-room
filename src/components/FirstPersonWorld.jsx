@@ -51,6 +51,14 @@ const COMPUTER_MONITOR_OCCLUDER_DOM_SIZE = {
   width: 420,
   height: 270
 };
+const AGENDA_BOARD_WORLD = {
+  center: new THREE.Vector3(62.32, 5.6, -18.8),
+  width: 4.2
+};
+const AGENDA_BOARD_DOM_SIZE = {
+  width: 520,
+  height: 330
+};
 const DEFAULT_SCREEN_LAYOUT = 'side-by-side';
 const DEFAULT_SCREEN_ZONES = {
   upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, displayScale: 100, updatedAt: 0 },
@@ -67,7 +75,8 @@ export function FirstPersonWorld({
   controlsEnabled = true,
   screenContentEnabled = controlsEnabled,
   screenZones = DEFAULT_SCREEN_ZONES,
-  screenLayout = DEFAULT_SCREEN_LAYOUT
+  screenLayout = DEFAULT_SCREEN_LAYOUT,
+  agendaItems = studyAgendaItems
 }) {
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
@@ -78,6 +87,7 @@ export function FirstPersonWorld({
   const screenContentEnabledRef = useRef(screenContentEnabled);
   const screenZonesRef = useRef(screenZones);
   const screenLayoutRef = useRef(screenLayout);
+  const agendaItemsRef = useRef(agendaItems);
 
   useEffect(() => {
     controlsEnabledRef.current = controlsEnabled;
@@ -97,6 +107,10 @@ export function FirstPersonWorld({
   useEffect(() => {
     screenLayoutRef.current = screenLayout;
   }, [screenLayout]);
+
+  useEffect(() => {
+    agendaItemsRef.current = agendaItems;
+  }, [agendaItems]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -136,6 +150,9 @@ export function FirstPersonWorld({
     const cssComputerMonitorOccluder = createCssComputerMonitorOccluderObject();
     cssComputerMonitorOccluder.visible = false;
     cssScene.add(cssComputerMonitorOccluder);
+    const cssAgendaBoard = createCssAgendaBoardObject();
+    cssAgendaBoard.visible = false;
+    cssScene.add(cssAgendaBoard);
 
     const ambient = new THREE.HemisphereLight(0xfff0d2, 0x263a36, 0.9);
     scene.add(ambient);
@@ -374,9 +391,12 @@ export function FirstPersonWorld({
 
       updateGiantScreen(giantScreen, screenZonesRef.current, screenLayoutRef.current);
       updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
+      updateCssAgendaContent(cssComputerMonitorOccluder, agendaItemsRef.current, 3);
+      updateCssAgendaContent(cssAgendaBoard, agendaItemsRef.current, 4);
       const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
       cssGiantScreen.visible = showPhysicalScreenContent;
       cssComputerMonitorOccluder.visible = showPhysicalScreenContent;
+      cssAgendaBoard.visible = showPhysicalScreenContent;
       cssRenderer.domElement.style.visibility = showPhysicalScreenContent ? 'visible' : 'hidden';
 
       const nearDoor = doorOpenRef.current
@@ -451,19 +471,6 @@ function createCssComputerMonitorOccluderObject() {
 
   const list = document.createElement('div');
   list.className = 'computer-monitor-occluder-list';
-  studyAgendaItems.slice(0, 3).forEach((item) => {
-    const row = document.createElement('div');
-    const time = document.createElement('span');
-    time.textContent = item.time;
-    const copy = document.createElement('p');
-    const task = document.createElement('strong');
-    task.textContent = item.title;
-    const detail = document.createElement('small');
-    detail.textContent = item.detail;
-    copy.append(task, detail);
-    row.append(time, copy);
-    list.appendChild(row);
-  });
 
   screen.append(header, list);
   monitor.appendChild(screen);
@@ -478,8 +485,68 @@ function createCssComputerMonitorOccluderObject() {
   const object = new CSS3DObject(root);
   object.position.copy(COMPUTER_MONITOR_OCCLUDER_WORLD.center);
   object.scale.setScalar(COMPUTER_MONITOR_OCCLUDER_WORLD.width / COMPUTER_MONITOR_OCCLUDER_DOM_SIZE.width);
+  object.userData.agendaList = list;
+  object.userData.agendaStateKey = '';
 
   return object;
+}
+
+function createCssAgendaBoardObject() {
+  const root = document.createElement('div');
+  root.className = 'css-agenda-board';
+  root.style.width = `${AGENDA_BOARD_DOM_SIZE.width}px`;
+  root.style.height = `${AGENDA_BOARD_DOM_SIZE.height}px`;
+
+  const panel = document.createElement('div');
+  panel.className = 'css-agenda-board-panel';
+
+  const header = document.createElement('div');
+  header.className = 'css-agenda-board-header';
+  const title = document.createElement('strong');
+  title.textContent = 'Agenda';
+  const status = document.createElement('span');
+  status.textContent = 'Sincronizada';
+  header.append(title, status);
+
+  const list = document.createElement('div');
+  list.className = 'css-agenda-board-list';
+  panel.append(header, list);
+  root.appendChild(panel);
+
+  const object = new CSS3DObject(root);
+  object.position.copy(AGENDA_BOARD_WORLD.center);
+  object.rotation.y = Math.PI / 2;
+  object.scale.setScalar(AGENDA_BOARD_WORLD.width / AGENDA_BOARD_DOM_SIZE.width);
+  object.userData.agendaList = list;
+  object.userData.agendaStateKey = '';
+
+  return object;
+}
+
+function updateCssAgendaContent(object, agendaItems, limit) {
+  const list = object.userData.agendaList;
+  if (!list) return;
+
+  const items = (Array.isArray(agendaItems) && agendaItems.length > 0 ? agendaItems : studyAgendaItems).slice(0, limit);
+  const nextKey = JSON.stringify(items.map((item) => [item.time, item.title, item.detail]));
+  if (object.userData.agendaStateKey === nextKey) return;
+
+  object.userData.agendaStateKey = nextKey;
+  list.replaceChildren(
+    ...items.map((item) => {
+      const row = document.createElement('div');
+      const time = document.createElement('span');
+      time.textContent = item.time;
+      const copy = document.createElement('p');
+      const task = document.createElement('strong');
+      task.textContent = item.title;
+      const detail = document.createElement('small');
+      detail.textContent = item.detail;
+      copy.append(task, detail);
+      row.append(time, copy);
+      return row;
+    })
+  );
 }
 
 function createCssGiantScreenObject() {
