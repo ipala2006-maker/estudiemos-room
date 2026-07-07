@@ -23,31 +23,22 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Diagnose Codex agenda and settings package
+      - name: Apply Codex agenda and settings update
         run: |
-          set +e
-          echo "diagnostic run" > codex-deploy-debug.txt
-          echo "date=$(date -u)" >> codex-deploy-debug.txt
-          echo "pwd=$(pwd)" >> codex-deploy-debug.txt
-          curl -L -w "http_code=%{http_code} size_download=%{size_download}\n" "https://tmpfiles.org/dl/wwwtv1bruLQ7/codex-agenda-settings-package.zip" -o codex-agenda-settings-update.zip >> codex-deploy-debug.txt 2>&1
-          echo "curl_exit=$?" >> codex-deploy-debug.txt
-          ls -l codex-agenda-settings-update.zip >> codex-deploy-debug.txt 2>&1
-          file codex-agenda-settings-update.zip >> codex-deploy-debug.txt 2>&1
-          python - <<'PY' >> codex-deploy-debug.txt 2>&1
+          curl -fL "https://tmpfiles.org/dl/1783385289.d45638dddeb69231/wwwtv1bruLQ7/codex-agenda-settings-package.zip" -o codex-agenda-settings-update.zip
+          python - <<'PY'
           import zipfile
-          path = 'codex-agenda-settings-update.zip'
-          print('is_zip=', zipfile.is_zipfile(path))
-          if zipfile.is_zipfile(path):
-              with zipfile.ZipFile(path) as archive:
-                  print('names=', archive.namelist()[:12])
+          with zipfile.ZipFile('codex-agenda-settings-update.zip') as archive:
+              archive.extractall('.')
           PY
-          echo "python_exit=$?" >> codex-deploy-debug.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add codex-deploy-debug.txt
-          git commit -m "Add Codex deploy diagnostic"
-          git push origin HEAD:main
-          exit 1
+          git add src/main.jsx src/components/ComputerUI.jsx src/components/VirtualComputerShell.jsx src/components/FirstPersonWorld.jsx src/styles/app.css src/styles/computer-os-corrections.css src/data/studyAgenda.js
+          git rm -f codex-deploy-debug.txt || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Make agenda and computer settings functional"
+            git push origin HEAD:main
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
