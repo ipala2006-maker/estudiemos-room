@@ -50,8 +50,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/codex-apply-trigger.txt
           git status --short
-          git add src/main.jsx src/components/ComputerUI.jsx src/components/DachshundMascot.jsx src/components/FirstPersonWorld.jsx src/components/VirtualComputerShell.jsx src/styles/app.css src/styles/computer-os-corrections.css
+          git add src/main.jsx src/components/ComputerUI.jsx src/components/DachshundMascot.jsx src/components/FirstPersonWorld.jsx src/components/VirtualComputerShell.jsx src/styles/app.css src/styles/computer-os-corrections.css .github/codex-apply-trigger.txt
           if git diff --cached --quiet; then
             echo "No source changes to commit."
           else
