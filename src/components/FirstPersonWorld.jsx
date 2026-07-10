@@ -35,6 +35,11 @@ const CAMERA_SENSITIVITY = {
 };
 const EDGE_OPACITY_SCALE = 0.28;
 const MIN_EDGE_OPACITY = 0.04;
+const COMPANION_SIDE_OFFSET = -2.35;
+const COMPANION_BACK_OFFSET = -3.35;
+const COMPANION_FOLLOW_RESPONSE = 4.4;
+const COMPANION_IDLE_SIT_DELAY = 0.85;
+const COMPANION_STILL_SPEED = 0.16;
 const INTERIOR_LOOK_TARGET = activeMap.interiorSpawnLookAt ?? new THREE.Vector3(84, 2.1, -24);
 const GIANT_SCREEN_WORLD = {
   center: new THREE.Vector3(90, 8.5, -34.25),
@@ -471,7 +476,7 @@ export function FirstPersonWorld({
 function createCompanionDachshund(equippedSkin) {
   const group = new THREE.Group();
   group.name = 'estudiemos-3d-dachshund-companion';
-  group.position.set(startPosition.x - 1.35, 0, startPosition.z + 1.65);
+  group.position.set(startPosition.x + COMPANION_SIDE_OFFSET, 0, startPosition.z + Math.abs(COMPANION_BACK_OFFSET));
   group.rotation.order = 'YXZ';
 
   const materials = {
@@ -532,8 +537,11 @@ function createCompanionDachshund(equippedSkin) {
     addDogMesh(group, new THREE.SphereGeometry(0.035, 8, 6), materials.eye, [1.14, 0.79, -0.12], [1, 1, 1]),
     addDogMesh(group, new THREE.SphereGeometry(0.035, 8, 6), materials.eye, [1.14, 0.79, 0.12], [1, 1, 1])
   ];
+  const eyeShines = [];
   eyes.forEach((eye) => {
-    addDogMesh(group, new THREE.SphereGeometry(0.011, 6, 4), materials.shine, [eye.position.x + 0.018, eye.position.y + 0.012, eye.position.z + 0.008], [1, 1, 1]);
+    eyeShines.push(
+      addDogMesh(group, new THREE.SphereGeometry(0.011, 6, 4), materials.shine, [eye.position.x + 0.018, eye.position.y + 0.012, eye.position.z + 0.008], [1, 1, 1])
+    );
   });
 
   const legs = [
@@ -606,6 +614,8 @@ function createCompanionDachshund(equippedSkin) {
     snout,
     nose,
     noseShine,
+    eyes,
+    eyeShines,
     ears: [leftEar, rightEar],
     legs,
     tail,
@@ -617,12 +627,18 @@ function createCompanionDachshund(equippedSkin) {
     legendaryGroup,
     visualKey: '',
     walkPhase: 0,
+    idleTimer: 0,
+    sitAmount: 0,
+    hasCameraPosition: false,
     lastPosition: group.position.clone(),
+    lastCameraPosition: new THREE.Vector3(),
     scratch: {
       forward: new THREE.Vector3(),
       right: new THREE.Vector3(),
       target: new THREE.Vector3(),
-      velocity: new THREE.Vector3()
+      velocity: new THREE.Vector3(),
+      cameraDelta: new THREE.Vector3(),
+      toCamera: new THREE.Vector3()
     }
   };
 
@@ -645,13 +661,31 @@ function addDogMesh(group, geometry, material, position, scale = [1, 1, 1], rota
 function addDogLeg(group, legMaterial, pawMaterial, position) {
   const leg = addDogMesh(group, new THREE.CylinderGeometry(0.058, 0.072, 0.42, 8), legMaterial, position);
   const paw = addDogMesh(group, new THREE.SphereGeometry(0.095, 8, 6), pawMaterial, [position[0] + 0.035, 0.08, position[2]], [1.26, 0.46, 0.86]);
-  return { leg, paw, baseX: position[0], baseZ: position[2] };
+  return {
+    leg,
+    paw,
+    baseX: position[0],
+    baseY: position[1],
+    baseZ: position[2],
+    pawBaseX: paw.position.x,
+    pawBaseY: paw.position.y,
+    pawBaseZ: paw.position.z
+  };
 }
 
 function updateCompanionDachshund(companion, camera, delta, isInterior, progress) {
   applyCompanionDachshundVisuals(companion, getEquippedSkinState(progress));
 
-  const { forward, right, target, velocity } = companion.scratch;
+  const { forward, right, target, velocity, cameraDelta, toCamera } = companion.scratch;
+  const responseDelta = Math.max(delta, 0.001);
+  if (!companion.hasCameraPosition) {
+    companion.lastCameraPosition.copy(camera.position);
+    companion.hasCameraPosition = true;
+  }
+  cameraDelta.copy(camera.position).sub(companion.lastCameraPosition);
+  const cameraSpeed = cameraDelta.length() / responseDelta;
+  const playerIsStill = cameraSpeed < COMPANION_STILL_SPEED;
+
   camera.getWorldDirection(forward);
   forward.y = 0;
   if (forward.lengthSq() < 0.001) forward.set(0, 0, -1);
@@ -659,25 +693,55 @@ function updateCompanionDachshund(companion, camera, delta, isInterior, progress
   right.crossVectors(forward, camera.up).normalize();
 
   target.copy(camera.position);
-  target.addScaledVector(right, -1.34);
-  target.addScaledVector(forward, -1.78);
+  target.addScaledVector(right, COMPANION_SIDE_OFFSET);
+  target.addScaledVector(forward, COMPANION_BACK_OFFSET);
   target.y = 0;
 
   const bounds = isInterior ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
   target.x = clamp(target.x, bounds.minX + 1.1, bounds.maxX - 1.1);
   target.z = clamp(target.z, bounds.minZ + 1.1, bounds.maxZ - 1.1);
 
-  if (companion.group.position.distanceTo(target) > 18) {
+  toCamera.copy(camera.position);
+  toCamera.y = 0;
+  const playerDistance = companion.group.position.distanceTo(toCamera);
+  const targetDistanceBeforeMove = companion.group.position.distanceTo(target);
+  const canHoldRestPosition =
+    playerIsStill &&
+    companion.sitAmount > 0.55 &&
+    playerDistance > 2.15 &&
+    playerDistance < 6.7 &&
+    targetDistanceBeforeMove < 2.4;
+  if (canHoldRestPosition) {
+    target.copy(companion.group.position);
+  }
+
+  if (companion.group.position.distanceTo(target) > 22) {
     companion.group.position.copy(target);
     companion.lastPosition.copy(target);
   } else {
-    companion.group.position.lerp(target, 1 - Math.exp(-6.2 * delta));
+    companion.group.position.lerp(target, 1 - Math.exp(-COMPANION_FOLLOW_RESPONSE * delta));
   }
 
   velocity.copy(companion.group.position).sub(companion.lastPosition);
-  const speed = velocity.length() / Math.max(delta, 0.001);
-  const walkAmount = clamp(speed / WALK_SPEED, 0, 1);
-  if (speed > 0.03) {
+  const speed = velocity.length() / responseDelta;
+  const targetDistance = companion.group.position.distanceTo(target);
+  if (playerIsStill && speed < 0.14 && targetDistance < 0.5 && playerDistance > 2.05) {
+    companion.idleTimer += delta;
+  } else {
+    companion.idleTimer = Math.max(0, companion.idleTimer - delta * 2.4);
+  }
+
+  const targetSitAmount = companion.idleTimer >= COMPANION_IDLE_SIT_DELAY ? 1 : 0;
+  companion.sitAmount += (targetSitAmount - companion.sitAmount) * (1 - Math.exp(-5.6 * delta));
+  const sit = companion.sitAmount;
+  const walkAmount = clamp(speed / WALK_SPEED, 0, 1) * (1 - sit);
+
+  toCamera.copy(camera.position).sub(companion.group.position);
+  toCamera.y = 0;
+  if (sit > 0.22 && toCamera.lengthSq() > 0.01) {
+    const desiredYaw = Math.atan2(-toCamera.z, toCamera.x);
+    companion.group.rotation.y = dampAngle(companion.group.rotation.y, desiredYaw, 7, delta);
+  } else if (speed > 0.03) {
     const desiredYaw = Math.atan2(-velocity.z, velocity.x);
     companion.group.rotation.y = dampAngle(companion.group.rotation.y, desiredYaw, 12, delta);
   }
@@ -686,23 +750,71 @@ function updateCompanionDachshund(companion, camera, delta, isInterior, progress
   const stride = Math.sin(companion.walkPhase) * 0.34 * walkAmount;
   const counterStride = Math.sin(companion.walkPhase + Math.PI) * 0.34 * walkAmount;
   companion.legs.forEach((part, index) => {
-    const swing = index % 2 === 0 ? stride : counterStride;
-    part.leg.rotation.z = swing;
-    part.paw.position.x = part.baseX + swing * 0.12;
+    const walkingSwing = index % 2 === 0 ? stride : counterStride;
+    const isFrontLeg = part.baseX > 0;
+    const sittingLegRotation = isFrontLeg ? 0.08 : -0.82;
+    part.leg.rotation.z = THREE.MathUtils.lerp(walkingSwing, sittingLegRotation, sit);
+    part.leg.position.x = THREE.MathUtils.lerp(part.baseX, part.baseX + (isFrontLeg ? 0.03 : -0.08), sit);
+    part.leg.position.y = THREE.MathUtils.lerp(part.baseY, isFrontLeg ? 0.28 : 0.22, sit);
+    part.leg.position.z = part.baseZ;
+    part.paw.position.x = THREE.MathUtils.lerp(part.pawBaseX + walkingSwing * 0.12, part.pawBaseX + (isFrontLeg ? 0.02 : -0.16), sit);
+    part.paw.position.y = THREE.MathUtils.lerp(part.pawBaseY, isFrontLeg ? 0.075 : 0.12, sit);
+    part.paw.position.z = part.pawBaseZ;
   });
 
   const bob = Math.sin(companion.walkPhase * 2) * 0.025 * walkAmount;
-  companion.body.position.y = 0.58 + bob;
-  companion.belly.position.y = 0.45 + bob * 0.55;
-  companion.chest.position.y = 0.58 + bob * 0.7;
-  companion.head.position.y = 0.72 + bob * 0.9;
-  companion.snout.position.y = 0.66 + bob * 0.9;
-  companion.nose.position.y = 0.68 + bob * 0.9;
-  companion.noseShine.position.y = 0.705 + bob * 0.9;
-  companion.tail.rotation.z = 0.16 + Math.sin(companion.walkPhase * 1.6) * 0.18;
+  companion.body.position.x = THREE.MathUtils.lerp(0, -0.08, sit);
+  companion.body.position.y = THREE.MathUtils.lerp(0.58 + bob, 0.48, sit);
+  companion.body.rotation.z = THREE.MathUtils.lerp(Math.PI / 2, Math.PI / 2 - 0.16, sit);
+  companion.belly.position.x = THREE.MathUtils.lerp(0.08, -0.03, sit);
+  companion.belly.position.y = THREE.MathUtils.lerp(0.45 + bob * 0.55, 0.38, sit);
+  companion.chest.position.x = THREE.MathUtils.lerp(0.62, 0.55, sit);
+  companion.chest.position.y = THREE.MathUtils.lerp(0.58 + bob * 0.7, 0.65, sit);
+  companion.head.position.x = THREE.MathUtils.lerp(0.88, 0.78, sit);
+  companion.head.position.y = THREE.MathUtils.lerp(0.72 + bob * 0.9, 0.88, sit);
+  companion.snout.position.x = THREE.MathUtils.lerp(1.16, 1.05, sit);
+  companion.snout.position.y = THREE.MathUtils.lerp(0.66 + bob * 0.9, 0.82, sit);
+  companion.nose.position.x = THREE.MathUtils.lerp(1.36, 1.25, sit);
+  companion.nose.position.y = THREE.MathUtils.lerp(0.68 + bob * 0.9, 0.84, sit);
+  companion.noseShine.position.x = THREE.MathUtils.lerp(1.39, 1.28, sit);
+  companion.noseShine.position.y = THREE.MathUtils.lerp(0.705 + bob * 0.9, 0.865, sit);
+  companion.eyes.forEach((eye, index) => {
+    const eyeZ = index === 0 ? -0.12 : 0.12;
+    eye.position.x = THREE.MathUtils.lerp(1.14, 1.04, sit);
+    eye.position.y = THREE.MathUtils.lerp(0.79 + bob * 0.9, 0.95, sit);
+    eye.position.z = eyeZ;
+  });
+  companion.eyeShines.forEach((shine, index) => {
+    const shineZ = index === 0 ? -0.112 : 0.128;
+    shine.position.x = THREE.MathUtils.lerp(1.158, 1.058, sit);
+    shine.position.y = THREE.MathUtils.lerp(0.802 + bob * 0.9, 0.962, sit);
+    shine.position.z = shineZ;
+  });
+  companion.ears.forEach((ear, index) => {
+    const isLeft = index === 0;
+    ear.position.x = THREE.MathUtils.lerp(0.74, 0.66, sit);
+    ear.position.y = THREE.MathUtils.lerp(0.58 + bob * 0.7, 0.76, sit);
+    ear.position.z = isLeft ? -0.25 : 0.25;
+    ear.rotation.x = THREE.MathUtils.lerp(isLeft ? 0.18 : -0.18, isLeft ? 0.26 : -0.26, sit);
+    ear.rotation.z = THREE.MathUtils.lerp(0.1, 0.02, sit);
+  });
+  companion.collar.position.x = THREE.MathUtils.lerp(0.62, 0.54, sit);
+  companion.collar.position.y = THREE.MathUtils.lerp(0.67, 0.79, sit);
+  companion.tag.position.x = THREE.MathUtils.lerp(0.78, 0.68, sit);
+  companion.tag.position.y = THREE.MathUtils.lerp(0.49, 0.58, sit);
+  companion.cyberGroup.position.x = -0.08 * sit;
+  companion.cyberGroup.position.y = 0.13 * sit;
+  companion.engineerGroup.position.x = -0.1 * sit;
+  companion.engineerGroup.position.y = 0.14 * sit;
+  companion.tail.rotation.z = THREE.MathUtils.lerp(
+    0.16 + Math.sin(companion.walkPhase * 1.6) * 0.18,
+    -0.34 + Math.sin(companion.walkPhase * 1.2) * 0.04,
+    sit
+  );
   companion.legendaryGroup.rotation.y += delta * 1.6;
 
   companion.lastPosition.copy(companion.group.position);
+  companion.lastCameraPosition.copy(camera.position);
 }
 
 function applyCompanionDachshundVisuals(companion, equippedSkin) {

@@ -771,6 +771,10 @@ button {
   fill: var(--dog-body);
 }
 
+.dog-body-group {
+  paint-order: stroke fill markers;
+}
+
 .dog-body-outline,
 .dog-head-outline,
 .dog-snout-outline {
@@ -780,6 +784,24 @@ button {
 .dog-belly {
   fill: var(--dog-belly);
   opacity: 0.88;
+}
+
+.dog-chest-fur {
+  fill: color-mix(in srgb, var(--dog-belly), #fff7de 18%);
+  opacity: 0.82;
+}
+
+.dog-marking {
+  fill: color-mix(in srgb, var(--dog-ear), var(--dog-body) 28%);
+  opacity: 0.34;
+}
+
+.dog-fur-lines {
+  fill: none;
+  stroke: color-mix(in srgb, var(--dog-ear), #111819 18%);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  opacity: 0.42;
 }
 
 .dog-back-highlight {
@@ -795,13 +817,14 @@ button {
 .dog-legs path {
   fill: var(--dog-ear);
   stroke: var(--dog-ear);
-  stroke-width: 8;
+  stroke-width: 5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .dog-tail {
   fill: none;
+  stroke-width: 7;
 }
 
 .dog-eye,
@@ -824,7 +847,7 @@ button {
 
 .dog-cheek {
   fill: color-mix(in srgb, var(--dog-belly), #ff8ca0 22%);
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .dog-smile {
@@ -850,9 +873,13 @@ button {
   fill: none;
 }
 
-.dog-nose-shine,
-.dog-paws {
+.dog-nose-shine {
   fill: rgba(255, 255, 255, 0.64);
+}
+
+.dog-paws {
+  fill: color-mix(in srgb, var(--dog-belly), white 18%);
+  opacity: 0.94;
 }
 
 .dog-tag-letter {
