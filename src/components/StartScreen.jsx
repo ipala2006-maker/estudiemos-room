@@ -1,8 +1,10 @@
 import { ArrowRight, Keyboard, MousePointer2, Move3D, ShieldCheck } from 'lucide-react';
+import { BUILD_LABEL, BUILD_MARKER } from '../data/buildInfo.js';
 
 export function StartScreen({ onEnter }) {
   return (
     <main className="start-screen">
+      <span className="build-version-pill" data-build-marker={BUILD_MARKER}>{BUILD_LABEL}</span>
       <section className="start-content" aria-labelledby="start-title">
         <p className="start-kicker">Estudiemos Room</p>
         <h1 id="start-title">Campus de estudio virtual</h1>

@@ -1,5 +1,6 @@
 import { Coins, Home, RotateCcw } from 'lucide-react';
 import { DachshundMascot } from './DachshundMascot.jsx';
+import { BUILD_LABEL, BUILD_MARKER } from '../data/buildInfo.js';
 import { formatFocusDuration, getEquippedSkinState } from '../data/focusEconomy.js';
 
 export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBackHome, onReset }) {
@@ -8,6 +9,7 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
 
   return (
     <aside className="hud">
+      <span className="hud-build-version" data-build-marker={BUILD_MARKER}>{BUILD_LABEL}</span>
       <div>
         <strong>Lobby 3D</strong>
         <span>WASD o flechas para caminar</span>
