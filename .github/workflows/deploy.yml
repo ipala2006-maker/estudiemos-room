@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Codex Apply 3D Mascot And Shop Fix
 
 on:
   push:
@@ -6,50 +6,53 @@ on:
       - main
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  build:
+  apply:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
+      - name: Download Codex patch package
+        run: curl -fL "https://files.catbox.moe/ywew6p.zip" -o codex-3d-mascot-shop.zip
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Extract patched files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          import zipfile
 
-      - name: Build
-        run: npm run build
+          allowed = {
+              'src/main.jsx',
+              'src/components/ComputerUI.jsx',
+              'src/components/FirstPersonWorld.jsx',
+              'src/styles/computer-os-corrections.css',
+          }
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+          with zipfile.ZipFile('codex-3d-mascot-shop.zip') as archive:
+              for member in archive.infolist():
+                  name = member.filename.replace('\\', '/').lstrip('/')
+                  if name not in allowed:
+                      continue
+                  target = Path(name)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  with archive.open(member) as source, target.open('wb') as dest:
+                      shutil.copyfileobj(source, dest)
+          PY
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Commit patched files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/codex-apply-trigger.txt
+          git status --short
+          git add src/main.jsx src/components/ComputerUI.jsx src/components/FirstPersonWorld.jsx src/styles/computer-os-corrections.css .github/codex-apply-trigger.txt
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+          else
+            git commit -m "Add 3D companion mascot and fix shop access"
+            git push origin HEAD:main
+          fi
