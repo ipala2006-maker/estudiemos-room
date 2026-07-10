@@ -22,16 +22,19 @@ const PERFORMANCE_PROFILE = {
   skyWidthSegments: 24,
   skyHeightSegments: 12
 };
+const PERFORMANCE_PASS_MARKER = 'performance-pass-smoother-room-2026-07-10';
+const CSS_CONTENT_SYNC_INTERVAL_MS = 140;
 const PLAYER_RADIUS = 0.58;
 const WALK_SPEED = 9.6;
-const WALK_ACCELERATION = 18;
-const WALK_DECELERATION = 24;
-const CAMERA_SMOOTHING = 24;
+const WALK_ACCELERATION = 26;
+const WALK_DECELERATION = 34;
+const CAMERA_SMOOTHING = 38;
 const CAMERA_SENSITIVITY = {
   yaw: 0.002,
   pitch: 0.0017
 };
 const EDGE_OPACITY_SCALE = 0.28;
+const MIN_EDGE_OPACITY = 0.04;
 const INTERIOR_LOOK_TARGET = activeMap.interiorSpawnLookAt ?? new THREE.Vector3(84, 2.1, -24);
 const GIANT_SCREEN_WORLD = {
   center: new THREE.Vector3(90, 8.5, -34.25),
@@ -122,6 +125,7 @@ export function FirstPersonWorld({
   useEffect(() => {
     const mount = mountRef.current;
     const scene = new THREE.Scene();
+    scene.userData.performancePass = PERFORMANCE_PASS_MARKER;
     scene.background = new THREE.Color(0x9ea99a);
     scene.fog = new THREE.Fog(0xa7ad9d, 54, 142);
     addStaticSkyDome(scene);
@@ -335,10 +339,12 @@ export function FirstPersonWorld({
     const timer = new THREE.Timer();
     timer.connect(document);
     let frameId = 0;
+    let lastCssContentSyncTime = Number.NEGATIVE_INFINITY;
 
     function animate(timestamp) {
       timer.update(timestamp);
       const delta = Math.min(timer.getDelta(), 0.04);
+      const frameTime = typeof timestamp === 'number' ? timestamp : 0;
       if (!controlsEnabledRef.current) {
         clearMovementInput();
         movementVelocity.set(0, 0, 0);
@@ -398,10 +404,13 @@ export function FirstPersonWorld({
         }
       }
 
-      updateGiantScreen(giantScreen, screenZonesRef.current, screenLayoutRef.current);
-      updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
-      updateCssAgendaContent(cssComputerMonitorOccluder, agendaItemsRef.current, 3);
-      updateCssAgendaContent(cssAgendaBoard, agendaItemsRef.current, 4);
+      if (frameTime - lastCssContentSyncTime >= CSS_CONTENT_SYNC_INTERVAL_MS) {
+        lastCssContentSyncTime = frameTime;
+        updateGiantScreen(giantScreen, screenZonesRef.current, screenLayoutRef.current);
+        updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
+        updateCssAgendaContent(cssComputerMonitorOccluder, agendaItemsRef.current, 3);
+        updateCssAgendaContent(cssAgendaBoard, agendaItemsRef.current, 4);
+      }
       updateCompanionDachshund(companionMascot, camera, delta, doorOpenRef.current, focusProgressRef.current);
       const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
       cssGiantScreen.visible = showPhysicalScreenContent;
@@ -479,7 +488,7 @@ function createCompanionDachshund(equippedSkin) {
 
   const contactShadow = addDogMesh(
     group,
-    new THREE.CircleGeometry(0.95, 28),
+    new THREE.CircleGeometry(0.95, 18),
     materials.shadow,
     [0, 0.035, 0],
     [1.35, 0.52, 1],
@@ -489,22 +498,22 @@ function createCompanionDachshund(equippedSkin) {
 
   const body = addDogMesh(
     group,
-    new THREE.CapsuleGeometry(0.3, 1.34, 8, 18),
+    new THREE.CapsuleGeometry(0.3, 1.34, 6, 12),
     materials.body,
     [0, 0.58, 0],
     [1, 0.82, 0.78],
     [0, 0, Math.PI / 2]
   );
-  const belly = addDogMesh(group, new THREE.SphereGeometry(0.32, 24, 12), materials.belly, [0.08, 0.45, 0], [1.42, 0.24, 0.58]);
-  const chest = addDogMesh(group, new THREE.SphereGeometry(0.22, 18, 10), materials.belly, [0.62, 0.58, 0], [0.72, 0.82, 0.78]);
-  const head = addDogMesh(group, new THREE.SphereGeometry(0.32, 24, 18), materials.body, [0.88, 0.72, 0], [1.04, 0.92, 0.94]);
-  const snout = addDogMesh(group, new THREE.SphereGeometry(0.18, 18, 12), materials.belly, [1.16, 0.66, 0], [1.22, 0.7, 0.82]);
-  const nose = addDogMesh(group, new THREE.SphereGeometry(0.062, 14, 10), materials.eye, [1.36, 0.68, 0], [1.08, 0.82, 1]);
+  const belly = addDogMesh(group, new THREE.SphereGeometry(0.32, 16, 8), materials.belly, [0.08, 0.45, 0], [1.42, 0.24, 0.58]);
+  const chest = addDogMesh(group, new THREE.SphereGeometry(0.22, 14, 8), materials.belly, [0.62, 0.58, 0], [0.72, 0.82, 0.78]);
+  const head = addDogMesh(group, new THREE.SphereGeometry(0.32, 16, 12), materials.body, [0.88, 0.72, 0], [1.04, 0.92, 0.94]);
+  const snout = addDogMesh(group, new THREE.SphereGeometry(0.18, 14, 8), materials.belly, [1.16, 0.66, 0], [1.22, 0.7, 0.82]);
+  const nose = addDogMesh(group, new THREE.SphereGeometry(0.062, 8, 6), materials.eye, [1.36, 0.68, 0], [1.08, 0.82, 1]);
   const noseShine = addDogMesh(group, new THREE.SphereGeometry(0.018, 8, 6), materials.shine, [1.39, 0.705, 0.024], [1, 1, 1]);
 
   const leftEar = addDogMesh(
     group,
-    new THREE.CapsuleGeometry(0.095, 0.42, 6, 10),
+    new THREE.CapsuleGeometry(0.095, 0.42, 5, 8),
     materials.ear,
     [0.74, 0.58, -0.25],
     [0.85, 1, 0.58],
@@ -512,7 +521,7 @@ function createCompanionDachshund(equippedSkin) {
   );
   const rightEar = addDogMesh(
     group,
-    new THREE.CapsuleGeometry(0.095, 0.42, 6, 10),
+    new THREE.CapsuleGeometry(0.095, 0.42, 5, 8),
     materials.ear,
     [0.74, 0.58, 0.25],
     [0.85, 1, 0.58],
@@ -520,8 +529,8 @@ function createCompanionDachshund(equippedSkin) {
   );
 
   const eyes = [
-    addDogMesh(group, new THREE.SphereGeometry(0.035, 10, 8), materials.eye, [1.14, 0.79, -0.12], [1, 1, 1]),
-    addDogMesh(group, new THREE.SphereGeometry(0.035, 10, 8), materials.eye, [1.14, 0.79, 0.12], [1, 1, 1])
+    addDogMesh(group, new THREE.SphereGeometry(0.035, 8, 6), materials.eye, [1.14, 0.79, -0.12], [1, 1, 1]),
+    addDogMesh(group, new THREE.SphereGeometry(0.035, 8, 6), materials.eye, [1.14, 0.79, 0.12], [1, 1, 1])
   ];
   eyes.forEach((eye) => {
     addDogMesh(group, new THREE.SphereGeometry(0.011, 6, 4), materials.shine, [eye.position.x + 0.018, eye.position.y + 0.012, eye.position.z + 0.008], [1, 1, 1]);
@@ -541,9 +550,9 @@ function createCompanionDachshund(equippedSkin) {
         new THREE.Vector3(-0.98, 0.82, 0.03),
         new THREE.Vector3(-1.18, 0.98, 0.12)
       ]),
-      18,
+      10,
       0.03,
-      8,
+      5,
       false
     ),
     materials.ear
@@ -551,8 +560,8 @@ function createCompanionDachshund(equippedSkin) {
   tail.castShadow = true;
   group.add(tail);
 
-  const collar = addDogMesh(group, new THREE.TorusGeometry(0.205, 0.024, 8, 28), materials.accent, [0.62, 0.67, 0], [1, 1.1, 0.86], [0, Math.PI / 2, 0]);
-  const tag = addDogMesh(group, new THREE.CylinderGeometry(0.055, 0.055, 0.018, 18), materials.glow, [0.78, 0.49, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
+  const collar = addDogMesh(group, new THREE.TorusGeometry(0.205, 0.024, 8, 18), materials.accent, [0.62, 0.67, 0], [1, 1.1, 0.86], [0, Math.PI / 2, 0]);
+  const tag = addDogMesh(group, new THREE.CylinderGeometry(0.055, 0.055, 0.018, 12), materials.glow, [0.78, 0.49, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
 
   const cyberGroup = new THREE.Group();
   cyberGroup.name = 'dachshund-cyber-kit';
@@ -564,7 +573,7 @@ function createCompanionDachshund(equippedSkin) {
 
   const engineerGroup = new THREE.Group();
   engineerGroup.name = 'dachshund-engineer-kit';
-  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 8, 0, Math.PI * 2, 0, Math.PI / 2), materials.glow);
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2), materials.glow);
   helmet.position.set(0.88, 0.95, 0);
   helmet.scale.set(1.06, 0.74, 0.88);
   engineerGroup.add(helmet);
@@ -573,7 +582,7 @@ function createCompanionDachshund(equippedSkin) {
   engineerGroup.add(brim);
   group.add(engineerGroup);
 
-  const premiumRing = addDogMesh(group, new THREE.TorusGeometry(0.78, 0.018, 8, 48), materials.glow, [0, 0.58, 0], [1, 0.16, 0.58], [Math.PI / 2, 0, 0]);
+  const premiumRing = addDogMesh(group, new THREE.TorusGeometry(0.78, 0.018, 8, 24), materials.glow, [0, 0.58, 0], [1, 0.16, 0.58], [Math.PI / 2, 0, 0]);
   const legendaryGroup = new THREE.Group();
   legendaryGroup.name = 'dachshund-legendary-stars';
   [
@@ -617,7 +626,7 @@ function createCompanionDachshund(equippedSkin) {
     }
   };
 
-  addGroupEdges(group, 0x080b0b, 0.12);
+  group.userData.performancePass = PERFORMANCE_PASS_MARKER;
   applyCompanionDachshundVisuals(companion, equippedSkin);
   return companion;
 }
@@ -634,8 +643,8 @@ function addDogMesh(group, geometry, material, position, scale = [1, 1, 1], rota
 }
 
 function addDogLeg(group, legMaterial, pawMaterial, position) {
-  const leg = addDogMesh(group, new THREE.CylinderGeometry(0.058, 0.072, 0.42, 12), legMaterial, position);
-  const paw = addDogMesh(group, new THREE.SphereGeometry(0.095, 12, 8), pawMaterial, [position[0] + 0.035, 0.08, position[2]], [1.26, 0.46, 0.86]);
+  const leg = addDogMesh(group, new THREE.CylinderGeometry(0.058, 0.072, 0.42, 8), legMaterial, position);
+  const paw = addDogMesh(group, new THREE.SphereGeometry(0.095, 8, 6), pawMaterial, [position[0] + 0.035, 0.08, position[2]], [1.26, 0.46, 0.86]);
   return { leg, paw, baseX: position[0], baseZ: position[2] };
 }
 
@@ -987,10 +996,12 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
     const zone = screenZones[slotConfig.zoneId];
     const src = zone.contentType === 'pdf' ? buildPdfEmbedUrl(zone.resourceUrl) : buildYouTubeEmbedUrl(zone);
     const displayScale = clampScreenDisplayScale(zone.displayScale);
+    const scaleValue = String(displayScale / 100);
     const slot = document.createElement('div');
     slot.className = 'physical-screen-slot';
     slot.dataset.zoneId = slotConfig.zoneId;
-    slot.style.setProperty('--screen-content-scale', String(displayScale / 100));
+    slot.dataset.screenScale = scaleValue;
+    slot.style.setProperty('--screen-content-scale', scaleValue);
 
     if (src) {
       const iframe = document.createElement('iframe');
@@ -1026,7 +1037,10 @@ function updateCssGiantScreenSlotScales(root, screenZones) {
   root.querySelectorAll('.physical-screen-slot').forEach((slot) => {
     const zone = screenZones[slot.dataset.zoneId];
     if (!zone) return;
-    slot.style.setProperty('--screen-content-scale', String(clampScreenDisplayScale(zone.displayScale) / 100));
+    const nextScale = String(clampScreenDisplayScale(zone.displayScale) / 100);
+    if (slot.dataset.screenScale === nextScale) return;
+    slot.dataset.screenScale = nextScale;
+    slot.style.setProperty('--screen-content-scale', nextScale);
   });
 }
 
@@ -3070,7 +3084,7 @@ function addGroupEdges(group, color, opacity) {
 
 function addEdges(mesh, color, opacity) {
   const effectiveOpacity = Math.min(opacity * EDGE_OPACITY_SCALE, 0.16);
-  if (effectiveOpacity <= 0.01) return null;
+  if (effectiveOpacity <= MIN_EDGE_OPACITY) return null;
 
   const geometry = new THREE.EdgesGeometry(mesh.geometry, 25);
   const key = `${color}-${effectiveOpacity}`;
