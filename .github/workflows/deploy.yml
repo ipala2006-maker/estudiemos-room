@@ -1,4 +1,4 @@
-name: Codex Apply Performance Update
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -6,60 +6,50 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: codex-apply-performance
-  cancel-in-progress: false
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  apply:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          persist-credentials: true
+          node-version: 24
+          cache: npm
 
-      - name: Download Codex patch
-        run: curl -fL "https://files.catbox.moe/izocrz.zip" -o codex-performance.zip
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Apply scoped patch
-        run: |
-          python - <<'PY'
-          import pathlib
-          import zipfile
+      - name: Build
+        run: npm run build
 
-          allowed = {"src/components/FirstPersonWorld.jsx"}
-          found = set()
-          root = pathlib.Path.cwd()
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
-          with zipfile.ZipFile("codex-performance.zip") as archive:
-            for info in archive.infolist():
-              normalized = info.filename.replace("\\", "/").lstrip("/")
-              if not normalized or normalized.endswith("/"):
-                continue
-              if normalized not in allowed:
-                raise SystemExit(f"Unexpected file in patch: {normalized}")
-              target = root / normalized
-              target.parent.mkdir(parents=True, exist_ok=True)
-              target.write_bytes(archive.read(info))
-              found.add(normalized)
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
 
-          missing = allowed - found
-          if missing:
-            raise SystemExit(f"Missing expected files: {sorted(missing)}")
-          PY
-
-      - name: Commit scoped patch
-        run: |
-          git config user.name "Codex"
-          git config user.email "codex@openai.com"
-          git rm -f .github/codex-apply-trigger.txt 2>/dev/null || rm -f .github/codex-apply-trigger.txt
-          git add src/components/FirstPersonWorld.jsx
-          if git diff --cached --quiet; then
-            echo "No scoped changes to commit."
-            exit 0
-          fi
-          git commit -m "Improve room performance responsiveness"
-          git push origin HEAD:main
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
