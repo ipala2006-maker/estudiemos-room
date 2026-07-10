@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import { getEquippedSkinState, getSkinVisuals } from '../data/focusEconomy.js';
 import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
 import { Casa1 } from '../maps/Casa1.js';
 import { buildYouTubeEmbedUrl } from '../utils/youtube.js';
@@ -76,7 +77,8 @@ export function FirstPersonWorld({
   screenContentEnabled = controlsEnabled,
   screenZones = DEFAULT_SCREEN_ZONES,
   screenLayout = DEFAULT_SCREEN_LAYOUT,
-  agendaItems = studyAgendaItems
+  agendaItems = studyAgendaItems,
+  focusProgress
 }) {
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
@@ -88,6 +90,7 @@ export function FirstPersonWorld({
   const screenZonesRef = useRef(screenZones);
   const screenLayoutRef = useRef(screenLayout);
   const agendaItemsRef = useRef(agendaItems);
+  const focusProgressRef = useRef(focusProgress);
 
   useEffect(() => {
     controlsEnabledRef.current = controlsEnabled;
@@ -111,6 +114,10 @@ export function FirstPersonWorld({
   useEffect(() => {
     agendaItemsRef.current = agendaItems;
   }, [agendaItems]);
+
+  useEffect(() => {
+    focusProgressRef.current = focusProgress;
+  }, [focusProgress]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -178,6 +185,8 @@ export function FirstPersonWorld({
     scene.add(softFill);
 
     const { giantScreen, colliders } = buildWorldScene(scene);
+    const companionMascot = createCompanionDachshund(getEquippedSkinState(focusProgressRef.current));
+    scene.add(companionMascot.group);
 
     const keys = {
       forward: false,
@@ -393,6 +402,7 @@ export function FirstPersonWorld({
       updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
       updateCssAgendaContent(cssComputerMonitorOccluder, agendaItemsRef.current, 3);
       updateCssAgendaContent(cssAgendaBoard, agendaItemsRef.current, 4);
+      updateCompanionDachshund(companionMascot, camera, delta, doorOpenRef.current, focusProgressRef.current);
       const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
       cssGiantScreen.visible = showPhysicalScreenContent;
       cssComputerMonitorOccluder.visible = showPhysicalScreenContent;
@@ -447,6 +457,272 @@ export function FirstPersonWorld({
   }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, onScreenAimChange, resetRef, toggleDoorRef]);
 
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
+}
+
+function createCompanionDachshund(equippedSkin) {
+  const group = new THREE.Group();
+  group.name = 'estudiemos-3d-dachshund-companion';
+  group.position.set(startPosition.x - 1.35, 0, startPosition.z + 1.65);
+  group.rotation.order = 'YXZ';
+
+  const materials = {
+    body: new THREE.MeshStandardMaterial({ color: 0xb46d3c, roughness: 0.58, metalness: 0.02 }),
+    belly: new THREE.MeshStandardMaterial({ color: 0xf3c391, roughness: 0.64, metalness: 0 }),
+    ear: new THREE.MeshStandardMaterial({ color: 0x743b27, roughness: 0.62, metalness: 0.01 }),
+    accent: new THREE.MeshStandardMaterial({ color: 0x2a6f64, roughness: 0.34, metalness: 0.03 }),
+    glow: new THREE.MeshStandardMaterial({ color: 0xe0c47a, emissive: 0xe0c47a, emissiveIntensity: 0.58, roughness: 0.26, metalness: 0 }),
+    dark: new THREE.MeshStandardMaterial({ color: 0x111819, roughness: 0.48, metalness: 0.04 }),
+    eye: new THREE.MeshStandardMaterial({ color: 0x050706, roughness: 0.24, metalness: 0.02 }),
+    shine: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0 }),
+    shadow: new THREE.MeshBasicMaterial({ color: 0x050706, transparent: true, opacity: 0.18, depthWrite: false })
+  };
+
+  const contactShadow = addDogMesh(
+    group,
+    new THREE.CircleGeometry(0.95, 28),
+    materials.shadow,
+    [0, 0.035, 0],
+    [1.35, 0.52, 1],
+    [-Math.PI / 2, 0, 0]
+  );
+  contactShadow.renderOrder = -1;
+
+  const body = addDogMesh(
+    group,
+    new THREE.CapsuleGeometry(0.3, 1.34, 8, 18),
+    materials.body,
+    [0, 0.58, 0],
+    [1, 0.82, 0.78],
+    [0, 0, Math.PI / 2]
+  );
+  const belly = addDogMesh(group, new THREE.SphereGeometry(0.32, 24, 12), materials.belly, [0.08, 0.45, 0], [1.42, 0.24, 0.58]);
+  const chest = addDogMesh(group, new THREE.SphereGeometry(0.22, 18, 10), materials.belly, [0.62, 0.58, 0], [0.72, 0.82, 0.78]);
+  const head = addDogMesh(group, new THREE.SphereGeometry(0.32, 24, 18), materials.body, [0.88, 0.72, 0], [1.04, 0.92, 0.94]);
+  const snout = addDogMesh(group, new THREE.SphereGeometry(0.18, 18, 12), materials.belly, [1.16, 0.66, 0], [1.22, 0.7, 0.82]);
+  const nose = addDogMesh(group, new THREE.SphereGeometry(0.062, 14, 10), materials.eye, [1.36, 0.68, 0], [1.08, 0.82, 1]);
+  const noseShine = addDogMesh(group, new THREE.SphereGeometry(0.018, 8, 6), materials.shine, [1.39, 0.705, 0.024], [1, 1, 1]);
+
+  const leftEar = addDogMesh(
+    group,
+    new THREE.CapsuleGeometry(0.095, 0.42, 6, 10),
+    materials.ear,
+    [0.74, 0.58, -0.25],
+    [0.85, 1, 0.58],
+    [0.18, 0.2, 0.1]
+  );
+  const rightEar = addDogMesh(
+    group,
+    new THREE.CapsuleGeometry(0.095, 0.42, 6, 10),
+    materials.ear,
+    [0.74, 0.58, 0.25],
+    [0.85, 1, 0.58],
+    [-0.18, -0.2, 0.1]
+  );
+
+  const eyes = [
+    addDogMesh(group, new THREE.SphereGeometry(0.035, 10, 8), materials.eye, [1.14, 0.79, -0.12], [1, 1, 1]),
+    addDogMesh(group, new THREE.SphereGeometry(0.035, 10, 8), materials.eye, [1.14, 0.79, 0.12], [1, 1, 1])
+  ];
+  eyes.forEach((eye) => {
+    addDogMesh(group, new THREE.SphereGeometry(0.011, 6, 4), materials.shine, [eye.position.x + 0.018, eye.position.y + 0.012, eye.position.z + 0.008], [1, 1, 1]);
+  });
+
+  const legs = [
+    addDogLeg(group, materials.ear, materials.belly, [-0.45, 0.29, -0.2]),
+    addDogLeg(group, materials.ear, materials.belly, [0.45, 0.29, -0.2]),
+    addDogLeg(group, materials.ear, materials.belly, [-0.45, 0.29, 0.2]),
+    addDogLeg(group, materials.ear, materials.belly, [0.45, 0.29, 0.2])
+  ];
+
+  const tail = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.72, 0.66, 0),
+        new THREE.Vector3(-0.98, 0.82, 0.03),
+        new THREE.Vector3(-1.18, 0.98, 0.12)
+      ]),
+      18,
+      0.03,
+      8,
+      false
+    ),
+    materials.ear
+  );
+  tail.castShadow = true;
+  group.add(tail);
+
+  const collar = addDogMesh(group, new THREE.TorusGeometry(0.205, 0.024, 8, 28), materials.accent, [0.62, 0.67, 0], [1, 1.1, 0.86], [0, Math.PI / 2, 0]);
+  const tag = addDogMesh(group, new THREE.CylinderGeometry(0.055, 0.055, 0.018, 18), materials.glow, [0.78, 0.49, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
+
+  const cyberGroup = new THREE.Group();
+  cyberGroup.name = 'dachshund-cyber-kit';
+  cyberGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.12, 0.42), materials.glow));
+  cyberGroup.children[0].position.set(1.19, 0.79, 0);
+  cyberGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.055, 0.88), materials.glow));
+  cyberGroup.children[1].position.set(0.04, 0.86, 0);
+  group.add(cyberGroup);
+
+  const engineerGroup = new THREE.Group();
+  engineerGroup.name = 'dachshund-engineer-kit';
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 8, 0, Math.PI * 2, 0, Math.PI / 2), materials.glow);
+  helmet.position.set(0.88, 0.95, 0);
+  helmet.scale.set(1.06, 0.74, 0.88);
+  engineerGroup.add(helmet);
+  const brim = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.045, 0.14), materials.glow);
+  brim.position.set(1.06, 0.88, 0);
+  engineerGroup.add(brim);
+  group.add(engineerGroup);
+
+  const premiumRing = addDogMesh(group, new THREE.TorusGeometry(0.78, 0.018, 8, 48), materials.glow, [0, 0.58, 0], [1, 0.16, 0.58], [Math.PI / 2, 0, 0]);
+  const legendaryGroup = new THREE.Group();
+  legendaryGroup.name = 'dachshund-legendary-stars';
+  [
+    [-0.42, 1.08, -0.36],
+    [0.24, 1.18, 0.38],
+    [0.78, 1.03, -0.28]
+  ].forEach((position) => {
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.07, 0), materials.glow);
+    star.position.set(...position);
+    legendaryGroup.add(star);
+  });
+  group.add(legendaryGroup);
+
+  const companion = {
+    group,
+    materials,
+    body,
+    belly,
+    chest,
+    head,
+    snout,
+    nose,
+    noseShine,
+    ears: [leftEar, rightEar],
+    legs,
+    tail,
+    collar,
+    tag,
+    cyberGroup,
+    engineerGroup,
+    premiumRing,
+    legendaryGroup,
+    visualKey: '',
+    walkPhase: 0,
+    lastPosition: group.position.clone(),
+    scratch: {
+      forward: new THREE.Vector3(),
+      right: new THREE.Vector3(),
+      target: new THREE.Vector3(),
+      velocity: new THREE.Vector3()
+    }
+  };
+
+  addGroupEdges(group, 0x080b0b, 0.12);
+  applyCompanionDachshundVisuals(companion, equippedSkin);
+  return companion;
+}
+
+function addDogMesh(group, geometry, material, position, scale = [1, 1, 1], rotation = [0, 0, 0]) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(...position);
+  mesh.scale.set(...scale);
+  mesh.rotation.set(...rotation);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+  return mesh;
+}
+
+function addDogLeg(group, legMaterial, pawMaterial, position) {
+  const leg = addDogMesh(group, new THREE.CylinderGeometry(0.058, 0.072, 0.42, 12), legMaterial, position);
+  const paw = addDogMesh(group, new THREE.SphereGeometry(0.095, 12, 8), pawMaterial, [position[0] + 0.035, 0.08, position[2]], [1.26, 0.46, 0.86]);
+  return { leg, paw, baseX: position[0], baseZ: position[2] };
+}
+
+function updateCompanionDachshund(companion, camera, delta, isInterior, progress) {
+  applyCompanionDachshundVisuals(companion, getEquippedSkinState(progress));
+
+  const { forward, right, target, velocity } = companion.scratch;
+  camera.getWorldDirection(forward);
+  forward.y = 0;
+  if (forward.lengthSq() < 0.001) forward.set(0, 0, -1);
+  forward.normalize();
+  right.crossVectors(forward, camera.up).normalize();
+
+  target.copy(camera.position);
+  target.addScaledVector(right, -1.34);
+  target.addScaledVector(forward, -1.78);
+  target.y = 0;
+
+  const bounds = isInterior ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
+  target.x = clamp(target.x, bounds.minX + 1.1, bounds.maxX - 1.1);
+  target.z = clamp(target.z, bounds.minZ + 1.1, bounds.maxZ - 1.1);
+
+  if (companion.group.position.distanceTo(target) > 18) {
+    companion.group.position.copy(target);
+    companion.lastPosition.copy(target);
+  } else {
+    companion.group.position.lerp(target, 1 - Math.exp(-6.2 * delta));
+  }
+
+  velocity.copy(companion.group.position).sub(companion.lastPosition);
+  const speed = velocity.length() / Math.max(delta, 0.001);
+  const walkAmount = clamp(speed / WALK_SPEED, 0, 1);
+  if (speed > 0.03) {
+    const desiredYaw = Math.atan2(-velocity.z, velocity.x);
+    companion.group.rotation.y = dampAngle(companion.group.rotation.y, desiredYaw, 12, delta);
+  }
+
+  companion.walkPhase += delta * (4.8 + walkAmount * 7.5);
+  const stride = Math.sin(companion.walkPhase) * 0.34 * walkAmount;
+  const counterStride = Math.sin(companion.walkPhase + Math.PI) * 0.34 * walkAmount;
+  companion.legs.forEach((part, index) => {
+    const swing = index % 2 === 0 ? stride : counterStride;
+    part.leg.rotation.z = swing;
+    part.paw.position.x = part.baseX + swing * 0.12;
+  });
+
+  const bob = Math.sin(companion.walkPhase * 2) * 0.025 * walkAmount;
+  companion.body.position.y = 0.58 + bob;
+  companion.belly.position.y = 0.45 + bob * 0.55;
+  companion.chest.position.y = 0.58 + bob * 0.7;
+  companion.head.position.y = 0.72 + bob * 0.9;
+  companion.snout.position.y = 0.66 + bob * 0.9;
+  companion.nose.position.y = 0.68 + bob * 0.9;
+  companion.noseShine.position.y = 0.705 + bob * 0.9;
+  companion.tail.rotation.z = 0.16 + Math.sin(companion.walkPhase * 1.6) * 0.18;
+  companion.legendaryGroup.rotation.y += delta * 1.6;
+
+  companion.lastPosition.copy(companion.group.position);
+}
+
+function applyCompanionDachshundVisuals(companion, equippedSkin) {
+  const skin = equippedSkin?.skin;
+  const rank = Math.max(1, equippedSkin?.rank ?? 1);
+  const visualKey = `${skin?.id ?? 'classic'}-${rank}`;
+  if (companion.visualKey === visualKey) return;
+
+  const visuals = getSkinVisuals(skin?.id, rank);
+  setMaterialColor(companion.materials.body, visuals.body);
+  setMaterialColor(companion.materials.belly, visuals.belly);
+  setMaterialColor(companion.materials.ear, visuals.ear);
+  setMaterialColor(companion.materials.accent, visuals.accent);
+  setMaterialColor(companion.materials.glow, visuals.glow);
+
+  companion.group.scale.setScalar(0.92 * visuals.scale);
+  companion.cyberGroup.visible = skin?.id === 'cyber';
+  companion.engineerGroup.visible = skin?.id === 'engineer';
+  companion.premiumRing.visible = rank >= 5;
+  companion.legendaryGroup.visible = rank >= 7;
+  companion.materials.glow.emissiveIntensity = rank >= 7 ? 0.92 : rank >= 5 ? 0.68 : 0.42;
+  companion.materials.shadow.opacity = rank >= 5 ? 0.22 : 0.17;
+  companion.visualKey = visualKey;
+}
+
+function setMaterialColor(material, color) {
+  material.color.set(color);
+  if (material.emissive) material.emissive.set(color);
+  material.needsUpdate = true;
 }
 
 function createCssComputerMonitorOccluderObject() {
@@ -3348,4 +3624,9 @@ function drawCorkTexture(ctx) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function dampAngle(current, target, lambda, delta) {
+  const deltaAngle = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  return current + deltaAngle * (1 - Math.exp(-lambda * delta));
 }

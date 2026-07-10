@@ -971,6 +971,10 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
               <h3>{selectedSkin.name}</h3>
               <p>{selectedSkin.description}</p>
               <strong>Vista previa rango {selectedRank}</strong>
+              <button type="button" className="focus-open-shop-button" onClick={() => setActiveFocusTab('shop')}>
+                <PawPrint size={17} aria-hidden="true" />
+                <span>Abrir tienda de skins</span>
+              </button>
             </div>
           </article>
 

@@ -211,6 +211,7 @@ function App() {
         screenZones={screenZones}
         screenLayout={screenLayout}
         agendaItems={agendaItems}
+        focusProgress={focusEconomy.progress}
       />
 
       <Hud

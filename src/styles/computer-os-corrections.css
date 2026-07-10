@@ -1055,6 +1055,11 @@
     #eef4ef;
 }
 
+.estudiemos-os-live-desktop .focus-profile-app {
+  align-content: stretch;
+  overflow: auto;
+}
+
 .focus-hero-panel,
 .focus-progress-panel,
 .focus-skin-card,
@@ -1206,13 +1211,18 @@
 }
 
 .focus-profile-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 6;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   padding: 6px;
   border: 1px solid rgba(32, 48, 46, 0.1);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 24px rgba(31, 45, 40, 0.08);
 }
 
 .focus-profile-tabs button {
@@ -1290,6 +1300,27 @@
   color: #20302e;
   font-size: 0.92rem;
   font-weight: 900;
+}
+
+.focus-open-shop-button {
+  width: fit-content;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid rgba(42, 111, 100, 0.24);
+  border-radius: 8px;
+  color: #13201d;
+  background: #e0c47a;
+  font-weight: 900;
+  box-shadow: 0 10px 20px rgba(32, 48, 46, 0.1);
+}
+
+.focus-open-shop-button:hover {
+  filter: saturate(1.05);
+  transform: translateY(-1px);
 }
 
 .focus-availability-panel {
