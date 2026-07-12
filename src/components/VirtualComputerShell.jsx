@@ -4,6 +4,7 @@ import {
   Coins,
   Globe2,
   MonitorUp,
+  Music2,
   PawPrint,
   Settings,
   Sparkles,
@@ -39,6 +40,14 @@ const DESKTOP_APPS = [
     state: 'Listo',
     icon: CalendarDays,
     action: 'agenda'
+  },
+  {
+    id: 'spotify',
+    title: 'Spotify',
+    subtitle: 'Musica de fondo',
+    state: 'Listo',
+    icon: Music2,
+    action: 'spotify'
   },
   {
     id: 'focus',

@@ -99,7 +99,7 @@ function App() {
     upper: createEmptyScreenZone(),
     lower: createEmptyScreenZone()
   });
-  const hasScreenContent = Object.values(screenZones).some((zone) => Boolean(zone.videoId || zone.resourceUrl));
+  const hasScreenContent = Object.values(screenZones).some((zone) => zone.contentType !== 'spotify' && Boolean(zone.videoId || zone.resourceUrl));
   const focusEconomy = useFocusEconomy({
     enabled: hasStarted,
     hasScreenContent,

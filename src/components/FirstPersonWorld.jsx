@@ -1227,7 +1227,7 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
 
   layout.slots.forEach((slotConfig) => {
     const zone = screenZones[slotConfig.zoneId];
-    const src = zone.contentType === 'pdf' ? buildPdfEmbedUrl(zone.resourceUrl) : buildYouTubeEmbedUrl(zone);
+    const src = buildScreenEmbedUrl(zone);
     const displayScale = clampScreenDisplayScale(zone.displayScale);
     const scaleValue = String(displayScale / 100);
     const slot = document.createElement('div');
@@ -1246,7 +1246,7 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       slot.appendChild(iframe);
       const loading = document.createElement('span');
       loading.className = 'physical-screen-loading';
-      loading.textContent = 'Cargando video';
+      loading.textContent = zone.contentType === 'spotify' ? 'Cargando Spotify' : 'Cargando video';
       slot.appendChild(loading);
       iframe.addEventListener('load', () => {
         slot.classList.add('is-loaded');
@@ -1258,7 +1258,7 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       const slotLabel = document.createElement('span');
       slotLabel.textContent = slotConfig.slotLabel;
       const emptyLabel = document.createElement('strong');
-      emptyLabel.textContent = 'Sin video';
+      emptyLabel.textContent = 'Sin contenido';
       placeholder.append(slotLabel, emptyLabel);
       slot.appendChild(placeholder);
     }
@@ -1337,6 +1337,12 @@ function postYouTubeCommand(iframe, func, args = []) {
 function buildPdfEmbedUrl(resourceUrl) {
   if (!resourceUrl) return '';
   return `${resourceUrl}#toolbar=0&navpanes=0&view=FitH`;
+}
+
+function buildScreenEmbedUrl(zone) {
+  if (zone.contentType === 'pdf') return buildPdfEmbedUrl(zone.resourceUrl);
+  if (zone.contentType === 'spotify') return zone.resourceUrl || zone.embedUrl || '';
+  return buildYouTubeEmbedUrl(zone);
 }
 
 function isCameraAimingAtGiantScreen(camera, isInterior, directionScratch) {
@@ -3235,7 +3241,7 @@ function clampScreenDisplayScale(value) {
 
 function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel, accent, isPrimary }) {
   const hasContent = Boolean(zone.videoId || zone.resourceUrl);
-  const contentLabel = zone.contentType === 'pdf' ? 'PDF' : 'YOUTUBE';
+  const contentLabel = zone.contentType === 'pdf' ? 'PDF' : zone.contentType === 'spotify' ? 'SPOTIFY' : 'YOUTUBE';
   const innerX = x + 34;
   const innerY = y + (isPrimary ? 36 : 24);
   const titleSize = isPrimary ? 64 : Math.min(34, Math.max(24, Math.round(width * 0.07)));
@@ -3283,13 +3289,15 @@ function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel,
     ctx.fillText(
       zone.contentType === 'pdf'
         ? `Documento de Estudiemos - Tamano ${clampScreenDisplayScale(zone.displayScale)}%`
+        : zone.contentType === 'spotify'
+          ? `Musica de fondo - Tamano ${clampScreenDisplayScale(zone.displayScale)}%`
         : `${zone.muted ? 'Mute activo' : 'Audio activo'} - Volumen ${zone.volume}% - Tamano ${clampScreenDisplayScale(zone.displayScale)}%`,
       innerX,
       innerY + (isPrimary ? 242 : 164),
       textMaxWidth
     );
   } else {
-    ctx.fillText(`Canal ${slotLabel} listo para recibir YouTube`, innerX, innerY + (isPrimary ? 205 : 136), textMaxWidth);
+    ctx.fillText(`Canal ${slotLabel} listo para recibir contenido`, innerX, innerY + (isPrimary ? 205 : 136), textMaxWidth);
   }
 
   ctx.fillStyle = accent;

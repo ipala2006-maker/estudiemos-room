@@ -16,6 +16,7 @@
   Maximize2,
   Minimize2,
   MonitorUp,
+  Music2,
   NotebookPen,
   PanelRightOpen,
   Pause,
@@ -59,6 +60,7 @@ import {
 } from '../data/focusEconomy.js';
 import { studyAgendaItems } from '../data/studyAgenda.js';
 import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingenieriaRecursos.js';
+import { parseSpotifyUrl } from '../utils/spotify.js';
 import { parseYouTubeUrl } from '../utils/youtube.js';
 
 const ZONES = [
@@ -120,6 +122,15 @@ const DESKTOP_APPS = [
     functional: true
   },
   {
+    id: 'spotify',
+    title: 'Spotify',
+    subtitle: 'Musica de fondo',
+    description: 'Reproductor embebido para canciones, playlists, albumes y podcasts.',
+    icon: Music2,
+    state: 'Listo',
+    functional: true
+  },
+  {
     id: 'focus',
     title: 'Perfil',
     subtitle: 'Monedas y skins',
@@ -166,6 +177,7 @@ const EMPTY_ROUTE = {
 };
 
 const COMPUTER_SETTINGS_STORAGE_KEY = 'estudiemos-room-computer-settings';
+const SPOTIFY_STORAGE_KEY = 'estudiemos-room-spotify-content';
 const DEFAULT_COMPUTER_SETTINGS = {
   largeText: false,
   highContrast: false,
@@ -243,6 +255,17 @@ function loadComputerSettings() {
   }
 }
 
+function loadStoredSpotifyContent() {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const savedContent = JSON.parse(window.localStorage.getItem(SPOTIFY_STORAGE_KEY) ?? 'null');
+    return savedContent?.embedUrl && savedContent?.id ? savedContent : null;
+  } catch {
+    return null;
+  }
+}
+
 export function ComputerUI({
   onClose,
   screenZones,
@@ -271,6 +294,9 @@ export function ComputerUI({
   const [systemNote, setSystemNote] = useState('Sesion enfocada lista');
   const [actionFeedback, setActionFeedback] = useState('');
   const [computerSettings, setComputerSettings] = useState(loadComputerSettings);
+  const [spotifyDraft, setSpotifyDraft] = useState('');
+  const [spotifyError, setSpotifyError] = useState('');
+  const [spotifyContent, setSpotifyContent] = useState(loadStoredSpotifyContent);
   const feedbackTimerRef = useRef(0);
 
   useEffect(() => {
@@ -283,6 +309,15 @@ export function ComputerUI({
   useEffect(() => {
     window.localStorage.setItem(COMPUTER_SETTINGS_STORAGE_KEY, JSON.stringify(computerSettings));
   }, [computerSettings]);
+
+  useEffect(() => {
+    if (spotifyContent) {
+      window.localStorage.setItem(SPOTIFY_STORAGE_KEY, JSON.stringify(spotifyContent));
+      return;
+    }
+
+    window.localStorage.removeItem(SPOTIFY_STORAGE_KEY);
+  }, [spotifyContent]);
 
   const carreras = ingenieriaRecursosData.carreras;
   const carrera = useMemo(
@@ -447,6 +482,53 @@ export function ComputerUI({
     });
     setSystemNote('Link listo para enviar');
     showActionFeedback('Link preparado');
+  }
+
+  function loadSpotifyContent(event) {
+    event.preventDefault();
+    const result = parseSpotifyUrl(spotifyDraft);
+
+    if (!result.ok) {
+      setSpotifyError(result.error);
+      setSystemNote('Link de Spotify no valido');
+      showActionFeedback('Spotify no cargado');
+      return;
+    }
+
+    setSpotifyContent(result.item);
+    setSpotifyDraft('');
+    setSpotifyError('');
+    setSystemNote(`${result.item.label} de Spotify cargado`);
+    showActionFeedback('Spotify cargado');
+  }
+
+  function clearSpotifyContent() {
+    setSpotifyContent(null);
+    setSpotifyDraft('');
+    setSpotifyError('');
+    setSystemNote('Spotify limpio');
+    showActionFeedback('Spotify limpio');
+  }
+
+  function sendSpotifyToSecondary() {
+    if (!spotifyContent) return;
+
+    onAssignVideo('lower', {
+      videoId: '',
+      inputUrl: spotifyContent.inputUrl,
+      watchUrl: spotifyContent.watchUrl,
+      embedUrl: spotifyContent.embedUrl,
+      contentType: 'spotify',
+      resourceUrl: spotifyContent.embedUrl,
+      title: spotifyContent.title,
+      creator: 'Spotify',
+      muted: false,
+      volume: 70,
+      displayScale: 100,
+      updatedAt: Date.now()
+    });
+    setSystemNote('Spotify enviado a pantalla derecha');
+    showActionFeedback('Spotify en pantalla derecha');
   }
 
   function assignContent(zoneId, layoutId = null) {
@@ -650,6 +732,11 @@ export function ComputerUI({
                 <strong>{agendaLead ? getAgendaDisplayTitle(agendaLead) : 'Agenda vacia'}</strong>
                 <p>{agendaLead ? getAgendaDisplayDetail(agendaLead) : 'No hay bloques cargados.'}</p>
               </div>
+              <div className="os-glance-card os-spotify-sync-card">
+                <span>Spotify</span>
+                <strong>{spotifyContent?.title ?? 'Sin musica cargada'}</strong>
+                <p>{spotifyContent ? `${spotifyContent.label} listo para estudiar.` : 'Abrir Spotify para cargar musica de fondo.'}</p>
+              </div>
             </section>
 
             <main className="os-window-stage" aria-label="Ventanas abiertas">
@@ -737,6 +824,32 @@ export function ComputerUI({
                     onRemoveItem={removeAgendaItem}
                     onClearDate={clearAgendaDate}
                     onClearAll={clearAgendaItems}
+                  />
+                </OSWindow>
+              )}
+
+              {openWindows.includes('spotify') && !minimizedWindows.includes('spotify') && (
+                <OSWindow
+                  appId="spotify"
+                  title="Spotify"
+                  subtitle="Musica de fondo"
+                  icon={Music2}
+                  focused={focusedWindow === 'spotify'}
+                  onFocus={focusWindow}
+                  onMinimize={minimizeWindow}
+                  onClose={closeWindow}
+                >
+                  <SpotifyApp
+                    draft={spotifyDraft}
+                    error={spotifyError}
+                    content={spotifyContent}
+                    onDraftChange={(value) => {
+                      setSpotifyDraft(value);
+                      setSpotifyError('');
+                    }}
+                    onLoad={loadSpotifyContent}
+                    onClear={clearSpotifyContent}
+                    onSendSecondary={sendSpotifyToSecondary}
                   />
                 </OSWindow>
               )}
@@ -1609,6 +1722,87 @@ function SettingToggle({ title, description, checked, onChange }) {
       </span>
       <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
     </label>
+  );
+}
+
+function SpotifyApp({ draft, error, content, onDraftChange, onLoad, onClear, onSendSecondary }) {
+  return (
+    <div className="os-fullscreen-app spotify-app-shell">
+      <section className="spotify-hero-panel" aria-label="Spotify en Estudiemos Room">
+        <div>
+          <span>Musica de fondo</span>
+          <h2>Spotify</h2>
+          <p>Carga canciones, playlists, albumes o podcasts con el reproductor oficial embebido.</p>
+        </div>
+        <div className="spotify-current-card">
+          <Music2 size={24} aria-hidden="true" />
+          <span>{content ? content.label : 'Sin contenido'}</span>
+          <strong>{content?.title ?? 'Pega un link para empezar'}</strong>
+        </div>
+      </section>
+
+      <section className="spotify-workspace">
+        <form className="spotify-link-panel" onSubmit={onLoad}>
+          <label htmlFor="spotify-room-link">Link de Spotify</label>
+          <div className="spotify-input-row">
+            <input
+              id="spotify-room-link"
+              type="text"
+              inputMode="url"
+              placeholder="https://open.spotify.com/playlist/..."
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+            />
+            <button type="submit">
+              <Play size={17} aria-hidden="true" />
+              <span>Cargar</span>
+            </button>
+          </div>
+          {error && <p className="screen-zone-error">{error}</p>}
+          <div className="spotify-support-list" aria-label="Tipos soportados">
+            <span>Canciones</span>
+            <span>Playlists</span>
+            <span>Albumes</span>
+            <span>Podcasts</span>
+            <span>Episodios</span>
+          </div>
+        </form>
+
+        <aside className="spotify-action-panel">
+          <button type="button" onClick={onSendSecondary} disabled={!content}>
+            <MonitorUp size={18} aria-hidden="true" />
+            <span>Enviar a pantalla derecha</span>
+          </button>
+          <button type="button" onClick={onClear} disabled={!content}>
+            <Eraser size={18} aria-hidden="true" />
+            <span>Limpiar Spotify</span>
+          </button>
+          {content && (
+            <a href={content.watchUrl} target="_blank" rel="noreferrer">
+              <ExternalLink size={17} aria-hidden="true" />
+              <span>Abrir en Spotify</span>
+            </a>
+          )}
+        </aside>
+      </section>
+
+      <section className={`spotify-player-panel${content ? ' is-loaded' : ''}`} aria-label="Reproductor de Spotify">
+        {content ? (
+          <iframe
+            title={content.title}
+            src={content.embedUrl}
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+          />
+        ) : (
+          <div className="spotify-empty-player">
+            <Music2 size={34} aria-hidden="true" />
+            <strong>Spotify listo</strong>
+            <span>El reproductor aparece aca cuando cargues un link compatible.</span>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 
