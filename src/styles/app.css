@@ -3959,10 +3959,6 @@ select {
     #ddebe8;
 }
 
-.skin-cyber .dachshund-render-image {
-  filter: saturate(0.98) hue-rotate(6deg) contrast(1.04);
-}
-
 .skin-engineer .dachshund-render-card {
   border-color: rgba(224, 158, 79, 0.34);
   background:
