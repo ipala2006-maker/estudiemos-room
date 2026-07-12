@@ -774,6 +774,11 @@
     #eef4ef;
 }
 
+.agenda-app-shell:focus-visible {
+  outline: 2px solid rgba(42, 111, 100, 0.42);
+  outline-offset: -4px;
+}
+
 .agenda-app-header,
 .settings-app-header {
   min-width: 0;
@@ -1008,6 +1013,11 @@
   background:
     radial-gradient(circle at 20% 8%, rgba(49, 202, 111, 0.22), transparent 34%),
     linear-gradient(135deg, #101816 0%, #192621 48%, #0f1414 100%);
+}
+
+.spotify-app-shell:focus-visible {
+  outline: 2px solid rgba(30, 215, 96, 0.5);
+  outline-offset: -4px;
 }
 
 .spotify-hero-panel {

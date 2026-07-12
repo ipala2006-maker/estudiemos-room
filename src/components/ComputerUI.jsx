@@ -268,12 +268,46 @@ function loadStoredSpotifyContent() {
   }
 }
 
+function isTextEntryElement(element) {
+  const tagName = element?.tagName?.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable);
+}
+
 function scrollPanelBy(targetRef, left, top) {
   targetRef.current?.scrollBy({
     left,
     top,
     behavior: 'smooth'
   });
+}
+
+function getArrowScrollDelta(key) {
+  if (key === 'ArrowUp') return [0, -260];
+  if (key === 'ArrowDown') return [0, 260];
+  if (key === 'ArrowLeft') return [-260, 0];
+  if (key === 'ArrowRight') return [260, 0];
+  return null;
+}
+
+function handlePanelArrowKey(event, targetRef) {
+  const delta = getArrowScrollDelta(event.key);
+  if (!delta || isTextEntryElement(event.target)) return;
+
+  event.preventDefault();
+  scrollPanelBy(targetRef, delta[0], delta[1]);
+}
+
+function useArrowKeyScroll(active, targetRef) {
+  useEffect(() => {
+    if (!active) return undefined;
+
+    function onKeyDown(event) {
+      handlePanelArrowKey(event, targetRef);
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [active, targetRef]);
 }
 
 export function ComputerUI({
@@ -836,6 +870,7 @@ export function ComputerUI({
                   onClose={closeWindow}
                 >
                   <AgendaApp
+                    active={focusedWindow === 'agenda'}
                     agendaItems={agendaItems}
                     onUpdateItem={updateAgendaItem}
                     onAddItem={addAgendaItem}
@@ -859,6 +894,7 @@ export function ComputerUI({
                   onClose={closeWindow}
                 >
                   <SpotifyApp
+                    active={focusedWindow === 'spotify'}
                     draft={spotifyDraft}
                     error={spotifyError}
                     content={spotifyContent}
@@ -1314,7 +1350,7 @@ function getRankCostGuide(rank) {
   return `R${previousRank}->R${rank}: Comun ${SKIN_COST_TABLE.common.upgrades[previousRank]}, Rara ${SKIN_COST_TABLE.rare.upgrades[previousRank]}, Legendaria ${SKIN_COST_TABLE.legendary.upgrades[previousRank]}.`;
 }
 
-function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClearDate, onClearAll, onRestoreInitial }) {
+function AgendaApp({ active, agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClearDate, onClearAll, onRestoreInitial }) {
   const shellRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(() => agendaItems[0]?.date ?? getTodayDateValue());
   const [calendarCursor, setCalendarCursor] = useState(() => parseAgendaDate(agendaItems[0]?.date ?? getTodayDateValue()));
@@ -1363,6 +1399,14 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
   const selectedDoneCount = selectedDateItems.length - selectedOpenCount;
   const todayCount = agendaCountsByDate[getTodayDateValue()]?.total ?? 0;
   const nextAgendaItem = activeAgendaItems.find((item) => (item.date ?? '') >= getTodayDateValue()) ?? activeAgendaItems[0] ?? null;
+
+  useArrowKeyScroll(active, shellRef);
+
+  useEffect(() => {
+    if (active && !isTextEntryElement(document.activeElement)) {
+      shellRef.current?.focus({ preventScroll: true });
+    }
+  }, [active]);
 
   useEffect(() => {
     setQuickDate(selectedDate);
@@ -1434,7 +1478,7 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
   }
 
   return (
-    <div className="os-fullscreen-app agenda-app-shell" ref={shellRef}>
+    <div className="os-fullscreen-app agenda-app-shell" ref={shellRef} tabIndex={0}>
       <header className="agenda-app-header">
         <div>
           <span>Agenda sincronizada</span>
@@ -1795,11 +1839,19 @@ function ScrollPad({ targetRef, label = 'Mover panel', tone = 'light' }) {
   );
 }
 
-function SpotifyApp({ draft, error, content, onDraftChange, onLoad, onClear, onSendSecondary }) {
+function SpotifyApp({ active, draft, error, content, onDraftChange, onLoad, onClear, onSendSecondary }) {
   const shellRef = useRef(null);
 
+  useArrowKeyScroll(active, shellRef);
+
+  useEffect(() => {
+    if (active && !isTextEntryElement(document.activeElement)) {
+      shellRef.current?.focus({ preventScroll: true });
+    }
+  }, [active]);
+
   return (
-    <div className="os-fullscreen-app spotify-app-shell" ref={shellRef}>
+    <div className="os-fullscreen-app spotify-app-shell" ref={shellRef} tabIndex={0}>
       <section className="spotify-hero-panel" aria-label="Spotify en Estudiemos Room">
         <div>
           <span>Musica de fondo</span>
