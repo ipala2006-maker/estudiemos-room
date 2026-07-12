@@ -55,14 +55,15 @@ function normalizeAgendaItems(items) {
   if (!Array.isArray(items)) return createStudyAgendaItems();
 
   return items
+    .filter((item) => item && typeof item === 'object')
     .map((item, index) => ({
       id: String(item?.id ?? '').trim() || createAgendaItemId(item, index),
       date: normalizeAgendaDate(item?.date),
-      time: String(item?.time ?? '').slice(0, 5),
+      time: /^\d{2}:\d{2}$/.test(String(item?.time ?? '').slice(0, 5)) ? String(item?.time ?? '').slice(0, 5) : '',
       title: String(item?.title ?? '').trim().slice(0, 48),
-      detail: String(item?.detail ?? '').trim().slice(0, 96)
-    }))
-    .filter((item) => item.time && item.title);
+      detail: String(item?.detail ?? '').trim().slice(0, 96),
+      completed: Boolean(item?.completed)
+    }));
 }
 
 function loadStoredAgendaItems() {

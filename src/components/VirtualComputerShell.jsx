@@ -61,6 +61,8 @@ const DESKTOP_APPS = [
 export function VirtualComputerShell(props) {
   const { agendaItems = studyAgendaItems, focusEconomy } = props;
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
+  const agendaPreviewItems = agendaItems.filter((item) => !item.completed);
+  const agendaLead = agendaPreviewItems[0] ?? agendaItems[0] ?? null;
   const [appOpen, setAppOpen] = useState(false);
   const [initialApp, setInitialApp] = useState('estudiemos');
 
@@ -157,17 +159,22 @@ export function VirtualComputerShell(props) {
                 <div>
                   <CalendarDays size={18} aria-hidden="true" />
                   <strong>Agenda</strong>
-                  <span>{agendaItems[0]?.title ?? 'Sin bloques'}</span>
+                  <span>{agendaLead?.title || 'Sin bloques'}</span>
                 </div>
               </div>
               <div className="virtual-agenda-list" aria-label="Agenda sincronizada">
-                {agendaItems.length > 0 ? (
-                  agendaItems.slice(0, 3).map((item) => (
-                    <span key={`${item.time}-${item.title}`}>
-                      <strong>{item.time}</strong>
-                      {item.title}
+                {agendaPreviewItems.length > 0 ? (
+                  agendaPreviewItems.slice(0, 3).map((item) => (
+                    <span key={`${item.id}-${item.time}`}>
+                      <strong>{item.time || '--:--'}</strong>
+                      {item.title || 'Bloque sin titulo'}
                     </span>
                   ))
+                ) : agendaItems.length > 0 ? (
+                  <span>
+                    <strong>OK</strong>
+                    Todo completado
+                  </span>
                 ) : (
                   <span>
                     <strong>--:--</strong>

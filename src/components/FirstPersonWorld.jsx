@@ -1045,20 +1045,21 @@ function updateCssAgendaContent(object, agendaItems, limit) {
   const list = object.userData.agendaList;
   if (!list) return;
 
-  const items = sortAgendaItemsBySchedule(Array.isArray(agendaItems) ? agendaItems : studyAgendaItems).slice(0, limit);
-  const nextKey = JSON.stringify(items.map((item) => [item.date, item.time, item.title, item.detail]));
+  const sourceItems = sortAgendaItemsBySchedule(Array.isArray(agendaItems) ? agendaItems : studyAgendaItems);
+  const items = sourceItems.filter((item) => !item.completed).slice(0, limit);
+  const nextKey = JSON.stringify(sourceItems.map((item) => [item.date, item.time, item.title, item.detail, item.completed]));
   if (object.userData.agendaStateKey === nextKey) return;
 
   object.userData.agendaStateKey = nextKey;
   if (items.length === 0) {
     const row = document.createElement('div');
     const time = document.createElement('span');
-    time.textContent = '--:--';
+    time.textContent = sourceItems.length > 0 ? 'OK' : '--:--';
     const copy = document.createElement('p');
     const task = document.createElement('strong');
-    task.textContent = 'Agenda vacia';
+    task.textContent = sourceItems.length > 0 ? 'Todo completado' : 'Agenda vacia';
     const detail = document.createElement('small');
-    detail.textContent = 'Agrega bloques desde la computadora';
+    detail.textContent = sourceItems.length > 0 ? 'No quedan bloques pendientes' : 'Agrega bloques desde la computadora';
     copy.append(task, detail);
     row.append(time, copy);
     list.replaceChildren(row);
@@ -1069,12 +1070,12 @@ function updateCssAgendaContent(object, agendaItems, limit) {
     ...items.map((item) => {
       const row = document.createElement('div');
       const time = document.createElement('span');
-      time.textContent = item.time;
+      time.textContent = item.time || '--:--';
       const copy = document.createElement('p');
       const task = document.createElement('strong');
-      task.textContent = item.title;
+      task.textContent = item.title || 'Bloque sin titulo';
       const detail = document.createElement('small');
-      detail.textContent = item.date ? `${formatAgendaDate(item.date)} - ${item.detail}` : item.detail;
+      detail.textContent = item.date ? `${formatAgendaDate(item.date)} - ${item.detail || 'Sin detalle cargado'}` : item.detail || 'Sin detalle cargado';
       copy.append(task, detail);
       row.append(time, copy);
       return row;
@@ -2942,19 +2943,34 @@ function createDeskMonitorTexture(agendaItems) {
   ctx.font = '700 22px system-ui, sans-serif';
   ctx.fillText('Agenda sincronizada', 500, 50);
 
-  agendaItems.slice(0, 3).forEach((item, index) => {
+  const monitorItems = agendaItems.filter((item) => !item.completed).slice(0, 3);
+  if (monitorItems.length === 0) {
+    ctx.fillStyle = 'rgba(255, 211, 132, 0.22)';
+    ctx.fillRect(44, 104, 680, 74);
+    ctx.fillStyle = '#ffd384';
+    ctx.font = '900 28px system-ui, sans-serif';
+    ctx.fillText(agendaItems.length > 0 ? 'OK' : '--:--', 68, 150);
+    ctx.fillStyle = '#f5ead1';
+    ctx.font = '900 28px system-ui, sans-serif';
+    ctx.fillText(agendaItems.length > 0 ? 'Todo completado' : 'Agenda vacia', 166, 148);
+    ctx.fillStyle = 'rgba(245,234,209,0.62)';
+    ctx.font = '700 18px system-ui, sans-serif';
+    ctx.fillText(agendaItems.length > 0 ? 'No quedan bloques pendientes' : 'Agrega bloques desde la computadora', 166, 174);
+  }
+
+  monitorItems.forEach((item, index) => {
     const y = 134 + index * 84;
     ctx.fillStyle = index === 0 ? 'rgba(255, 211, 132, 0.22)' : 'rgba(255,255,255,0.08)';
     ctx.fillRect(44, y - 44, 680, 62);
     ctx.fillStyle = '#ffd384';
     ctx.font = '900 24px system-ui, sans-serif';
-    ctx.fillText(item.time, 68, y - 4);
+    ctx.fillText(item.time || '--:--', 68, y - 4);
     ctx.fillStyle = '#f5ead1';
     ctx.font = '900 25px system-ui, sans-serif';
-    ctx.fillText(item.title, 166, y - 5);
+    ctx.fillText(item.title || 'Bloque sin titulo', 166, y - 5);
     ctx.fillStyle = 'rgba(245,234,209,0.62)';
     ctx.font = '700 17px system-ui, sans-serif';
-    ctx.fillText(item.detail, 166, y + 22);
+    ctx.fillText(item.detail || 'Sin detalle cargado', 166, y + 22);
   });
 
   ctx.strokeStyle = 'rgba(255,255,255,0.1)';

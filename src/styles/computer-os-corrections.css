@@ -842,6 +842,18 @@
   border-color: rgba(85, 71, 36, 0.22);
 }
 
+.agenda-app-actions button:disabled,
+.agenda-day-tools button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.agenda-app-actions .agenda-danger-button {
+  color: #7f2d2d;
+  border-color: rgba(111, 32, 32, 0.16);
+  background: rgba(255, 242, 238, 0.86);
+}
+
 .agenda-editor-list {
   display: grid;
   gap: 12px;
@@ -850,14 +862,19 @@
 .agenda-editor-row {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(90px, 0.42fr) minmax(180px, 1fr) minmax(220px, 1.35fr) auto;
+  grid-template-columns: 46px minmax(162px, 0.58fr) minmax(0, 1fr) auto;
   gap: 12px;
-  align-items: end;
+  align-items: stretch;
   padding: 14px;
   border: 1px solid rgba(32, 48, 46, 0.12);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 0 16px 34px rgba(31, 45, 40, 0.08);
+}
+
+.agenda-editor-row.is-completed {
+  border-color: rgba(42, 111, 100, 0.18);
+  background: rgba(238, 247, 242, 0.78);
 }
 
 .agenda-editor-row label {
@@ -896,9 +913,45 @@
   resize: vertical;
 }
 
+.agenda-editor-when,
+.agenda-editor-copy {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.agenda-editor-copy {
+  grid-template-columns: minmax(150px, 0.8fr) minmax(190px, 1.2fr);
+}
+
+.agenda-complete-button {
+  width: 42px;
+  height: 42px;
+  align-self: center;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(42, 111, 100, 0.18);
+  border-radius: 8px;
+  color: #2a6f64;
+  background: rgba(240, 248, 244, 0.88);
+}
+
+.agenda-complete-button.is-done {
+  color: #f7fbf6;
+  background: #2a6f64;
+  border-color: rgba(24, 82, 73, 0.2);
+}
+
+.agenda-editor-row.is-completed input,
+.agenda-editor-row.is-completed textarea {
+  color: rgba(23, 35, 31, 0.62);
+  text-decoration: line-through;
+}
+
 .agenda-remove-button {
   width: 42px;
   height: 42px;
+  align-self: center;
   display: inline-grid;
   place-items: center;
   border: 1px solid rgba(111, 32, 32, 0.18);
@@ -1629,6 +1682,45 @@ button.focus-skin-preview {
   align-items: start;
 }
 
+.agenda-stats-strip {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(110px, 0.55fr)) minmax(220px, 1.25fr);
+  gap: 10px;
+}
+
+.agenda-stats-strip div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid rgba(32, 48, 46, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 12px 26px rgba(31, 45, 40, 0.06);
+}
+
+.agenda-stats-strip span {
+  color: #64716b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.agenda-stats-strip strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #182522;
+  font-size: 1.02rem;
+  font-weight: 930;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-stats-strip div:not(.agenda-next-card) strong {
+  font-size: 1.34rem;
+}
+
 .agenda-calendar-panel,
 .agenda-day-panel {
   min-width: 0;
@@ -1718,6 +1810,10 @@ button.focus-skin-preview {
   box-shadow: 0 10px 22px rgba(72, 58, 25, 0.16);
 }
 
+.agenda-calendar-grid button.is-complete small {
+  background: #65746c;
+}
+
 .agenda-calendar-grid button small {
   position: absolute;
   right: 5px;
@@ -1744,6 +1840,27 @@ button.focus-skin-preview {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.agenda-day-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.agenda-day-tools button,
+.agenda-quick-add button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(32, 48, 46, 0.14);
+  border-radius: 8px;
+  color: #20302e;
+  background: rgba(244, 248, 244, 0.88);
+  font-weight: 850;
 }
 
 .agenda-day-head div {
@@ -1776,6 +1893,51 @@ button.focus-skin-preview {
   font-weight: 760;
 }
 
+.agenda-quick-add {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(90px, 0.36fr) minmax(150px, 0.86fr) minmax(190px, 1.1fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid rgba(42, 111, 100, 0.14);
+  border-radius: 8px;
+  background: rgba(239, 247, 243, 0.78);
+}
+
+.agenda-quick-add label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.agenda-quick-add span {
+  color: #64716b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.agenda-quick-add input {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid rgba(32, 48, 46, 0.16);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #fbfdfb;
+  color: #17231f;
+  font: inherit;
+  font-weight: 760;
+}
+
+.agenda-quick-add button {
+  padding: 0 14px;
+  color: #13201d;
+  background: #e0c47a;
+  border-color: rgba(85, 71, 36, 0.22);
+}
+
 .agenda-empty-day {
   min-height: 180px;
   display: grid;
@@ -1797,22 +1959,59 @@ button.focus-skin-preview {
 }
 
 .agenda-calendar-layout .agenda-editor-row {
-  grid-template-columns: minmax(128px, 0.56fr) minmax(92px, 0.4fr) minmax(160px, 0.9fr) minmax(210px, 1.2fr) auto;
+  grid-template-columns: 46px minmax(162px, 0.58fr) minmax(0, 1fr) auto;
 }
 
 @media (max-width: 1120px) {
   .agenda-calendar-layout {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .agenda-stats-strip,
+  .agenda-quick-add {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 980px) {
   .agenda-calendar-layout .agenda-editor-row {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+  }
+
+  .agenda-editor-copy,
+  .agenda-editor-when {
+    grid-column: 2 / 3;
   }
 
   .agenda-day-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .agenda-day-tools {
+    justify-content: stretch;
+  }
+
+  .agenda-day-tools input,
+  .agenda-day-tools button {
+    flex: 1 1 180px;
+  }
+}
+
+@media (max-width: 680px) {
+  .agenda-stats-strip,
+  .agenda-quick-add,
+  .agenda-editor-copy,
+  .agenda-editor-when {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .agenda-calendar-layout .agenda-editor-row {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .agenda-remove-button {
+    grid-column: 2;
+    justify-self: end;
   }
 }
