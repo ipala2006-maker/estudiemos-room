@@ -1554,6 +1554,48 @@ button.focus-skin-preview {
   line-height: 1.38;
 }
 
+.focus-rank-guide small,
+.focus-estimate-note,
+.focus-skin-meta small {
+  display: block;
+  color: #536468;
+  font-size: 0.76rem;
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+.focus-estimate-note {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid rgba(42, 111, 100, 0.14);
+  border-radius: 8px;
+  background: rgba(42, 111, 100, 0.07);
+}
+
+.focus-economy-rules {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(20, 32, 31, 0.1);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(229, 238, 232, 0.82)),
+    #f6f8f3;
+  box-shadow: 0 14px 32px rgba(20, 32, 31, 0.08);
+}
+
+.focus-economy-rules ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+  color: #4f5e59;
+  font-size: 0.84rem;
+  font-weight: 760;
+  line-height: 1.4;
+}
+
 @media (max-width: 980px) {
   .settings-grid,
   .settings-layout-options {

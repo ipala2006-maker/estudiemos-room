@@ -46,10 +46,14 @@ import { DachshundMascot } from './DachshundMascot.jsx';
 import {
   DACHSHUND_SKINS,
   FOCUS_REWARD_CONFIG,
+  SKIN_COST_TABLE,
   SKIN_RANKS,
+  estimateValidMsForCoins,
   formatFocusDuration,
   getEquippedSkinState,
   getPurchaseCost,
+  getRemainingCostToMax,
+  getSkinCostPlan,
   getSkinRank,
   getUpgradeCost,
   isSkinPurchased
@@ -867,6 +871,7 @@ function getFocusCoinAvailability(progress) {
         cost,
         available: progress.coins >= cost,
         missing: Math.max(0, cost - progress.coins),
+        estimateMs: estimateValidMsForCoins(Math.max(0, cost - progress.coins)),
         state: progress.coins >= cost ? 'Disponible' : 'Faltan monedas'
       };
     }
@@ -881,6 +886,7 @@ function getFocusCoinAvailability(progress) {
         cost,
         available: progress.coins >= cost,
         missing: Math.max(0, cost - progress.coins),
+        estimateMs: estimateValidMsForCoins(Math.max(0, cost - progress.coins)),
         state: progress.coins >= cost ? 'Disponible' : 'Faltan monedas'
       };
     }
@@ -893,6 +899,7 @@ function getFocusCoinAvailability(progress) {
       cost: 0,
       available: isEquipped,
       missing: 0,
+      estimateMs: 0,
       state: isEquipped ? 'Equipada' : 'Lista para equipar'
     };
   });
@@ -905,6 +912,9 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
   const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy.nextRewardProgress ?? 0) * 100)));
   const selectedSkin = DACHSHUND_SKINS.find((skin) => skin.id === selectedSkinId) ?? equippedSkin.skin;
   const selectedRank = Math.max(1, getSkinRank(progress, selectedSkin.id));
+  const selectedSkinPlan = getSkinCostPlan(selectedSkin.id);
+  const selectedRemainingToMax = getRemainingCostToMax(progress, selectedSkin.id);
+  const selectedRemainingEstimate = estimateValidMsForCoins(Math.max(0, selectedRemainingToMax - progress.coins));
   const availabilityItems = useMemo(() => getFocusCoinAvailability(progress), [progress]);
 
   return (
@@ -913,7 +923,7 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
         <div className="focus-hero-copy">
           <span>Perfil de Enfoque</span>
           <h2>Monedas de Enfoque</h2>
-          <p>Estudia activo, gana monedas y evoluciona la mascota salchicha de Estudiemos.</p>
+          <p>Ganas monedas solo con contenido cargado, pestana visible y actividad reciente.</p>
           <div className="focus-stat-row">
             <div>
               <Coins size={20} aria-hidden="true" />
@@ -922,18 +932,18 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
             </div>
             <div>
               <Clock3 size={20} aria-hidden="true" />
-              <strong>{formatFocusDuration(progress.totalActiveMs)}</strong>
-              <span>Tiempo activo</span>
+              <strong>{formatFocusDuration(progress.totalValidContentMs)}</strong>
+              <span>Tiempo valido total</span>
             </div>
             <div>
               <Sparkles size={20} aria-hidden="true" />
-              <strong>{progress.sessionEarned}</strong>
-              <span>Ganadas hoy</span>
+              <strong>{formatFocusDuration(progress.sessionValidContentMs)}</strong>
+              <span>Sesion valida</span>
             </div>
             <div>
               <ShieldCheck size={20} aria-hidden="true" />
-              <strong>{progress.streak}</strong>
-              <span>Racha</span>
+              <strong>{progress.dailyEarned}</strong>
+              <span>Ganadas hoy</span>
             </div>
           </div>
         </div>
@@ -948,12 +958,14 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
       <section className="focus-progress-panel" aria-label="Progreso de recompensas">
         <div>
           <strong>{focusEconomy.status.label}</strong>
-          <span>{formatFocusDuration(focusEconomy.nextRewardRemainingMs)} para +{FOCUS_REWARD_CONFIG.rewardCoins} monedas</span>
+          <span>{formatFocusDuration(focusEconomy.nextRewardRemainingMs)} para +{FOCUS_REWARD_CONFIG.rewardCoins} moneda</span>
         </div>
         <div className="focus-progress-track">
           <span style={{ width: `${nextRewardPercent}%` }} />
         </div>
-        <small>Bonus: +{FOCUS_REWARD_CONFIG.bonusCoins} cada 25 minutos activos. Primera sesion del dia: +{FOCUS_REWARD_CONFIG.dailyBonusCoins}.</small>
+        <small>
+          Bonus: +{FOCUS_REWARD_CONFIG.bonusCoins} cada 60 min validos, +{FOCUS_REWARD_CONFIG.deepBonusCoins} cada 5 h. Primera sesion valida del dia: +{FOCUS_REWARD_CONFIG.dailyBonusCoins}.
+        </small>
       </section>
 
       <nav className="focus-profile-tabs" aria-label="Explorar perfil">
@@ -978,7 +990,10 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
               <span>{selectedSkin.rarity}</span>
               <h3>{selectedSkin.name}</h3>
               <p>{selectedSkin.description}</p>
-              <strong>Vista previa rango {selectedRank}</strong>
+              <strong>Vista previa rango {selectedRank} - tier {selectedSkinPlan.label}</strong>
+              <small className="focus-estimate-note">
+                Para completar esta skin: {selectedRemainingToMax} monedas pendientes, aprox. {formatFocusDuration(selectedRemainingEstimate)} de contenido activo.
+              </small>
               <button type="button" className="focus-open-shop-button" onClick={() => setActiveFocusTab('shop')}>
                 <PawPrint size={17} aria-hidden="true" />
                 <span>Abrir tienda de skins</span>
@@ -1009,10 +1024,25 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
                     <strong>{item.title}</strong>
                     <small>{item.description}</small>
                   </span>
-                  <em>{item.available ? item.state : `Faltan ${item.missing}`}</em>
+                  <em>{item.available ? item.state : `Faltan ${item.missing} - ${formatFocusDuration(item.estimateMs)}`}</em>
                 </button>
               ))}
             </div>
+          </article>
+
+          <article className="focus-economy-rules">
+            <div className="focus-panel-title">
+              <ShieldCheck size={20} aria-hidden="true" />
+              <div>
+                <strong>Economia lenta y justa</strong>
+                <span>Una o dos pantallas cuentan como una sola sesion valida.</span>
+              </div>
+            </div>
+            <ul>
+              <li>Solo suma con contenido en pantalla, pestana visible y actividad reciente.</li>
+              <li>No suma por caminar, dejar la pagina abierta o estar AFK.</li>
+              <li>El progreso alto requiere muchas horas reales de contenido activo.</li>
+            </ul>
           </article>
         </section>
       )}
@@ -1028,6 +1058,10 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
             const upgradeCost = getUpgradeCost(skin.id, rank);
             const canBuy = !purchased && progress.coins >= purchaseCost;
             const canUpgrade = purchased && rank < 7 && progress.coins >= upgradeCost;
+            const nextCost = purchased ? upgradeCost : purchaseCost;
+            const missingForNext = Math.max(0, nextCost - progress.coins);
+            const nextEstimate = estimateValidMsForCoins(missingForNext);
+            const skinPlan = getSkinCostPlan(skin.id);
 
             return (
               <article className={`focus-skin-card${isEquipped ? ' is-equipped' : ''}${selectedSkinId === skin.id ? ' is-selected' : ''}`} key={skin.id}>
@@ -1035,7 +1069,7 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
                   <DachshundMascot skinId={skin.id} rank={visibleRank} size="shop" />
                 </button>
                 <div className="focus-skin-copy">
-                  <span>{skin.rarity}</span>
+                  <span>{skin.rarity} - {skinPlan.label}</span>
                   <h3>{skin.name}</h3>
                   <p>{skin.description}</p>
                 </div>
@@ -1047,6 +1081,7 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
                 <div className="focus-skin-meta">
                   <strong>{purchased ? `Rango ${visibleRank}/7` : `Comprar: ${purchaseCost}`}</strong>
                   <span>{purchased && rank < 7 ? `Mejora: ${upgradeCost} monedas` : rank >= 7 ? 'Maximo rango' : canBuy ? 'Disponible ahora' : `Faltan ${purchaseCost - progress.coins} monedas`}</span>
+                  {missingForNext > 0 && <small>Aprox. {formatFocusDuration(nextEstimate)} de contenido activo</small>}
                 </div>
                 <div className="focus-skin-actions">
                   {!purchased && (
@@ -1081,6 +1116,7 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
               <strong>Rango {rankItem.rank}</strong>
               <span>{rankItem.label}</span>
               <p>{getRankGuideCopy(rankItem.rank)}</p>
+              <small>{getRankCostGuide(rankItem.rank)}</small>
             </article>
           ))}
         </section>
@@ -1091,12 +1127,21 @@ function FocusProfileApp({ focusEconomy, equippedSkin, onBuySkin, onUpgradeSkin,
 
 function getRankGuideCopy(rank) {
   if (rank === 1) return 'Desbloquea la skin y su identidad base.';
-  if (rank === 2) return 'Mejora colores y lectura visual.';
-  if (rank === 3) return 'Agrega accesorios reconocibles.';
-  if (rank === 4) return 'Suma una variante mas trabajada.';
-  if (rank === 5) return 'Activa brillo suave de enfoque.';
-  if (rank === 6) return 'Marca premium con detalles extra.';
-  return 'Version legendaria con efectos destacados.';
+  if (rank === 2) return 'Primera mejora real: requiere una base sostenida de contenido valido.';
+  if (rank === 3) return 'Empieza a sentirse como progreso de varias sesiones.';
+  if (rank === 4) return 'Objetivo intermedio de largo plazo.';
+  if (rank === 5) return 'Entra en rangos de compromiso serio.';
+  if (rank === 6) return 'Marca premium con muchas horas acumuladas.';
+  return 'Version legendaria: recompensa de muy largo plazo.';
+}
+
+function getRankCostGuide(rank) {
+  if (rank === 1) {
+    return `Comprar: Comun ${SKIN_COST_TABLE.common.purchase}, Rara ${SKIN_COST_TABLE.rare.purchase}, Legendaria ${SKIN_COST_TABLE.legendary.purchase}.`;
+  }
+
+  const previousRank = rank - 1;
+  return `R${previousRank}->R${rank}: Comun ${SKIN_COST_TABLE.common.upgrades[previousRank]}, Rara ${SKIN_COST_TABLE.rare.upgrades[previousRank]}, Legendaria ${SKIN_COST_TABLE.legendary.upgrades[previousRank]}.`;
 }
 
 function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onResetAgenda }) {

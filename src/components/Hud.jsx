@@ -1,7 +1,7 @@
 import { Coins, Home, RotateCcw } from 'lucide-react';
 import { DachshundMascot } from './DachshundMascot.jsx';
 import { BUILD_LABEL, BUILD_MARKER } from '../data/buildInfo.js';
-import { formatFocusDuration, getEquippedSkinState } from '../data/focusEconomy.js';
+import { FOCUS_REWARD_CONFIG, formatFocusDuration, getEquippedSkinState } from '../data/focusEconomy.js';
 
 export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBackHome, onReset }) {
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
@@ -43,7 +43,7 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
             <div className="hud-focus-progress" aria-label={`Progreso a proxima recompensa ${nextRewardPercent}%`}>
               <span style={{ width: `${nextRewardPercent}%` }} />
             </div>
-            <small>{focusEconomy.status.label} - {formatFocusDuration(focusEconomy.nextRewardRemainingMs)} para +10</small>
+            <small>{focusEconomy.status.label} - {formatFocusDuration(focusEconomy.nextRewardRemainingMs)} para +{FOCUS_REWARD_CONFIG.rewardCoins}</small>
           </div>
         </section>
       )}

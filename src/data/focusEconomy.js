@@ -1,13 +1,56 @@
 export const FOCUS_ECONOMY_STORAGE_KEY = 'estudiemos-room-focus-economy';
+export const FOCUS_ECONOMY_VERSION = 2;
 
 export const FOCUS_REWARD_CONFIG = {
   idleMs: 3 * 60 * 1000,
-  rewardIntervalMs: 5 * 60 * 1000,
-  rewardCoins: 10,
-  bonusIntervalMs: 25 * 60 * 1000,
-  bonusCoins: 25,
-  dailyBonusCoins: 20,
-  engagedMultiplier: 1.15
+  tickMaxMs: 5 * 1000,
+  rewardIntervalMs: 10 * 60 * 1000,
+  rewardCoins: 1,
+  bonusIntervalMs: 60 * 60 * 1000,
+  bonusCoins: 3,
+  deepBonusIntervalMs: 5 * 60 * 60 * 1000,
+  deepBonusCoins: 10,
+  dailyBonusCoins: 2,
+  resetProgressDevFlag: false
+};
+
+export const SKIN_COST_TABLE = {
+  common: {
+    label: 'Comun',
+    purchase: 50,
+    upgrades: {
+      1: 75,
+      2: 125,
+      3: 200,
+      4: 350,
+      5: 600,
+      6: 1000
+    }
+  },
+  rare: {
+    label: 'Rara',
+    purchase: 200,
+    upgrades: {
+      1: 300,
+      2: 500,
+      3: 850,
+      4: 1400,
+      5: 2200,
+      6: 3500
+    }
+  },
+  legendary: {
+    label: 'Legendaria',
+    purchase: 750,
+    upgrades: {
+      1: 1000,
+      2: 1600,
+      3: 2600,
+      4: 4200,
+      5: 6500,
+      6: 10000
+    }
+  }
 };
 
 export const SKIN_RANKS = [
@@ -24,10 +67,9 @@ export const DACHSHUND_SKINS = [
   {
     id: 'classic',
     name: 'Salchicha Clasico',
-    rarity: 'Inicial',
+    tier: 'common',
+    rarity: 'Comun inicial',
     description: 'La mascota base de Estudiemos: simpatica, clara y lista para acompanarte.',
-    baseCost: 0,
-    rankCost: 45,
     colors: {
       body: '#b46d3c',
       belly: '#f3c391',
@@ -39,10 +81,9 @@ export const DACHSHUND_SKINS = [
   {
     id: 'cyber',
     name: 'Salchicha Cyber Focus',
+    tier: 'rare',
     rarity: 'Rara',
     description: 'Un look futurista para sesiones largas con visor, neon y energia limpia.',
-    baseCost: 90,
-    rankCost: 70,
     colors: {
       body: '#323f46',
       belly: '#8ed7d2',
@@ -54,10 +95,9 @@ export const DACHSHUND_SKINS = [
   {
     id: 'engineer',
     name: 'Salchicha Ingeniero',
-    rarity: 'Epica',
+    tier: 'legendary',
+    rarity: 'Legendaria',
     description: 'Casco, herramientas y espiritu de resolver problemas paso a paso.',
-    baseCost: 130,
-    rankCost: 90,
     colors: {
       body: '#a45f33',
       belly: '#f1bf85',
@@ -69,11 +109,17 @@ export const DACHSHUND_SKINS = [
 ];
 
 export const DEFAULT_FOCUS_PROGRESS = {
+  economyVersion: FOCUS_ECONOMY_VERSION,
   coins: 0,
   totalActiveMs: 0,
+  totalValidContentMs: 0,
+  sessionValidContentMs: 0,
+  dailyValidContentMs: 0,
   activeIntervalMs: 0,
   bonusIntervalMs: 0,
+  deepBonusIntervalMs: 0,
   sessionEarned: 0,
+  dailyEarned: 0,
   purchasedSkins: {
     classic: true
   },
@@ -84,6 +130,9 @@ export const DEFAULT_FOCUS_PROGRESS = {
   },
   equippedSkin: 'classic',
   lastSessionDate: '',
+  lastValidBonusDate: '',
+  lastEarningDate: '',
+  lastRewardAt: 0,
   streak: 0
 };
 
@@ -96,6 +145,8 @@ export function getFocusDateValue(offsetDays = 0) {
 
 export function sanitizeFocusProgress(value) {
   const current = value && typeof value === 'object' ? value : {};
+  const isCurrentEconomy = Number(current.economyVersion ?? 0) >= FOCUS_ECONOMY_VERSION;
+  const today = getFocusDateValue();
   const purchasedSkins = { ...DEFAULT_FOCUS_PROGRESS.purchasedSkins, ...(current.purchasedSkins ?? {}) };
   const skinRanks = { ...DEFAULT_FOCUS_PROGRESS.skinRanks, ...(current.skinRanks ?? {}) };
 
@@ -109,19 +160,29 @@ export function sanitizeFocusProgress(value) {
   });
 
   const equippedSkin = purchasedSkins[current.equippedSkin] ? current.equippedSkin : 'classic';
+  const lastEarningDate = String(current.lastEarningDate ?? '');
 
   return {
     ...DEFAULT_FOCUS_PROGRESS,
     ...current,
+    economyVersion: FOCUS_ECONOMY_VERSION,
     coins: Math.max(0, Math.floor(Number(current.coins ?? 0))),
     totalActiveMs: Math.max(0, Number(current.totalActiveMs ?? 0)),
-    activeIntervalMs: Math.max(0, Number(current.activeIntervalMs ?? 0)),
-    bonusIntervalMs: Math.max(0, Number(current.bonusIntervalMs ?? 0)),
+    totalValidContentMs: Math.max(0, Number(current.totalValidContentMs ?? 0)),
+    sessionValidContentMs: 0,
+    dailyValidContentMs: isCurrentEconomy && lastEarningDate === today ? Math.max(0, Number(current.dailyValidContentMs ?? 0)) : 0,
+    activeIntervalMs: isCurrentEconomy ? clampInterval(current.activeIntervalMs, FOCUS_REWARD_CONFIG.rewardIntervalMs) : 0,
+    bonusIntervalMs: isCurrentEconomy ? clampInterval(current.bonusIntervalMs, FOCUS_REWARD_CONFIG.bonusIntervalMs) : 0,
+    deepBonusIntervalMs: isCurrentEconomy ? clampInterval(current.deepBonusIntervalMs, FOCUS_REWARD_CONFIG.deepBonusIntervalMs) : 0,
     sessionEarned: 0,
+    dailyEarned: isCurrentEconomy && lastEarningDate === today ? Math.max(0, Math.floor(Number(current.dailyEarned ?? 0))) : 0,
     purchasedSkins,
     skinRanks,
     equippedSkin,
     lastSessionDate: String(current.lastSessionDate ?? ''),
+    lastValidBonusDate: String(current.lastValidBonusDate ?? ''),
+    lastEarningDate,
+    lastRewardAt: Math.max(0, Number(current.lastRewardAt ?? 0)),
     streak: Math.max(0, Math.floor(Number(current.streak ?? 0)))
   };
 }
@@ -147,14 +208,77 @@ export function getEquippedSkinState(progress) {
   };
 }
 
+export function getSkinCostPlan(skinId) {
+  const skin = getSkinDefinition(skinId);
+  return SKIN_COST_TABLE[skin.tier] ?? SKIN_COST_TABLE.common;
+}
+
 export function getPurchaseCost(skinId) {
-  return getSkinDefinition(skinId).baseCost;
+  return getSkinCostPlan(skinId).purchase;
 }
 
 export function getUpgradeCost(skinId, currentRank) {
   if (currentRank >= 7) return 0;
-  const skin = getSkinDefinition(skinId);
-  return skin.rankCost + currentRank * Math.round(skin.rankCost * 0.42);
+  const rank = Math.max(1, Math.floor(Number(currentRank ?? 1)));
+  return getSkinCostPlan(skinId).upgrades[rank] ?? 0;
+}
+
+export function getTotalCostToMax(skinId, includePurchase = true) {
+  const plan = getSkinCostPlan(skinId);
+  const upgradeTotal = Object.values(plan.upgrades).reduce((sum, cost) => sum + cost, 0);
+  return upgradeTotal + (includePurchase ? plan.purchase : 0);
+}
+
+export function getRemainingCostToMax(progress, skinId) {
+  const purchased = isSkinPurchased(progress, skinId);
+  const currentRank = getSkinRank(progress, skinId);
+  let total = purchased ? 0 : getPurchaseCost(skinId);
+
+  for (let rank = Math.max(1, currentRank); rank < 7; rank += 1) {
+    total += getUpgradeCost(skinId, rank);
+  }
+
+  return total;
+}
+
+export function estimateValidMsForCoins(coins) {
+  let remainingCoins = Math.ceil(Math.max(0, Number(coins ?? 0)));
+  if (remainingCoins <= 0) return 0;
+
+  let elapsedMs = 0;
+  let coinRemainder = 0;
+  let hourlyRemainder = 0;
+  let deepRemainder = 0;
+  const maxIterations = remainingCoins * 8 + 1000;
+
+  for (let i = 0; remainingCoins > 0 && i < maxIterations; i += 1) {
+    const nextCoinMs = FOCUS_REWARD_CONFIG.rewardIntervalMs - coinRemainder;
+    const nextHourlyMs = FOCUS_REWARD_CONFIG.bonusIntervalMs - hourlyRemainder;
+    const nextDeepMs = FOCUS_REWARD_CONFIG.deepBonusIntervalMs - deepRemainder;
+    const stepMs = Math.min(nextCoinMs, nextHourlyMs, nextDeepMs);
+
+    elapsedMs += stepMs;
+    coinRemainder += stepMs;
+    hourlyRemainder += stepMs;
+    deepRemainder += stepMs;
+
+    if (coinRemainder >= FOCUS_REWARD_CONFIG.rewardIntervalMs) {
+      coinRemainder = 0;
+      remainingCoins -= FOCUS_REWARD_CONFIG.rewardCoins;
+    }
+
+    if (hourlyRemainder >= FOCUS_REWARD_CONFIG.bonusIntervalMs) {
+      hourlyRemainder = 0;
+      remainingCoins -= FOCUS_REWARD_CONFIG.bonusCoins;
+    }
+
+    if (deepRemainder >= FOCUS_REWARD_CONFIG.deepBonusIntervalMs) {
+      deepRemainder = 0;
+      remainingCoins -= FOCUS_REWARD_CONFIG.deepBonusCoins;
+    }
+  }
+
+  return elapsedMs;
 }
 
 export function getSkinVisuals(skinId, rank = 1) {
@@ -172,12 +296,18 @@ export function getSkinVisuals(skinId, rank = 1) {
 }
 
 export function formatFocusDuration(ms) {
-  const totalMinutes = Math.floor(ms / 60000);
+  const totalMinutes = Math.floor(Math.max(0, Number(ms ?? 0)) / 60000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
   if (hours <= 0) return `${minutes} min`;
   return `${hours} h ${minutes} min`;
+}
+
+function clampInterval(value, intervalMs) {
+  const numeric = Math.max(0, Number(value ?? 0));
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.min(intervalMs - 1, numeric % intervalMs);
 }
 
 function clampRank(rank) {

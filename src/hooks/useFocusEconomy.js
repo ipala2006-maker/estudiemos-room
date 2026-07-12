@@ -23,7 +23,7 @@ function loadStoredFocusProgress() {
   }
 }
 
-export function useFocusEconomy({ enabled, hasScreenContent, computerOpen }) {
+export function useFocusEconomy({ enabled, hasScreenContent }) {
   const [progress, setProgress] = useState(loadStoredFocusProgress);
   const [lastActivityAt, setLastActivityAt] = useState(() => Date.now());
   const [rewardToast, setRewardToast] = useState(null);
@@ -65,43 +65,41 @@ export function useFocusEconomy({ enabled, hasScreenContent, computerOpen }) {
   }, []);
 
   useEffect(() => {
-    if (!enabled) return;
-
-    const today = getFocusDateValue();
-    const yesterday = getFocusDateValue(-1);
-    setProgress((current) => {
-      if (current.lastSessionDate === today) return current;
-
-      const nextStreak = current.lastSessionDate === yesterday ? current.streak + 1 : 1;
-      pushRewardToast(`+${FOCUS_REWARD_CONFIG.dailyBonusCoins} Monedas de Enfoque`, 'Primera sesion del dia');
-      return {
-        ...current,
-        coins: current.coins + FOCUS_REWARD_CONFIG.dailyBonusCoins,
-        sessionEarned: current.sessionEarned + FOCUS_REWARD_CONFIG.dailyBonusCoins,
-        lastSessionDate: today,
-        streak: nextStreak
-      };
-    });
-  }, [enabled]);
-
-  useEffect(() => {
     const interval = window.setInterval(() => {
       const now = Date.now();
-      const elapsed = Math.min(now - lastTickRef.current, 5000);
+      const elapsed = Math.min(now - lastTickRef.current, FOCUS_REWARD_CONFIG.tickMaxMs);
       lastTickRef.current = now;
       setClock(now);
 
-      if (!enabled || document.hidden || now - lastActivityRef.current > FOCUS_REWARD_CONFIG.idleMs) return;
+      const isEligible =
+        enabled &&
+        hasScreenContent &&
+        !document.hidden &&
+        now - lastActivityRef.current <= FOCUS_REWARD_CONFIG.idleMs;
 
-      const multiplier = computerOpen || hasScreenContent ? FOCUS_REWARD_CONFIG.engagedMultiplier : 1;
-      const activeMs = Math.round(elapsed * multiplier);
+      if (!isEligible || elapsed <= 0) return;
 
       setProgress((current) => {
-        let nextRewardRemainder = current.activeIntervalMs + activeMs;
-        let nextBonusRemainder = current.bonusIntervalMs + activeMs;
+        const today = getFocusDateValue();
+        const yesterday = getFocusDateValue(-1);
+        const isSameEarningDay = current.lastEarningDate === today;
+        let nextRewardRemainder = current.activeIntervalMs + elapsed;
+        let nextBonusRemainder = current.bonusIntervalMs + elapsed;
+        let nextDeepBonusRemainder = current.deepBonusIntervalMs + elapsed;
         let earned = 0;
         let rewardCount = 0;
-        let bonusCount = 0;
+        let hourBonusCount = 0;
+        let deepBonusCount = 0;
+        let nextStreak = current.streak;
+        let nextLastSessionDate = current.lastSessionDate;
+        let nextLastValidBonusDate = current.lastValidBonusDate;
+
+        if (current.lastValidBonusDate !== today) {
+          earned += FOCUS_REWARD_CONFIG.dailyBonusCoins;
+          nextLastValidBonusDate = today;
+          nextStreak = current.lastSessionDate === yesterday ? current.streak + 1 : 1;
+          nextLastSessionDate = today;
+        }
 
         while (nextRewardRemainder >= FOCUS_REWARD_CONFIG.rewardIntervalMs) {
           nextRewardRemainder -= FOCUS_REWARD_CONFIG.rewardIntervalMs;
@@ -112,36 +110,52 @@ export function useFocusEconomy({ enabled, hasScreenContent, computerOpen }) {
         while (nextBonusRemainder >= FOCUS_REWARD_CONFIG.bonusIntervalMs) {
           nextBonusRemainder -= FOCUS_REWARD_CONFIG.bonusIntervalMs;
           earned += FOCUS_REWARD_CONFIG.bonusCoins;
-          bonusCount += 1;
+          hourBonusCount += 1;
+        }
+
+        while (nextDeepBonusRemainder >= FOCUS_REWARD_CONFIG.deepBonusIntervalMs) {
+          nextDeepBonusRemainder -= FOCUS_REWARD_CONFIG.deepBonusIntervalMs;
+          earned += FOCUS_REWARD_CONFIG.deepBonusCoins;
+          deepBonusCount += 1;
         }
 
         if (earned > 0) {
-          const detail = bonusCount > 0 ? 'Bonus de enfoque incluido' : `${rewardCount} bloque activo`;
-          pushRewardToast(`+${earned} Monedas de Enfoque`, detail);
+          pushRewardToast(`+${earned} Monedas de Enfoque`, buildRewardDetail(rewardCount, hourBonusCount, deepBonusCount));
         }
 
         return {
           ...current,
           coins: current.coins + earned,
-          totalActiveMs: current.totalActiveMs + activeMs,
+          totalValidContentMs: current.totalValidContentMs + elapsed,
+          totalActiveMs: current.totalActiveMs + elapsed,
+          sessionValidContentMs: current.sessionValidContentMs + elapsed,
+          dailyValidContentMs: (isSameEarningDay ? current.dailyValidContentMs : 0) + elapsed,
           activeIntervalMs: nextRewardRemainder,
           bonusIntervalMs: nextBonusRemainder,
-          sessionEarned: current.sessionEarned + earned
+          deepBonusIntervalMs: nextDeepBonusRemainder,
+          sessionEarned: current.sessionEarned + earned,
+          dailyEarned: (isSameEarningDay ? current.dailyEarned : 0) + earned,
+          lastEarningDate: today,
+          lastRewardAt: earned > 0 ? now : current.lastRewardAt,
+          lastValidBonusDate: nextLastValidBonusDate,
+          lastSessionDate: nextLastSessionDate,
+          streak: nextStreak
         };
       });
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [computerOpen, enabled, hasScreenContent]);
+  }, [enabled, hasScreenContent]);
 
   useEffect(() => () => window.clearTimeout(toastTimerRef.current), []);
 
   const status = useMemo(() => {
     if (!enabled) return { id: 'idle', label: 'Esperando inicio', active: false };
     if (document.hidden) return { id: 'hidden', label: 'Pausado: pestana oculta', active: false };
-    if (clock - lastActivityAt > FOCUS_REWARD_CONFIG.idleMs) return { id: 'afk', label: 'Pausado por inactividad', active: false };
-    return { id: 'active', label: computerOpen || hasScreenContent ? 'Estudio activo reforzado' : 'Estudio activo', active: true };
-  }, [clock, computerOpen, enabled, hasScreenContent, lastActivityAt]);
+    if (!hasScreenContent) return { id: 'no-content', label: 'Pausado: sin contenido', active: false };
+    if (clock - lastActivityAt > FOCUS_REWARD_CONFIG.idleMs) return { id: 'afk', label: 'Pausado: inactivo', active: false };
+    return { id: 'active', label: 'Ganando monedas: contenido activo', active: true };
+  }, [clock, enabled, hasScreenContent, lastActivityAt]);
 
   const actions = useMemo(
     () => ({
@@ -151,7 +165,7 @@ export function useFocusEconomy({ enabled, hasScreenContent, computerOpen }) {
 
           const cost = getPurchaseCost(skinId);
           if (current.coins < cost) {
-            pushRewardToast('Monedas insuficientes', 'Segui estudiando para comprar esta skin');
+            pushRewardToast('Monedas insuficientes', 'Necesitas mas tiempo valido con contenido');
             return current;
           }
 
@@ -175,7 +189,7 @@ export function useFocusEconomy({ enabled, hasScreenContent, computerOpen }) {
 
           const cost = getUpgradeCost(skinId, rank);
           if (current.coins < cost) {
-            pushRewardToast('Monedas insuficientes', 'Falta para mejorar este rango');
+            pushRewardToast('Monedas insuficientes', 'Falta tiempo valido para mejorar este rango');
             return current;
           }
 
@@ -215,6 +229,15 @@ export function useFocusEconomy({ enabled, hasScreenContent, computerOpen }) {
     rewardToast,
     actions,
     nextRewardProgress: progress.activeIntervalMs / FOCUS_REWARD_CONFIG.rewardIntervalMs,
-    nextRewardRemainingMs: Math.max(0, FOCUS_REWARD_CONFIG.rewardIntervalMs - progress.activeIntervalMs)
+    nextRewardRemainingMs: Math.max(0, FOCUS_REWARD_CONFIG.rewardIntervalMs - progress.activeIntervalMs),
+    nextBonusRemainingMs: Math.max(0, FOCUS_REWARD_CONFIG.bonusIntervalMs - progress.bonusIntervalMs),
+    nextDeepBonusRemainingMs: Math.max(0, FOCUS_REWARD_CONFIG.deepBonusIntervalMs - progress.deepBonusIntervalMs)
   };
+}
+
+function buildRewardDetail(rewardCount, hourBonusCount, deepBonusCount) {
+  if (deepBonusCount > 0) return 'Bonus de 5 h de contenido incluido';
+  if (hourBonusCount > 0) return 'Bonus de 60 min de contenido incluido';
+  if (rewardCount > 0) return `${rewardCount} bloque de 10 min valido`;
+  return 'Primera sesion valida del dia';
 }
