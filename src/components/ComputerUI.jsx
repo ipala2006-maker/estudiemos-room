@@ -18,7 +18,9 @@
   MonitorUp,
   NotebookPen,
   PanelRightOpen,
+  Pause,
   PawPrint,
+  Play,
   Plus,
   RotateCcw,
   Search,
@@ -26,6 +28,8 @@
   ShieldCheck,
   Signal,
   SlidersHorizontal,
+  SkipBack,
+  SkipForward,
   Sparkles,
   Square,
   Trash2,
@@ -50,7 +54,7 @@ import {
   getUpgradeCost,
   isSkinPurchased
 } from '../data/focusEconomy.js';
-import { studyAgendaItems } from '../data/studyAgenda.js';
+import { createStudyAgendaItems, studyAgendaItems } from '../data/studyAgenda.js';
 import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingenieriaRecursos.js';
 import { parseYouTubeUrl } from '../utils/youtube.js';
 
@@ -213,6 +217,7 @@ export function ComputerUI({
   onClearZone,
   onUpdateZone,
   onScreenLayoutChange,
+  onScreenCommand = () => {},
   agendaItems = studyAgendaItems,
   onAgendaItemsChange = () => {},
   focusEconomy
@@ -480,9 +485,11 @@ export function ComputerUI({
   }
 
   function resetAgendaItems() {
-    onAgendaItemsChange(studyAgendaItems);
+    const restoredItems = createStudyAgendaItems();
+    onAgendaItemsChange(restoredItems);
     setSystemNote('Agenda restaurada');
     showActionFeedback('Agenda restaurada');
+    return restoredItems;
   }
 
   function updateComputerSetting(key, value) {
@@ -796,6 +803,7 @@ export function ComputerUI({
             onClearZone={clearZoneFromComputer}
             onUpdateZone={updateZoneFromComputer}
             onScreenLayoutChange={changeScreenLayout}
+            onScreenCommand={onScreenCommand}
           />
         )}
       </div>
@@ -1139,6 +1147,13 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onReset
     onAddItem(selectedDate);
   }
 
+  function restoreAgenda() {
+    const restoredItems = onResetAgenda?.() ?? createStudyAgendaItems();
+    const nextDate = restoredItems[0]?.date ?? getTodayDateValue();
+    setSelectedDate(nextDate);
+    setCalendarCursor(parseAgendaDate(nextDate));
+  }
+
   return (
     <div className="os-fullscreen-app agenda-app-shell">
       <header className="agenda-app-header">
@@ -1148,7 +1163,7 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onReset
           <p>Los cambios se reflejan en el cartel de pared y en el monitor fisico.</p>
         </div>
         <div className="agenda-app-actions">
-          <button type="button" onClick={onResetAgenda}>
+          <button type="button" onClick={restoreAgenda}>
             <RotateCcw size={17} aria-hidden="true" />
             <span>Restaurar</span>
           </button>
@@ -1787,8 +1802,13 @@ function ScreenControlDrawer({
   onClose,
   onClearZone,
   onUpdateZone,
-  onScreenLayoutChange
+  onScreenLayoutChange,
+  onScreenCommand
 }) {
+  function sendScreenCommand(zoneId, action, payload = {}) {
+    onScreenCommand?.(zoneId, action, payload);
+  }
+
   return (
     <>
       <button type="button" className="screen-drawer-backdrop" onClick={onClose} aria-label="Cerrar controles de pantalla" />
@@ -1826,6 +1846,8 @@ function ScreenControlDrawer({
             {ZONES.map((zone) => {
               const current = screenZones[zone.id];
               const hasContent = Boolean(current.videoId || current.resourceUrl);
+              const canControlPlayback = current.contentType === 'youtube' && Boolean(current.videoId);
+              const isPaused = Boolean(current.paused);
               return (
                 <div className="drawer-zone-card" key={zone.id}>
                   <div className="drawer-zone-title">
@@ -1837,6 +1859,25 @@ function ScreenControlDrawer({
                       {hasContent ? <CheckCircle2 size={15} aria-hidden="true" /> : <ShieldCheck size={15} aria-hidden="true" />}
                       <span>{hasContent ? 'Activo' : 'Libre'}</span>
                     </div>
+                  </div>
+
+                  <div className="drawer-playback-actions" aria-label={`Reproduccion de ${zone.label}`}>
+                    <button type="button" onClick={() => sendScreenCommand(zone.id, isPaused ? 'play' : 'pause')} disabled={!canControlPlayback}>
+                      {isPaused ? <Play size={17} aria-hidden="true" /> : <Pause size={17} aria-hidden="true" />}
+                      <span>{isPaused ? 'Play' : 'Pausa'}</span>
+                    </button>
+                    <button type="button" onClick={() => sendScreenCommand(zone.id, 'seek-relative', { seconds: -15 })} disabled={!canControlPlayback}>
+                      <SkipBack size={17} aria-hidden="true" />
+                      <span>15s</span>
+                    </button>
+                    <button type="button" onClick={() => sendScreenCommand(zone.id, 'seek-relative', { seconds: 15 })} disabled={!canControlPlayback}>
+                      <SkipForward size={17} aria-hidden="true" />
+                      <span>15s</span>
+                    </button>
+                    <button type="button" onClick={() => sendScreenCommand(zone.id, 'skip-ad', { seconds: 45 })} disabled={!canControlPlayback}>
+                      <SkipForward size={17} aria-hidden="true" />
+                      <span>Anuncio</span>
+                    </button>
                   </div>
 
                   <label className="drawer-volume">

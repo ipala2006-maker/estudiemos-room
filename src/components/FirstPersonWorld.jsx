@@ -1200,7 +1200,6 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       contentType: screenZones.upper.contentType,
       resourceUrl: screenZones.upper.resourceUrl,
       title: screenZones.upper.title,
-      muted: screenZones.upper.muted,
       updatedAt: screenZones.upper.updatedAt
     },
     lower: {
@@ -1208,13 +1207,13 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       contentType: screenZones.lower.contentType,
       resourceUrl: screenZones.lower.resourceUrl,
       title: screenZones.lower.title,
-      muted: screenZones.lower.muted,
       updatedAt: screenZones.lower.updatedAt
     }
   });
 
   if (cssGiantScreen.userData.screenStateKey === stateKey) {
     updateCssGiantScreenSlotScales(cssGiantScreen.userData.contentRoot, screenZones);
+    applyCssGiantScreenCommands(cssGiantScreen.userData.contentRoot, screenZones);
     return;
   }
   cssGiantScreen.userData.screenStateKey = stateKey;
@@ -1250,6 +1249,7 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
       slot.appendChild(loading);
       iframe.addEventListener('load', () => {
         slot.classList.add('is-loaded');
+        applyScreenCommandToIframe(iframe, zone.playerCommand, zone);
       });
     } else {
       const placeholder = document.createElement('div');
@@ -1264,6 +1264,7 @@ function updateCssGiantScreenContent(cssGiantScreen, screenZones, screenLayout) 
 
     root.appendChild(slot);
   });
+  applyCssGiantScreenCommands(root, screenZones);
 }
 
 function updateCssGiantScreenSlotScales(root, screenZones) {
@@ -1275,6 +1276,61 @@ function updateCssGiantScreenSlotScales(root, screenZones) {
     slot.dataset.screenScale = nextScale;
     slot.style.setProperty('--screen-content-scale', nextScale);
   });
+}
+
+function applyCssGiantScreenCommands(root, screenZones) {
+  root.querySelectorAll('.physical-screen-slot').forEach((slot) => {
+    const zone = screenZones[slot.dataset.zoneId];
+    const command = zone?.playerCommand;
+    if (!command || slot.dataset.lastCommandId === String(command.id)) return;
+
+    const iframe = slot.querySelector('iframe');
+    if (!iframe || !applyScreenCommandToIframe(iframe, command, zone)) return;
+    slot.dataset.lastCommandId = String(command.id);
+  });
+}
+
+function applyScreenCommandToIframe(iframe, command, zone) {
+  if (!command || zone?.contentType !== 'youtube' || !iframe.contentWindow) return false;
+
+  if (command.action === 'play') {
+    return postYouTubeCommand(iframe, 'playVideo');
+  }
+
+  if (command.action === 'pause') {
+    return postYouTubeCommand(iframe, 'pauseVideo');
+  }
+
+  if (command.action === 'restart') {
+    postYouTubeCommand(iframe, 'seekTo', [0, true]);
+    return postYouTubeCommand(iframe, 'playVideo');
+  }
+
+  if (command.action === 'seek') {
+    const seconds = Math.max(0, Math.round(Number(command.payload?.seconds ?? 0)));
+    postYouTubeCommand(iframe, 'seekTo', [seconds, true]);
+    return command.payload?.play === false ? postYouTubeCommand(iframe, 'pauseVideo') : postYouTubeCommand(iframe, 'playVideo');
+  }
+
+  if (command.action === 'sync-audio') {
+    const volume = Math.min(100, Math.max(0, Math.round(Number(command.payload?.volume ?? zone.volume ?? 70))));
+    postYouTubeCommand(iframe, 'setVolume', [volume]);
+    return postYouTubeCommand(iframe, command.payload?.muted ? 'mute' : 'unMute');
+  }
+
+  return false;
+}
+
+function postYouTubeCommand(iframe, func, args = []) {
+  iframe.contentWindow?.postMessage(
+    JSON.stringify({
+      event: 'command',
+      func,
+      args
+    }),
+    '*'
+  );
+  return true;
 }
 
 function buildPdfEmbedUrl(resourceUrl) {

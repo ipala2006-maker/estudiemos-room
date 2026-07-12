@@ -191,11 +191,13 @@ button {
 .resource-action-card:focus-visible,
 .links-input-row input:focus-visible,
 .drawer-layout-grid button:focus-visible,
+.drawer-playback-actions button:focus-visible,
 .drawer-zone-actions button:focus-visible,
 .zone-icon-button:focus-visible,
 .zone-controls input:focus-visible,
 .screen-remote-icon-button:focus-visible,
 .screen-remote-targets button:focus-visible,
+.screen-remote-playback button:focus-visible,
 .screen-remote-controls button:focus-visible,
 .screen-remote-layouts button:focus-visible,
 .screen-remote-link button:focus-visible,
@@ -3004,6 +3006,7 @@ select {
 
 .drawer-layout-grid button,
 .drawer-zone-card,
+.drawer-playback-actions button,
 .drawer-zone-actions button {
   border: 1px solid rgba(17, 22, 34, 0.1);
   border-radius: 8px;
@@ -3069,6 +3072,28 @@ select {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.drawer-playback-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.drawer-playback-actions button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #172426;
+  font-size: 0.76rem;
+  font-weight: 820;
+}
+
+.drawer-playback-actions button:disabled {
+  opacity: 0.46;
+  cursor: default;
 }
 
 .drawer-zone-actions button {
@@ -3537,6 +3562,7 @@ select {
 
 .screen-remote-header,
 .screen-remote-targets,
+.screen-remote-playback,
 .screen-remote-controls,
 .screen-remote-layouts {
   display: flex;
@@ -3573,6 +3599,7 @@ select {
 
 .screen-remote-icon-button,
 .screen-remote-targets button,
+.screen-remote-playback button,
 .screen-remote-controls button,
 .screen-remote-layouts button,
 .screen-remote-link button {
@@ -3597,6 +3624,7 @@ select {
 }
 
 .screen-remote-targets button,
+.screen-remote-playback button,
 .screen-remote-controls button,
 .screen-remote-layouts button {
   display: inline-flex;
@@ -3694,6 +3722,25 @@ select {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.screen-remote-playback {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.screen-remote-playback button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 7px;
+  font-size: 0.76rem;
+}
+
+.screen-remote-playback button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screen-remote-playback button:disabled,
 .screen-remote-controls button:disabled {
   opacity: 0.48;
   cursor: default;
@@ -3701,6 +3748,7 @@ select {
 
 .screen-remote-icon-button:active,
 .screen-remote-targets button:active,
+.screen-remote-playback button:active,
 .screen-remote-controls button:active,
 .screen-remote-layouts button:active,
 .screen-remote-link button:active {

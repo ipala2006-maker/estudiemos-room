@@ -5,7 +5,7 @@ import { Hud } from './components/Hud.jsx';
 import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
-import { getAgendaDateValue, studyAgendaItems } from './data/studyAgenda.js';
+import { createStudyAgendaItems, getAgendaDateValue } from './data/studyAgenda.js';
 import { useFocusEconomy } from './hooks/useFocusEconomy.js';
 import './styles/app.css';
 import './styles/computer-os.css';
@@ -26,6 +26,10 @@ function createEmptyScreenZone() {
     muted: true,
     volume: 70,
     displayScale: 100,
+    paused: false,
+    seekSeconds: 0,
+    lastPlaybackAt: 0,
+    playerCommand: null,
     updatedAt: 0
   };
 }
@@ -48,7 +52,7 @@ function normalizeAgendaDate(value) {
 }
 
 function normalizeAgendaItems(items) {
-  if (!Array.isArray(items)) return studyAgendaItems;
+  if (!Array.isArray(items)) return createStudyAgendaItems();
 
   return items
     .map((item, index) => ({
@@ -62,14 +66,21 @@ function normalizeAgendaItems(items) {
 }
 
 function loadStoredAgendaItems() {
-  if (typeof window === 'undefined') return studyAgendaItems;
+  if (typeof window === 'undefined') return createStudyAgendaItems();
 
   try {
     const rawAgenda = window.localStorage.getItem(AGENDA_STORAGE_KEY);
-    return rawAgenda ? normalizeAgendaItems(JSON.parse(rawAgenda)) : studyAgendaItems;
+    return rawAgenda ? normalizeAgendaItems(JSON.parse(rawAgenda)) : createStudyAgendaItems();
   } catch {
-    return studyAgendaItems;
+    return createStudyAgendaItems();
   }
+}
+
+function getEstimatedPlaybackSeconds(zone) {
+  const baseSeconds = Math.max(0, Number(zone?.seekSeconds ?? 0));
+  const lastPlaybackAt = Number(zone?.lastPlaybackAt ?? 0);
+  if (zone?.paused || !lastPlaybackAt) return baseSeconds;
+  return baseSeconds + Math.max(0, (Date.now() - lastPlaybackAt) / 1000);
 }
 
 function App() {
@@ -95,6 +106,7 @@ function App() {
   });
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
+  const screenCommandCounterRef = useRef(0);
 
   useEffect(() => {
     window.localStorage.setItem(AGENDA_STORAGE_KEY, JSON.stringify(agendaItems));
@@ -156,14 +168,28 @@ function App() {
   }
 
   function assignVideoToZone(zoneId, video) {
+    const now = Date.now();
     setScreenZones((current) => ({
       ...current,
       [zoneId]: {
         ...current[zoneId],
         ...video,
-        updatedAt: Date.now()
+        paused: false,
+        seekSeconds: 0,
+        lastPlaybackAt: now,
+        playerCommand: null,
+        updatedAt: now
       }
     }));
+  }
+
+  function createScreenCommand(action, payload = {}) {
+    screenCommandCounterRef.current += 1;
+    return {
+      id: `${Date.now()}-${screenCommandCounterRef.current}`,
+      action,
+      payload
+    };
   }
 
   function updateScreenZone(zoneId, patch) {
@@ -172,12 +198,75 @@ function App() {
 
     setScreenZones((current) => ({
       ...current,
-      [zoneId]: {
-        ...current[zoneId],
-        ...zonePatch,
-        ...(hasRefreshStamp ? { updatedAt } : {})
-      }
+      [zoneId]: (() => {
+        const currentZone = current[zoneId];
+        const nextZone = {
+          ...currentZone,
+          ...zonePatch,
+          ...(hasRefreshStamp ? { updatedAt } : {})
+        };
+
+        if (Object.prototype.hasOwnProperty.call(zonePatch, 'muted') || Object.prototype.hasOwnProperty.call(zonePatch, 'volume')) {
+          nextZone.playerCommand = createScreenCommand('sync-audio', {
+            muted: nextZone.muted,
+            volume: nextZone.volume
+          });
+        }
+
+        return nextZone;
+      })()
     }));
+  }
+
+  function commandScreenZone(zoneId, action, payload = {}) {
+    setScreenZones((current) => {
+      const currentZone = current[zoneId];
+      if (!currentZone || currentZone.contentType !== 'youtube' || !currentZone.videoId) return current;
+
+      const now = Date.now();
+      const estimatedSeconds = getEstimatedPlaybackSeconds(currentZone);
+      const nextZone = { ...currentZone };
+      let commandAction = action;
+      let commandPayload = { ...payload };
+
+      if (action === 'play') {
+        nextZone.paused = false;
+        nextZone.seekSeconds = estimatedSeconds;
+        nextZone.lastPlaybackAt = now;
+      }
+
+      if (action === 'pause') {
+        nextZone.paused = true;
+        nextZone.seekSeconds = estimatedSeconds;
+        nextZone.lastPlaybackAt = now;
+      }
+
+      if (action === 'restart') {
+        nextZone.paused = false;
+        nextZone.seekSeconds = 0;
+        nextZone.lastPlaybackAt = now;
+      }
+
+      if (action === 'seek-relative' || action === 'skip-ad') {
+        const deltaSeconds = action === 'skip-ad' ? Number(payload.seconds ?? 45) : Number(payload.seconds ?? 0);
+        const targetSeconds = Math.max(0, Math.round(estimatedSeconds + deltaSeconds));
+        nextZone.paused = false;
+        nextZone.seekSeconds = targetSeconds;
+        nextZone.lastPlaybackAt = now;
+        commandAction = 'seek';
+        commandPayload = {
+          seconds: targetSeconds,
+          play: true
+        };
+      }
+
+      nextZone.playerCommand = createScreenCommand(commandAction, commandPayload);
+
+      return {
+        ...current,
+        [zoneId]: nextZone
+      };
+    });
   }
 
   function clearScreenZone(zoneId) {
@@ -257,6 +346,7 @@ function App() {
           onUpdateZone={updateScreenZone}
           onClearZone={clearScreenZone}
           onScreenLayoutChange={setScreenLayout}
+          onScreenCommand={commandScreenZone}
           agendaItems={agendaItems}
           onAgendaItemsChange={setAgendaItems}
           focusEconomy={focusEconomy}
@@ -272,6 +362,7 @@ function App() {
           onUpdateZone={updateScreenZone}
           onClearZone={clearScreenZone}
           onScreenLayoutChange={setScreenLayout}
+          onScreenCommand={commandScreenZone}
           onClose={() => setScreenRemoteOpen(false)}
         />
       )}

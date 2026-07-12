@@ -1,9 +1,13 @@
 import {
   Eraser,
+  Pause,
+  Play,
   Maximize2,
   MonitorUp,
   RotateCcw,
   Send,
+  SkipBack,
+  SkipForward,
   Smartphone,
   Volume2,
   VolumeX,
@@ -20,7 +24,9 @@ const REMOTE_ZONES = [
 const REMOTE_LAYOUTS = [
   { id: 'side-by-side', label: '2 x 16:9' },
   { id: 'single', label: '100%' },
-  { id: 'split-50-50', label: '50/50' }
+  { id: 'split-50-50', label: '50/50' },
+  { id: 'split-70-30', label: '70/30' },
+  { id: 'split-30-70', label: '30/70' }
 ];
 
 export function ScreenRemoteControl({
@@ -30,6 +36,7 @@ export function ScreenRemoteControl({
   onUpdateZone,
   onClearZone,
   onScreenLayoutChange,
+  onScreenCommand = () => {},
   onClose
 }) {
   const [activeZoneId, setActiveZoneId] = useState('upper');
@@ -43,6 +50,8 @@ export function ScreenRemoteControl({
     [activeZoneId]
   );
   const hasContent = Boolean(activeZone.videoId || activeZone.resourceUrl);
+  const canControlPlayback = activeZone.contentType === 'youtube' && Boolean(activeZone.videoId);
+  const isPaused = Boolean(activeZone.paused);
 
   useEffect(() => () => window.clearTimeout(noteTimerRef.current), []);
 
@@ -82,8 +91,42 @@ export function ScreenRemoteControl({
 
   function restartVideo() {
     if (!hasContent) return;
-    onUpdateZone(activeZoneId, { updatedAt: Date.now() });
+    if (canControlPlayback) {
+      onScreenCommand(activeZoneId, 'restart');
+    } else {
+      onUpdateZone(activeZoneId, { updatedAt: Date.now() });
+    }
     announce(`Reiniciado en ${activeZoneLabel}`);
+  }
+
+  function sendPlaybackCommand(action, payload, message) {
+    if (!canControlPlayback) {
+      announce('Controles disponibles para YouTube');
+      return;
+    }
+
+    onScreenCommand(activeZoneId, action, payload);
+    announce(message);
+  }
+
+  function togglePlayback() {
+    sendPlaybackCommand(
+      isPaused ? 'play' : 'pause',
+      {},
+      `${isPaused ? 'Reproduciendo' : 'Pausado'} en ${activeZoneLabel}`
+    );
+  }
+
+  function seekRelative(seconds) {
+    sendPlaybackCommand(
+      'seek-relative',
+      { seconds },
+      `${seconds > 0 ? 'Avance' : 'Retroceso'} ${Math.abs(seconds)}s en ${activeZoneLabel}`
+    );
+  }
+
+  function skipAd() {
+    sendPlaybackCommand('skip-ad', { seconds: 45 }, `Intento de salto +45s en ${activeZoneLabel}`);
   }
 
   function toggleMute() {
@@ -167,7 +210,26 @@ export function ScreenRemoteControl({
           {linkError && <p>{linkError}</p>}
         </form>
 
-        <section className="screen-remote-controls" aria-label="Controles de reproduccion">
+        <section className="screen-remote-playback" aria-label="Controles de reproduccion">
+          <button type="button" onClick={togglePlayback} disabled={!canControlPlayback}>
+            {isPaused ? <Play size={18} aria-hidden="true" /> : <Pause size={18} aria-hidden="true" />}
+            <span>{isPaused ? 'Play' : 'Pausa'}</span>
+          </button>
+          <button type="button" onClick={() => seekRelative(-15)} disabled={!canControlPlayback}>
+            <SkipBack size={18} aria-hidden="true" />
+            <span>15s</span>
+          </button>
+          <button type="button" onClick={() => seekRelative(15)} disabled={!canControlPlayback}>
+            <SkipForward size={18} aria-hidden="true" />
+            <span>15s</span>
+          </button>
+          <button type="button" onClick={skipAd} disabled={!canControlPlayback}>
+            <SkipForward size={18} aria-hidden="true" />
+            <span>Anuncio</span>
+          </button>
+        </section>
+
+        <section className="screen-remote-controls" aria-label="Controles de pantalla">
           <button type="button" onClick={toggleMute}>
             {activeZone.muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
             <span>{activeZone.muted ? 'Mute' : 'Audio'}</span>

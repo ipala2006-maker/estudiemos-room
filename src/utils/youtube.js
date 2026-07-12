@@ -53,9 +53,18 @@ export function buildYouTubeEmbedUrl(zone) {
     modestbranding: '1',
     playsinline: '1',
     controls: '1',
-    autoplay: '1',
+    autoplay: zone.paused ? '0' : '1',
     mute: zone.muted ? '1' : '0'
   });
+
+  const startSeconds = Math.max(0, Math.floor(Number(zone.seekSeconds ?? 0)));
+  if (startSeconds > 0) {
+    params.set('start', String(startSeconds));
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    params.set('origin', window.location.origin);
+  }
 
   return `${zone.embedUrl}?${params.toString()}`;
 }
