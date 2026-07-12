@@ -739,6 +739,7 @@ button {
   aspect-ratio: 260 / 150;
   transform: scale(var(--dog-scale, 1));
   transform-origin: 50% 70%;
+  filter: drop-shadow(0 12px 22px rgba(17, 22, 34, 0.12));
 }
 
 .dachshund-mascot svg {
@@ -773,6 +774,9 @@ button {
 
 .dog-body-group {
   paint-order: stroke fill markers;
+  transform-box: view-box;
+  transform-origin: 50% 76%;
+  animation: dog-breathe 3.8s ease-in-out infinite;
 }
 
 .dog-body-outline,
@@ -802,6 +806,7 @@ button {
   stroke-width: 2.2;
   stroke-linecap: round;
   opacity: 0.42;
+  animation: dog-fur-soften 3.8s ease-in-out infinite;
 }
 
 .dog-back-highlight {
@@ -825,6 +830,9 @@ button {
 .dog-tail {
   fill: none;
   stroke-width: 7;
+  transform-box: view-box;
+  transform-origin: 54px 64px;
+  animation: dog-tail-wag 1.55s ease-in-out infinite;
 }
 
 .dog-eye,
@@ -832,8 +840,17 @@ button {
   fill: #111819;
 }
 
+.dog-eye {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: dog-blink 5.4s ease-in-out infinite;
+}
+
 .dog-eye-shine {
   fill: #ffffff;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: dog-eye-shine-blink 5.4s ease-in-out infinite;
 }
 
 .dog-eyebrow,
@@ -848,6 +865,20 @@ button {
 .dog-cheek {
   fill: color-mix(in srgb, var(--dog-belly), #ff8ca0 22%);
   opacity: 0.5;
+}
+
+.dog-ear-back,
+.dog-ear-front {
+  transform-box: fill-box;
+  transform-origin: 50% 12%;
+}
+
+.dog-ear-back {
+  animation: dog-ear-sway-back 4.4s ease-in-out infinite;
+}
+
+.dog-ear-front {
+  animation: dog-ear-sway-front 4.2s ease-in-out infinite;
 }
 
 .dog-smile {
@@ -932,6 +963,9 @@ button {
   fill: var(--dog-glow);
   opacity: var(--dog-legendary-opacity);
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--dog-glow), transparent 25%));
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: dog-legendary-glint 2.8s ease-in-out infinite;
 }
 
 .dog-cyber-kit path:nth-child(2),
@@ -1064,6 +1098,92 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes dog-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  48% {
+    transform: translateY(-1.5px) scale(1.012, 0.992);
+  }
+}
+
+@keyframes dog-tail-wag {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+
+@keyframes dog-blink {
+  0%,
+  91%,
+  100% {
+    transform: scaleY(1);
+  }
+  94%,
+  96% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes dog-eye-shine-blink {
+  0%,
+  91%,
+  100% {
+    opacity: 1;
+  }
+  94%,
+  96% {
+    opacity: 0;
+  }
+}
+
+@keyframes dog-ear-sway-back {
+  0%,
+  100% {
+    transform: rotate(-1deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+
+@keyframes dog-ear-sway-front {
+  0%,
+  100% {
+    transform: rotate(1deg);
+  }
+  50% {
+    transform: rotate(-2.5deg);
+  }
+}
+
+@keyframes dog-fur-soften {
+  0%,
+  100% {
+    opacity: 0.36;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes dog-legendary-glint {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--dog-glow), transparent 25%));
+  }
+  50% {
+    transform: scale(1.025);
+    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--dog-glow), transparent 8%));
   }
 }
 
@@ -3582,7 +3702,15 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .screen-remote-backdrop,
   .screen-remote-phone,
-  .physical-screen-loading {
+  .physical-screen-loading,
+  .dog-body-group,
+  .dog-tail,
+  .dog-eye,
+  .dog-eye-shine,
+  .dog-ear-back,
+  .dog-ear-front,
+  .dog-fur-lines,
+  .dog-legendary-stars {
     animation: none !important;
     transition: none !important;
   }

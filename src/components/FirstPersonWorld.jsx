@@ -38,8 +38,10 @@ const MIN_EDGE_OPACITY = 0.04;
 const COMPANION_SIDE_OFFSET = -2.35;
 const COMPANION_BACK_OFFSET = -3.35;
 const COMPANION_FOLLOW_RESPONSE = 4.4;
+const COMPANION_DIRECTION_RESPONSE = 8.5;
 const COMPANION_IDLE_SIT_DELAY = 0.85;
 const COMPANION_STILL_SPEED = 0.16;
+const COMPANION_MIN_PLAYER_DISTANCE = 2.35;
 const INTERIOR_LOOK_TARGET = activeMap.interiorSpawnLookAt ?? new THREE.Vector3(84, 2.1, -24);
 const GIANT_SCREEN_WORLD = {
   center: new THREE.Vector3(90, 8.5, -34.25),
@@ -630,6 +632,8 @@ function createCompanionDachshund(equippedSkin) {
     idleTimer: 0,
     sitAmount: 0,
     hasCameraPosition: false,
+    hasFollowBasis: false,
+    followForward: new THREE.Vector3(0, 0, -1),
     lastPosition: group.position.clone(),
     lastCameraPosition: new THREE.Vector3(),
     scratch: {
@@ -683,6 +687,7 @@ function updateCompanionDachshund(companion, camera, delta, isInterior, progress
     companion.hasCameraPosition = true;
   }
   cameraDelta.copy(camera.position).sub(companion.lastCameraPosition);
+  cameraDelta.y = 0;
   const cameraSpeed = cameraDelta.length() / responseDelta;
   const playerIsStill = cameraSpeed < COMPANION_STILL_SPEED;
 
@@ -690,6 +695,16 @@ function updateCompanionDachshund(companion, camera, delta, isInterior, progress
   forward.y = 0;
   if (forward.lengthSq() < 0.001) forward.set(0, 0, -1);
   forward.normalize();
+  if (!companion.hasFollowBasis) {
+    companion.followForward.copy(forward);
+    companion.hasFollowBasis = true;
+  }
+  if (!playerIsStill && cameraDelta.lengthSq() > 0.0001) {
+    cameraDelta.normalize();
+    companion.followForward.lerp(cameraDelta, 1 - Math.exp(-COMPANION_DIRECTION_RESPONSE * delta));
+    companion.followForward.normalize();
+  }
+  forward.copy(companion.followForward);
   right.crossVectors(forward, camera.up).normalize();
 
   target.copy(camera.position);
@@ -700,6 +715,18 @@ function updateCompanionDachshund(companion, camera, delta, isInterior, progress
   const bounds = isInterior ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
   target.x = clamp(target.x, bounds.minX + 1.1, bounds.maxX - 1.1);
   target.z = clamp(target.z, bounds.minZ + 1.1, bounds.maxZ - 1.1);
+  toCamera.copy(target).sub(camera.position);
+  toCamera.y = 0;
+  if (toCamera.lengthSq() < COMPANION_MIN_PLAYER_DISTANCE * COMPANION_MIN_PLAYER_DISTANCE) {
+    if (toCamera.lengthSq() < 0.001) {
+      toCamera.copy(right).multiplyScalar(Math.sign(COMPANION_SIDE_OFFSET) || -1);
+    }
+    toCamera.normalize().multiplyScalar(COMPANION_MIN_PLAYER_DISTANCE);
+    target.copy(camera.position).add(toCamera);
+    target.y = 0;
+    target.x = clamp(target.x, bounds.minX + 1.1, bounds.maxX - 1.1);
+    target.z = clamp(target.z, bounds.minZ + 1.1, bounds.maxZ - 1.1);
+  }
 
   toCamera.copy(camera.position);
   toCamera.y = 0;
