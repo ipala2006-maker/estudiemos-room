@@ -3752,6 +3752,279 @@ select {
     rgba(4, 7, 8, 0.88);
 }
 
+.hud.hud-compact {
+  left: 12px;
+  top: 12px;
+  width: min(248px, calc(100vw - 24px));
+  gap: 7px;
+  padding: 10px;
+  border-color: rgba(255, 232, 184, 0.12);
+  background: rgba(11, 18, 18, 0.64);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.hud.hud-compact .hud-build-version {
+  min-height: 18px;
+  max-width: 100%;
+  padding: 0 6px;
+  overflow: hidden;
+  color: rgba(247, 241, 228, 0.58);
+  font-size: 0.56rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud-heading {
+  gap: 1px !important;
+}
+
+.hud-heading strong {
+  font-size: 0.92rem;
+  line-height: 1.1;
+}
+
+.hud-heading span {
+  color: rgba(247, 241, 228, 0.7) !important;
+  font-size: 0.74rem !important;
+  line-height: 1.15;
+}
+
+.hud-mini-guide {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 4px !important;
+}
+
+.hud-mini-guide span {
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 232, 184, 0.13);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 244, 215, 0.78) !important;
+  font-size: 0.64rem !important;
+  font-weight: 880;
+  letter-spacing: 0;
+}
+
+.hud.hud-compact .hud-focus-card {
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 8px !important;
+  padding: 8px;
+}
+
+.hud.hud-compact .hud-focus-card strong {
+  overflow: hidden;
+  font-size: 0.82rem;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud.hud-compact .hud-focus-card span:not(.hud-focus-kicker),
+.hud.hud-compact .hud-focus-card small {
+  overflow: hidden;
+  font-size: 0.68rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud.hud-compact .hud-focus-kicker {
+  gap: 4px;
+  font-size: 0.68rem !important;
+}
+
+.hud.hud-compact .hud-focus-kicker svg {
+  width: 13px;
+  height: 13px;
+}
+
+.hud.hud-compact .hud-focus-progress {
+  height: 5px;
+}
+
+.hud.hud-compact .hud-actions {
+  gap: 6px !important;
+}
+
+.hud.hud-compact button {
+  min-height: 28px;
+  gap: 5px;
+  padding: 0 8px;
+  font-size: 0.72rem;
+}
+
+.hud.hud-compact button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.hud.hud-compact .hud-ready {
+  margin: -2px 0 0;
+  color: rgba(255, 244, 215, 0.78);
+  font-size: 0.7rem !important;
+}
+
+.dachshund-mascot {
+  max-width: 260px;
+  aspect-ratio: 1;
+  transform: scale(var(--dog-scale, 1));
+}
+
+.dachshund-mascot svg {
+  display: none;
+}
+
+.dachshund-mascot-hud {
+  width: 58px;
+  flex: 0 0 58px;
+}
+
+.dachshund-mascot-desktop {
+  width: 124px;
+}
+
+.dachshund-mascot-shop {
+  width: 152px;
+}
+
+.dachshund-mascot-profile {
+  max-width: 320px;
+}
+
+.dachshund-render-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(41, 49, 54, 0.12);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 244, 215, 0.7), transparent 38%),
+    #f4e6c4;
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+.dachshund-render-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.dachshund-render-aura {
+  position: absolute;
+  inset: 7%;
+  z-index: 1;
+  border: 1px solid var(--dog-accent, rgba(224, 196, 122, 0.8));
+  border-radius: 8px;
+  opacity: calc(0.24 + var(--dog-premium-opacity, 0) * 0.28 + var(--dog-legendary-opacity, 0) * 0.32);
+  pointer-events: none;
+  box-shadow: 0 0 28px var(--dog-glow, rgba(224, 196, 122, 0.32));
+}
+
+.dachshund-render-skin-tag {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 2;
+  min-width: 30px;
+  min-height: 22px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--dog-accent, #e0c47a) 82%, #111622);
+  color: #111622;
+  font-size: 0.68rem;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.skin-cyber .dachshund-render-card {
+  border-color: rgba(90, 218, 219, 0.36);
+  background:
+    linear-gradient(135deg, rgba(23, 47, 57, 0.2), transparent 42%),
+    #ddebe8;
+}
+
+.skin-cyber .dachshund-render-image {
+  filter: saturate(0.98) hue-rotate(6deg) contrast(1.04);
+}
+
+.skin-engineer .dachshund-render-card {
+  border-color: rgba(224, 158, 79, 0.34);
+  background:
+    linear-gradient(135deg, rgba(224, 158, 79, 0.16), transparent 46%),
+    #f1e3c2;
+}
+
+.rank-3 .dachshund-render-card,
+.rank-4 .dachshund-render-card,
+.rank-5 .dachshund-render-card {
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.2),
+    0 0 calc(18px * var(--dog-premium-opacity, 0)) var(--dog-glow, rgba(224, 196, 122, 0.28)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.46);
+}
+
+.rank-5 .dachshund-render-skin-tag {
+  background: linear-gradient(135deg, #fff5bd, var(--dog-accent, #e0c47a));
+}
+
+.interaction-prompt {
+  min-height: 38px;
+  max-width: min(340px, calc(100vw - 32px));
+  bottom: 22px;
+  padding: 0 14px;
+  font-size: 0.82rem;
+}
+
+.screen-remote-prompt {
+  bottom: 64px;
+}
+
+@media (max-width: 640px) {
+  .hud.hud-compact {
+    left: 10px;
+    top: 10px;
+    width: min(230px, calc(100vw - 20px));
+    padding: 9px;
+  }
+
+  .hud.hud-compact .hud-focus-card {
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 7px !important;
+  }
+
+  .hud.hud-compact .dachshund-mascot-hud {
+    width: 46px;
+    flex-basis: 46px;
+  }
+
+  .hud.hud-compact .hud-actions {
+    display: none !important;
+  }
+
+  .interaction-prompt {
+    min-height: 34px;
+    bottom: 14px;
+    padding: 0 12px;
+    font-size: 0.76rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .screen-remote-backdrop,
   .screen-remote-phone,

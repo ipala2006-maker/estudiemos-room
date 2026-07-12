@@ -6,23 +6,28 @@ import { formatFocusDuration, getEquippedSkinState } from '../data/focusEconomy.
 export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBackHome, onReset }) {
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
   const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy?.nextRewardProgress ?? 0) * 100)));
+  const sceneTitle = isDoorOpen ? 'Casa 1' : 'Lobby 3D';
+  const contextHint = isNearComputer
+    ? 'E: computadora'
+    : isNearDoor
+      ? isDoorOpen ? 'E: salir' : 'E: entrar'
+      : isDoorOpen
+        ? 'Q: control de pantalla'
+        : 'WASD + mouse';
 
   return (
-    <aside className="hud">
+    <aside className="hud hud-compact">
       <span className="hud-build-version" data-build-marker={BUILD_MARKER}>{BUILD_LABEL}</span>
-      <div>
-        <strong>Lobby 3D</strong>
-        <span>WASD o flechas para caminar</span>
-        <span>Click en el mundo para capturar el mouse</span>
-        <span>E para interactuar cuando estes cerca</span>
+      <div className="hud-heading">
+        <strong>{sceneTitle}</strong>
+        <span>{contextHint}</span>
       </div>
 
-      <div>
-        <span>
-          {isDoorOpen
-            ? 'Estas en Casa 1: la pantalla y la computadora quedan como foco principal de la sala.'
-            : 'Segui el camino hasta la puerta de la casita.'}
-        </span>
+      <div className="hud-mini-guide" aria-label="Controles basicos">
+        <span>WASD</span>
+        <span>Mouse</span>
+        <span>E</span>
+        <span>Q</span>
       </div>
 
       {focusEconomy && (
@@ -54,8 +59,8 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
         </button>
       </div>
 
-      {isNearDoor && <p className="hud-ready">Estas frente a la puerta.</p>}
-      {isNearComputer && <p className="hud-ready">Estas frente a la computadora.</p>}
+      {isNearDoor && <p className="hud-ready">Puerta cerca.</p>}
+      {isNearComputer && <p className="hud-ready">Computadora cerca.</p>}
     </aside>
   );
 }
