@@ -946,6 +946,49 @@ button {
   stroke-linejoin: round;
 }
 
+.dog-skateboard {
+  transform-box: view-box;
+  transform-origin: 50% 88%;
+  animation: dog-board-cruise 2.2s ease-in-out infinite;
+}
+
+.dog-skateboard-shadow {
+  fill: rgba(17, 22, 34, 0.16);
+}
+
+.dog-skateboard-deck {
+  fill: color-mix(in srgb, var(--dog-glow), #d7c28a 42%);
+  stroke: #6f573c;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.dog-skateboard-grip {
+  fill: #172426;
+  opacity: 0.82;
+}
+
+.dog-skateboard-trucks {
+  fill: #b9d7df;
+  stroke: #172426;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dog-skateboard-wheels {
+  fill: var(--dog-accent);
+  stroke: #111819;
+  stroke-width: 3;
+}
+
+.dog-skateboard-wheels path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--dog-glow), white 10%);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
 .dog-rank-accessory {
   opacity: var(--dog-accessory-opacity);
 }
@@ -1118,6 +1161,16 @@ button {
   }
   50% {
     transform: rotate(7deg);
+  }
+}
+
+@keyframes dog-board-cruise {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.3deg);
+  }
+  50% {
+    transform: translateY(1.5px) rotate(0.45deg);
   }
 }
 
@@ -3709,6 +3762,7 @@ select {
   .dog-eye-shine,
   .dog-ear-back,
   .dog-ear-front,
+  .dog-skateboard,
   .dog-fur-lines,
   .dog-legendary-stars {
     animation: none !important;

@@ -38,6 +38,24 @@ export function DachshundMascot({ skinId = 'classic', rank = 1, size = 'medium',
           <path d="M61 48 C88 13 173 13 200 49" />
           <path d="M55 68 C83 29 178 29 205 70" />
         </g>
+        <g className="dog-skateboard">
+          <path className="dog-skateboard-shadow" d="M47 137 C78 127 179 126 215 137 C181 148 80 148 47 137Z" />
+          <path className="dog-skateboard-deck" d="M42 119 C52 111 66 112 78 116 C107 125 151 125 183 116 C198 111 213 112 224 120 C218 131 199 134 177 130 C144 125 111 125 80 130 C60 133 48 129 42 119Z" />
+          <path className="dog-skateboard-grip" d="M72 118 C105 125 153 125 187 118 C175 124 155 127 129 127 C103 127 83 124 72 118Z" />
+          <g className="dog-skateboard-trucks">
+            <path d="M79 128 H105" />
+            <path d="M158 128 H185" />
+            <rect x="89" y="123" width="10" height="8" rx="2" />
+            <rect x="166" y="123" width="10" height="8" rx="2" />
+          </g>
+          <g className="dog-skateboard-wheels">
+            <circle cx="73" cy="134" r="9" />
+            <circle cx="109" cy="134" r="8" />
+            <circle cx="154" cy="134" r="8" />
+            <circle cx="191" cy="134" r="9" />
+            <path d="M69 134 H77 M105 134 H113 M150 134 H158 M187 134 H195" />
+          </g>
+        </g>
 
         <g className="dog-body-group" filter={`url(#dog-soft-shadow-${skin.id}-${rank})`}>
           <path className="dog-tail" d="M55 74 C35 68 26 54 32 43 C36 35 45 33 51 39 C42 44 42 56 55 63" />

@@ -490,6 +490,10 @@ function createCompanionDachshund(equippedSkin) {
     dark: new THREE.MeshStandardMaterial({ color: 0x111819, roughness: 0.48, metalness: 0.04 }),
     eye: new THREE.MeshStandardMaterial({ color: 0x050706, roughness: 0.24, metalness: 0.02 }),
     shine: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0 }),
+    skateDeck: new THREE.MeshStandardMaterial({ color: 0xd7c28a, roughness: 0.48, metalness: 0.02 }),
+    skateGrip: new THREE.MeshStandardMaterial({ color: 0x101718, roughness: 0.62, metalness: 0.02 }),
+    skateTruck: new THREE.MeshStandardMaterial({ color: 0xb9d7df, roughness: 0.36, metalness: 0.18 }),
+    skateWheel: new THREE.MeshStandardMaterial({ color: 0x2a6f64, roughness: 0.42, metalness: 0.03 }),
     shadow: new THREE.MeshBasicMaterial({ color: 0x050706, transparent: true, opacity: 0.18, depthWrite: false })
   };
 
@@ -570,6 +574,9 @@ function createCompanionDachshund(equippedSkin) {
   tail.castShadow = true;
   group.add(tail);
 
+  const skateboard = createCompanionSkateboard(materials);
+  group.add(skateboard);
+
   const collar = addDogMesh(group, new THREE.TorusGeometry(0.205, 0.024, 8, 18), materials.accent, [0.62, 0.67, 0], [1, 1.1, 0.86], [0, Math.PI / 2, 0]);
   const tag = addDogMesh(group, new THREE.CylinderGeometry(0.055, 0.055, 0.018, 12), materials.glow, [0.78, 0.49, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
 
@@ -621,6 +628,7 @@ function createCompanionDachshund(equippedSkin) {
     ears: [leftEar, rightEar],
     legs,
     tail,
+    skateboard,
     collar,
     tag,
     cyberGroup,
@@ -675,6 +683,84 @@ function addDogLeg(group, legMaterial, pawMaterial, position) {
     pawBaseY: paw.position.y,
     pawBaseZ: paw.position.z
   };
+}
+
+function createCompanionSkateboard(materials) {
+  const skateboard = new THREE.Group();
+  skateboard.name = 'dachshund-3d-skateboard';
+  skateboard.userData.wheels = [];
+
+  const deck = new THREE.Mesh(createSkateboardDeckGeometry(), materials.skateDeck);
+  deck.position.set(0.02, 0.095, 0);
+  deck.castShadow = true;
+  deck.receiveShadow = true;
+  skateboard.add(deck);
+
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.012, 0.28), materials.skateGrip);
+  grip.position.set(0.04, 0.13, 0);
+  grip.castShadow = true;
+  grip.receiveShadow = true;
+  skateboard.add(grip);
+
+  [-0.62, 0.72].forEach((x) => {
+    const truck = new THREE.Group();
+    truck.position.set(x, 0.062, 0);
+
+    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.78, 10), materials.skateTruck);
+    axle.rotation.x = Math.PI / 2;
+    axle.castShadow = true;
+    axle.receiveShadow = true;
+    truck.add(axle);
+
+    const mount = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.045, 0.14), materials.skateTruck);
+    mount.position.y = 0.018;
+    mount.castShadow = true;
+    mount.receiveShadow = true;
+    truck.add(mount);
+
+    [-0.39, 0.39].forEach((z) => {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.08, 16), materials.skateWheel);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(0, -0.025, z);
+      wheel.castShadow = true;
+      wheel.receiveShadow = true;
+      truck.add(wheel);
+      skateboard.userData.wheels.push(wheel);
+    });
+
+    skateboard.add(truck);
+  });
+
+  const noseStripe = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.014, 0.36), materials.glow);
+  noseStripe.position.set(0.88, 0.137, 0);
+  noseStripe.castShadow = true;
+  skateboard.add(noseStripe);
+
+  skateboard.userData.deck = deck;
+  return skateboard;
+}
+
+function createSkateboardDeckGeometry() {
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.86, -0.24);
+  shape.bezierCurveTo(-1.08, -0.23, -1.18, -0.12, -1.18, 0);
+  shape.bezierCurveTo(-1.18, 0.12, -1.08, 0.23, -0.86, 0.24);
+  shape.lineTo(0.86, 0.24);
+  shape.bezierCurveTo(1.08, 0.23, 1.18, 0.12, 1.18, 0);
+  shape.bezierCurveTo(1.18, -0.12, 1.08, -0.23, 0.86, -0.24);
+  shape.closePath();
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: 0.06,
+    bevelEnabled: true,
+    bevelThickness: 0.012,
+    bevelSize: 0.02,
+    bevelSegments: 2,
+    curveSegments: 8
+  });
+  geometry.rotateX(Math.PI / 2);
+  geometry.center();
+  return geometry;
 }
 
 function updateCompanionDachshund(companion, camera, delta, isInterior, progress) {
@@ -762,6 +848,7 @@ function updateCompanionDachshund(companion, camera, delta, isInterior, progress
   companion.sitAmount += (targetSitAmount - companion.sitAmount) * (1 - Math.exp(-5.6 * delta));
   const sit = companion.sitAmount;
   const walkAmount = clamp(speed / WALK_SPEED, 0, 1) * (1 - sit);
+  const skateRoll = speed * delta * 4.8;
 
   toCamera.copy(camera.position).sub(companion.group.position);
   toCamera.y = 0;
@@ -833,6 +920,11 @@ function updateCompanionDachshund(companion, camera, delta, isInterior, progress
   companion.cyberGroup.position.y = 0.13 * sit;
   companion.engineerGroup.position.x = -0.1 * sit;
   companion.engineerGroup.position.y = 0.14 * sit;
+  companion.skateboard.position.y = THREE.MathUtils.lerp(0, -0.012, sit);
+  companion.skateboard.rotation.z = Math.sin(companion.walkPhase * 1.8) * 0.018 * walkAmount;
+  companion.skateboard.userData.wheels?.forEach((wheel, index) => {
+    wheel.rotation.z += (index % 2 === 0 ? 1 : -1) * skateRoll;
+  });
   companion.tail.rotation.z = THREE.MathUtils.lerp(
     0.16 + Math.sin(companion.walkPhase * 1.6) * 0.18,
     -0.34 + Math.sin(companion.walkPhase * 1.2) * 0.04,
@@ -856,6 +948,8 @@ function applyCompanionDachshundVisuals(companion, equippedSkin) {
   setMaterialColor(companion.materials.ear, visuals.ear);
   setMaterialColor(companion.materials.accent, visuals.accent);
   setMaterialColor(companion.materials.glow, visuals.glow);
+  setMaterialColor(companion.materials.skateWheel, visuals.accent);
+  setMaterialColor(companion.materials.skateDeck, visuals.glow);
 
   companion.group.scale.setScalar(0.92 * visuals.scale);
   companion.cyberGroup.visible = skin?.id === 'cyber';
