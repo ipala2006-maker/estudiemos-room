@@ -1,43 +1,55 @@
-name: Apply skateboard dachshund patch
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  apply:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
+          node-version: 24
+          cache: npm
 
-      - name: Download patch
-        run: |
-          curl -L --fail "https://litter.catbox.moe/eij5n8.gz" -o patch.tar.gz
-          mkdir -p patch
-          tar -xzf patch.tar.gz -C patch
-          test -f patch/src/components/FirstPersonWorld.jsx
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Apply patch files
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
-          cp patch/src/components/FirstPersonWorld.jsx src/components/FirstPersonWorld.jsx
-          cp patch/src/components/DachshundMascot.jsx src/components/DachshundMascot.jsx
-          cp patch/src/styles/app.css src/styles/app.css
-          cp patch/src/data/buildInfo.js src/data/buildInfo.js
-          git add src/components/FirstPersonWorld.jsx src/components/DachshundMascot.jsx src/styles/app.css src/data/buildInfo.js
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Add skateboard dachshund companion"
-            git push
-          fi
+      - name: Build
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
