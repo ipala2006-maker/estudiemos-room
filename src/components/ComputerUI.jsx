@@ -2,9 +2,11 @@
   BarChart3,
   BookOpen,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   CheckCircle2,
   ChevronRight,
+  ChevronUp,
   Clock3,
   Coins,
   Eraser,
@@ -58,7 +60,7 @@ import {
   getUpgradeCost,
   isSkinPurchased
 } from '../data/focusEconomy.js';
-import { studyAgendaItems } from '../data/studyAgenda.js';
+import { createStudyAgendaItems, studyAgendaItems } from '../data/studyAgenda.js';
 import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingenieriaRecursos.js';
 import { parseSpotifyUrl } from '../utils/spotify.js';
 import { parseYouTubeUrl } from '../utils/youtube.js';
@@ -264,6 +266,14 @@ function loadStoredSpotifyContent() {
   } catch {
     return null;
   }
+}
+
+function scrollPanelBy(targetRef, left, top) {
+  targetRef.current?.scrollBy({
+    left,
+    top,
+    behavior: 'smooth'
+  });
 }
 
 export function ComputerUI({
@@ -614,6 +624,14 @@ export function ComputerUI({
     showActionFeedback('Agenda vacia');
   }
 
+  function restoreInitialAgendaItems() {
+    const restoredItems = createStudyAgendaItems();
+    onAgendaItemsChange(restoredItems);
+    setSystemNote('Agenda inicial restaurada');
+    showActionFeedback('Agenda restaurada');
+    return restoredItems;
+  }
+
   function updateComputerSetting(key, value) {
     setComputerSettings((current) => ({ ...current, [key]: value }));
     setSystemNote('Configuracion actualizada');
@@ -824,6 +842,7 @@ export function ComputerUI({
                     onRemoveItem={removeAgendaItem}
                     onClearDate={clearAgendaDate}
                     onClearAll={clearAgendaItems}
+                    onRestoreInitial={restoreInitialAgendaItems}
                   />
                 </OSWindow>
               )}
@@ -895,6 +914,7 @@ export function ComputerUI({
                     onClearAllScreens={clearAllScreens}
                     onMuteAllScreens={muteAllScreens}
                     onClearAgenda={clearAgendaItems}
+                    onRestoreAgenda={restoreInitialAgendaItems}
                   />
                 </OSWindow>
               )}
@@ -1294,11 +1314,13 @@ function getRankCostGuide(rank) {
   return `R${previousRank}->R${rank}: Comun ${SKIN_COST_TABLE.common.upgrades[previousRank]}, Rara ${SKIN_COST_TABLE.rare.upgrades[previousRank]}, Legendaria ${SKIN_COST_TABLE.legendary.upgrades[previousRank]}.`;
 }
 
-function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClearDate, onClearAll }) {
+function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClearDate, onClearAll, onRestoreInitial }) {
+  const shellRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(() => agendaItems[0]?.date ?? getTodayDateValue());
   const [calendarCursor, setCalendarCursor] = useState(() => parseAgendaDate(agendaItems[0]?.date ?? getTodayDateValue()));
+  const [quickDate, setQuickDate] = useState(() => agendaItems[0]?.date ?? getTodayDateValue());
   const [quickTitle, setQuickTitle] = useState('');
-  const [quickTime, setQuickTime] = useState(() => getNextAgendaTime(agendaItems, agendaItems[0]?.date ?? getTodayDateValue()));
+  const [quickTime, setQuickTime] = useState(() => getNextAgendaTime(agendaItems, quickDate));
   const [quickDetail, setQuickDetail] = useState('');
   const sortedAgendaItems = useMemo(() => sortAgendaItems(agendaItems), [agendaItems]);
   const selectedDateItems = useMemo(
@@ -1343,8 +1365,12 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
   const nextAgendaItem = activeAgendaItems.find((item) => (item.date ?? '') >= getTodayDateValue()) ?? activeAgendaItems[0] ?? null;
 
   useEffect(() => {
-    setQuickTime(getNextAgendaTime(agendaItems, selectedDate));
-  }, [agendaItems, selectedDate]);
+    setQuickDate(selectedDate);
+  }, [selectedDate]);
+
+  useEffect(() => {
+    setQuickTime(getNextAgendaTime(agendaItems, quickDate));
+  }, [agendaItems, quickDate]);
 
   function shiftCalendarMonth(offset) {
     setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1, 12));
@@ -1356,7 +1382,8 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
   }
 
   function addItemForSelectedDate() {
-    const createdItem = onAddItem?.(selectedDate, {
+    const targetDate = quickDate || selectedDate;
+    const createdItem = onAddItem?.(targetDate, {
       time: quickTime,
       title: quickTitle.trim() || 'Nuevo bloque',
       detail: quickDetail.trim() || 'Objetivo de estudio',
@@ -1364,6 +1391,7 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
     });
     setQuickTitle('');
     setQuickDetail('');
+    selectAgendaDate(createdItem?.date ?? targetDate);
     setQuickTime(addAgendaMinutes(createdItem?.time ?? quickTime, 60));
   }
 
@@ -1396,8 +1424,17 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
     }
   }
 
+  function restoreInitialAgenda() {
+    if (window.confirm('Restaurar la agenda inicial? Se reemplaza la agenda actual.')) {
+      const restoredItems = onRestoreInitial?.() ?? createStudyAgendaItems();
+      const nextDate = restoredItems[0]?.date ?? getTodayDateValue();
+      selectAgendaDate(nextDate);
+      setQuickDate(nextDate);
+    }
+  }
+
   return (
-    <div className="os-fullscreen-app agenda-app-shell">
+    <div className="os-fullscreen-app agenda-app-shell" ref={shellRef}>
       <header className="agenda-app-header">
         <div>
           <span>Agenda sincronizada</span>
@@ -1413,6 +1450,10 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
             <ChevronRight size={17} aria-hidden="true" />
             <span>Manana</span>
           </button>
+          <button type="button" onClick={restoreInitialAgenda}>
+            <CalendarDays size={17} aria-hidden="true" />
+            <span>Restaurar inicio</span>
+          </button>
           <button type="button" className="agenda-danger-button" onClick={clearAllAgenda} disabled={agendaItems.length === 0}>
             <Eraser size={17} aria-hidden="true" />
             <span>Vaciar</span>
@@ -1421,6 +1462,7 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
             <Plus size={18} aria-hidden="true" />
             <span>Agregar</span>
           </button>
+          <ScrollPad targetRef={shellRef} label="Mover agenda" />
         </div>
       </header>
 
@@ -1497,6 +1539,10 @@ function AgendaApp({ agendaItems, onUpdateItem, onAddItem, onRemoveItem, onClear
           </div>
 
           <form className="agenda-quick-add" onSubmit={submitQuickAdd}>
+            <label>
+              <span>Fecha</span>
+              <input type="date" value={quickDate} onChange={(event) => setQuickDate(event.target.value)} />
+            </label>
             <label>
               <span>Hora</span>
               <input type="time" value={quickTime} onChange={(event) => setQuickTime(event.target.value)} />
@@ -1634,7 +1680,8 @@ function SettingsApp({
   onScreenLayoutChange,
   onClearAllScreens,
   onMuteAllScreens,
-  onClearAgenda
+  onClearAgenda,
+  onRestoreAgenda
 }) {
   const activeScreenCount = ZONES.filter((zone) => Boolean(screenZones[zone.id]?.videoId || screenZones[zone.id]?.resourceUrl)).length;
 
@@ -1707,6 +1754,10 @@ function SettingsApp({
             <Eraser size={17} aria-hidden="true" />
             <span>Vaciar agenda</span>
           </button>
+          <button type="button" onClick={onRestoreAgenda}>
+            <CalendarDays size={17} aria-hidden="true" />
+            <span>Restaurar agenda</span>
+          </button>
         </div>
       </section>
     </div>
@@ -1725,9 +1776,30 @@ function SettingToggle({ title, description, checked, onChange }) {
   );
 }
 
-function SpotifyApp({ draft, error, content, onDraftChange, onLoad, onClear, onSendSecondary }) {
+function ScrollPad({ targetRef, label = 'Mover panel', tone = 'light' }) {
   return (
-    <div className="os-fullscreen-app spotify-app-shell">
+    <div className={`os-scroll-pad is-${tone}`} aria-label={label}>
+      <button type="button" onClick={() => scrollPanelBy(targetRef, 0, -260)} aria-label={`${label} arriba`}>
+        <ChevronUp size={16} aria-hidden="true" />
+      </button>
+      <button type="button" onClick={() => scrollPanelBy(targetRef, -260, 0)} aria-label={`${label} izquierda`}>
+        <ChevronLeft size={16} aria-hidden="true" />
+      </button>
+      <button type="button" onClick={() => scrollPanelBy(targetRef, 260, 0)} aria-label={`${label} derecha`}>
+        <ChevronRight size={16} aria-hidden="true" />
+      </button>
+      <button type="button" onClick={() => scrollPanelBy(targetRef, 0, 260)} aria-label={`${label} abajo`}>
+        <ChevronDown size={16} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+function SpotifyApp({ draft, error, content, onDraftChange, onLoad, onClear, onSendSecondary }) {
+  const shellRef = useRef(null);
+
+  return (
+    <div className="os-fullscreen-app spotify-app-shell" ref={shellRef}>
       <section className="spotify-hero-panel" aria-label="Spotify en Estudiemos Room">
         <div>
           <span>Musica de fondo</span>
@@ -1738,6 +1810,7 @@ function SpotifyApp({ draft, error, content, onDraftChange, onLoad, onClear, onS
           <Music2 size={24} aria-hidden="true" />
           <span>{content ? content.label : 'Sin contenido'}</span>
           <strong>{content?.title ?? 'Pega un link para empezar'}</strong>
+          <ScrollPad targetRef={shellRef} label="Mover Spotify" tone="dark" />
         </div>
       </section>
 

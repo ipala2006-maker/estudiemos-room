@@ -766,6 +766,8 @@
   padding: clamp(18px, 2.4vw, 30px);
   gap: clamp(14px, 2vw, 22px);
   overflow: auto;
+  scrollbar-color: rgba(42, 111, 100, 0.74) rgba(32, 48, 46, 0.08);
+  scrollbar-gutter: stable;
   color: #20302e;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(238, 244, 239, 0.96)),
@@ -821,6 +823,30 @@
   gap: 9px;
 }
 
+.os-scroll-pad {
+  display: grid;
+  grid-template-columns: repeat(4, 34px);
+  gap: 5px;
+  align-items: center;
+}
+
+.os-scroll-pad button {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(32, 48, 46, 0.14);
+  border-radius: 8px;
+  color: #20302e;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.os-scroll-pad.is-dark button {
+  color: #ecfff1;
+  border-color: rgba(234, 244, 238, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .agenda-app-actions button,
 .settings-action-grid button {
   min-height: 42px;
@@ -840,6 +866,16 @@
   color: #13201d;
   background: #e0c47a;
   border-color: rgba(85, 71, 36, 0.22);
+}
+
+.agenda-app-actions .os-scroll-pad button,
+.settings-action-grid .os-scroll-pad button,
+.spotify-current-card .os-scroll-pad button {
+  width: 34px;
+  height: 34px;
+  min-height: 0;
+  padding: 0;
+  display: inline-grid;
 }
 
 .agenda-app-actions button:disabled,
@@ -966,6 +1002,8 @@
   padding: clamp(18px, 2.4vw, 30px);
   gap: clamp(14px, 2vw, 22px);
   overflow: auto;
+  scrollbar-color: rgba(30, 215, 96, 0.82) rgba(255, 255, 255, 0.08);
+  scrollbar-gutter: stable;
   color: #eaf4ee;
   background:
     radial-gradient(circle at 20% 8%, rgba(49, 202, 111, 0.22), transparent 34%),
@@ -1036,6 +1074,10 @@
   background:
     linear-gradient(135deg, rgba(29, 185, 84, 0.18), rgba(255, 255, 255, 0.06)),
     rgba(255, 255, 255, 0.07);
+}
+
+.spotify-current-card .os-scroll-pad {
+  margin-top: 4px;
 }
 
 .spotify-current-card svg {
@@ -2104,7 +2146,7 @@ button.focus-skin-preview {
 .agenda-quick-add {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(90px, 0.36fr) minmax(150px, 0.86fr) minmax(190px, 1.1fr) auto;
+  grid-template-columns: minmax(132px, 0.48fr) minmax(90px, 0.34fr) minmax(150px, 0.82fr) minmax(190px, 1.05fr) auto;
   gap: 10px;
   align-items: end;
   padding: 12px;
