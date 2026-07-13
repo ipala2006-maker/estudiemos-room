@@ -470,8 +470,7 @@ export function ComputerUI({
     if (focusedWindow === 'estudiemos' && goBackInEstudiemos()) return true;
 
     if (focusedWindow === 'estudiemos') {
-      openEstudiemosHome();
-      setSystemNote('Inicio de Estudiemos');
+      returnToComputerDesktop();
       return true;
     }
 
