@@ -18,18 +18,21 @@ const edgeMaterialCache = new Map();
 const modelLoader = new GLTFLoader();
 const PERFORMANCE_PROFILE = {
   maxPixelRatio: 1,
-  grassBlades: 36,
+  grassBlades: 24,
+  horizonTrees: 18,
+  horizonShrubs: 22,
+  horizonFlowers: 28,
   skyWidthSegments: 24,
   skyHeightSegments: 12
 };
 const MEADOW_SIZE = 1400;
 const MEADOW_HORIZON_RADIUS = 118;
 const PERFORMANCE_PASS_MARKER = 'performance-pass-smoother-room-2026-07-10';
-const CSS_CONTENT_SYNC_INTERVAL_MS = 140;
+const CSS_CONTENT_SYNC_INTERVAL_MS = 220;
 const PLAYER_RADIUS = 0.58;
-const WALK_SPEED = 9.6;
-const WALK_ACCELERATION = 26;
-const WALK_DECELERATION = 34;
+const WALK_SPEED = 9.1;
+const WALK_ACCELERATION = 22;
+const WALK_DECELERATION = 30;
 const CAMERA_SMOOTHING = 38;
 const CAMERA_SENSITIVITY = {
   yaw: 0.002,
@@ -139,9 +142,8 @@ export function FirstPersonWorld({
     const mount = mountRef.current;
     const scene = new THREE.Scene();
     scene.userData.performancePass = PERFORMANCE_PASS_MARKER;
-    scene.background = new THREE.Color(0x9ea99a);
-    scene.fog = new THREE.Fog(0xa7ad9d, 72, 220);
-    addStaticSkyDome(scene);
+    scene.background = new THREE.Color(0xb5c0af);
+    scene.fog = new THREE.Fog(0xb5c0af, 70, 210);
 
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 230);
     camera.position.copy(startPosition);
@@ -182,7 +184,7 @@ export function FirstPersonWorld({
     const ambient = new THREE.HemisphereLight(0xfff0d2, 0x263a36, 0.9);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xffdca6, 1.75);
+    const sun = new THREE.DirectionalLight(0xffdca6, 1.35);
     sun.position.set(28, 31, 16);
     sun.castShadow = false;
     sun.shadow.mapSize.set(512, 512);
@@ -430,7 +432,7 @@ export function FirstPersonWorld({
         }
       }
 
-      if (frameTime - lastCssContentSyncTime >= CSS_CONTENT_SYNC_INTERVAL_MS) {
+      if (doorOpenRef.current && frameTime - lastCssContentSyncTime >= CSS_CONTENT_SYNC_INTERVAL_MS) {
         lastCssContentSyncTime = frameTime;
         updateGiantScreen(giantScreen, screenZonesRef.current, screenLayoutRef.current);
         updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
@@ -1530,7 +1532,7 @@ function addStaticSkyDome(scene) {
       fog: false
     })
   );
-  sky.position.set(0, -18, 0);
+  sky.position.set(0, -38, 0);
   sky.renderOrder = -20;
   scene.add(sky);
 }
@@ -1643,8 +1645,8 @@ function addInfiniteMeadowBackdrop(scene) {
     makeMaterial(0xb9d7df, 0.82)
   ];
 
-  for (let i = 0; i < 26; i += 1) {
-    const angle = (i / 26) * Math.PI * 2 + ((i * 19) % 11) * 0.012;
+  for (let i = 0; i < PERFORMANCE_PROFILE.horizonTrees; i += 1) {
+    const angle = (i / PERFORMANCE_PROFILE.horizonTrees) * Math.PI * 2 + ((i * 19) % 11) * 0.012;
     const radius = MEADOW_HORIZON_RADIUS + (i % 7) * 9;
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
@@ -1660,8 +1662,8 @@ function addInfiniteMeadowBackdrop(scene) {
     scene.add(crown);
   }
 
-  for (let i = 0; i < 36; i += 1) {
-    const angle = (i / 36) * Math.PI * 2 + ((i * 23) % 13) * 0.01;
+  for (let i = 0; i < PERFORMANCE_PROFILE.horizonShrubs; i += 1) {
+    const angle = (i / PERFORMANCE_PROFILE.horizonShrubs) * Math.PI * 2 + ((i * 23) % 13) * 0.01;
     const radius = 42 + (i % 9) * 5.8;
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
@@ -1673,7 +1675,7 @@ function addInfiniteMeadowBackdrop(scene) {
     scene.add(shrub);
   }
 
-  for (let i = 0; i < 48; i += 1) {
+  for (let i = 0; i < PERFORMANCE_PROFILE.horizonFlowers; i += 1) {
     const x = ((i * 17) % 86) - 43;
     const z = ((i * 29) % 92) - 46;
     const nearHouse = Math.abs(x) < 13 && z < -12;
@@ -1803,10 +1805,8 @@ function addExteriorHorizon(scene) {
 
 function addExteriorCinematicLighting(scene) {
   [
-    { position: [-4.7, 2.5, -14.35], color: 0xffd39b, intensity: 1.25, distance: 14 },
-    { position: [4.7, 2.5, -14.35], color: 0xffd39b, intensity: 1.25, distance: 14 },
-    { position: [-3.2, 0.9, 7.4], color: 0xd7c28a, intensity: 0.55, distance: 8 },
-    { position: [3.2, 0.9, 2.2], color: 0xd7c28a, intensity: 0.45, distance: 8 }
+    { position: [-4.7, 2.45, -14.35], color: 0xffd39b, intensity: 0.95, distance: 13 },
+    { position: [4.7, 2.45, -14.35], color: 0xffd39b, intensity: 0.95, distance: 13 }
   ].forEach((lightSpec) => {
     const light = new THREE.PointLight(lightSpec.color, lightSpec.intensity, lightSpec.distance, 2.05);
     light.position.set(...lightSpec.position);
@@ -2922,7 +2922,7 @@ function addCasa1Interior(scene, textures) {
   const keyLight = new THREE.SpotLight(0xffc27a, 4.8, 36, Math.PI / 5.8, 0.55, 1.35);
   keyLight.position.set(-8.2, 7.2, -4.8);
   keyLight.target.position.set(-11.2, 0.85, -8.3);
-  keyLight.castShadow = true;
+  keyLight.castShadow = false;
   keyLight.shadow.mapSize.set(512, 512);
   keyLight.shadow.bias = -0.00025;
   room.add(keyLight);
@@ -3629,9 +3629,9 @@ function createSkyBackgroundTexture() {
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, '#5f7980');
   gradient.addColorStop(0.35, '#a6b6aa');
-  gradient.addColorStop(0.62, '#d3c5a8');
-  gradient.addColorStop(0.84, '#898f74');
-  gradient.addColorStop(1, '#566349');
+  gradient.addColorStop(0.62, '#d7ceb8');
+  gradient.addColorStop(0.84, '#adb79d');
+  gradient.addColorStop(1, '#829177');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -3645,7 +3645,7 @@ function createSkyBackgroundTexture() {
   const drawCloudCluster = (x, y, scale, opacity) => {
     ctx.save();
     ctx.globalAlpha = opacity;
-    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.fillStyle = 'rgba(255,255,255,0.58)';
     [
       [-58, 6, 64, 19],
       [-16, -8, 78, 26],
@@ -3657,7 +3657,7 @@ function createSkyBackgroundTexture() {
       ctx.ellipse(x + ox * scale, y + oy * scale, rx * scale, ry * scale, -0.03, 0, Math.PI * 2);
       ctx.fill();
     });
-    ctx.fillStyle = 'rgba(126, 151, 159, 0.18)';
+    ctx.fillStyle = 'rgba(126, 151, 159, 0.08)';
     ctx.beginPath();
     ctx.ellipse(x + 12 * scale, y + 22 * scale, 116 * scale, 13 * scale, -0.02, 0, Math.PI * 2);
     ctx.fill();
@@ -3665,26 +3665,24 @@ function createSkyBackgroundTexture() {
   };
 
   [
-    [130, 92, 0.9, 0.72],
-    [345, 148, 0.62, 0.5],
-    [578, 82, 0.82, 0.54],
-    [860, 158, 0.76, 0.5],
-    [1010, 108, 0.88, 0.56]
+    [150, 76, 0.58, 0.34],
+    [470, 104, 0.42, 0.24],
+    [900, 86, 0.52, 0.28]
   ].forEach((cloud) => drawCloudCluster(...cloud));
 
-  ctx.fillStyle = 'rgba(80, 101, 88, 0.2)';
-  ctx.fillRect(0, canvas.height * 0.76, canvas.width, canvas.height * 0.24);
-  const treeLine = ctx.createLinearGradient(0, canvas.height * 0.68, 0, canvas.height);
-  treeLine.addColorStop(0, 'rgba(77, 99, 81, 0.05)');
-  treeLine.addColorStop(0.36, 'rgba(77, 99, 81, 0.24)');
-  treeLine.addColorStop(1, 'rgba(56, 75, 59, 0.38)');
+  ctx.fillStyle = 'rgba(80, 101, 88, 0.06)';
+  ctx.fillRect(0, canvas.height * 0.84, canvas.width, canvas.height * 0.16);
+  const treeLine = ctx.createLinearGradient(0, canvas.height * 0.78, 0, canvas.height);
+  treeLine.addColorStop(0, 'rgba(77, 99, 81, 0.015)');
+  treeLine.addColorStop(0.5, 'rgba(77, 99, 81, 0.08)');
+  treeLine.addColorStop(1, 'rgba(56, 75, 59, 0.14)');
   ctx.fillStyle = treeLine;
-  for (let x = -12; x < canvas.width + 20; x += 18) {
-    const h = 18 + (Math.abs(x * 13) % 32);
+  for (let x = -12; x < canvas.width + 20; x += 28) {
+    const h = 8 + (Math.abs(x * 13) % 14);
     ctx.beginPath();
-    ctx.moveTo(x, canvas.height * 0.76);
-    ctx.lineTo(x + 10, canvas.height * 0.76 - h);
-    ctx.lineTo(x + 22, canvas.height * 0.76);
+    ctx.moveTo(x, canvas.height * 0.88);
+    ctx.lineTo(x + 10, canvas.height * 0.88 - h);
+    ctx.lineTo(x + 22, canvas.height * 0.88);
     ctx.closePath();
     ctx.fill();
   }

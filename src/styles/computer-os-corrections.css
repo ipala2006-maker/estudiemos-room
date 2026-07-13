@@ -2486,3 +2486,103 @@ button.focus-skin-preview {
   color: rgba(247, 241, 228, 0.34) !important;
   background: rgba(255, 255, 255, 0.025) !important;
 }
+
+/* Product polish pass: restore useful aim feedback and reduce expensive glass effects. */
+.game-shell::before {
+  display: none !important;
+}
+
+.game-shell::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 25;
+  display: block !important;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(255, 244, 215, 0.72);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px rgba(6, 9, 9, 0.45);
+  pointer-events: none;
+}
+
+.game-shell.is-computer-open::after,
+.game-shell.is-screen-remote-open::after {
+  display: none !important;
+}
+
+.estudiemos-os-live-desktop .os-system-bar,
+.estudiemos-os-live-desktop .focus-profile-tabs {
+  backdrop-filter: none !important;
+}
+
+.estudiemos-os-live-desktop :is(button, a, input, select, textarea) {
+  transition-timing-function: cubic-bezier(0.2, 0.82, 0.22, 1) !important;
+}
+
+.estudiemos-os-live-desktop :is(button, a):focus-visible,
+.virtual-app-tile:focus-visible,
+.virtual-dock-button:focus-visible {
+  outline: 2px solid rgba(224, 196, 122, 0.74);
+  outline-offset: 2px;
+}
+
+.virtual-desktop-shell {
+  gap: clamp(12px, 1.7vw, 20px);
+}
+
+.virtual-app-grid,
+.virtual-side-panel,
+.agenda-app-shell,
+.settings-app-shell,
+.focus-profile-app,
+.screen-control-drawer {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224, 196, 122, 0.42) rgba(255, 255, 255, 0.06);
+}
+
+.virtual-app-tile.is-ready,
+.virtual-dock-button.is-active {
+  cursor: pointer;
+}
+
+.virtual-app-tile.is-ready:hover,
+.virtual-app-tile.is-ready:focus-visible,
+.virtual-dock-button.is-active:hover,
+.virtual-dock-button.is-active:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(224, 196, 122, 0.62);
+  background: rgba(23, 39, 35, 0.84);
+}
+
+.virtual-app-tile:active,
+.virtual-dock-button:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.virtual-side-panel,
+.virtual-dock,
+.virtual-desktop-topbar,
+.virtual-focus-card,
+.virtual-agenda-list,
+.virtual-mini-grid > div,
+.virtual-app-tile {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.virtual-focus-card p {
+  max-width: 34ch;
+}
+
+.virtual-app-state {
+  background: rgba(224, 196, 122, 0.86);
+}
+
+@media (max-width: 640px) {
+  .game-shell::after {
+    width: 6px;
+    height: 6px;
+  }
+}

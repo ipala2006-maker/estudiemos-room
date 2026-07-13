@@ -299,6 +299,22 @@ function App() {
     }));
   }
 
+  const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !wallAgendaOpen;
+  const interactionPrompts = [
+    canShowWorldPrompts && isNearDoor
+      ? { key: 'door', label: `E - ${isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}` }
+      : null,
+    canShowWorldPrompts && isNearComputer
+      ? { key: 'computer', label: 'E - abrir computadora' }
+      : null,
+    canShowWorldPrompts && isAimingAgendaBoard
+      ? { key: 'agenda', label: 'E - editar agenda de pared' }
+      : null,
+    canShowWorldPrompts && isAimingScreen
+      ? { key: 'screen', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
+      : null
+  ].filter(Boolean);
+
   if (!hasStarted) {
     return <StartScreen onEnter={() => setHasStarted(true)} />;
   }
@@ -337,20 +353,14 @@ function App() {
         </div>
       )}
 
-      {isNearDoor && (
-        <div className="interaction-prompt">
-          Presiona E para {isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}
+      {interactionPrompts.length > 0 && (
+        <div className="interaction-prompt-stack" aria-live="polite">
+          {interactionPrompts.map((prompt) => (
+            <div key={prompt.key} className={`interaction-prompt${prompt.className ? ` ${prompt.className}` : ''}`}>
+              {prompt.label}
+            </div>
+          ))}
         </div>
-      )}
-
-      {isNearComputer && <div className="interaction-prompt">Presiona E para usar la computadora</div>}
-
-      {isAimingAgendaBoard && !computerOpen && !screenRemoteOpen && !wallAgendaOpen && (
-        <div className="interaction-prompt wall-agenda-prompt">Presiona E para editar la agenda</div>
-      )}
-
-      {isAimingScreen && !computerOpen && !screenRemoteOpen && !wallAgendaOpen && (
-        <div className="interaction-prompt screen-remote-prompt">Presiona Q para abrir el control</div>
       )}
 
       {!computerOpen && !screenRemoteOpen && !wallAgendaOpen && !isPointerLocked && (

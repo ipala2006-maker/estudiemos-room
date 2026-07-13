@@ -3,31 +3,32 @@
   right: 16px;
   bottom: 16px;
   z-index: 28;
-  width: min(292px, calc(100vw - 32px));
+  width: min(270px, calc(100vw - 32px));
   display: grid;
-  gap: 3px;
-  padding: 9px 11px;
-  border: 1px solid rgba(215, 194, 138, 0.46);
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid rgba(215, 194, 138, 0.34);
   border-radius: 8px;
-  background: rgba(17, 22, 34, 0.88);
+  background: rgba(8, 13, 13, 0.82);
   color: #ffffff;
   text-align: left;
   box-shadow:
-    0 12px 30px rgba(0, 0, 0, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px);
-  opacity: 0.9;
+    0 12px 28px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: none;
+  opacity: 0.92;
   pointer-events: auto;
 }
 
 .camera-lock-prompt strong {
-  font-size: 0.82rem;
+  color: #fff4d7;
+  font-size: 0.8rem;
   line-height: 1.2;
 }
 
 .camera-lock-prompt span {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.7rem;
   font-weight: 700;
   line-height: 1.25;
 }

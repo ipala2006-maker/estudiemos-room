@@ -8,12 +8,12 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
   const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy?.nextRewardProgress ?? 0) * 100)));
   const sceneTitle = isDoorOpen ? 'Casa 1' : 'Lobby 3D';
   const contextHint = isNearComputer
-    ? 'E: computadora'
+    ? 'E: abrir computadora'
     : isNearDoor
-      ? isDoorOpen ? 'E: salir' : 'E: entrar'
+      ? isDoorOpen ? 'E: salir al barrio' : 'E: entrar a Casa 1'
       : isDoorOpen
         ? 'Q: control de pantalla'
-        : 'WASD + mouse';
+        : 'Moverse y mirar';
 
   return (
     <aside className="hud hud-compact">
@@ -26,8 +26,7 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
       <div className="hud-mini-guide" aria-label="Controles basicos">
         <span>WASD</span>
         <span>Mouse</span>
-        <span>E</span>
-        <span>Q</span>
+        <span>Interactuar</span>
       </div>
 
       {focusEconomy && (
@@ -58,9 +57,6 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
           Inicio
         </button>
       </div>
-
-      {isNearDoor && <p className="hud-ready">Puerta cerca.</p>}
-      {isNearComputer && <p className="hud-ready">Computadora cerca.</p>}
     </aside>
   );
 }

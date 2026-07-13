@@ -154,9 +154,9 @@ export function VirtualComputerShell(props) {
 
             <aside className="virtual-side-panel" aria-label="Bandeja de estudio">
               <div className="virtual-focus-card">
-                <span>Sesion</span>
-                <strong>Escritorio listo</strong>
-                <p>Estudiemos queda preparado como app principal de la sala.</p>
+                <span>Estado</span>
+                <strong>Listo para estudiar</strong>
+                <p>Abre Estudiemos, organiza la agenda o manda material a la pantalla de la sala.</p>
               </div>
               {focusEconomy && (
                 <div className="virtual-mascot-card">
@@ -173,12 +173,12 @@ export function VirtualComputerShell(props) {
                 <div>
                   <MonitorUp size={18} aria-hidden="true" />
                   <strong>Pantallas</strong>
-                  <span>Controles en la bandeja inferior</span>
+                  <span>Control desde la sala</span>
                 </div>
                 <div>
                   <BarChart3 size={18} aria-hidden="true" />
                   <strong>Progreso</strong>
-                  <span>Modulo preparado</span>
+                  <span>Rango {equippedSkin.rank}</span>
                 </div>
                 <div>
                   <Coins size={18} aria-hidden="true" />
