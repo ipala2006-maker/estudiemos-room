@@ -18,7 +18,7 @@ const edgeMaterialCache = new Map();
 const modelLoader = new GLTFLoader();
 const PERFORMANCE_PROFILE = {
   maxPixelRatio: 1,
-  grassBlades: 56,
+  grassBlades: 36,
   skyWidthSegments: 24,
   skyHeightSegments: 12
 };
@@ -140,10 +140,10 @@ export function FirstPersonWorld({
     const scene = new THREE.Scene();
     scene.userData.performancePass = PERFORMANCE_PASS_MARKER;
     scene.background = new THREE.Color(0x9ea99a);
-    scene.fog = new THREE.Fog(0xa7ad9d, 78, 240);
+    scene.fog = new THREE.Fog(0xa7ad9d, 72, 220);
     addStaticSkyDome(scene);
 
-    const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 260);
+    const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 230);
     camera.position.copy(startPosition);
     camera.rotation.order = 'YXZ';
     scene.add(camera);
@@ -202,8 +202,9 @@ export function FirstPersonWorld({
     softFill.position.set(-18, 11, -8);
     scene.add(softFill);
 
-    const { giantScreen, colliders } = buildWorldScene(scene);
+    const { giantScreen, colliders, exteriorGroup } = buildWorldScene(scene);
     giantScreen.room.visible = false;
+    exteriorGroup.visible = true;
     const companionMascot = createCompanionDachshund(getEquippedSkinState(focusProgressRef.current));
     scene.add(companionMascot.group);
     const firstPersonArm = createFirstPersonArmViewModel();
@@ -257,6 +258,7 @@ export function FirstPersonWorld({
       onAgendaBoardAimChange(false);
       onScreenAimChange(false);
       giantScreen.room.visible = false;
+      exteriorGroup.visible = true;
     }
 
     function faceCameraToward(target) {
@@ -271,6 +273,7 @@ export function FirstPersonWorld({
     toggleDoorRef.current = () => {
       doorOpenRef.current = !doorOpenRef.current;
       giantScreen.room.visible = doorOpenRef.current;
+      exteriorGroup.visible = !doorOpenRef.current;
       camera.position.copy(doorOpenRef.current ? activeMap.interiorSpawnPosition : startPosition);
       movementVelocity.set(0, 0, 0);
       yaw = 0;
@@ -437,6 +440,7 @@ export function FirstPersonWorld({
       updateCompanionDachshund(companionMascot, camera, delta, doorOpenRef.current, focusProgressRef.current);
       updateFirstPersonArmViewModel(firstPersonArm, delta, hasMovementInput, frameTime);
       giantScreen.room.visible = doorOpenRef.current;
+      exteriorGroup.visible = !doorOpenRef.current;
       const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
       cssGiantScreen.visible = showPhysicalScreenContent;
       cssComputerMonitorOccluder.visible = showPhysicalScreenContent;
@@ -1507,10 +1511,13 @@ function buildWorldScene(scene) {
   const roofMaterial = makeMaterial(0x6f5546, 0.7, 0, textures.roof);
   const doorMaterial = makeMaterial(0x2e271f, 0.56, 0.01, textures.wood);
 
-  addNeighborhood(scene, { groundMaterial, houseWall, roofMaterial, doorMaterial, textures });
+  const exteriorGroup = new THREE.Group();
+  exteriorGroup.name = 'estudiemos-room-exterior-neighborhood';
+  addNeighborhood(exteriorGroup, { groundMaterial, houseWall, roofMaterial, doorMaterial, textures });
+  scene.add(exteriorGroup);
   const giantScreen = addCasa1Interior(scene, textures);
   const colliders = createWorldColliders();
-  return { giantScreen, colliders };
+  return { giantScreen, colliders, exteriorGroup };
 }
 
 function addStaticSkyDome(scene) {
@@ -1636,8 +1643,8 @@ function addInfiniteMeadowBackdrop(scene) {
     makeMaterial(0xb9d7df, 0.82)
   ];
 
-  for (let i = 0; i < 44; i += 1) {
-    const angle = (i / 44) * Math.PI * 2 + ((i * 19) % 11) * 0.012;
+  for (let i = 0; i < 26; i += 1) {
+    const angle = (i / 26) * Math.PI * 2 + ((i * 19) % 11) * 0.012;
     const radius = MEADOW_HORIZON_RADIUS + (i % 7) * 9;
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
@@ -1653,8 +1660,8 @@ function addInfiniteMeadowBackdrop(scene) {
     scene.add(crown);
   }
 
-  for (let i = 0; i < 72; i += 1) {
-    const angle = (i / 72) * Math.PI * 2 + ((i * 23) % 13) * 0.01;
+  for (let i = 0; i < 36; i += 1) {
+    const angle = (i / 36) * Math.PI * 2 + ((i * 23) % 13) * 0.01;
     const radius = 42 + (i % 9) * 5.8;
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
@@ -1666,7 +1673,7 @@ function addInfiniteMeadowBackdrop(scene) {
     scene.add(shrub);
   }
 
-  for (let i = 0; i < 90; i += 1) {
+  for (let i = 0; i < 48; i += 1) {
     const x = ((i * 17) % 86) - 43;
     const z = ((i * 29) % 92) - 46;
     const nearHouse = Math.abs(x) < 13 && z < -12;
