@@ -292,12 +292,67 @@ function scrollPanelBy(targetRef, left, top) {
   });
 }
 
+function scrollElementBy(element, left, top) {
+  element?.scrollBy?.({
+    left,
+    top,
+    behavior: 'smooth'
+  });
+}
+
 function getArrowScrollDelta(key) {
   if (key === 'ArrowUp') return [0, -260];
   if (key === 'ArrowDown') return [0, 260];
   if (key === 'ArrowLeft') return [-260, 0];
   if (key === 'ArrowRight') return [260, 0];
   return null;
+}
+
+function canScrollElement(element, left, top) {
+  if (!element || element === document || element === window) return false;
+  const style = window.getComputedStyle(element);
+  const overflowX = `${style.overflowX} ${style.overflow}`;
+  const overflowY = `${style.overflowY} ${style.overflow}`;
+  const canScrollX = left !== 0 && element.scrollWidth > element.clientWidth + 2 && /(auto|scroll|overlay)/.test(overflowX);
+  const canScrollY = top !== 0 && element.scrollHeight > element.clientHeight + 2 && /(auto|scroll|overlay)/.test(overflowY);
+  return canScrollX || canScrollY;
+}
+
+function findScrollableFromElement(element, boundary, left, top) {
+  let current = element;
+  while (current && current !== document.body && current !== boundary?.parentElement) {
+    if (boundary && !boundary.contains(current)) return null;
+    if (canScrollElement(current, left, top)) return current;
+    current = current.parentElement;
+  }
+  return null;
+}
+
+function findKeyboardScrollTarget(scope, left, top) {
+  if (!scope) return null;
+
+  const activeCandidate = findScrollableFromElement(document.activeElement, scope, left, top);
+  if (activeCandidate) return activeCandidate;
+
+  const preferredSelectors = [
+    '.estudiemos-real-page',
+    '.estudiemos-container',
+    '.mediahub-context-panel',
+    '.links-card-panel',
+    '.settings-app-shell',
+    '.focus-profile-app',
+    '.agenda-app-shell',
+    '.spotify-app-shell',
+    '.screen-control-drawer',
+    '.os-window-content'
+  ];
+  for (const selector of preferredSelectors) {
+    const candidate = scope.matches?.(selector) ? scope : scope.querySelector?.(selector);
+    if (canScrollElement(candidate, left, top)) return candidate;
+  }
+
+  const candidates = [scope, ...(scope.querySelectorAll?.('*') ?? [])];
+  return candidates.find((candidate) => canScrollElement(candidate, left, top)) ?? null;
 }
 
 function handlePanelArrowKey(event, targetRef) {
@@ -535,6 +590,21 @@ export function ComputerUI({
       event.stopPropagation();
       goBackOneInstance();
       return true;
+    }
+
+    const arrowDelta = getArrowScrollDelta(event.key);
+    if (arrowDelta && !isTextEntryElement(event.target)) {
+      const desktopRoot = computerRootRef.current ?? document.querySelector('.estudiemos-os-live-desktop');
+      const activeScope = drawerOpen
+        ? desktopRoot?.querySelector('.screen-control-drawer')
+        : desktopRoot?.querySelector(`.os-window-${focusedWindow}`) ?? desktopRoot;
+      const scrollTarget = findKeyboardScrollTarget(activeScope, arrowDelta[0], arrowDelta[1]);
+      if (scrollTarget) {
+        event.preventDefault();
+        event.stopPropagation();
+        scrollElementBy(scrollTarget, arrowDelta[0], arrowDelta[1]);
+        return true;
+      }
     }
 
     if (event.key === 'Enter' && !isTextEntryElement(event.target)) {

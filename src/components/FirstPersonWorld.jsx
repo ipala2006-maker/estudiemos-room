@@ -22,6 +22,8 @@ const PERFORMANCE_PROFILE = {
   skyWidthSegments: 24,
   skyHeightSegments: 12
 };
+const MEADOW_SIZE = 1400;
+const MEADOW_HORIZON_RADIUS = 118;
 const PERFORMANCE_PASS_MARKER = 'performance-pass-smoother-room-2026-07-10';
 const CSS_CONTENT_SYNC_INTERVAL_MS = 140;
 const PLAYER_RADIUS = 0.58;
@@ -138,12 +140,13 @@ export function FirstPersonWorld({
     const scene = new THREE.Scene();
     scene.userData.performancePass = PERFORMANCE_PASS_MARKER;
     scene.background = new THREE.Color(0x9ea99a);
-    scene.fog = new THREE.Fog(0xa7ad9d, 54, 142);
+    scene.fog = new THREE.Fog(0xa7ad9d, 78, 240);
     addStaticSkyDome(scene);
 
-    const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 120);
+    const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 260);
     camera.position.copy(startPosition);
     camera.rotation.order = 'YXZ';
+    scene.add(camera);
 
     const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, PERFORMANCE_PROFILE.maxPixelRatio));
@@ -200,8 +203,11 @@ export function FirstPersonWorld({
     scene.add(softFill);
 
     const { giantScreen, colliders } = buildWorldScene(scene);
+    giantScreen.room.visible = false;
     const companionMascot = createCompanionDachshund(getEquippedSkinState(focusProgressRef.current));
     scene.add(companionMascot.group);
+    const firstPersonArm = createFirstPersonArmViewModel();
+    camera.add(firstPersonArm.group);
 
     const keys = {
       forward: false,
@@ -250,6 +256,7 @@ export function FirstPersonWorld({
       onNearComputerChange(false);
       onAgendaBoardAimChange(false);
       onScreenAimChange(false);
+      giantScreen.room.visible = false;
     }
 
     function faceCameraToward(target) {
@@ -263,6 +270,7 @@ export function FirstPersonWorld({
     resetRef.current = resetCamera;
     toggleDoorRef.current = () => {
       doorOpenRef.current = !doorOpenRef.current;
+      giantScreen.room.visible = doorOpenRef.current;
       camera.position.copy(doorOpenRef.current ? activeMap.interiorSpawnPosition : startPosition);
       movementVelocity.set(0, 0, 0);
       yaw = 0;
@@ -291,6 +299,9 @@ export function FirstPersonWorld({
         verticalVelocity = 6.2;
         isGrounded = false;
         event.preventDefault();
+      }
+      if (event.code === 'KeyE') {
+        firstPersonArm.swing = 0.32;
       }
       if (event.code === 'KeyR') resetCamera();
     }
@@ -424,6 +435,8 @@ export function FirstPersonWorld({
         updateCssAgendaContent(cssAgendaBoard, agendaItemsRef.current, 4);
       }
       updateCompanionDachshund(companionMascot, camera, delta, doorOpenRef.current, focusProgressRef.current);
+      updateFirstPersonArmViewModel(firstPersonArm, delta, hasMovementInput, frameTime);
+      giantScreen.room.visible = doorOpenRef.current;
       const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
       cssGiantScreen.visible = showPhysicalScreenContent;
       cssComputerMonitorOccluder.visible = showPhysicalScreenContent;
@@ -486,6 +499,77 @@ export function FirstPersonWorld({
   }, [onAgendaBoardAimChange, onDoorOpenChange, onNearComputerChange, onNearDoorChange, onScreenAimChange, resetRef, toggleDoorRef]);
 
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
+}
+
+function createViewModelMaterial(color) {
+  return new THREE.MeshBasicMaterial({
+    color,
+    depthTest: false,
+    depthWrite: false,
+    fog: false
+  });
+}
+
+function createFirstPersonArmViewModel() {
+  const group = new THREE.Group();
+  group.name = 'first-person-study-arm';
+  group.renderOrder = 10000;
+
+  const pivot = new THREE.Group();
+  pivot.position.set(0.42, -0.46, -0.82);
+  pivot.rotation.set(-0.48, -0.16, 0.14);
+  group.add(pivot);
+
+  const sleeveMaterial = createViewModelMaterial(0x223f37);
+  const cuffMaterial = createViewModelMaterial(0xe0c47a);
+  const skinMaterial = createViewModelMaterial(0xd8a06f);
+  const shadowMaterial = createViewModelMaterial(0x6f4a35);
+
+  const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.24, 0.54), sleeveMaterial);
+  sleeve.position.set(0, 0.02, -0.08);
+  sleeve.renderOrder = 10001;
+  pivot.add(sleeve);
+
+  const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.08), cuffMaterial);
+  cuff.position.set(0, 0.01, -0.39);
+  cuff.renderOrder = 10002;
+  pivot.add(cuff);
+
+  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.2, 0.25), skinMaterial);
+  hand.position.set(0, -0.01, -0.56);
+  hand.renderOrder = 10003;
+  pivot.add(hand);
+
+  const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.11, 0.16), shadowMaterial);
+  thumb.position.set(-0.14, -0.02, -0.52);
+  thumb.rotation.z = 0.12;
+  thumb.renderOrder = 10004;
+  pivot.add(thumb);
+
+  return {
+    group,
+    pivot,
+    basePosition: pivot.position.clone(),
+    baseRotation: pivot.rotation.clone(),
+    swing: 0
+  };
+}
+
+function updateFirstPersonArmViewModel(viewModel, delta, isWalking, frameTime) {
+  const bob = isWalking ? Math.sin(frameTime * 0.012) : Math.sin(frameTime * 0.004) * 0.18;
+  viewModel.swing = Math.max(0, viewModel.swing - delta);
+  const swingProgress = viewModel.swing > 0 ? 1 - viewModel.swing / 0.32 : 1;
+  const punch = viewModel.swing > 0 ? Math.sin(swingProgress * Math.PI) : 0;
+
+  viewModel.pivot.position.copy(viewModel.basePosition);
+  viewModel.pivot.position.x += Math.sin(frameTime * 0.009) * (isWalking ? 0.025 : 0.006);
+  viewModel.pivot.position.y += bob * (isWalking ? 0.028 : 0.01) - punch * 0.075;
+  viewModel.pivot.position.z -= punch * 0.26;
+
+  viewModel.pivot.rotation.copy(viewModel.baseRotation);
+  viewModel.pivot.rotation.x -= punch * 0.58;
+  viewModel.pivot.rotation.y += Math.sin(frameTime * 0.01) * (isWalking ? 0.035 : 0.012);
+  viewModel.pivot.rotation.z += punch * 0.18;
 }
 
 function createCompanionDachshund(equippedSkin) {
@@ -1513,17 +1597,85 @@ function isPlayerColliding(x, z, colliders, radius) {
 
 function addNeighborhood(scene, materials) {
   const { textures } = materials;
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(72, 72, 1, 1), materials.groundMaterial);
+  const meadowMaterial = materials.groundMaterial.clone();
+  if (meadowMaterial.map) {
+    meadowMaterial.map = meadowMaterial.map.clone();
+    meadowMaterial.map.repeat.set(120, 120);
+    meadowMaterial.map.needsUpdate = true;
+  }
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(MEADOW_SIZE, MEADOW_SIZE, 1, 1), meadowMaterial);
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = 0;
+  ground.position.y = -0.02;
   ground.receiveShadow = true;
   scene.add(ground);
 
   addModelNeighborhoodHouses(scene);
   addModelNatureAssets(scene);
   addProfessionalGrassLayer(scene);
+  addInfiniteMeadowBackdrop(scene);
   addExteriorIdentityDetails(scene, textures);
   addExteriorCinematicLighting(scene);
+}
+
+function addInfiniteMeadowBackdrop(scene) {
+  const trunkMaterial = makeMaterial(0x38442f, 0.78);
+  const crownMaterials = [
+    makeMaterial(0x4f6d45, 0.82),
+    makeMaterial(0x5f7b4f, 0.8),
+    makeMaterial(0x415f3f, 0.84)
+  ];
+  const shrubMaterials = [
+    makeMaterial(0x6c874e, 0.86),
+    makeMaterial(0x80905a, 0.84),
+    makeMaterial(0x536f47, 0.88)
+  ];
+  const flowerMaterials = [
+    makeMaterial(0xd7c28a, 0.78),
+    makeMaterial(0xe7b7a1, 0.8),
+    makeMaterial(0xb9d7df, 0.82)
+  ];
+
+  for (let i = 0; i < 44; i += 1) {
+    const angle = (i / 44) * Math.PI * 2 + ((i * 19) % 11) * 0.012;
+    const radius = MEADOW_HORIZON_RADIUS + (i % 7) * 9;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const height = 4.6 + (i % 5) * 0.7;
+
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, height * 0.48, 5), trunkMaterial);
+    trunk.position.set(x, height * 0.24, z);
+    scene.add(trunk);
+
+    const crown = new THREE.Mesh(new THREE.ConeGeometry(1.35 + (i % 3) * 0.22, height, 7), crownMaterials[i % crownMaterials.length]);
+    crown.position.set(x, height * 0.82, z);
+    crown.rotation.y = angle;
+    scene.add(crown);
+  }
+
+  for (let i = 0; i < 72; i += 1) {
+    const angle = (i / 72) * Math.PI * 2 + ((i * 23) % 13) * 0.01;
+    const radius = 42 + (i % 9) * 5.8;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    if (Math.abs(x) < 28 && Math.abs(z) < 32) continue;
+
+    const shrub = new THREE.Mesh(new THREE.SphereGeometry(0.9 + (i % 4) * 0.12, 8, 5), shrubMaterials[i % shrubMaterials.length]);
+    shrub.position.set(x, 0.48, z);
+    shrub.scale.y = 0.42 + (i % 3) * 0.08;
+    scene.add(shrub);
+  }
+
+  for (let i = 0; i < 90; i += 1) {
+    const x = ((i * 17) % 86) - 43;
+    const z = ((i * 29) % 92) - 46;
+    const nearHouse = Math.abs(x) < 13 && z < -12;
+    if (nearHouse || Math.abs(x) < 5 && z > 3) continue;
+
+    const flower = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.08, 5), flowerMaterials[i % flowerMaterials.length]);
+    flower.position.set(x, 0.06, z);
+    scene.add(flower);
+  }
 }
 
 function addBoundaryWalls(scene, wallMaterial) {
@@ -2703,6 +2855,7 @@ function addHouseGraphicTrim(houseGroup, isCasa1) {
 function addCasa1Interior(scene, textures) {
   const room = new THREE.Group();
   room.position.set(90, 0, -6);
+  room.visible = false;
 
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(56, 0.4, 58),
@@ -2781,7 +2934,7 @@ function addCasa1Interior(scene, textures) {
   room.add(ceilingPractical);
 
   scene.add(room);
-  return { canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentScreenStateKey: '' };
+  return { room, canvas: screenCanvas, context: screenCanvas.getContext('2d'), texture: screenTexture, currentScreenStateKey: '' };
 }
 
 function addAgendaBoard(room, lines, textures) {
