@@ -5,6 +5,7 @@ import { Hud } from './components/Hud.jsx';
 import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
+import { WallAgendaEditor } from './components/WallAgendaEditor.jsx';
 import { createStudyAgendaItems, getAgendaDateValue } from './data/studyAgenda.js';
 import { useFocusEconomy } from './hooks/useFocusEconomy.js';
 import './styles/app.css';
@@ -88,9 +89,11 @@ function App() {
   const [hasStarted, setHasStarted] = useState(false);
   const [computerOpen, setComputerOpen] = useState(false);
   const [screenRemoteOpen, setScreenRemoteOpen] = useState(false);
+  const [wallAgendaOpen, setWallAgendaOpen] = useState(false);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
+  const [isAimingAgendaBoard, setIsAimingAgendaBoard] = useState(false);
   const [isAimingScreen, setIsAimingScreen] = useState(false);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [screenLayout, setScreenLayout] = useState('side-by-side');
@@ -135,7 +138,12 @@ function App() {
         return;
       }
 
-      if (!hasStarted || computerOpen || screenRemoteOpen) return;
+      if (wallAgendaOpen && key === 'escape') {
+        setWallAgendaOpen(false);
+        return;
+      }
+
+      if (!hasStarted || computerOpen || screenRemoteOpen || wallAgendaOpen) return;
 
       if (isNearDoor && key === 'e') {
         toggleDoorRef.current();
@@ -148,6 +156,12 @@ function App() {
         return;
       }
 
+      if (isAimingAgendaBoard && key === 'e') {
+        document.exitPointerLock?.();
+        setWallAgendaOpen(true);
+        return;
+      }
+
       if (isNearComputer && key === 'e') {
         document.exitPointerLock?.();
         setComputerOpen(true);
@@ -156,11 +170,13 @@ function App() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [computerOpen, hasStarted, isAimingScreen, isNearComputer, isNearDoor, screenRemoteOpen]);
+  }, [computerOpen, hasStarted, isAimingAgendaBoard, isAimingScreen, isNearComputer, isNearDoor, screenRemoteOpen, wallAgendaOpen]);
 
   function backToStart() {
     setComputerOpen(false);
     setScreenRemoteOpen(false);
+    setWallAgendaOpen(false);
+    setIsAimingAgendaBoard(false);
     setIsAimingScreen(false);
     setHasStarted(false);
     setIsNearComputer(false);
@@ -293,10 +309,11 @@ function App() {
         onDoorOpenChange={setIsDoorOpen}
         onNearComputerChange={setIsNearComputer}
         onNearDoorChange={setIsNearDoor}
+        onAgendaBoardAimChange={setIsAimingAgendaBoard}
         onScreenAimChange={setIsAimingScreen}
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
-        controlsEnabled={!computerOpen && !screenRemoteOpen}
+        controlsEnabled={!computerOpen && !screenRemoteOpen && !wallAgendaOpen}
         screenContentEnabled={!computerOpen}
         screenZones={screenZones}
         screenLayout={screenLayout}
@@ -328,11 +345,15 @@ function App() {
 
       {isNearComputer && <div className="interaction-prompt">Presiona E para usar la computadora</div>}
 
-      {isAimingScreen && !computerOpen && !screenRemoteOpen && (
+      {isAimingAgendaBoard && !computerOpen && !screenRemoteOpen && !wallAgendaOpen && (
+        <div className="interaction-prompt wall-agenda-prompt">Presiona E para editar la agenda</div>
+      )}
+
+      {isAimingScreen && !computerOpen && !screenRemoteOpen && !wallAgendaOpen && (
         <div className="interaction-prompt screen-remote-prompt">Presiona Q para abrir el control</div>
       )}
 
-      {!computerOpen && !screenRemoteOpen && !isPointerLocked && (
+      {!computerOpen && !screenRemoteOpen && !wallAgendaOpen && !isPointerLocked && (
         <div className="camera-lock-prompt">
           <strong>Click para tomar la camara</strong>
           <span>Mover el mouse para mirar. Presiona Esc para liberar.</span>
@@ -352,6 +373,14 @@ function App() {
           onAgendaItemsChange={setAgendaItems}
           focusEconomy={focusEconomy}
           onClose={() => setComputerOpen(false)}
+        />
+      )}
+
+      {wallAgendaOpen && (
+        <WallAgendaEditor
+          agendaItems={agendaItems}
+          onAgendaItemsChange={setAgendaItems}
+          onClose={() => setWallAgendaOpen(false)}
         />
       )}
 

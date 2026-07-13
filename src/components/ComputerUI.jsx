@@ -273,6 +273,17 @@ function isTextEntryElement(element) {
   return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable);
 }
 
+function isKeyboardActionElement(element) {
+  const tagName = element?.tagName?.toLowerCase();
+  return tagName === 'button' || tagName === 'a' || element?.role === 'button';
+}
+
+function findEnterDefault(scope) {
+  return scope?.querySelector?.(
+    '[data-enter-default]:not(:disabled), button[type="submit"]:not(:disabled), .is-primary:not(:disabled), .mediahub-primary-button:not(:disabled)'
+  );
+}
+
 function scrollPanelBy(targetRef, left, top) {
   targetRef.current?.scrollBy({
     left,
@@ -412,6 +423,136 @@ export function ComputerUI({
     setDrawerOpen(false);
     setSystemNote(`${app.title} activo`);
   }
+
+  function goBackInEstudiemos() {
+    if (selectedContent) {
+      setSelectedContent(null);
+      setSystemNote('Acciones de contenido cerradas');
+      return true;
+    }
+
+    if (resourceView !== 'categories') {
+      setResourceView('categories');
+      setSystemNote('Categorias de recursos');
+      return true;
+    }
+
+    if (estudiemosRoute.temaSlug) {
+      setEstudiemosRoute({ carreraSlug: carrera.slug, materiaSlug: materia.slug, temaSlug: '' });
+      setSystemNote('Volviste a la materia');
+      return true;
+    }
+
+    if (estudiemosRoute.materiaSlug) {
+      setEstudiemosRoute({ carreraSlug: carrera.slug, materiaSlug: '', temaSlug: '' });
+      setSystemNote('Volviste a la carrera');
+      return true;
+    }
+
+    if (estudiemosRoute.carreraSlug) {
+      openEstudiemosHome();
+      setSystemNote('Inicio de Estudiemos');
+      return true;
+    }
+
+    return false;
+  }
+
+  function goBackOneInstance() {
+    if (drawerOpen) {
+      setDrawerOpen(false);
+      setSystemNote('Panel de pantallas cerrado');
+      return true;
+    }
+
+    if (focusedWindow === 'estudiemos' && goBackInEstudiemos()) return true;
+
+    if (focusedWindow === 'links' && selectedContent) {
+      setSelectedContent(null);
+      setSystemNote('Acciones de link cerradas');
+      return true;
+    }
+
+    if (focusedWindow === 'links' && linkError) {
+      setLinkError('');
+      setSystemNote('Error de link descartado');
+      return true;
+    }
+
+    if (focusedWindow === 'spotify' && spotifyError) {
+      setSpotifyError('');
+      setSystemNote('Error de Spotify descartado');
+      return true;
+    }
+
+    if (focusedWindow === 'spotify' && spotifyDraft.trim()) {
+      setSpotifyDraft('');
+      setSystemNote('Link de Spotify descartado');
+      return true;
+    }
+
+    if (focusedWindow && openWindows.includes(focusedWindow)) {
+      closeWindow(focusedWindow);
+      return true;
+    }
+
+    if (openWindows.length > 0) {
+      closeWindow(openWindows.at(-1));
+      return true;
+    }
+
+    onClose?.();
+    return true;
+  }
+
+  function confirmKeyboardAction() {
+    const activeElement = document.activeElement;
+    if (isKeyboardActionElement(activeElement) && !activeElement?.disabled) {
+      activeElement.click();
+      return true;
+    }
+
+    const desktopRoot = document.querySelector('.estudiemos-os-live-desktop');
+    const activeScope = drawerOpen
+      ? desktopRoot?.querySelector('.screen-control-drawer')
+      : desktopRoot?.querySelector(`.os-window-${focusedWindow}`) ?? desktopRoot;
+    const defaultAction = findEnterDefault(activeScope);
+    if (!defaultAction) return false;
+
+    defaultAction.click();
+    return true;
+  }
+
+  useEffect(() => {
+    function onComputerKeyDown(event) {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+      if (event.key === 'Backspace' && !isTextEntryElement(event.target)) {
+        event.preventDefault();
+        goBackOneInstance();
+        return;
+      }
+
+      if (event.key === 'Enter' && !isTextEntryElement(event.target)) {
+        if (confirmKeyboardAction()) {
+          event.preventDefault();
+        }
+      }
+    }
+
+    window.addEventListener('keydown', onComputerKeyDown);
+    return () => window.removeEventListener('keydown', onComputerKeyDown);
+  }, [
+    drawerOpen,
+    estudiemosRoute,
+    focusedWindow,
+    linkError,
+    openWindows,
+    resourceView,
+    selectedContent,
+    spotifyDraft,
+    spotifyError
+  ]);
 
   function showActionFeedback(message) {
     window.clearTimeout(feedbackTimerRef.current);
@@ -1502,7 +1643,7 @@ function AgendaApp({ active, agendaItems, onUpdateItem, onAddItem, onRemoveItem,
             <Eraser size={17} aria-hidden="true" />
             <span>Vaciar</span>
           </button>
-          <button type="button" className="is-primary" onClick={addItemForSelectedDate}>
+          <button type="button" className="is-primary" data-enter-default onClick={addItemForSelectedDate}>
             <Plus size={18} aria-hidden="true" />
             <span>Agregar</span>
           </button>
@@ -1611,7 +1752,7 @@ function AgendaApp({ active, agendaItems, onUpdateItem, onAddItem, onRemoveItem,
                 onChange={(event) => setQuickDetail(event.target.value)}
               />
             </label>
-            <button type="submit">
+            <button type="submit" data-enter-default>
               <Plus size={17} aria-hidden="true" />
               <span>Agregar</span>
             </button>
@@ -2264,7 +2405,7 @@ function LinksApp({
               value={linkDraft}
               onChange={(event) => onDraftChange(event.target.value)}
             />
-            <button type="submit" className="mediahub-primary-button">
+            <button type="submit" className="mediahub-primary-button" data-enter-default>
               Preparar
             </button>
           </div>
@@ -2307,7 +2448,7 @@ function ContentActionPanel({ content, emptyText, onAssignContent, onClose }) {
         <p>{content.description}</p>
       </div>
       <div className="content-action-buttons">
-        <button type="button" className="mediahub-primary-button" onClick={() => onAssignContent('upper')}>
+        <button type="button" className="mediahub-primary-button" data-enter-default onClick={() => onAssignContent('upper')}>
           Enviar a izquierda
         </button>
         <button type="button" className="mediahub-secondary-button" onClick={() => onAssignContent('lower')}>

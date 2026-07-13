@@ -70,6 +70,8 @@ const AGENDA_BOARD_DOM_SIZE = {
   width: 520,
   height: 330
 };
+const AGENDA_BOARD_INTERACTION_PADDING = 0.65;
+const AGENDA_BOARD_INTERACTION_DISTANCE = 18;
 const DEFAULT_SCREEN_LAYOUT = 'side-by-side';
 const DEFAULT_SCREEN_ZONES = {
   upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, displayScale: 100, updatedAt: 0 },
@@ -80,6 +82,7 @@ export function FirstPersonWorld({
   onDoorOpenChange,
   onNearComputerChange,
   onNearDoorChange,
+  onAgendaBoardAimChange = () => {},
   onScreenAimChange,
   resetRef,
   toggleDoorRef,
@@ -93,6 +96,7 @@ export function FirstPersonWorld({
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
   const nearComputerRef = useRef(false);
+  const agendaBoardAimRef = useRef(false);
   const screenAimRef = useRef(false);
   const doorOpenRef = useRef(false);
   const controlsEnabledRef = useRef(controlsEnabled);
@@ -244,6 +248,7 @@ export function FirstPersonWorld({
       onDoorOpenChange(false);
       onNearDoorChange(false);
       onNearComputerChange(false);
+      onAgendaBoardAimChange(false);
       onScreenAimChange(false);
     }
 
@@ -439,6 +444,13 @@ export function FirstPersonWorld({
         onNearComputerChange(nearComputer);
       }
 
+      const aimingAtAgendaBoard =
+        controlsEnabledRef.current && isCameraAimingAtAgendaBoard(camera, doorOpenRef.current, cameraForwardHorizontal);
+      if (aimingAtAgendaBoard !== agendaBoardAimRef.current) {
+        agendaBoardAimRef.current = aimingAtAgendaBoard;
+        onAgendaBoardAimChange(aimingAtAgendaBoard);
+      }
+
       const aimingAtScreen =
         controlsEnabledRef.current && isCameraAimingAtGiantScreen(camera, doorOpenRef.current, cameraForwardHorizontal);
       if (aimingAtScreen !== screenAimRef.current) {
@@ -466,11 +478,12 @@ export function FirstPersonWorld({
       document.removeEventListener('pointerlockerror', onPointerLockError);
       mount.removeEventListener('click', requestCameraLock);
       renderer.dispose();
+      onAgendaBoardAimChange(false);
       onScreenAimChange(false);
       mount.removeChild(cssRenderer.domElement);
       mount.removeChild(renderer.domElement);
     };
-  }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, onScreenAimChange, resetRef, toggleDoorRef]);
+  }, [onAgendaBoardAimChange, onDoorOpenChange, onNearComputerChange, onNearDoorChange, onScreenAimChange, resetRef, toggleDoorRef]);
 
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
 }
@@ -1364,6 +1377,30 @@ function isCameraAimingAtGiantScreen(camera, isInterior, directionScratch) {
     hitX <= GIANT_SCREEN_WORLD.center.x + halfWidth &&
     hitY >= GIANT_SCREEN_WORLD.center.y - halfHeight &&
     hitY <= GIANT_SCREEN_WORLD.center.y + halfHeight
+  );
+}
+
+function isCameraAimingAtAgendaBoard(camera, isInterior, directionScratch) {
+  if (!isInterior) return false;
+
+  camera.getWorldDirection(directionScratch);
+  if (Math.abs(directionScratch.x) < 0.001) return false;
+
+  const distanceToBoardPlane = (AGENDA_BOARD_WORLD.center.x - camera.position.x) / directionScratch.x;
+  if (distanceToBoardPlane < 1.2 || distanceToBoardPlane > AGENDA_BOARD_INTERACTION_DISTANCE) return false;
+
+  const hitY = camera.position.y + directionScratch.y * distanceToBoardPlane;
+  const hitZ = camera.position.z + directionScratch.z * distanceToBoardPlane;
+  const halfWidth = AGENDA_BOARD_WORLD.width / 2 + AGENDA_BOARD_INTERACTION_PADDING;
+  const halfHeight =
+    (AGENDA_BOARD_WORLD.width * (AGENDA_BOARD_DOM_SIZE.height / AGENDA_BOARD_DOM_SIZE.width)) / 2 +
+    AGENDA_BOARD_INTERACTION_PADDING;
+
+  return (
+    hitZ >= AGENDA_BOARD_WORLD.center.z - halfWidth &&
+    hitZ <= AGENDA_BOARD_WORLD.center.z + halfWidth &&
+    hitY >= AGENDA_BOARD_WORLD.center.y - halfHeight &&
+    hitY <= AGENDA_BOARD_WORLD.center.y + halfHeight
   );
 }
 
