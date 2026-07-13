@@ -26,6 +26,7 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
       <div className="hud-mini-guide" aria-label="Controles basicos">
         <span>WASD</span>
         <span>Mouse</span>
+        <span>F5 camara</span>
         <span>Interactuar</span>
       </div>
 

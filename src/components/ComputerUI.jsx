@@ -155,6 +155,20 @@ const DEFAULT_COMPUTER_SETTINGS = {
   reduceMotion: false,
   focusMode: true
 };
+const TEXT_ENTRY_INPUT_TYPES = new Set([
+  'date',
+  'datetime-local',
+  'email',
+  'month',
+  'number',
+  'password',
+  'search',
+  'tel',
+  'text',
+  'time',
+  'url',
+  'week'
+]);
 
 const carreraInicial = ingenieriaRecursosData.carreras[0];
 
@@ -239,7 +253,11 @@ function loadStoredSpotifyContent() {
 
 function isTextEntryElement(element) {
   const tagName = element?.tagName?.toLowerCase();
-  return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable);
+  if (tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable)) return true;
+  if (tagName !== 'input') return false;
+
+  const inputType = String(element.getAttribute?.('type') || element.type || 'text').toLowerCase();
+  return TEXT_ENTRY_INPUT_TYPES.has(inputType);
 }
 
 function isKeyboardActionElement(element) {
@@ -1186,6 +1204,7 @@ export function ComputerUI({
                     onScreenLayoutChange={changeScreenLayout}
                     onClearAllScreens={clearAllScreens}
                     onMuteAllScreens={muteAllScreens}
+                    onBack={returnToComputerDesktop}
                   />
                 </OSWindow>
               )}
@@ -1952,7 +1971,8 @@ function SettingsApp({
   onSettingChange,
   onScreenLayoutChange,
   onClearAllScreens,
-  onMuteAllScreens
+  onMuteAllScreens,
+  onBack
 }) {
   const activeScreenCount = ZONES.filter((zone) => Boolean(screenZones[zone.id]?.videoId || screenZones[zone.id]?.resourceUrl)).length;
 
@@ -1964,7 +1984,13 @@ function SettingsApp({
           <h2>Comodidad del Room</h2>
           <p>{activeScreenCount} pantalla{activeScreenCount === 1 ? '' : 's'} con contenido. Layout actual: {activeLayout.label}.</p>
         </div>
-        <SlidersHorizontal size={28} aria-hidden="true" />
+        <div className="settings-header-actions">
+          <button type="button" className="settings-back-button" onClick={onBack}>
+            <ChevronLeft size={18} aria-hidden="true" />
+            <span>Volver</span>
+          </button>
+          <SlidersHorizontal size={28} aria-hidden="true" />
+        </div>
       </header>
 
       <section className="settings-grid" aria-label="Preferencias de comodidad">

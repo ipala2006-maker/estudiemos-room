@@ -38,6 +38,12 @@ const CAMERA_SENSITIVITY = {
   yaw: 0.002,
   pitch: 0.0017
 };
+const CAMERA_VIEW_MODES = [
+  { id: 'first-person', label: 'Primera persona' },
+  { id: 'third-person', label: 'Tercera persona' },
+  { id: 'front-person', label: 'Camara frontal' }
+];
+const CAMERA_VIEW_TRANSITION = 11;
 const FREE_MOUSE_LOOK_SCALE = 0.62;
 const FREE_MOUSE_JUMP_LIMIT = 180;
 const FIRST_PERSON_ARM_SWING_SECONDS = 0.26;
@@ -148,8 +154,9 @@ export function FirstPersonWorld({
     scene.background = new THREE.Color(0xb5c0af);
     scene.fog = new THREE.Fog(0xb5c0af, 70, 210);
 
+    const playerPosition = startPosition.clone();
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 230);
-    camera.position.copy(startPosition);
+    camera.position.copy(playerPosition);
     camera.rotation.order = 'YXZ';
     scene.add(camera);
 
@@ -214,6 +221,8 @@ export function FirstPersonWorld({
     scene.add(companionMascot.group);
     const firstPersonArm = createFirstPersonArmViewModel();
     camera.add(firstPersonArm.group);
+    const playerAvatar = createStudyPlayerAvatar();
+    scene.add(playerAvatar.group);
 
     const keys = {
       forward: false,
@@ -222,21 +231,34 @@ export function FirstPersonWorld({
       right: false
     };
     const inputDirection = new THREE.Vector3();
-    const cameraForwardHorizontal = new THREE.Vector3();
+    const playerForwardHorizontal = new THREE.Vector3();
     const cameraRightHorizontal = new THREE.Vector3();
+    const cameraModeForward = new THREE.Vector3();
+    const cameraDesiredPosition = new THREE.Vector3();
+    const cameraLookTarget = new THREE.Vector3();
     const movementVelocity = new THREE.Vector3();
     const targetVelocity = new THREE.Vector3();
     const movementStep = new THREE.Vector3();
+    const playerViewProxy = {
+      position: playerPosition,
+      up: camera.up,
+      getWorldDirection(target) {
+        return target.copy(playerForwardHorizontal);
+      }
+    };
     let yaw = 0;
     let pitch = 0;
     let targetYaw = 0;
     let targetPitch = 0;
+    let cameraModeIndex = 0;
+    let cameraMode = CAMERA_VIEW_MODES[cameraModeIndex].id;
     let pointerLocked = false;
     let lastFreeMouseX = null;
     let lastFreeMouseY = null;
     let verticalVelocity = 0;
     let isGrounded = true;
     const eyeHeight = startPosition.y;
+    applyCameraModeVisuals();
 
     function clearMovementInput() {
       keys.forward = false;
@@ -246,7 +268,8 @@ export function FirstPersonWorld({
     }
 
     function resetCamera() {
-      camera.position.copy(startPosition);
+      playerPosition.copy(startPosition);
+      camera.position.copy(playerPosition);
       movementVelocity.set(0, 0, 0);
       verticalVelocity = 0;
       isGrounded = true;
@@ -269,11 +292,26 @@ export function FirstPersonWorld({
     }
 
     function faceCameraToward(target) {
-      yaw = Math.atan2(camera.position.x - target.x, camera.position.z - target.z);
+      yaw = Math.atan2(playerPosition.x - target.x, playerPosition.z - target.z);
       pitch = 0;
       targetYaw = yaw;
       targetPitch = pitch;
       camera.rotation.set(pitch, yaw, 0);
+    }
+
+    function applyCameraModeVisuals() {
+      const isFirstPerson = cameraMode === 'first-person';
+      firstPersonArm.group.visible = isFirstPerson;
+      playerAvatar.group.visible = !isFirstPerson;
+      mount.dataset.cameraMode = cameraMode;
+      mount.dataset.cameraModeLabel = CAMERA_VIEW_MODES[cameraModeIndex].label;
+    }
+
+    function cycleCameraMode() {
+      cameraModeIndex = (cameraModeIndex + 1) % CAMERA_VIEW_MODES.length;
+      cameraMode = CAMERA_VIEW_MODES[cameraModeIndex].id;
+      applyCameraModeVisuals();
+      resetFreeMouseLook();
     }
 
     resetRef.current = resetCamera;
@@ -281,7 +319,8 @@ export function FirstPersonWorld({
       doorOpenRef.current = !doorOpenRef.current;
       giantScreen.room.visible = doorOpenRef.current;
       exteriorGroup.visible = !doorOpenRef.current;
-      camera.position.copy(doorOpenRef.current ? activeMap.interiorSpawnPosition : startPosition);
+      playerPosition.copy(doorOpenRef.current ? activeMap.interiorSpawnPosition : startPosition);
+      camera.position.copy(playerPosition);
       movementVelocity.set(0, 0, 0);
       yaw = 0;
       pitch = 0;
@@ -299,6 +338,12 @@ export function FirstPersonWorld({
     function onKeyDown(event) {
       if (!controlsEnabledRef.current) {
         clearMovementInput();
+        return;
+      }
+
+      if (event.code === 'F5' || event.key === 'F5') {
+        event.preventDefault();
+        cycleCameraMode();
         return;
       }
 
@@ -419,17 +464,14 @@ export function FirstPersonWorld({
       const cameraResponse = 1 - Math.exp(-CAMERA_SMOOTHING * delta);
       yaw += (targetYaw - yaw) * cameraResponse;
       pitch += (targetPitch - pitch) * cameraResponse;
-      camera.rotation.set(pitch, yaw, 0);
 
-      camera.getWorldDirection(cameraForwardHorizontal);
-      cameraForwardHorizontal.y = 0;
-      cameraForwardHorizontal.normalize();
-      cameraRightHorizontal.crossVectors(cameraForwardHorizontal, camera.up).normalize();
+      setHorizontalForwardFromYaw(playerForwardHorizontal, yaw);
+      cameraRightHorizontal.crossVectors(playerForwardHorizontal, camera.up).normalize();
 
       const inputVertical = Number(keys.forward) - Number(keys.backward);
       const inputHorizontal = Number(keys.right) - Number(keys.left);
       inputDirection.set(0, 0, 0);
-      inputDirection.addScaledVector(cameraForwardHorizontal, inputVertical);
+      inputDirection.addScaledVector(playerForwardHorizontal, inputVertical);
       inputDirection.addScaledVector(cameraRightHorizontal, inputHorizontal);
 
       const hasMovementInput = controlsEnabledRef.current && inputDirection.lengthSq() > 0;
@@ -450,7 +492,7 @@ export function FirstPersonWorld({
         const isInterior = doorOpenRef.current;
         const bounds = isInterior ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
         const collisionResult = movePlayerWithCollisions(
-          camera.position,
+          playerPosition,
           movementStep,
           bounds,
           isInterior ? colliders.interior : colliders.exterior,
@@ -462,9 +504,9 @@ export function FirstPersonWorld({
 
       if (controlsEnabledRef.current || !isGrounded) {
         verticalVelocity -= 16.5 * delta;
-        camera.position.y += verticalVelocity * delta;
-        if (camera.position.y <= eyeHeight) {
-          camera.position.y = eyeHeight;
+        playerPosition.y += verticalVelocity * delta;
+        if (playerPosition.y <= eyeHeight) {
+          playerPosition.y = eyeHeight;
           verticalVelocity = 0;
           isGrounded = true;
         }
@@ -477,8 +519,21 @@ export function FirstPersonWorld({
         updateCssAgendaContent(cssComputerMonitorOccluder, agendaItemsRef.current, 3);
         updateCssAgendaContent(cssAgendaBoard, agendaItemsRef.current, 4);
       }
-      updateCompanionDachshund(companionMascot, camera, delta, doorOpenRef.current, focusProgressRef.current);
+      updateCompanionDachshund(companionMascot, playerViewProxy, delta, doorOpenRef.current, focusProgressRef.current);
+      updateStudyPlayerAvatar(playerAvatar, playerPosition, yaw, hasMovementInput, movementVelocity, delta, frameTime, cameraMode, eyeHeight);
       updateFirstPersonArmViewModel(firstPersonArm, delta, hasMovementInput, frameTime);
+      updateCameraForViewMode(
+        camera,
+        playerPosition,
+        yaw,
+        pitch,
+        cameraMode,
+        doorOpenRef.current ? activeMap.interiorBounds : activeMap.neighborhoodBounds,
+        delta,
+        cameraModeForward,
+        cameraDesiredPosition,
+        cameraLookTarget
+      );
       giantScreen.room.visible = doorOpenRef.current;
       exteriorGroup.visible = !doorOpenRef.current;
       const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
@@ -488,28 +543,28 @@ export function FirstPersonWorld({
       cssRenderer.domElement.style.visibility = showPhysicalScreenContent ? 'visible' : 'hidden';
 
       const nearDoor = doorOpenRef.current
-        ? camera.position.distanceTo(activeMap.interiorExitPosition) < 4.5
-        : camera.position.distanceTo(houseDoorPosition) < 5;
+        ? playerPosition.distanceTo(activeMap.interiorExitPosition) < 4.5
+        : playerPosition.distanceTo(houseDoorPosition) < 5;
       if (nearDoor !== nearDoorRef.current) {
         nearDoorRef.current = nearDoor;
         onNearDoorChange(nearDoor);
       }
 
-      const nearComputer = doorOpenRef.current && camera.position.distanceTo(computerPosition) < 7;
+      const nearComputer = doorOpenRef.current && playerPosition.distanceTo(computerPosition) < 7;
       if (nearComputer !== nearComputerRef.current) {
         nearComputerRef.current = nearComputer;
         onNearComputerChange(nearComputer);
       }
 
       const aimingAtAgendaBoard =
-        controlsEnabledRef.current && isCameraAimingAtAgendaBoard(camera, doorOpenRef.current, cameraForwardHorizontal);
+        controlsEnabledRef.current && isPlayerAimingAtAgendaBoard(playerPosition, doorOpenRef.current, playerForwardHorizontal);
       if (aimingAtAgendaBoard !== agendaBoardAimRef.current) {
         agendaBoardAimRef.current = aimingAtAgendaBoard;
         onAgendaBoardAimChange(aimingAtAgendaBoard);
       }
 
       const aimingAtScreen =
-        controlsEnabledRef.current && isCameraAimingAtGiantScreen(camera, doorOpenRef.current, cameraForwardHorizontal);
+        controlsEnabledRef.current && isPlayerAimingAtGiantScreen(playerPosition, doorOpenRef.current, playerForwardHorizontal);
       if (aimingAtScreen !== screenAimRef.current) {
         screenAimRef.current = aimingAtScreen;
         onScreenAimChange(aimingAtScreen);
@@ -675,6 +730,214 @@ function updateFirstPersonArmViewModel(viewModel, delta, isWalking, frameTime) {
   viewModel.pivot.rotation.x -= punch * 0.28;
   viewModel.pivot.rotation.y += Math.sin(frameTime * 0.01) * (isWalking ? 0.024 : 0.008);
   viewModel.pivot.rotation.z += punch * 0.1;
+}
+
+function createStudyPlayerAvatar() {
+  const group = new THREE.Group();
+  group.name = 'estudiemos-player-avatar-skin';
+  group.visible = false;
+
+  const materials = {
+    shadow: new THREE.MeshBasicMaterial({ color: 0x050706, transparent: true, opacity: 0.2, depthWrite: false }),
+    sneakers: makeMaterial(0x101718, 0.54, 0.02),
+    pants: makeMaterial(0x273d47, 0.5, 0.02),
+    hoodie: makeMaterial(0x1b3732, 0.46, 0.03),
+    hoodieAccent: makeMaterial(0xe0c47a, 0.38, 0.02),
+    skin: makeMaterial(0xd99c6d, 0.58, 0.01),
+    hair: makeMaterial(0x21170f, 0.5, 0.02),
+    headphones: makeMaterial(0x0f1718, 0.34, 0.08),
+    glow: makeEmissiveMaterial(0x8ed7d2, 0.44),
+    backpack: makeMaterial(0x162625, 0.52, 0.04)
+  };
+
+  const shadow = addAvatarMesh(
+    group,
+    new THREE.CircleGeometry(0.72, 20),
+    materials.shadow,
+    [0, 0.035, 0],
+    [1.05, 0.52, 1],
+    [-Math.PI / 2, 0, 0]
+  );
+  shadow.renderOrder = -1;
+
+  const hips = addAvatarMesh(group, new THREE.BoxGeometry(0.58, 0.28, 0.34), materials.pants, [0, 0.82, 0], [1, 1, 1]);
+  const torso = addAvatarMesh(
+    group,
+    new THREE.CapsuleGeometry(0.34, 0.58, 6, 12),
+    materials.hoodie,
+    [0, 1.18, 0],
+    [0.92, 1, 0.78]
+  );
+  const chestPanel = addAvatarMesh(group, new THREE.BoxGeometry(0.42, 0.3, 0.04), materials.hoodieAccent, [0, 1.22, -0.27], [1, 1, 1]);
+  const badge = addAvatarMesh(group, new THREE.CylinderGeometry(0.07, 0.07, 0.018, 14), materials.glow, [0.18, 1.33, -0.3], [1, 1, 1], [Math.PI / 2, 0, 0]);
+
+  const head = addAvatarMesh(group, new THREE.SphereGeometry(0.24, 18, 12), materials.skin, [0, 1.73, -0.01], [0.94, 1.06, 0.88]);
+  const hair = addAvatarMesh(group, new THREE.SphereGeometry(0.245, 18, 8, 0, Math.PI * 2, 0, Math.PI * 0.58), materials.hair, [0, 1.86, -0.02], [1.02, 0.54, 0.92]);
+  const neck = addAvatarMesh(group, new THREE.CylinderGeometry(0.105, 0.12, 0.18, 12), materials.skin, [0, 1.52, 0], [1, 1, 1]);
+
+  const leftHeadphone = addAvatarMesh(group, new THREE.BoxGeometry(0.08, 0.22, 0.12), materials.headphones, [-0.24, 1.74, 0], [1, 1, 1]);
+  const rightHeadphone = addAvatarMesh(group, new THREE.BoxGeometry(0.08, 0.22, 0.12), materials.headphones, [0.24, 1.74, 0], [1, 1, 1]);
+  const band = addAvatarMesh(group, new THREE.TorusGeometry(0.235, 0.015, 6, 22, Math.PI), materials.headphones, [0, 1.78, 0], [1, 1, 0.72], [0, Math.PI / 2, 0]);
+
+  const backpack = addAvatarMesh(group, new THREE.BoxGeometry(0.5, 0.58, 0.18), materials.backpack, [0, 1.18, 0.34], [1, 1, 1]);
+  const backpackStripe = addAvatarMesh(group, new THREE.BoxGeometry(0.34, 0.05, 0.025), materials.hoodieAccent, [0, 1.36, 0.44], [1, 1, 1]);
+
+  const leftArm = addAvatarMesh(
+    group,
+    new THREE.CapsuleGeometry(0.07, 0.46, 5, 8),
+    materials.hoodie,
+    [-0.42, 1.15, -0.02],
+    [1, 1, 1],
+    [0.12, 0.02, -0.28]
+  );
+  const rightArm = addAvatarMesh(
+    group,
+    new THREE.CapsuleGeometry(0.07, 0.46, 5, 8),
+    materials.hoodie,
+    [0.42, 1.15, -0.02],
+    [1, 1, 1],
+    [0.12, -0.02, 0.28]
+  );
+  const leftHand = addAvatarMesh(group, new THREE.SphereGeometry(0.075, 12, 8), materials.skin, [-0.52, 0.91, -0.04], [1, 0.92, 1]);
+  const rightHand = addAvatarMesh(group, new THREE.SphereGeometry(0.075, 12, 8), materials.skin, [0.52, 0.91, -0.04], [1, 0.92, 1]);
+
+  const leftLeg = addAvatarMesh(group, new THREE.CapsuleGeometry(0.095, 0.55, 5, 8), materials.pants, [-0.15, 0.48, 0], [1, 1, 0.88]);
+  const rightLeg = addAvatarMesh(group, new THREE.CapsuleGeometry(0.095, 0.55, 5, 8), materials.pants, [0.15, 0.48, 0], [1, 1, 0.88]);
+  const leftShoe = addAvatarMesh(group, new THREE.BoxGeometry(0.24, 0.095, 0.36), materials.sneakers, [-0.15, 0.12, -0.08], [1, 1, 1]);
+  const rightShoe = addAvatarMesh(group, new THREE.BoxGeometry(0.24, 0.095, 0.36), materials.sneakers, [0.15, 0.12, -0.08], [1, 1, 1]);
+
+  [
+    torso,
+    hips,
+    chestPanel,
+    badge,
+    head,
+    hair,
+    neck,
+    leftHeadphone,
+    rightHeadphone,
+    band,
+    backpack,
+    backpackStripe,
+    leftArm,
+    rightArm,
+    leftHand,
+    rightHand,
+    leftLeg,
+    rightLeg,
+    leftShoe,
+    rightShoe
+  ].forEach((part) => {
+    part.castShadow = false;
+    part.receiveShadow = false;
+  });
+  addGroupEdges(group, 0x071011, 0.18);
+
+  return {
+    group,
+    torso,
+    head,
+    arms: [
+      { mesh: leftArm, hand: leftHand, side: -1, basePosition: leftArm.position.clone(), baseRotation: leftArm.rotation.clone(), handBase: leftHand.position.clone() },
+      { mesh: rightArm, hand: rightHand, side: 1, basePosition: rightArm.position.clone(), baseRotation: rightArm.rotation.clone(), handBase: rightHand.position.clone() }
+    ],
+    legs: [
+      { mesh: leftLeg, shoe: leftShoe, side: -1, basePosition: leftLeg.position.clone(), shoeBase: leftShoe.position.clone() },
+      { mesh: rightLeg, shoe: rightShoe, side: 1, basePosition: rightLeg.position.clone(), shoeBase: rightShoe.position.clone() }
+    ]
+  };
+}
+
+function addAvatarMesh(group, geometry, material, position, scale = [1, 1, 1], rotation = [0, 0, 0]) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(...position);
+  mesh.scale.set(...scale);
+  mesh.rotation.set(...rotation);
+  group.add(mesh);
+  return mesh;
+}
+
+function updateStudyPlayerAvatar(avatar, playerPosition, yaw, isWalking, velocity, delta, frameTime, cameraMode, eyeHeight) {
+  const visible = cameraMode !== 'first-person';
+  avatar.group.visible = visible;
+  if (!visible) return;
+
+  avatar.group.position.set(playerPosition.x, playerPosition.y - eyeHeight, playerPosition.z);
+  avatar.group.rotation.y = dampAngle(avatar.group.rotation.y, yaw, 14, delta);
+
+  const speed = clamp(velocity.length() / WALK_SPEED, 0, 1);
+  const walk = isWalking ? speed : 0;
+  const phase = frameTime * 0.011;
+  const stride = Math.sin(phase) * 0.38 * walk;
+  const bounce = Math.abs(Math.sin(phase)) * 0.035 * walk;
+
+  avatar.torso.position.y = 1.18 + bounce;
+  avatar.head.position.y = 1.73 + bounce * 0.55;
+
+  avatar.arms.forEach((arm) => {
+    arm.mesh.position.copy(arm.basePosition);
+    arm.mesh.position.y += bounce * 0.45;
+    arm.mesh.rotation.copy(arm.baseRotation);
+    arm.mesh.rotation.x += stride * -arm.side * 0.34;
+    arm.hand.position.copy(arm.handBase);
+    arm.hand.position.y += bounce * 0.45 + Math.sin(phase + arm.side * Math.PI) * 0.045 * walk;
+    arm.hand.position.z += stride * -arm.side * 0.08;
+  });
+
+  avatar.legs.forEach((leg) => {
+    const legStride = stride * leg.side;
+    leg.mesh.position.copy(leg.basePosition);
+    leg.mesh.position.z = leg.basePosition.z + legStride * 0.12;
+    leg.mesh.rotation.x = legStride;
+    leg.shoe.position.copy(leg.shoeBase);
+    leg.shoe.position.z = leg.shoeBase.z + legStride * 0.17;
+  });
+}
+
+function setHorizontalForwardFromYaw(target, yaw) {
+  target.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+  if (target.lengthSq() < 0.001) target.set(0, 0, -1);
+  return target.normalize();
+}
+
+function updateCameraForViewMode(
+  camera,
+  playerPosition,
+  yaw,
+  pitch,
+  cameraMode,
+  bounds,
+  delta,
+  forward,
+  desiredPosition,
+  lookTarget
+) {
+  if (cameraMode === 'first-person') {
+    camera.position.copy(playerPosition);
+    camera.rotation.set(pitch, yaw, 0);
+    return;
+  }
+
+  setHorizontalForwardFromYaw(forward, yaw);
+  const pitchLift = clamp(-pitch * 2.25, -1.0, 1.25);
+
+  if (cameraMode === 'front-person') {
+    desiredPosition.copy(playerPosition).addScaledVector(forward, 4.1);
+    desiredPosition.y += 2.05 + pitchLift * 0.42;
+    lookTarget.copy(playerPosition).addScaledVector(forward, -0.55);
+    lookTarget.y += 0.96;
+  } else {
+    desiredPosition.copy(playerPosition).addScaledVector(forward, -5.4);
+    desiredPosition.y += 2.45 + pitchLift;
+    lookTarget.copy(playerPosition).addScaledVector(forward, 1.45);
+    lookTarget.y += 0.96 + clamp(-pitch * 0.55, -0.45, 0.55);
+  }
+
+  desiredPosition.x = clamp(desiredPosition.x, bounds.minX + 0.45, bounds.maxX - 0.45);
+  desiredPosition.z = clamp(desiredPosition.z, bounds.minZ + 0.45, bounds.maxZ - 0.45);
+  const response = 1 - Math.exp(-CAMERA_VIEW_TRANSITION * Math.max(delta, 0.001));
+  camera.position.lerp(desiredPosition, response);
+  camera.lookAt(lookTarget);
 }
 
 function createCompanionDachshund(equippedSkin) {
@@ -1547,17 +1810,16 @@ function buildScreenEmbedUrl(zone) {
   return buildYouTubeEmbedUrl(zone);
 }
 
-function isCameraAimingAtGiantScreen(camera, isInterior, directionScratch) {
+function isPlayerAimingAtGiantScreen(position, isInterior, directionScratch) {
   if (!isInterior) return false;
 
-  camera.getWorldDirection(directionScratch);
   if (Math.abs(directionScratch.z) < 0.001) return false;
 
-  const distanceToScreenPlane = (GIANT_SCREEN_WORLD.center.z - camera.position.z) / directionScratch.z;
+  const distanceToScreenPlane = (GIANT_SCREEN_WORLD.center.z - position.z) / directionScratch.z;
   if (distanceToScreenPlane < 1.5 || distanceToScreenPlane > GIANT_SCREEN_INTERACTION_DISTANCE) return false;
 
-  const hitX = camera.position.x + directionScratch.x * distanceToScreenPlane;
-  const hitY = camera.position.y + directionScratch.y * distanceToScreenPlane;
+  const hitX = position.x + directionScratch.x * distanceToScreenPlane;
+  const hitY = position.y + directionScratch.y * distanceToScreenPlane;
   const halfWidth = GIANT_SCREEN_WORLD.width / 2 + GIANT_SCREEN_INTERACTION_PADDING;
   const halfHeight = GIANT_SCREEN_WORLD.height / 2 + GIANT_SCREEN_INTERACTION_PADDING;
 
@@ -1569,17 +1831,16 @@ function isCameraAimingAtGiantScreen(camera, isInterior, directionScratch) {
   );
 }
 
-function isCameraAimingAtAgendaBoard(camera, isInterior, directionScratch) {
+function isPlayerAimingAtAgendaBoard(position, isInterior, directionScratch) {
   if (!isInterior) return false;
 
-  camera.getWorldDirection(directionScratch);
   if (Math.abs(directionScratch.x) < 0.001) return false;
 
-  const distanceToBoardPlane = (AGENDA_BOARD_WORLD.center.x - camera.position.x) / directionScratch.x;
+  const distanceToBoardPlane = (AGENDA_BOARD_WORLD.center.x - position.x) / directionScratch.x;
   if (distanceToBoardPlane < 1.2 || distanceToBoardPlane > AGENDA_BOARD_INTERACTION_DISTANCE) return false;
 
-  const hitY = camera.position.y + directionScratch.y * distanceToBoardPlane;
-  const hitZ = camera.position.z + directionScratch.z * distanceToBoardPlane;
+  const hitY = position.y + directionScratch.y * distanceToBoardPlane;
+  const hitZ = position.z + directionScratch.z * distanceToBoardPlane;
   const halfWidth = AGENDA_BOARD_WORLD.width / 2 + AGENDA_BOARD_INTERACTION_PADDING;
   const halfHeight =
     (AGENDA_BOARD_WORLD.width * (AGENDA_BOARD_DOM_SIZE.height / AGENDA_BOARD_DOM_SIZE.width)) / 2 +

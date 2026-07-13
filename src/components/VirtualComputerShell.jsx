@@ -14,6 +14,21 @@ import { getEquippedSkinState } from '../data/focusEconomy.js';
 import { studyAgendaItems } from '../data/studyAgenda.js';
 import { ComputerUI } from './ComputerUI.jsx';
 
+const TEXT_ENTRY_INPUT_TYPES = new Set([
+  'date',
+  'datetime-local',
+  'email',
+  'month',
+  'number',
+  'password',
+  'search',
+  'tel',
+  'text',
+  'time',
+  'url',
+  'week'
+]);
+
 const DESKTOP_APPS = [
   {
     id: 'estudiemos',
@@ -67,7 +82,11 @@ const DESKTOP_APPS = [
 
 function isTextEntryElement(element) {
   const tagName = element?.tagName?.toLowerCase();
-  return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable);
+  if (tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable)) return true;
+  if (tagName !== 'input') return false;
+
+  const inputType = String(element.getAttribute?.('type') || element.type || 'text').toLowerCase();
+  return TEXT_ENTRY_INPUT_TYPES.has(inputType);
 }
 
 export function VirtualComputerShell(props) {

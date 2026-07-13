@@ -828,6 +828,42 @@
   font-weight: 650;
 }
 
+.settings-header-actions {
+  min-width: max-content !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px !important;
+}
+
+.settings-back-button {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgba(32, 48, 46, 0.14);
+  border-radius: 999px;
+  padding: 0 14px 0 11px;
+  color: #1b2926;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 24px rgba(10, 18, 16, 0.08);
+  cursor: pointer;
+}
+
+.settings-back-button span {
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.settings-back-button:hover {
+  border-color: rgba(42, 111, 100, 0.28);
+  background: #fff6dc;
+}
+
 .agenda-app-actions,
 .settings-action-grid {
   display: flex;
@@ -2385,6 +2421,18 @@ button.focus-skin-preview {
   .screen-control-drawer h2
 ) {
   color: #fff6dc !important;
+}
+
+.estudiemos-os-live-desktop .settings-back-button {
+  border-color: rgba(224, 196, 122, 0.24);
+  color: #fff6dc;
+  background: rgba(9, 18, 18, 0.72);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.26);
+}
+
+.estudiemos-os-live-desktop .settings-back-button:hover {
+  border-color: rgba(224, 196, 122, 0.5);
+  background: rgba(224, 196, 122, 0.14);
 }
 
 .estudiemos-os-live-desktop :is(
