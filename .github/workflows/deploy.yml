@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   apply-payload:
-    if: github.event.head_commit.message == 'chore: apply illustrated player skin payload'
+    if: ${{ github.event.head_commit.message == 'chore: apply illustrated player skin payload v2' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
