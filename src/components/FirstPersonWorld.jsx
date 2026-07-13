@@ -623,88 +623,137 @@ function addViewModelMesh(parent, geometry, material, position, scale = [1, 1, 1
 
 function createFirstPersonArmViewModel() {
   const group = new THREE.Group();
-  group.name = 'first-person-study-arm';
+  group.name = 'first-person-professional-study-hand';
   group.renderOrder = 10000;
-  group.scale.setScalar(0.78);
+  group.scale.setScalar(0.86);
 
   const pivot = new THREE.Group();
-  pivot.position.set(0.43, -0.61, -1.08);
-  pivot.rotation.set(-0.66, -0.24, 0.16);
+  pivot.position.set(0.43, -0.61, -1.05);
+  pivot.rotation.set(-0.64, -0.27, 0.14);
   group.add(pivot);
 
-  const sleeveMaterial = createViewModelMaterial(0x1b3732);
-  const cuffMaterial = createViewModelMaterial(0xe0c47a);
-  const cuffShadowMaterial = createViewModelMaterial(0x7f6a36);
-  const gloveMaterial = createViewModelMaterial(0x101b1b);
+  const sleeveMaterial = createViewModelMaterial(0x1a3430);
+  const sleeveShadowMaterial = createViewModelMaterial(0x0d1a18);
+  const cuffMaterial = createViewModelMaterial(0xd9bd72);
+  const cuffTrimMaterial = createViewModelMaterial(0x7f6a36);
+  const gloveMaterial = createViewModelMaterial(0x0d1718);
   const glovePanelMaterial = createViewModelMaterial(0x243d37);
-  const seamMaterial = createViewModelMaterial(0x86a18f);
+  const gloveHighlightMaterial = createViewModelMaterial(0x31574f);
+  const seamMaterial = createViewModelMaterial(0x95b4a0);
   const skinMaterial = createViewModelMaterial(0xd99c6d);
   const skinShadowMaterial = createViewModelMaterial(0xa86e4b);
+  const nailMaterial = createViewModelMaterial(0xf0c7a6);
 
   addViewModelMesh(
     pivot,
-    new THREE.CapsuleGeometry(0.12, 0.48, 5, 10),
+    new THREE.CapsuleGeometry(0.13, 0.58, 8, 14),
     sleeveMaterial,
-    [0.005, 0.02, -0.16],
-    [1.12, 0.86, 1],
-    [Math.PI / 2, 0, 0],
+    [0.006, 0.012, -0.19],
+    [1.12, 0.84, 0.96],
+    [Math.PI / 2, -0.02, 0.02],
     10001
   );
-  addViewModelMesh(pivot, new THREE.BoxGeometry(0.25, 0.045, 0.4), cuffShadowMaterial, [0, -0.072, -0.22], [1, 1, 1], [0.12, 0, 0.02], 10002);
-  addViewModelMesh(pivot, new THREE.BoxGeometry(0.27, 0.2, 0.085), cuffMaterial, [0.004, 0.01, -0.405], [1, 1, 1], [0.02, 0, 0], 10003);
+  addViewModelMesh(
+    pivot,
+    new THREE.CapsuleGeometry(0.112, 0.46, 6, 12),
+    sleeveShadowMaterial,
+    [-0.008, -0.058, -0.18],
+    [0.92, 0.72, 0.88],
+    [Math.PI / 2, -0.02, 0.08],
+    10002
+  );
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.31, 0.05, 0.34), cuffTrimMaterial, [0, -0.074, -0.355], [1, 1, 1], [0.12, 0, 0.02], 10003);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.31, 0.18, 0.11), cuffMaterial, [0.003, 0.004, -0.427], [1, 1, 1], [0.03, 0, 0.01], 10004);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.25, 0.032, 0.022), seamMaterial, [0.006, 0.096, -0.43], [1, 1, 1], [0, 0, 0], 10005);
 
   addViewModelMesh(
     pivot,
-    new THREE.SphereGeometry(0.145, 16, 10),
+    new THREE.SphereGeometry(0.165, 22, 14),
     skinMaterial,
-    [0.012, -0.008, -0.545],
-    [1.18, 0.72, 1.04],
-    [0.1, 0, -0.03],
-    10004
+    [0.01, -0.004, -0.565],
+    [1.22, 0.72, 1.05],
+    [0.08, 0, -0.03],
+    10006
   );
-  addViewModelMesh(pivot, new THREE.BoxGeometry(0.235, 0.064, 0.215), gloveMaterial, [0.008, 0.055, -0.545], [1, 1, 1], [0.08, 0, -0.025], 10005);
-  addViewModelMesh(pivot, new THREE.BoxGeometry(0.125, 0.02, 0.15), glovePanelMaterial, [0.012, 0.094, -0.56], [1, 1, 1], [0.08, 0, -0.025], 10006);
-  addViewModelMesh(pivot, new THREE.BoxGeometry(0.19, 0.018, 0.032), seamMaterial, [0.006, 0.103, -0.646], [1, 1, 1], [0.08, 0, -0.025], 10007);
+  addViewModelMesh(
+    pivot,
+    new THREE.SphereGeometry(0.15, 18, 10),
+    skinShadowMaterial,
+    [0.008, -0.052, -0.552],
+    [1.02, 0.32, 0.78],
+    [0.08, 0, -0.03],
+    10007
+  );
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.27, 0.075, 0.235), gloveMaterial, [0.006, 0.054, -0.565], [1, 1, 1], [0.08, 0, -0.025], 10008);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.15, 0.024, 0.16), glovePanelMaterial, [0.01, 0.103, -0.572], [1, 1, 1], [0.08, 0, -0.025], 10009);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.085, 0.018, 0.12), gloveHighlightMaterial, [0.09, 0.109, -0.565], [1, 1, 1], [0.08, 0, -0.08], 10010);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.21, 0.016, 0.032), seamMaterial, [0.002, 0.116, -0.666], [1, 1, 1], [0.08, 0, -0.025], 10011);
 
   const fingerSpecs = [
-    { x: -0.084, y: -0.005, z: -0.68, length: 0.155, radius: 0.024, tilt: -0.1 },
-    { x: -0.03, y: 0.002, z: -0.705, length: 0.19, radius: 0.026, tilt: -0.035 },
-    { x: 0.026, y: 0.002, z: -0.708, length: 0.185, radius: 0.025, tilt: 0.028 },
-    { x: 0.079, y: -0.006, z: -0.686, length: 0.15, radius: 0.023, tilt: 0.095 }
+    { x: -0.092, z: -0.682, lengths: [0.085, 0.066, 0.052], radius: 0.024, tilt: -0.13, y: 0.003 },
+    { x: -0.032, z: -0.704, lengths: [0.102, 0.081, 0.064], radius: 0.027, tilt: -0.045, y: 0.008 },
+    { x: 0.029, z: -0.706, lengths: [0.1, 0.078, 0.061], radius: 0.026, tilt: 0.04, y: 0.006 },
+    { x: 0.087, z: -0.686, lengths: [0.082, 0.062, 0.049], radius: 0.023, tilt: 0.13, y: -0.002 }
   ];
 
-  fingerSpecs.forEach((finger, index) => {
+  fingerSpecs.forEach((finger, fingerIndex) => {
+    let cursorZ = finger.z;
+    finger.lengths.forEach((length, segmentIndex) => {
+      const segmentY = finger.y - segmentIndex * 0.012;
+      const segmentZ = cursorZ - length * 0.5 - segmentIndex * 0.012;
+      addViewModelMesh(
+        pivot,
+        new THREE.CapsuleGeometry(finger.radius * (1 - segmentIndex * 0.09), length, 5, 10),
+        skinMaterial,
+        [finger.x + finger.tilt * segmentIndex * 0.012, segmentY, segmentZ],
+        [1, 0.94, 1],
+        [Math.PI / 2 + segmentIndex * 0.04, finger.tilt, 0],
+        10012 + fingerIndex * 6 + segmentIndex
+      );
+      cursorZ -= length + 0.006;
+    });
+
     addViewModelMesh(
       pivot,
-      new THREE.CapsuleGeometry(finger.radius, finger.length, 4, 8),
-      skinMaterial,
-      [finger.x, finger.y, finger.z],
-      [1, 0.92, 1],
-      [Math.PI / 2, finger.tilt, 0],
-      10008 + index
+      new THREE.BoxGeometry(finger.radius * 2.15, 0.024, 0.065),
+      glovePanelMaterial,
+      [finger.x, 0.063, finger.z + 0.048],
+      [1, 1, 1],
+      [0.08, finger.tilt, 0],
+      10040 + fingerIndex
     );
     addViewModelMesh(
       pivot,
-      new THREE.BoxGeometry(finger.radius * 1.9, 0.02, 0.056),
-      glovePanelMaterial,
-      [finger.x, 0.058, finger.z + 0.06],
+      new THREE.BoxGeometry(finger.radius * 1.5, 0.006, 0.022),
+      nailMaterial,
+      [finger.x + finger.tilt * 0.02, finger.y - 0.045, cursorZ + 0.028],
       [1, 1, 1],
       [0.08, finger.tilt, 0],
-      10014 + index
+      10046 + fingerIndex
     );
   });
 
   addViewModelMesh(
     pivot,
-    new THREE.CapsuleGeometry(0.035, 0.14, 4, 8),
+    new THREE.CapsuleGeometry(0.037, 0.168, 6, 10),
     skinShadowMaterial,
-    [-0.135, -0.033, -0.56],
-    [1, 0.96, 1],
-    [0.64, 0.16, 0.46],
-    10018
+    [-0.142, -0.028, -0.56],
+    [1, 0.98, 1],
+    [0.68, 0.18, 0.5],
+    10052
   );
-  addViewModelMesh(pivot, new THREE.BoxGeometry(0.052, 0.025, 0.11), glovePanelMaterial, [-0.095, 0.044, -0.538], [1, 1, 1], [0.18, 0, 0.24], 10019);
-  addViewModelMesh(pivot, new THREE.BoxGeometry(0.04, 0.012, 0.16), seamMaterial, [0.126, 0.06, -0.565], [1, 1, 1], [0.08, 0, -0.2], 10020);
+  addViewModelMesh(
+    pivot,
+    new THREE.CapsuleGeometry(0.031, 0.112, 6, 10),
+    skinMaterial,
+    [-0.158, -0.03, -0.632],
+    [1, 0.9, 0.98],
+    [0.86, 0.28, 0.55],
+    10053
+  );
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.058, 0.028, 0.12), glovePanelMaterial, [-0.1, 0.047, -0.536], [1, 1, 1], [0.18, 0, 0.24], 10054);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.046, 0.012, 0.18), seamMaterial, [0.136, 0.064, -0.57], [1, 1, 1], [0.08, 0, -0.2], 10055);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.18, 0.014, 0.018), cuffTrimMaterial, [-0.008, -0.108, -0.43], [1, 1, 1], [0.02, 0, 0.02], 10056);
 
   return {
     group,
@@ -734,116 +783,243 @@ function updateFirstPersonArmViewModel(viewModel, delta, isWalking, frameTime) {
 
 function createStudyPlayerAvatar() {
   const group = new THREE.Group();
-  group.name = 'estudiemos-player-avatar-skin';
+  group.name = 'estudiemos-player-avatar-skin-v2';
   group.visible = false;
 
   const materials = {
-    shadow: new THREE.MeshBasicMaterial({ color: 0x050706, transparent: true, opacity: 0.2, depthWrite: false }),
-    sneakers: makeMaterial(0x101718, 0.54, 0.02),
-    pants: makeMaterial(0x273d47, 0.5, 0.02),
-    hoodie: makeMaterial(0x1b3732, 0.46, 0.03),
+    shadow: new THREE.MeshBasicMaterial({ color: 0x050706, transparent: true, opacity: 0.22, depthWrite: false }),
+    sole: makeMaterial(0x080d0e, 0.58, 0.03),
+    sneaker: makeMaterial(0x18282a, 0.48, 0.04),
+    sneakerTrim: makeMaterial(0xe0c47a, 0.42, 0.02),
+    pants: makeMaterial(0x273d47, 0.54, 0.02),
+    pantsPanel: makeMaterial(0x35515e, 0.48, 0.02),
+    hoodie: makeMaterial(0x1b3732, 0.5, 0.03),
+    hoodieDark: makeMaterial(0x0f2421, 0.56, 0.02),
     hoodieAccent: makeMaterial(0xe0c47a, 0.38, 0.02),
+    zipper: makeMaterial(0xb9d7df, 0.34, 0.08),
     skin: makeMaterial(0xd99c6d, 0.58, 0.01),
+    skinShade: makeMaterial(0xb97955, 0.6, 0.01),
     hair: makeMaterial(0x21170f, 0.5, 0.02),
+    eye: makeMaterial(0x071011, 0.34, 0.02),
+    mouth: makeMaterial(0x7b3c36, 0.54, 0.01),
     headphones: makeMaterial(0x0f1718, 0.34, 0.08),
     glow: makeEmissiveMaterial(0x8ed7d2, 0.44),
-    backpack: makeMaterial(0x162625, 0.52, 0.04)
+    backpack: makeMaterial(0x162625, 0.52, 0.04),
+    strap: makeMaterial(0x0e1d1b, 0.56, 0.03),
+    glove: makeMaterial(0x101718, 0.54, 0.03)
   };
 
   const shadow = addAvatarMesh(
     group,
-    new THREE.CircleGeometry(0.72, 20),
+    new THREE.CircleGeometry(0.78, 24),
     materials.shadow,
     [0, 0.035, 0],
-    [1.05, 0.52, 1],
+    [1.08, 0.52, 1],
     [-Math.PI / 2, 0, 0]
   );
   shadow.renderOrder = -1;
 
-  const hips = addAvatarMesh(group, new THREE.BoxGeometry(0.58, 0.28, 0.34), materials.pants, [0, 0.82, 0], [1, 1, 1]);
+  const bodyGroup = new THREE.Group();
+  bodyGroup.name = 'avatar-body-rig';
+  group.add(bodyGroup);
+
+  const hipsGroup = new THREE.Group();
+  hipsGroup.name = 'avatar-hips';
+  hipsGroup.position.set(0, 0.82, 0);
+  bodyGroup.add(hipsGroup);
+  const hips = addAvatarMesh(hipsGroup, new THREE.CapsuleGeometry(0.23, 0.25, 6, 12), materials.pants, [0, 0, 0], [1.24, 0.86, 0.84], [0, 0, Math.PI / 2]);
+  const belt = addAvatarMesh(hipsGroup, new THREE.BoxGeometry(0.58, 0.055, 0.36), materials.hoodieDark, [0, 0.16, -0.01], [1, 1, 1]);
+  const beltBuckle = addAvatarMesh(hipsGroup, new THREE.BoxGeometry(0.12, 0.063, 0.02), materials.hoodieAccent, [0, 0.17, -0.19], [1, 1, 1]);
+
+  const torsoGroup = new THREE.Group();
+  torsoGroup.name = 'avatar-torso';
+  torsoGroup.position.set(0, 1.22, 0);
+  bodyGroup.add(torsoGroup);
   const torso = addAvatarMesh(
-    group,
-    new THREE.CapsuleGeometry(0.34, 0.58, 6, 12),
+    torsoGroup,
+    new THREE.CapsuleGeometry(0.33, 0.6, 8, 16),
     materials.hoodie,
-    [0, 1.18, 0],
-    [0.92, 1, 0.78]
+    [0, 0, 0],
+    [0.95, 1, 0.78]
   );
-  const chestPanel = addAvatarMesh(group, new THREE.BoxGeometry(0.42, 0.3, 0.04), materials.hoodieAccent, [0, 1.22, -0.27], [1, 1, 1]);
-  const badge = addAvatarMesh(group, new THREE.CylinderGeometry(0.07, 0.07, 0.018, 14), materials.glow, [0.18, 1.33, -0.3], [1, 1, 1], [Math.PI / 2, 0, 0]);
+  const shoulderLine = addAvatarMesh(torsoGroup, new THREE.CapsuleGeometry(0.065, 0.74, 6, 12), materials.hoodieDark, [0, 0.29, -0.01], [1, 1, 0.8], [0, 0, Math.PI / 2]);
+  const chestPanel = addAvatarMesh(torsoGroup, new THREE.BoxGeometry(0.42, 0.34, 0.044), materials.hoodieAccent, [0, 0.05, -0.27], [1, 1, 1]);
+  const chestInset = addAvatarMesh(torsoGroup, new THREE.BoxGeometry(0.32, 0.22, 0.048), materials.hoodie, [0, 0.04, -0.296], [1, 1, 1]);
+  const pocket = addAvatarMesh(torsoGroup, new THREE.BoxGeometry(0.32, 0.12, 0.052), materials.hoodieDark, [0, -0.18, -0.3], [1, 1, 1]);
+  const zipper = addAvatarMesh(torsoGroup, new THREE.BoxGeometry(0.022, 0.47, 0.056), materials.zipper, [0, 0.09, -0.32], [1, 1, 1]);
+  const badge = addAvatarMesh(torsoGroup, new THREE.CylinderGeometry(0.064, 0.064, 0.018, 18), materials.glow, [0.17, 0.18, -0.334], [1, 1, 1], [Math.PI / 2, 0, 0]);
+  const hoodieCollar = addAvatarMesh(torsoGroup, new THREE.TorusGeometry(0.22, 0.038, 8, 24), materials.hoodieDark, [0, 0.42, -0.02], [1.08, 0.72, 0.78], [Math.PI / 2, 0, 0]);
+  const leftString = addAvatarMesh(torsoGroup, new THREE.CylinderGeometry(0.011, 0.011, 0.31, 8), materials.zipper, [-0.095, 0.19, -0.335], [1, 1, 1], [0.08, 0.02, 0.02]);
+  const rightString = addAvatarMesh(torsoGroup, new THREE.CylinderGeometry(0.011, 0.011, 0.31, 8), materials.zipper, [0.095, 0.19, -0.335], [1, 1, 1], [0.08, -0.02, -0.02]);
+  const leftStringTip = addAvatarMesh(torsoGroup, new THREE.SphereGeometry(0.022, 8, 6), materials.hoodieAccent, [-0.11, 0.03, -0.34], [1, 1, 1]);
+  const rightStringTip = addAvatarMesh(torsoGroup, new THREE.SphereGeometry(0.022, 8, 6), materials.hoodieAccent, [0.11, 0.03, -0.34], [1, 1, 1]);
 
-  const head = addAvatarMesh(group, new THREE.SphereGeometry(0.24, 18, 12), materials.skin, [0, 1.73, -0.01], [0.94, 1.06, 0.88]);
-  const hair = addAvatarMesh(group, new THREE.SphereGeometry(0.245, 18, 8, 0, Math.PI * 2, 0, Math.PI * 0.58), materials.hair, [0, 1.86, -0.02], [1.02, 0.54, 0.92]);
-  const neck = addAvatarMesh(group, new THREE.CylinderGeometry(0.105, 0.12, 0.18, 12), materials.skin, [0, 1.52, 0], [1, 1, 1]);
+  const backpackGroup = new THREE.Group();
+  backpackGroup.name = 'avatar-backpack';
+  backpackGroup.position.set(0, -0.01, 0.38);
+  torsoGroup.add(backpackGroup);
+  const backpack = addAvatarMesh(backpackGroup, new THREE.BoxGeometry(0.48, 0.62, 0.18), materials.backpack, [0, 0, 0], [1, 1, 1]);
+  const backpackCap = addAvatarMesh(backpackGroup, new THREE.BoxGeometry(0.42, 0.09, 0.19), materials.hoodieAccent, [0, 0.23, 0.012], [1, 1, 1]);
+  const backpackStripe = addAvatarMesh(backpackGroup, new THREE.BoxGeometry(0.31, 0.045, 0.025), materials.glow, [0, 0.08, -0.102], [1, 1, 1]);
+  const leftStrap = addAvatarMesh(torsoGroup, new THREE.BoxGeometry(0.052, 0.58, 0.032), materials.strap, [-0.25, 0.05, -0.16], [1, 1, 1], [0, 0, -0.07]);
+  const rightStrap = addAvatarMesh(torsoGroup, new THREE.BoxGeometry(0.052, 0.58, 0.032), materials.strap, [0.25, 0.05, -0.16], [1, 1, 1], [0, 0, 0.07]);
 
-  const leftHeadphone = addAvatarMesh(group, new THREE.BoxGeometry(0.08, 0.22, 0.12), materials.headphones, [-0.24, 1.74, 0], [1, 1, 1]);
-  const rightHeadphone = addAvatarMesh(group, new THREE.BoxGeometry(0.08, 0.22, 0.12), materials.headphones, [0.24, 1.74, 0], [1, 1, 1]);
-  const band = addAvatarMesh(group, new THREE.TorusGeometry(0.235, 0.015, 6, 22, Math.PI), materials.headphones, [0, 1.78, 0], [1, 1, 0.72], [0, Math.PI / 2, 0]);
+  const neck = addAvatarMesh(bodyGroup, new THREE.CylinderGeometry(0.105, 0.12, 0.18, 14), materials.skinShade, [0, 1.58, 0], [1, 1, 1]);
+  const headGroup = new THREE.Group();
+  headGroup.name = 'avatar-head';
+  headGroup.position.set(0, 1.77, -0.01);
+  bodyGroup.add(headGroup);
+  const head = addAvatarMesh(headGroup, new THREE.SphereGeometry(0.245, 22, 14), materials.skin, [0, 0, 0], [0.94, 1.06, 0.88]);
+  const hair = addAvatarMesh(headGroup, new THREE.SphereGeometry(0.252, 22, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), materials.hair, [0, 0.125, -0.01], [1.02, 0.58, 0.92]);
+  const fringe = addAvatarMesh(headGroup, new THREE.SphereGeometry(0.09, 12, 8), materials.hair, [-0.085, 0.12, -0.18], [1.25, 0.6, 0.72], [-0.14, 0.16, -0.28]);
+  const nose = addAvatarMesh(headGroup, new THREE.SphereGeometry(0.032, 10, 6), materials.skinShade, [0, -0.015, -0.22], [0.78, 1, 0.72]);
+  const leftEye = addAvatarMesh(headGroup, new THREE.SphereGeometry(0.022, 8, 6), materials.eye, [-0.075, 0.05, -0.214], [1, 0.7, 0.45]);
+  const rightEye = addAvatarMesh(headGroup, new THREE.SphereGeometry(0.022, 8, 6), materials.eye, [0.075, 0.05, -0.214], [1, 0.7, 0.45]);
+  const mouth = addAvatarMesh(headGroup, new THREE.BoxGeometry(0.08, 0.012, 0.01), materials.mouth, [0, -0.085, -0.221], [1, 1, 1]);
+  const leftHeadphone = addAvatarMesh(headGroup, new THREE.BoxGeometry(0.075, 0.22, 0.13), materials.headphones, [-0.245, 0.0, 0], [1, 1, 1]);
+  const rightHeadphone = addAvatarMesh(headGroup, new THREE.BoxGeometry(0.075, 0.22, 0.13), materials.headphones, [0.245, 0.0, 0], [1, 1, 1]);
+  const band = addAvatarMesh(headGroup, new THREE.TorusGeometry(0.235, 0.015, 6, 24, Math.PI), materials.headphones, [0, 0.035, 0], [1, 1, 0.74], [0, Math.PI / 2, 0]);
 
-  const backpack = addAvatarMesh(group, new THREE.BoxGeometry(0.5, 0.58, 0.18), materials.backpack, [0, 1.18, 0.34], [1, 1, 1]);
-  const backpackStripe = addAvatarMesh(group, new THREE.BoxGeometry(0.34, 0.05, 0.025), materials.hoodieAccent, [0, 1.36, 0.44], [1, 1, 1]);
+  function createArm(side) {
+    const armGroup = new THREE.Group();
+    armGroup.name = side < 0 ? 'avatar-left-arm' : 'avatar-right-arm';
+    armGroup.position.set(side * 0.4, 1.39, -0.01);
+    bodyGroup.add(armGroup);
+    const shoulder = addAvatarMesh(armGroup, new THREE.SphereGeometry(0.09, 12, 8), materials.hoodieDark, [0, 0, 0], [1.1, 0.9, 0.9]);
+    const upper = addAvatarMesh(armGroup, new THREE.CapsuleGeometry(0.065, 0.34, 6, 10), materials.hoodie, [side * 0.03, -0.18, -0.015], [1, 1, 0.92], [0.05, 0, side * 0.12]);
+    const elbow = addAvatarMesh(armGroup, new THREE.SphereGeometry(0.07, 10, 8), materials.hoodieDark, [side * 0.055, -0.39, -0.02], [1, 0.9, 0.9]);
+    const forearm = addAvatarMesh(armGroup, new THREE.CapsuleGeometry(0.058, 0.3, 6, 10), materials.hoodie, [side * 0.07, -0.56, -0.025], [0.92, 1, 0.86], [-0.02, 0, side * 0.08]);
+    const cuff = addAvatarMesh(armGroup, new THREE.BoxGeometry(0.14, 0.055, 0.115), materials.hoodieAccent, [side * 0.082, -0.735, -0.03], [1, 1, 1], [0, 0, side * 0.05]);
+    const handGroup = new THREE.Group();
+    handGroup.name = side < 0 ? 'avatar-left-hand' : 'avatar-right-hand';
+    handGroup.position.set(side * 0.085, -0.81, -0.035);
+    armGroup.add(handGroup);
+    const palm = addAvatarMesh(handGroup, new THREE.SphereGeometry(0.07, 12, 8), materials.skin, [0, 0, 0], [1.08, 0.92, 0.8]);
+    const glove = addAvatarMesh(handGroup, new THREE.BoxGeometry(0.11, 0.04, 0.085), materials.glove, [0, 0.035, -0.006], [1, 1, 1]);
+    const thumb = addAvatarMesh(handGroup, new THREE.CapsuleGeometry(0.018, 0.07, 5, 8), materials.skinShade, [side * 0.058, -0.005, -0.032], [1, 1, 1], [0.4, 0.15, side * 0.72]);
+    [-0.031, 0, 0.031].forEach((offset, index) => {
+      addAvatarMesh(
+        handGroup,
+        new THREE.CapsuleGeometry(0.013, 0.062 - index * 0.004, 4, 7),
+        materials.skin,
+        [offset, -0.054, -0.012],
+        [1, 1, 0.9],
+        [0.12, 0, 0]
+      );
+    });
+    return {
+      group: armGroup,
+      handGroup,
+      basePosition: armGroup.position.clone(),
+      baseRotation: armGroup.rotation.clone(),
+      parts: [shoulder, upper, elbow, forearm, cuff, palm, glove, thumb]
+    };
+  }
 
-  const leftArm = addAvatarMesh(
-    group,
-    new THREE.CapsuleGeometry(0.07, 0.46, 5, 8),
-    materials.hoodie,
-    [-0.42, 1.15, -0.02],
-    [1, 1, 1],
-    [0.12, 0.02, -0.28]
-  );
-  const rightArm = addAvatarMesh(
-    group,
-    new THREE.CapsuleGeometry(0.07, 0.46, 5, 8),
-    materials.hoodie,
-    [0.42, 1.15, -0.02],
-    [1, 1, 1],
-    [0.12, -0.02, 0.28]
-  );
-  const leftHand = addAvatarMesh(group, new THREE.SphereGeometry(0.075, 12, 8), materials.skin, [-0.52, 0.91, -0.04], [1, 0.92, 1]);
-  const rightHand = addAvatarMesh(group, new THREE.SphereGeometry(0.075, 12, 8), materials.skin, [0.52, 0.91, -0.04], [1, 0.92, 1]);
+  function createLeg(side) {
+    const legGroup = new THREE.Group();
+    legGroup.name = side < 0 ? 'avatar-left-leg' : 'avatar-right-leg';
+    legGroup.position.set(side * 0.15, 0.76, 0);
+    bodyGroup.add(legGroup);
+    const thigh = addAvatarMesh(legGroup, new THREE.CapsuleGeometry(0.09, 0.34, 6, 10), materials.pants, [0, -0.18, 0], [1, 1, 0.9]);
+    const kneePad = addAvatarMesh(legGroup, new THREE.BoxGeometry(0.14, 0.09, 0.035), materials.pantsPanel, [0, -0.38, -0.08], [1, 1, 1]);
+    const shin = addAvatarMesh(legGroup, new THREE.CapsuleGeometry(0.08, 0.32, 6, 10), materials.pants, [0, -0.56, -0.01], [0.92, 1, 0.88]);
+    const shoeGroup = new THREE.Group();
+    shoeGroup.name = side < 0 ? 'avatar-left-shoe' : 'avatar-right-shoe';
+    shoeGroup.position.set(0, -0.82, -0.055);
+    legGroup.add(shoeGroup);
+    const shoe = addAvatarMesh(shoeGroup, new THREE.BoxGeometry(0.22, 0.095, 0.36), materials.sneaker, [0, 0, 0], [1, 1, 1]);
+    const toe = addAvatarMesh(shoeGroup, new THREE.SphereGeometry(0.088, 12, 6), materials.sneaker, [0, 0.004, -0.18], [1.22, 0.52, 0.64]);
+    const sole = addAvatarMesh(shoeGroup, new THREE.BoxGeometry(0.24, 0.035, 0.38), materials.sole, [0, -0.06, 0.002], [1, 1, 1]);
+    const lace = addAvatarMesh(shoeGroup, new THREE.BoxGeometry(0.12, 0.011, 0.018), materials.sneakerTrim, [0, 0.058, -0.045], [1, 1, 1]);
+    return {
+      group: legGroup,
+      shoeGroup,
+      basePosition: legGroup.position.clone(),
+      baseRotation: legGroup.rotation.clone(),
+      shoeBasePosition: shoeGroup.position.clone(),
+      parts: [thigh, kneePad, shin, shoe, toe, sole, lace]
+    };
+  }
 
-  const leftLeg = addAvatarMesh(group, new THREE.CapsuleGeometry(0.095, 0.55, 5, 8), materials.pants, [-0.15, 0.48, 0], [1, 1, 0.88]);
-  const rightLeg = addAvatarMesh(group, new THREE.CapsuleGeometry(0.095, 0.55, 5, 8), materials.pants, [0.15, 0.48, 0], [1, 1, 0.88]);
-  const leftShoe = addAvatarMesh(group, new THREE.BoxGeometry(0.24, 0.095, 0.36), materials.sneakers, [-0.15, 0.12, -0.08], [1, 1, 1]);
-  const rightShoe = addAvatarMesh(group, new THREE.BoxGeometry(0.24, 0.095, 0.36), materials.sneakers, [0.15, 0.12, -0.08], [1, 1, 1]);
+  const leftArmRig = createArm(-1);
+  const rightArmRig = createArm(1);
+  const leftLegRig = createLeg(-1);
+  const rightLegRig = createLeg(1);
 
   [
+    bodyGroup,
+    hipsGroup,
+    torsoGroup,
+    headGroup,
     torso,
     hips,
+    belt,
+    beltBuckle,
+    shoulderLine,
     chestPanel,
+    chestInset,
+    pocket,
+    zipper,
     badge,
+    hoodieCollar,
+    leftString,
+    rightString,
+    leftStringTip,
+    rightStringTip,
     head,
     hair,
+    fringe,
+    nose,
+    leftEye,
+    rightEye,
+    mouth,
     neck,
     leftHeadphone,
     rightHeadphone,
     band,
     backpack,
+    backpackCap,
     backpackStripe,
-    leftArm,
-    rightArm,
-    leftHand,
-    rightHand,
-    leftLeg,
-    rightLeg,
-    leftShoe,
-    rightShoe
+    leftStrap,
+    rightStrap,
+    ...leftArmRig.parts,
+    ...rightArmRig.parts,
+    ...leftLegRig.parts,
+    ...rightLegRig.parts
   ].forEach((part) => {
+    if (!part.isMesh) return;
     part.castShadow = false;
     part.receiveShadow = false;
   });
 
   return {
     group,
+    bodyGroup,
+    hipsGroup,
+    torsoGroup,
     torso,
+    chestPanel,
+    pocket,
+    backpackGroup,
+    headGroup,
     head,
+    mouth,
     arms: [
-      { mesh: leftArm, hand: leftHand, side: -1, basePosition: leftArm.position.clone(), baseRotation: leftArm.rotation.clone(), handBase: leftHand.position.clone() },
-      { mesh: rightArm, hand: rightHand, side: 1, basePosition: rightArm.position.clone(), baseRotation: rightArm.rotation.clone(), handBase: rightHand.position.clone() }
+      { ...leftArmRig, side: -1 },
+      { ...rightArmRig, side: 1 }
     ],
     legs: [
-      { mesh: leftLeg, shoe: leftShoe, side: -1, basePosition: leftLeg.position.clone(), shoeBase: leftShoe.position.clone() },
-      { mesh: rightLeg, shoe: rightShoe, side: 1, basePosition: rightLeg.position.clone(), shoeBase: rightShoe.position.clone() }
-    ]
+      { ...leftLegRig, side: -1 },
+      { ...rightLegRig, side: 1 }
+    ],
+    baseBodyPosition: bodyGroup.position.clone(),
+    baseTorsoPosition: torsoGroup.position.clone(),
+    baseTorsoRotation: torsoGroup.rotation.clone(),
+    baseHipsPosition: hipsGroup.position.clone(),
+    baseHipsRotation: hipsGroup.rotation.clone(),
+    baseHeadPosition: headGroup.position.clone(),
+    baseHeadRotation: headGroup.rotation.clone()
   };
 }
 
@@ -866,30 +1042,55 @@ function updateStudyPlayerAvatar(avatar, playerPosition, yaw, isWalking, velocit
 
   const speed = clamp(velocity.length() / WALK_SPEED, 0, 1);
   const walk = isWalking ? speed : 0;
-  const phase = frameTime * 0.011;
-  const stride = Math.sin(phase) * 0.38 * walk;
-  const bounce = Math.abs(Math.sin(phase)) * 0.035 * walk;
+  const phase = frameTime * 0.0115;
+  const idle = Math.sin(frameTime * 0.0024);
+  const stride = Math.sin(phase) * 0.44 * walk;
+  const counterStride = Math.sin(phase + Math.PI) * 0.44 * walk;
+  const bounce = Math.abs(Math.sin(phase)) * 0.045 * walk + idle * 0.006;
+  const lean = clamp(speed, 0, 1) * 0.055;
 
-  avatar.torso.position.y = 1.18 + bounce;
-  avatar.head.position.y = 1.73 + bounce * 0.55;
+  avatar.bodyGroup.position.copy(avatar.baseBodyPosition);
+  avatar.torsoGroup.position.copy(avatar.baseTorsoPosition);
+  avatar.torsoGroup.position.y += bounce;
+  avatar.torsoGroup.rotation.copy(avatar.baseTorsoRotation);
+  avatar.torsoGroup.rotation.x = -lean;
+  avatar.torsoGroup.rotation.z = Math.sin(phase) * 0.025 * walk;
+
+  avatar.hipsGroup.position.copy(avatar.baseHipsPosition);
+  avatar.hipsGroup.position.y += bounce * 0.45;
+  avatar.hipsGroup.rotation.copy(avatar.baseHipsRotation);
+  avatar.hipsGroup.rotation.z = Math.sin(phase + Math.PI) * 0.018 * walk;
+
+  avatar.headGroup.position.copy(avatar.baseHeadPosition);
+  avatar.headGroup.position.y += bounce * 0.62;
+  avatar.headGroup.rotation.copy(avatar.baseHeadRotation);
+  avatar.headGroup.rotation.x = idle * 0.018 - lean * 0.4;
+  avatar.headGroup.rotation.y = Math.sin(frameTime * 0.0018) * 0.04 * (1 - walk * 0.55);
+  avatar.mouth.scale.x = 1 + Math.abs(idle) * 0.08;
 
   avatar.arms.forEach((arm) => {
-    arm.mesh.position.copy(arm.basePosition);
-    arm.mesh.position.y += bounce * 0.45;
-    arm.mesh.rotation.copy(arm.baseRotation);
-    arm.mesh.rotation.x += stride * -arm.side * 0.34;
-    arm.hand.position.copy(arm.handBase);
-    arm.hand.position.y += bounce * 0.45 + Math.sin(phase + arm.side * Math.PI) * 0.045 * walk;
-    arm.hand.position.z += stride * -arm.side * 0.08;
+    const armStride = arm.side < 0 ? counterStride : stride;
+    arm.group.position.copy(arm.basePosition);
+    arm.group.position.y += bounce * 0.42;
+    arm.group.rotation.copy(arm.baseRotation);
+    arm.group.rotation.x = armStride * 0.68 - lean * 0.35;
+    arm.group.rotation.z = arm.side * (0.06 + walk * 0.035);
+    arm.handGroup.rotation.x = -armStride * 0.22;
+    arm.handGroup.rotation.z = Math.sin(phase + arm.side * Math.PI) * 0.08 * walk;
   });
 
   avatar.legs.forEach((leg) => {
-    const legStride = stride * leg.side;
-    leg.mesh.position.copy(leg.basePosition);
-    leg.mesh.position.z = leg.basePosition.z + legStride * 0.12;
-    leg.mesh.rotation.x = legStride;
-    leg.shoe.position.copy(leg.shoeBase);
-    leg.shoe.position.z = leg.shoeBase.z + legStride * 0.17;
+    const legStride = leg.side < 0 ? stride : counterStride;
+    const stepLift = Math.max(0, Math.sin(phase + (leg.side < 0 ? 0 : Math.PI))) * 0.06 * walk;
+    leg.group.position.copy(leg.basePosition);
+    leg.group.position.y += bounce * 0.18 + stepLift * 0.18;
+    leg.group.rotation.copy(leg.baseRotation);
+    leg.group.rotation.x = legStride * 0.78;
+    leg.group.rotation.z = leg.side * 0.018 * walk;
+    leg.shoeGroup.position.copy(leg.shoeBasePosition);
+    leg.shoeGroup.position.y += stepLift;
+    leg.shoeGroup.position.z += legStride * 0.1;
+    leg.shoeGroup.rotation.x = -legStride * 0.28;
   });
 }
 
