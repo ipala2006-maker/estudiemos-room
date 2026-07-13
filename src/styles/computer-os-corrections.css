@@ -2298,3 +2298,191 @@ button.focus-skin-preview {
     width: 100%;
   }
 }
+
+/* Unified dark mode pass for every in-computer surface. */
+.estudiemos-os-live-desktop {
+  color-scheme: dark;
+}
+
+.estudiemos-os-live-desktop .os-fullscreen-app,
+.estudiemos-os-live-desktop .agenda-app-shell,
+.estudiemos-os-live-desktop .settings-app-shell,
+.estudiemos-os-live-desktop .focus-profile-app,
+.estudiemos-os-live-desktop .estudiemos-real-page,
+.estudiemos-os-live-desktop .links-card-panel,
+.estudiemos-os-live-desktop .mediahub-context-panel,
+.estudiemos-os-live-desktop .content-action-panel,
+.estudiemos-os-live-desktop .screen-control-drawer {
+  color: #f7f1e4 !important;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(224, 196, 122, 0.14), transparent 30%),
+    linear-gradient(135deg, rgba(18, 31, 29, 0.98), rgba(8, 13, 14, 0.99)) !important;
+}
+
+.estudiemos-os-live-desktop :is(
+  .agenda-stats-strip div,
+  .agenda-calendar-panel,
+  .agenda-day-panel,
+  .agenda-quick-add,
+  .agenda-editor-row,
+  .agenda-empty-day,
+  .settings-panel,
+  .settings-toggle-card,
+  .settings-layout-options button,
+  .focus-hero-panel,
+  .focus-progress-panel,
+  .focus-selected-skin-panel,
+  .focus-availability-panel,
+  .focus-economy-rules,
+  .focus-skin-card,
+  .focus-rank-guide article,
+  .focus-profile-tabs button,
+  .estudiemos-hero,
+  .estudiemos-card,
+  .estudiemos-topic-card,
+  .resource-category-game,
+  .resource-action-card,
+  .links-input-card,
+  .links-format-note,
+  .screen-zone-card,
+  .drawer-section,
+  .drawer-layout-grid button
+) {
+  border-color: rgba(247, 241, 228, 0.14) !important;
+  color: #f7f1e4 !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+    rgba(12, 21, 20, 0.84) !important;
+}
+
+.estudiemos-os-live-desktop :is(
+  .agenda-app-header h2,
+  .settings-app-header h2,
+  .agenda-day-head strong,
+  .agenda-next-card strong,
+  .agenda-stats-strip strong,
+  .agenda-editor-row strong,
+  .agenda-empty-day strong,
+  .settings-panel-head strong,
+  .settings-toggle-card strong,
+  .focus-hero-copy h2,
+  .focus-selected-skin-panel h3,
+  .focus-panel-title strong,
+  .focus-skin-copy h3,
+  .focus-rank-guide strong,
+  .estudiemos-section-head h2,
+  .estudiemos-card h3,
+  .estudiemos-topic-card p,
+  .content-action-panel h3,
+  .context-section-title h3,
+  .screen-control-drawer h2
+) {
+  color: #fff6dc !important;
+}
+
+.estudiemos-os-live-desktop :is(
+  .agenda-app-header span,
+  .agenda-app-header p,
+  .settings-app-header span,
+  .settings-app-header p,
+  .agenda-stats-strip span,
+  .agenda-quick-add span,
+  .agenda-editor-row label span,
+  .agenda-day-head span,
+  .agenda-empty-day,
+  .settings-toggle-card small,
+  .settings-layout-options small,
+  .focus-hero-copy p,
+  .focus-selected-skin-panel p,
+  .focus-selected-skin-panel small,
+  .focus-panel-title span,
+  .focus-skin-copy p,
+  .focus-skin-meta span,
+  .focus-skin-meta small,
+  .estudiemos-section-head p,
+  .estudiemos-card p,
+  .estudiemos-topic-card span,
+  .resource-category-game p,
+  .content-action-panel p,
+  .context-section-title p,
+  .links-format-note,
+  .screen-zone-card small
+) {
+  color: rgba(247, 241, 228, 0.68) !important;
+}
+
+.estudiemos-os-live-desktop :is(input, textarea, select) {
+  border-color: rgba(247, 241, 228, 0.18) !important;
+  color: #fff6dc !important;
+  background: rgba(5, 10, 11, 0.82) !important;
+  caret-color: #e0c47a;
+}
+
+.estudiemos-os-live-desktop :is(input, textarea, select)::placeholder {
+  color: rgba(247, 241, 228, 0.44) !important;
+}
+
+.estudiemos-os-live-desktop :is(
+  .agenda-app-actions button,
+  .agenda-day-tools button,
+  .settings-action-grid button,
+  .mediahub-secondary-button,
+  .mediahub-text-button,
+  .mediahub-icon-button,
+  .os-scroll-pad button,
+  .spotify-action-panel button,
+  .spotify-action-panel a
+) {
+  border-color: rgba(247, 241, 228, 0.16) !important;
+  color: #f7f1e4 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.estudiemos-os-live-desktop :is(
+  .agenda-app-actions .is-primary,
+  .agenda-quick-add button,
+  .mediahub-primary-button,
+  .settings-layout-options button.is-selected,
+  .focus-profile-tabs button.is-selected,
+  .focus-skin-actions .is-primary
+) {
+  border-color: rgba(224, 196, 122, 0.34) !important;
+  color: #111817 !important;
+  background: linear-gradient(135deg, #e0c47a, #9fc1b0) !important;
+}
+
+.estudiemos-os-live-desktop :is(
+  .agenda-danger-button,
+  .agenda-remove-button
+) {
+  color: #ffd1c4 !important;
+  border-color: rgba(255, 177, 156, 0.22) !important;
+  background: rgba(108, 42, 42, 0.32) !important;
+}
+
+.estudiemos-os-live-desktop .agenda-complete-button {
+  color: #e0c47a !important;
+  border-color: rgba(224, 196, 122, 0.22) !important;
+  background: rgba(224, 196, 122, 0.08) !important;
+}
+
+.estudiemos-os-live-desktop .agenda-complete-button.is-done {
+  color: #111817 !important;
+  background: #9fc1b0 !important;
+}
+
+.estudiemos-os-live-desktop .agenda-calendar-grid button {
+  color: #f7f1e4 !important;
+  border-color: rgba(247, 241, 228, 0.12) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+}
+
+.estudiemos-os-live-desktop .agenda-calendar-grid button.is-selected {
+  color: #111817 !important;
+  background: #e0c47a !important;
+}
+
+.estudiemos-os-live-desktop .agenda-calendar-grid button.is-outside {
+  color: rgba(247, 241, 228, 0.34) !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+}

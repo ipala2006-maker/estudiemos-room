@@ -1418,14 +1418,12 @@ function buildWorldScene(scene) {
     brushedMetal: createTexture('brushedMetal'),
     cork: createTexture('cork')
   };
-  const groundMaterial = makeMaterial(0x526947, 0.82, 0, textures.grass);
-  const pathMaterial = makeMaterial(0x8f877b, 0.74, 0, textures.path);
-  const wallMaterial = makeMaterial(0x8f8678, 0.78, 0, textures.comicWall);
+  const groundMaterial = makeMaterial(0x587a4c, 0.84, 0, textures.grass);
   const houseWall = makeMaterial(0xbfa17f, 0.68, 0, textures.plaster);
   const roofMaterial = makeMaterial(0x6f5546, 0.7, 0, textures.roof);
   const doorMaterial = makeMaterial(0x2e271f, 0.56, 0.01, textures.wood);
 
-  addNeighborhood(scene, { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures });
+  addNeighborhood(scene, { groundMaterial, houseWall, roofMaterial, doorMaterial, textures });
   const giantScreen = addCasa1Interior(scene, textures);
   const colliders = createWorldColliders();
   return { giantScreen, colliders };
@@ -1454,8 +1452,6 @@ function createWorldColliders() {
       createCollider(0, -20.8, 15.2, 8.7),
       createCollider(-18, -19, 12.5, 8.5),
       createCollider(18, -19, 12.5, 8.5),
-      createCollider(-4.35, -7.4, 0.8, 12.1),
-      createCollider(4.35, -7.4, 0.8, 12.1),
       createCollider(-6.6, 4.8, 3.4, 1.1),
       createCollider(5.7, -12.8, 2.3, 1.1),
       createCollider(-19.5, -9.8, 2.7, 2.7),
@@ -1516,37 +1512,16 @@ function isPlayerColliding(x, z, colliders, radius) {
 }
 
 function addNeighborhood(scene, materials) {
-  const { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures } = materials;
-  const ground = new THREE.Mesh(new THREE.BoxGeometry(60, 0.6, 60), groundMaterial);
-  ground.position.y = -0.3;
+  const { textures } = materials;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(72, 72, 1, 1), materials.groundMaterial);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0;
   ground.receiveShadow = true;
   scene.add(ground);
-  addEdges(ground, 0x111622, 0.18);
 
-  const path = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.1, 35), pathMaterial);
-  path.position.set(0, 0.04, 2.5);
-  path.receiveShadow = true;
-  scene.add(path);
-  addEdges(path, 0x111622, 0.26);
-
-  [-3.05, 3.05].forEach((x) => {
-    const pathEdge = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 0.18, 35),
-      makeMaterial(x < 0 ? 0x8a9188 : 0x77786e, 0.2)
-    );
-    pathEdge.position.set(x, 0.1, 2.5);
-    pathEdge.receiveShadow = true;
-    scene.add(pathEdge);
-    addEdges(pathEdge, 0x111622, 0.32);
-  });
-
-  addBoundaryWalls(scene, wallMaterial);
-  addExteriorHorizon(scene);
   addModelNeighborhoodHouses(scene);
   addModelNatureAssets(scene);
   addProfessionalGrassLayer(scene);
-  addGrassEdgeBlends(scene, textures);
-  addExteriorApproachDressing(scene, textures);
   addExteriorIdentityDetails(scene, textures);
   addExteriorCinematicLighting(scene);
 }
@@ -2023,9 +1998,8 @@ function addProfessionalGrassLayer(scene) {
   for (let i = 0; i < bladeCount; i += 1) {
     const x = -26 + ((i * 7.7) % 52);
     const z = -25 + ((i * 11.3) % 50);
-    const nearMainPath = Math.abs(x) < 4.2 && z > -15.6 && z < 20.8;
     const nearHouse = Math.abs(x) < 11.2 && z < -12.5;
-    if (nearMainPath || nearHouse) continue;
+    if (nearHouse) continue;
 
     position.set(x + Math.sin(i * 1.9) * 0.46, 0.18, z + Math.cos(i * 1.3) * 0.46);
     rotation.set(0.05 + (i % 5) * 0.025, i * 0.71, (i % 7 - 3) * 0.045);
@@ -2192,22 +2166,23 @@ function addExteriorIdentityDetails(scene, textures) {
   const sign = createCanvasSign({
     width: 512,
     height: 256,
-    background: '#f4f0e5',
-    accent: '#4f6f78',
-    title: 'ESTUDIEMOS',
-    subtitle: 'Casa 1 - sala de enfoque'
+    background: '#101816',
+    accent: '#e0c47a',
+    title: 'ESTUDIEMOS ROOM',
+    subtitle: 'Casa 1 / foco y estudio'
   });
-  sign.position.set(-6.6, 2.2, 4.8);
-  sign.rotation.y = 0.18;
-  sign.scale.set(3.2, 1.6, 1);
+  sign.position.set(-7.2, 2.45, 5.35);
+  sign.rotation.y = 0.24;
+  sign.scale.set(4.2, 2.1, 1);
   scene.add(sign);
+  addEdges(sign, 0xe0c47a, 0.16);
 
   [
-    { x: -7.85, z: 4.92 },
-    { x: -5.35, z: 4.68 }
+    { x: -8.85, z: 5.76 },
+    { x: -5.55, z: 4.98 }
   ].forEach((postSpec) => {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.4, 0.18), signPostMaterial);
-    post.position.set(postSpec.x, 1.18, postSpec.z);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.55, 0.2), signPostMaterial);
+    post.position.set(postSpec.x, 1.24, postSpec.z);
     post.castShadow = true;
     scene.add(post);
     addEdges(post, 0x111622, 0.2);
@@ -2216,15 +2191,16 @@ function addExteriorIdentityDetails(scene, textures) {
   const smallMarker = createCanvasSign({
     width: 384,
     height: 192,
-    background: '#172426',
-    accent: '#d7d0c0',
-    title: 'ENTRADA',
-    subtitle: 'Computadora y pantalla'
+    background: '#111817',
+    accent: '#9fc1b0',
+    title: 'CASA 1',
+    subtitle: 'Computadora + pantalla'
   });
-  smallMarker.position.set(5.7, 1.45, -12.8);
+  smallMarker.position.set(5.7, 1.62, -12.8);
   smallMarker.rotation.y = -0.28;
-  smallMarker.scale.set(2.1, 1.05, 1);
+  smallMarker.scale.set(2.45, 1.22, 1);
   scene.add(smallMarker);
+  addEdges(smallMarker, 0x9fc1b0, 0.18);
 
   const markerPost = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.7, 0.16), signPostMaterial);
   markerPost.position.set(5.7, 0.84, -12.8);
@@ -3035,23 +3011,49 @@ function createCanvasSign({ width = 512, height = 256, background, accent, title
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = background;
+
+  const baseGradient = ctx.createLinearGradient(0, 0, width, height);
+  baseGradient.addColorStop(0, background);
+  baseGradient.addColorStop(0.55, '#182422');
+  baseGradient.addColorStop(1, '#070d0f');
+  ctx.fillStyle = baseGradient;
   ctx.fillRect(0, 0, width, height);
 
+  ctx.fillStyle = 'rgba(255,255,255,0.045)';
+  for (let i = 0; i < 18; i += 1) {
+    const y = 18 + i * 14;
+    ctx.fillRect(34, y, width - 68, 1);
+  }
+
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(0, height - Math.max(24, height * 0.12), width, Math.max(24, height * 0.12));
   ctx.fillStyle = accent;
-  ctx.fillRect(0, 0, Math.max(12, width * 0.04), height);
-  ctx.fillRect(0, 0, width, Math.max(8, height * 0.035));
+  ctx.fillRect(0, 0, Math.max(14, width * 0.034), height);
+  ctx.fillRect(0, 0, width, Math.max(10, height * 0.04));
+  ctx.fillRect(width * 0.08, height * 0.75, width * 0.34, Math.max(4, height * 0.018));
 
-  ctx.fillStyle = background === '#172426' ? '#ffffff' : '#172426';
-  ctx.font = `900 ${Math.round(height * 0.22)}px system-ui, sans-serif`;
-  ctx.fillText(title, width * 0.11, height * 0.47);
-  ctx.font = `700 ${Math.round(height * 0.105)}px system-ui, sans-serif`;
-  ctx.fillStyle = background === '#172426' ? 'rgba(255,255,255,0.78)' : 'rgba(23,36,38,0.7)';
-  ctx.fillText(subtitle, width * 0.11, height * 0.66);
-
-  ctx.strokeStyle = background === '#172426' ? 'rgba(255,255,255,0.16)' : 'rgba(23,36,38,0.18)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
   ctx.lineWidth = Math.max(4, width * 0.012);
   ctx.strokeRect(width * 0.04, height * 0.08, width * 0.9, height * 0.8);
+
+  ctx.fillStyle = '#fff6dc';
+  ctx.font = `900 ${Math.round(height * (title.length > 11 ? 0.16 : 0.2))}px system-ui, sans-serif`;
+  ctx.shadowColor = 'rgba(0,0,0,0.34)';
+  ctx.shadowBlur = 10;
+  ctx.fillText(title, width * 0.11, height * 0.47);
+  ctx.shadowBlur = 0;
+  ctx.font = `700 ${Math.round(height * 0.105)}px system-ui, sans-serif`;
+  ctx.fillStyle = 'rgba(247,241,228,0.76)';
+  ctx.fillText(subtitle, width * 0.11, height * 0.66);
+
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(width * 0.86, height * 0.24, Math.max(8, height * 0.038), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.beginPath();
+  ctx.arc(width * 0.89, height * 0.24, Math.max(4, height * 0.019), 0, Math.PI * 2);
+  ctx.fill();
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;

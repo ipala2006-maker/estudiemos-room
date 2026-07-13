@@ -341,6 +341,7 @@ export function ComputerUI({
   const [minimizedWindows, setMinimizedWindows] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState(null);
+  const [selectedContentOrigin, setSelectedContentOrigin] = useState('');
   const [estudiemosRoute, setEstudiemosRoute] = useState(EMPTY_ROUTE);
   const [resourceView, setResourceView] = useState('categories');
   const [linkDraft, setLinkDraft] = useState('');
@@ -425,8 +426,8 @@ export function ComputerUI({
   }
 
   function goBackInEstudiemos() {
-    if (selectedContent) {
-      setSelectedContent(null);
+    if (selectedContent && selectedContentOrigin === 'estudiemos') {
+      clearSelectedContent('estudiemos');
       setSystemNote('Acciones de contenido cerradas');
       return true;
     }
@@ -467,8 +468,14 @@ export function ComputerUI({
 
     if (focusedWindow === 'estudiemos' && goBackInEstudiemos()) return true;
 
-    if (focusedWindow === 'links' && selectedContent) {
-      setSelectedContent(null);
+    if (focusedWindow === 'estudiemos') {
+      openEstudiemosHome();
+      setSystemNote('Inicio de Estudiemos');
+      return true;
+    }
+
+    if (focusedWindow === 'links' && selectedContent && selectedContentOrigin === 'links') {
+      clearSelectedContent('links');
       setSystemNote('Acciones de link cerradas');
       return true;
     }
@@ -550,6 +557,7 @@ export function ComputerUI({
     openWindows,
     resourceView,
     selectedContent,
+    selectedContentOrigin,
     spotifyDraft,
     spotifyError
   ]);
@@ -586,27 +594,38 @@ export function ComputerUI({
     setSystemNote(`${findDesktopApp(appId)?.title ?? 'Ventana'} cerrada`);
   }
 
+  function setPreparedContent(content, origin) {
+    setSelectedContent(content);
+    setSelectedContentOrigin(origin);
+  }
+
+  function clearSelectedContent(origin = '') {
+    if (origin && selectedContentOrigin && selectedContentOrigin !== origin) return;
+    setSelectedContent(null);
+    setSelectedContentOrigin('');
+  }
+
   function openEstudiemosHome() {
     setEstudiemosRoute(EMPTY_ROUTE);
-    setSelectedContent(null);
+    clearSelectedContent('estudiemos');
     setResourceView('categories');
   }
 
   function openCarrera(carreraSlug) {
     setEstudiemosRoute({ carreraSlug, materiaSlug: '', temaSlug: '' });
-    setSelectedContent(null);
+    clearSelectedContent('estudiemos');
     setResourceView('categories');
   }
 
   function openMateria(materiaSlug) {
     setEstudiemosRoute({ carreraSlug: carrera.slug, materiaSlug, temaSlug: '' });
-    setSelectedContent(null);
+    clearSelectedContent('estudiemos');
     setResourceView('categories');
   }
 
   function openTema(temaSlug) {
     setEstudiemosRoute({ carreraSlug: carrera.slug, materiaSlug: materia.slug, temaSlug });
-    setSelectedContent(null);
+    clearSelectedContent('estudiemos');
     setResourceView('categories');
   }
 
@@ -614,7 +633,7 @@ export function ComputerUI({
     const result = parseYouTubeUrl(videoItem.url);
     if (!result.ok) return;
 
-    setSelectedContent({
+    setPreparedContent({
       ...result.video,
       contentType: 'youtube',
       resourceUrl: '',
@@ -622,13 +641,13 @@ export function ComputerUI({
       creator: ingenieriaRecursosSource.name,
       description: `${materia.title} / ${tema.title}`,
       category: 'Video'
-    });
+    }, 'estudiemos');
     setSystemNote('Video listo para enviar a pantalla');
     showActionFeedback('Video preparado');
   }
 
   function selectPdf(pdfItem) {
-    setSelectedContent({
+    setPreparedContent({
       videoId: '',
       inputUrl: pdfItem.url,
       watchUrl: pdfItem.url,
@@ -639,7 +658,7 @@ export function ComputerUI({
       creator: ingenieriaRecursosSource.name,
       description: `${materia.title} / ${tema.title}`,
       category: 'PDF'
-    });
+    }, 'estudiemos');
     setSystemNote('PDF listo para enviar a pantalla');
     showActionFeedback('Material preparado');
   }
@@ -649,14 +668,14 @@ export function ComputerUI({
     const result = parseYouTubeUrl(linkDraft);
     if (!result.ok) {
       setLinkError(result.error);
-      setSelectedContent(null);
+      clearSelectedContent('links');
       setSystemNote('Link no valido');
       showActionFeedback('No se pudo preparar el link');
       return;
     }
 
     setLinkError('');
-    setSelectedContent({
+    setPreparedContent({
       ...result.video,
       contentType: 'youtube',
       resourceUrl: '',
@@ -664,7 +683,7 @@ export function ComputerUI({
       creator: 'Contenido externo',
       description: 'Video preparado desde Navegador. Elegi donde mostrarlo.',
       category: 'Link'
-    });
+    }, 'links');
     setSystemNote('Link listo para enviar');
     showActionFeedback('Link preparado');
   }
@@ -959,7 +978,7 @@ export function ComputerUI({
                     tema={tema}
                     route={estudiemosRoute}
                     resourceView={resourceView}
-                    selectedContent={selectedContent}
+                    selectedContent={selectedContentOrigin === 'estudiemos' ? selectedContent : null}
                     onHome={openEstudiemosHome}
                     onCarrera={openCarrera}
                     onMateria={openMateria}
@@ -968,7 +987,7 @@ export function ComputerUI({
                     onSelectVideo={selectVideo}
                     onSelectPdf={selectPdf}
                     onAssignContent={assignContent}
-                    onCloseContent={() => setSelectedContent(null)}
+                    onCloseContent={() => clearSelectedContent('estudiemos')}
                   />
                 </OSWindow>
               )}
@@ -987,14 +1006,14 @@ export function ComputerUI({
                   <LinksApp
                     linkDraft={linkDraft}
                     linkError={linkError}
-                    selectedContent={selectedContent}
+                    selectedContent={selectedContentOrigin === 'links' ? selectedContent : null}
                     onDraftChange={(value) => {
                       setLinkDraft(value);
                       setLinkError('');
                     }}
                     onPrepareLink={prepareManualLink}
                     onAssignContent={assignContent}
-                    onCloseContent={() => setSelectedContent(null)}
+                    onCloseContent={() => clearSelectedContent('links')}
                   />
                 </OSWindow>
               )}
