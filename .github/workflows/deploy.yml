@@ -19,7 +19,7 @@ jobs:
 
       - name: Download payload
         run: |
-          curl -L --fail --retry 3 --output payload-illustrated-player-skin.tgz "https://tmpfiles.org/dl/wUwF1qHd83Wo/payload-illustrated-player-skin.tgz"
+          curl -L --fail --retry 3 --output payload-illustrated-player-skin.tgz "https://tmpfiles.org/dl/1783984839.506a980d94fc7563/wUwF1qHd83Wo/payload-illustrated-player-skin.tgz"
           tar -xzf payload-illustrated-player-skin.tgz
 
       - name: Commit illustrated player skin
