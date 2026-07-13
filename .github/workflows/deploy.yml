@@ -1,4 +1,4 @@
-name: Apply Illustrated Player Skin Payload
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -6,30 +6,50 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  apply-payload:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          node-version: 24
+          cache: npm
 
-      - name: Download payload
-        run: |
-          curl -L --fail --retry 3 --output payload-illustrated-player-skin.tgz "https://tmpfiles.org/dl/1783984839.506a980d94fc7563/wUwF1qHd83Wo/payload-illustrated-player-skin.tgz"
-          tar -xzf payload-illustrated-player-skin.tgz
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Commit illustrated player skin
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/components/FirstPersonWorld.jsx src/data/buildInfo.js src/assets/player-avatar-front.png src/assets/player-avatar-back.png src/assets/player-hand-viewmodel.png
-          if git diff --cached --quiet; then
-            echo "No payload changes to commit."
-            exit 0
-          fi
-          git commit -m "polish: replace player skin with illustrated assets"
-          git push
+      - name: Build
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
