@@ -3815,7 +3815,9 @@ select {
 .screen-remote-backdrop {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(4, 7, 8, 0.08), rgba(4, 7, 8, 0.52));
+  background:
+    radial-gradient(circle at 72% 72%, rgba(224, 196, 122, 0.13), transparent 34%),
+    linear-gradient(90deg, rgba(3, 6, 8, 0.12), rgba(3, 6, 8, 0.68));
   pointer-events: auto;
   animation: remote-fade-in 130ms ease-out both;
 }
@@ -3823,20 +3825,37 @@ select {
 .screen-remote-phone {
   position: relative;
   z-index: 1;
-  width: min(390px, 100%);
-  max-height: min(760px, calc(100vh - 28px));
+  width: min(406px, 100%);
+  max-height: min(780px, calc(100vh - 28px));
   display: grid;
-  gap: 13px;
-  padding: 14px;
-  border: 8px solid #111817;
-  border-radius: 24px;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255, 244, 215, 0.16);
+  border-radius: 26px;
   overflow: auto;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 38%),
-    #edf3ef;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+    radial-gradient(circle at 20% 0%, rgba(224, 196, 122, 0.13), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025) 44%, rgba(0, 0, 0, 0.18)),
+    #071011;
+  box-shadow:
+    0 30px 92px rgba(0, 0, 0, 0.62),
+    inset 0 0 0 7px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  color: #f7f1e4;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224, 196, 122, 0.42) rgba(255, 255, 255, 0.06);
   pointer-events: auto;
   animation: remote-phone-in 160ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
+}
+
+.screen-remote-phone::before {
+  content: "";
+  justify-self: center;
+  width: 72px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 244, 215, 0.22);
+  box-shadow: 0 0 18px rgba(224, 196, 122, 0.12);
 }
 
 .screen-remote-header,
@@ -3851,7 +3870,7 @@ select {
 
 .screen-remote-header {
   justify-content: space-between;
-  padding-bottom: 2px;
+  padding: 2px 2px 4px;
 }
 
 .screen-remote-header div {
@@ -3864,14 +3883,14 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #4f6f78;
+  color: rgba(224, 196, 122, 0.82);
   font-size: 0.76rem;
   font-weight: 850;
   text-transform: uppercase;
 }
 
 .screen-remote-header strong {
-  color: #111817;
+  color: #fff6dc;
   font-size: 1.25rem;
   font-weight: 920;
 }
@@ -3883,12 +3902,15 @@ select {
 .screen-remote-layouts button,
 .screen-remote-link button {
   min-height: 40px;
-  border: 1px solid rgba(17, 24, 23, 0.12);
+  border: 1px solid rgba(247, 241, 228, 0.13);
   border-radius: 8px;
-  background: #ffffff;
-  color: #172426;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035)),
+    rgba(14, 25, 25, 0.92);
+  color: #f7f1e4;
   font-weight: 850;
-  transition: transform 130ms ease, background 130ms ease, border-color 130ms ease, color 130ms ease, opacity 130ms ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  transition: transform 130ms ease, background 130ms ease, border-color 130ms ease, color 130ms ease, opacity 130ms ease, box-shadow 130ms ease;
 }
 
 .screen-remote-icon-button {
@@ -3914,9 +3936,10 @@ select {
 
 .screen-remote-targets button.is-selected,
 .screen-remote-layouts button.is-selected {
-  background: #172426;
-  color: #f8f6ed;
-  border-color: #172426;
+  background: linear-gradient(135deg, #e0c47a, #9fc1b0);
+  color: #101716;
+  border-color: rgba(224, 196, 122, 0.66);
+  box-shadow: 0 10px 24px rgba(224, 196, 122, 0.13);
 }
 
 .screen-remote-now,
@@ -3924,20 +3947,23 @@ select {
 .screen-remote-sliders {
   display: grid;
   gap: 8px;
-  padding: 12px;
-  border: 1px solid rgba(17, 24, 23, 0.1);
+  padding: 13px;
+  border: 1px solid rgba(247, 241, 228, 0.13);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.78);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    rgba(8, 15, 16, 0.86);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
 }
 
 .screen-remote-note {
   min-height: 36px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(79, 111, 120, 0.16);
+  border: 1px solid rgba(159, 193, 176, 0.26);
   border-radius: 8px;
-  color: #172426;
-  background: rgba(185, 215, 223, 0.36);
+  color: #dcefe7;
+  background: rgba(36, 72, 64, 0.34);
   font-size: 0.82rem;
   font-weight: 860;
   text-align: center;
@@ -3946,7 +3972,7 @@ select {
 .screen-remote-now span,
 .screen-remote-link label,
 .screen-remote-sliders span {
-  color: #60736e;
+  color: rgba(247, 241, 228, 0.62);
   font-size: 0.76rem;
   font-weight: 850;
   text-transform: uppercase;
@@ -3961,13 +3987,13 @@ select {
 }
 
 .screen-remote-now strong {
-  color: #172426;
+  color: #fff6dc;
   font-size: 1rem;
   font-weight: 900;
 }
 
 .screen-remote-now small {
-  color: #536468;
+  color: rgba(247, 241, 228, 0.56);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -3981,17 +4007,21 @@ select {
 .screen-remote-link input {
   min-width: 0;
   height: 42px;
-  border: 1px solid rgba(17, 24, 23, 0.12);
+  border: 1px solid rgba(247, 241, 228, 0.14);
   border-radius: 8px;
   padding: 0 12px;
-  color: #172426;
-  background: #f8faf7;
+  color: #fff6dc;
+  background: rgba(2, 7, 8, 0.78);
   font-weight: 760;
+}
+
+.screen-remote-link input::placeholder {
+  color: rgba(247, 241, 228, 0.36);
 }
 
 .screen-remote-link p {
   margin: 0;
-  color: #b0443e;
+  color: #ffb7a8;
   font-size: 0.78rem;
   font-weight: 790;
 }
@@ -4008,9 +4038,15 @@ select {
 
 .screen-remote-playback button {
   min-width: 0;
-  min-height: 42px;
+  min-height: 46px;
   padding: 0 7px;
   font-size: 0.76rem;
+}
+
+.screen-remote-playback button:first-child {
+  border-color: rgba(224, 196, 122, 0.38);
+  background: linear-gradient(135deg, rgba(224, 196, 122, 0.96), rgba(159, 193, 176, 0.92));
+  color: #101716;
 }
 
 .screen-remote-playback button span {
@@ -4021,8 +4057,25 @@ select {
 
 .screen-remote-playback button:disabled,
 .screen-remote-controls button:disabled {
-  opacity: 0.48;
+  opacity: 0.42;
   cursor: default;
+}
+
+.screen-remote-icon-button:hover,
+.screen-remote-targets button:hover,
+.screen-remote-playback button:hover,
+.screen-remote-controls button:hover,
+.screen-remote-layouts button:hover,
+.screen-remote-link button:hover {
+  border-color: rgba(224, 196, 122, 0.42);
+  background: rgba(24, 42, 39, 0.96);
+}
+
+.screen-remote-playback button:first-child:hover,
+.screen-remote-targets button.is-selected:hover,
+.screen-remote-layouts button.is-selected:hover {
+  background: linear-gradient(135deg, #e0c47a, #9fc1b0);
+  color: #101716;
 }
 
 .screen-remote-icon-button:active,
@@ -4041,7 +4094,7 @@ select {
 
 .screen-remote-sliders input {
   width: 100%;
-  accent-color: #4f6f78;
+  accent-color: #e0c47a;
 }
 
 .screen-remote-layouts {

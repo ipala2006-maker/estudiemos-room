@@ -29,6 +29,23 @@ const REMOTE_LAYOUTS = [
   { id: 'split-30-70', label: '30/70' }
 ];
 
+function isRemoteTextEntry(element) {
+  const tagName = element?.tagName?.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable);
+}
+
+function shouldKeepRemoteBackspaceForText(element) {
+  if (!isRemoteTextEntry(element)) return false;
+  if (element?.isContentEditable) return true;
+  if (element?.tagName?.toLowerCase() === 'select') return true;
+
+  const value = String(element?.value ?? '');
+  if (!value) return false;
+  const selectionStart = Number(element?.selectionStart ?? value.length);
+  const selectionEnd = Number(element?.selectionEnd ?? value.length);
+  return selectionStart !== selectionEnd || selectionStart > 0;
+}
+
 export function ScreenRemoteControl({
   screenZones,
   screenLayout,
@@ -43,6 +60,7 @@ export function ScreenRemoteControl({
   const [linkDraft, setLinkDraft] = useState('');
   const [linkError, setLinkError] = useState('');
   const [remoteNote, setRemoteNote] = useState('Control listo');
+  const remoteRef = useRef(null);
   const noteTimerRef = useRef(0);
   const activeZone = screenZones[activeZoneId] ?? screenZones.upper;
   const activeZoneLabel = useMemo(
@@ -54,6 +72,23 @@ export function ScreenRemoteControl({
   const isPaused = Boolean(activeZone.paused);
 
   useEffect(() => () => window.clearTimeout(noteTimerRef.current), []);
+
+  useEffect(() => {
+    remoteRef.current?.focus({ preventScroll: true });
+
+    function onRemoteKeyDown(event) {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+
+      if (event.key === 'Escape' || (event.key === 'Backspace' && !shouldKeepRemoteBackspaceForText(event.target))) {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose?.();
+      }
+    }
+
+    document.addEventListener('keydown', onRemoteKeyDown, true);
+    return () => document.removeEventListener('keydown', onRemoteKeyDown, true);
+  }, [onClose]);
 
   function announce(message) {
     window.clearTimeout(noteTimerRef.current);
@@ -159,7 +194,14 @@ export function ScreenRemoteControl({
   return (
     <section className="screen-remote-overlay" aria-label="Control remoto de pantalla">
       <div className="screen-remote-backdrop" onClick={onClose} />
-      <aside className="screen-remote-phone" role="dialog" aria-modal="true" aria-label="Celular de control">
+      <aside
+        ref={remoteRef}
+        className="screen-remote-phone"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Celular de control"
+        tabIndex={-1}
+      >
         <header className="screen-remote-header">
           <div>
             <span>

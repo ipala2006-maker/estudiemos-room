@@ -32,7 +32,6 @@
   Sparkles,
   Square,
   Trash2,
-  UserCircle,
   Video,
   Volume2,
   VolumeX,
@@ -928,6 +927,8 @@ export function ComputerUI({
     <section
       ref={computerRootRef}
       className={computerOverlayClass}
+      data-computer-ui-active-app={focusedWindow || 'desktop'}
+      data-computer-ui-drawer-open={drawerOpen ? 'true' : 'false'}
       tabIndex={-1}
       onKeyDownCapture={handleComputerShortcut}
       aria-label="Computadora de Casa 1"

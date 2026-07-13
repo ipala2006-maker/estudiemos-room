@@ -556,45 +556,100 @@ function createViewModelMaterial(color) {
   });
 }
 
+function addViewModelMesh(parent, geometry, material, position, scale = [1, 1, 1], rotation = [0, 0, 0], renderOrder = 10001) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(...position);
+  mesh.scale.set(...scale);
+  mesh.rotation.set(...rotation);
+  mesh.renderOrder = renderOrder;
+  parent.add(mesh);
+  return mesh;
+}
+
 function createFirstPersonArmViewModel() {
   const group = new THREE.Group();
   group.name = 'first-person-study-arm';
   group.renderOrder = 10000;
-  group.scale.setScalar(0.74);
+  group.scale.setScalar(0.78);
 
   const pivot = new THREE.Group();
-  pivot.position.set(0.42, -0.58, -1.02);
-  pivot.rotation.set(-0.62, -0.22, 0.18);
+  pivot.position.set(0.43, -0.61, -1.08);
+  pivot.rotation.set(-0.66, -0.24, 0.16);
   group.add(pivot);
 
-  const sleeveMaterial = createViewModelMaterial(0x223f37);
+  const sleeveMaterial = createViewModelMaterial(0x1b3732);
   const cuffMaterial = createViewModelMaterial(0xe0c47a);
-  const skinMaterial = createViewModelMaterial(0xd8a06f);
-  const shadowMaterial = createViewModelMaterial(0x6f4a35);
+  const cuffShadowMaterial = createViewModelMaterial(0x7f6a36);
+  const gloveMaterial = createViewModelMaterial(0x101b1b);
+  const glovePanelMaterial = createViewModelMaterial(0x243d37);
+  const seamMaterial = createViewModelMaterial(0x86a18f);
+  const skinMaterial = createViewModelMaterial(0xd99c6d);
+  const skinShadowMaterial = createViewModelMaterial(0xa86e4b);
 
-  const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.42, 4, 8), sleeveMaterial);
-  sleeve.position.set(0, 0.02, -0.14);
-  sleeve.rotation.x = Math.PI / 2;
-  sleeve.renderOrder = 10001;
-  pivot.add(sleeve);
+  addViewModelMesh(
+    pivot,
+    new THREE.CapsuleGeometry(0.12, 0.48, 5, 10),
+    sleeveMaterial,
+    [0.005, 0.02, -0.16],
+    [1.12, 0.86, 1],
+    [Math.PI / 2, 0, 0],
+    10001
+  );
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.25, 0.045, 0.4), cuffShadowMaterial, [0, -0.072, -0.22], [1, 1, 1], [0.12, 0, 0.02], 10002);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.27, 0.2, 0.085), cuffMaterial, [0.004, 0.01, -0.405], [1, 1, 1], [0.02, 0, 0], 10003);
 
-  const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.19, 0.07), cuffMaterial);
-  cuff.position.set(0, 0.01, -0.38);
-  cuff.renderOrder = 10002;
-  pivot.add(cuff);
+  addViewModelMesh(
+    pivot,
+    new THREE.SphereGeometry(0.145, 16, 10),
+    skinMaterial,
+    [0.012, -0.008, -0.545],
+    [1.18, 0.72, 1.04],
+    [0.1, 0, -0.03],
+    10004
+  );
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.235, 0.064, 0.215), gloveMaterial, [0.008, 0.055, -0.545], [1, 1, 1], [0.08, 0, -0.025], 10005);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.125, 0.02, 0.15), glovePanelMaterial, [0.012, 0.094, -0.56], [1, 1, 1], [0.08, 0, -0.025], 10006);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.19, 0.018, 0.032), seamMaterial, [0.006, 0.103, -0.646], [1, 1, 1], [0.08, 0, -0.025], 10007);
 
-  const hand = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.1, 4, 8), skinMaterial);
-  hand.position.set(0.01, -0.01, -0.52);
-  hand.rotation.x = Math.PI / 2;
-  hand.scale.set(1.08, 0.82, 0.9);
-  hand.renderOrder = 10003;
-  pivot.add(hand);
+  const fingerSpecs = [
+    { x: -0.084, y: -0.005, z: -0.68, length: 0.155, radius: 0.024, tilt: -0.1 },
+    { x: -0.03, y: 0.002, z: -0.705, length: 0.19, radius: 0.026, tilt: -0.035 },
+    { x: 0.026, y: 0.002, z: -0.708, length: 0.185, radius: 0.025, tilt: 0.028 },
+    { x: 0.079, y: -0.006, z: -0.686, length: 0.15, radius: 0.023, tilt: 0.095 }
+  ];
 
-  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.034, 0.09, 3, 6), shadowMaterial);
-  thumb.position.set(-0.105, -0.025, -0.49);
-  thumb.rotation.set(0.75, 0.1, 0.28);
-  thumb.renderOrder = 10004;
-  pivot.add(thumb);
+  fingerSpecs.forEach((finger, index) => {
+    addViewModelMesh(
+      pivot,
+      new THREE.CapsuleGeometry(finger.radius, finger.length, 4, 8),
+      skinMaterial,
+      [finger.x, finger.y, finger.z],
+      [1, 0.92, 1],
+      [Math.PI / 2, finger.tilt, 0],
+      10008 + index
+    );
+    addViewModelMesh(
+      pivot,
+      new THREE.BoxGeometry(finger.radius * 1.9, 0.02, 0.056),
+      glovePanelMaterial,
+      [finger.x, 0.058, finger.z + 0.06],
+      [1, 1, 1],
+      [0.08, finger.tilt, 0],
+      10014 + index
+    );
+  });
+
+  addViewModelMesh(
+    pivot,
+    new THREE.CapsuleGeometry(0.035, 0.14, 4, 8),
+    skinShadowMaterial,
+    [-0.135, -0.033, -0.56],
+    [1, 0.96, 1],
+    [0.64, 0.16, 0.46],
+    10018
+  );
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.052, 0.025, 0.11), glovePanelMaterial, [-0.095, 0.044, -0.538], [1, 1, 1], [0.18, 0, 0.24], 10019);
+  addViewModelMesh(pivot, new THREE.BoxGeometry(0.04, 0.012, 0.16), seamMaterial, [0.126, 0.06, -0.565], [1, 1, 1], [0.08, 0, -0.2], 10020);
 
   return {
     group,

@@ -71,7 +71,7 @@ function isTextEntryElement(element) {
 }
 
 export function VirtualComputerShell(props) {
-  const { agendaItems = studyAgendaItems, focusEconomy } = props;
+  const { agendaItems = studyAgendaItems, focusEconomy, onClose } = props;
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
   const agendaPreviewItems = agendaItems.filter((item) => !item.completed);
   const agendaLead = agendaPreviewItems[0] ?? agendaItems[0] ?? null;
@@ -79,19 +79,22 @@ export function VirtualComputerShell(props) {
   const [initialApp, setInitialApp] = useState('estudiemos');
 
   useEffect(() => {
-    if (!appOpen) return undefined;
-
     function onBackspaceFallback(event) {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
       if (event.key !== 'Backspace' || isTextEntryElement(event.target)) return;
 
       event.preventDefault();
-      setAppOpen(false);
+      if (appOpen) {
+        setAppOpen(false);
+        return;
+      }
+
+      onClose?.();
     }
 
     document.addEventListener('keydown', onBackspaceFallback);
     return () => document.removeEventListener('keydown', onBackspaceFallback);
-  }, [appOpen]);
+  }, [appOpen, onClose]);
 
   if (appOpen) {
     return <ComputerUI {...props} initialApp={initialApp} onBackToDesktop={() => setAppOpen(false)} />;
@@ -103,7 +106,11 @@ export function VirtualComputerShell(props) {
   }
 
   return (
-    <section className="computer-overlay mediahub-boot-overlay" aria-label="Escritorio de la computadora de Casa 1">
+    <section
+      className="computer-overlay mediahub-boot-overlay"
+      data-computer-shell-state="desktop"
+      aria-label="Escritorio de la computadora de Casa 1"
+    >
       <div className="computer-window computer-window-wide mediahub-window game-computer-window estudiemos-os-live-desktop computer-landing-desktop">
         <div className="computer-boot-glow" aria-hidden="true" />
 
