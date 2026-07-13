@@ -38,15 +38,11 @@ export function StartScreen({ onEnter }) {
         <div className="start-controls" aria-label="Controles basicos">
           <span>
             <MousePointer2 size={17} aria-hidden="true" />
-            Click toma camara
+            Mouse mira al entrar
           </span>
           <span>
             <Keyboard size={17} aria-hidden="true" />
             WASD o flechas
-          </span>
-          <span>
-            <MousePointer2 size={17} aria-hidden="true" />
-            Mouse para mirar
           </span>
           <span>E para interactuar</span>
         </div>

@@ -124,6 +124,13 @@
   display: none;
 }
 
+.estudiemos-os-live-desktop .os-running-apps-empty {
+  color: rgba(236, 246, 238, 0.48);
+  font-size: 0.78rem;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
 .estudiemos-os-live-desktop .estudiemos-browser-bar {
   grid-template-columns: minmax(0, 1fr);
   min-height: 42px;

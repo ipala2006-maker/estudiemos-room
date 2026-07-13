@@ -38,6 +38,9 @@ const CAMERA_SENSITIVITY = {
   yaw: 0.002,
   pitch: 0.0017
 };
+const FREE_MOUSE_LOOK_SCALE = 0.62;
+const FREE_MOUSE_JUMP_LIMIT = 180;
+const FIRST_PERSON_ARM_SWING_SECONDS = 0.26;
 const EDGE_OPACITY_SCALE = 0.28;
 const MIN_EDGE_OPACITY = 0.04;
 const COMPANION_SIDE_OFFSET = -2.35;
@@ -229,6 +232,8 @@ export function FirstPersonWorld({
     let targetYaw = 0;
     let targetPitch = 0;
     let pointerLocked = false;
+    let lastFreeMouseX = null;
+    let lastFreeMouseY = null;
     let verticalVelocity = 0;
     let isGrounded = true;
     const eyeHeight = startPosition.y;
@@ -306,7 +311,7 @@ export function FirstPersonWorld({
         event.preventDefault();
       }
       if (event.code === 'KeyE') {
-        firstPersonArm.swing = 0.32;
+        firstPersonArm.swing = FIRST_PERSON_ARM_SWING_SECONDS;
       }
       if (event.code === 'KeyR') resetCamera();
     }
@@ -327,10 +332,14 @@ export function FirstPersonWorld({
 
     function onPointerLockChange() {
       pointerLocked = document.pointerLockElement === renderer.domElement;
+      lastFreeMouseX = null;
+      lastFreeMouseY = null;
     }
 
     function onPointerLockError() {
       pointerLocked = false;
+      lastFreeMouseX = null;
+      lastFreeMouseY = null;
     }
 
     function requestCameraLock() {
@@ -340,12 +349,39 @@ export function FirstPersonWorld({
     }
 
     function onMouseMove(event) {
-      if (!controlsEnabledRef.current || !pointerLocked) {
+      if (!controlsEnabledRef.current) {
+        lastFreeMouseX = null;
+        lastFreeMouseY = null;
         return;
       }
 
-      targetYaw -= event.movementX * CAMERA_SENSITIVITY.yaw;
-      targetPitch = clamp(targetPitch - event.movementY * CAMERA_SENSITIVITY.pitch, -0.7, 0.5);
+      if (pointerLocked) {
+        targetYaw -= event.movementX * CAMERA_SENSITIVITY.yaw;
+        targetPitch = clamp(targetPitch - event.movementY * CAMERA_SENSITIVITY.pitch, -0.7, 0.5);
+        return;
+      }
+
+      if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return;
+
+      if (lastFreeMouseX === null || lastFreeMouseY === null) {
+        lastFreeMouseX = event.clientX;
+        lastFreeMouseY = event.clientY;
+        return;
+      }
+
+      const deltaX = event.clientX - lastFreeMouseX;
+      const deltaY = event.clientY - lastFreeMouseY;
+      lastFreeMouseX = event.clientX;
+      lastFreeMouseY = event.clientY;
+
+      if (Math.abs(deltaX) > FREE_MOUSE_JUMP_LIMIT || Math.abs(deltaY) > FREE_MOUSE_JUMP_LIMIT) return;
+      targetYaw -= deltaX * CAMERA_SENSITIVITY.yaw * FREE_MOUSE_LOOK_SCALE;
+      targetPitch = clamp(targetPitch - deltaY * CAMERA_SENSITIVITY.pitch * FREE_MOUSE_LOOK_SCALE, -0.7, 0.5);
+    }
+
+    function resetFreeMouseLook() {
+      lastFreeMouseX = null;
+      lastFreeMouseY = null;
     }
 
     function onResize() {
@@ -362,6 +398,8 @@ export function FirstPersonWorld({
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('pointerlockchange', onPointerLockChange);
     document.addEventListener('pointerlockerror', onPointerLockError);
+    window.addEventListener('blur', resetFreeMouseLook);
+    mount.addEventListener('mouseleave', resetFreeMouseLook);
     mount.addEventListener('click', requestCameraLock);
 
     const timer = new THREE.Timer();
@@ -495,6 +533,8 @@ export function FirstPersonWorld({
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('pointerlockchange', onPointerLockChange);
       document.removeEventListener('pointerlockerror', onPointerLockError);
+      window.removeEventListener('blur', resetFreeMouseLook);
+      mount.removeEventListener('mouseleave', resetFreeMouseLook);
       mount.removeEventListener('click', requestCameraLock);
       renderer.dispose();
       onAgendaBoardAimChange(false);
@@ -520,10 +560,11 @@ function createFirstPersonArmViewModel() {
   const group = new THREE.Group();
   group.name = 'first-person-study-arm';
   group.renderOrder = 10000;
+  group.scale.setScalar(0.74);
 
   const pivot = new THREE.Group();
-  pivot.position.set(0.42, -0.46, -0.82);
-  pivot.rotation.set(-0.48, -0.16, 0.14);
+  pivot.position.set(0.42, -0.58, -1.02);
+  pivot.rotation.set(-0.62, -0.22, 0.18);
   group.add(pivot);
 
   const sleeveMaterial = createViewModelMaterial(0x223f37);
@@ -531,24 +572,27 @@ function createFirstPersonArmViewModel() {
   const skinMaterial = createViewModelMaterial(0xd8a06f);
   const shadowMaterial = createViewModelMaterial(0x6f4a35);
 
-  const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.24, 0.54), sleeveMaterial);
-  sleeve.position.set(0, 0.02, -0.08);
+  const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(0.105, 0.42, 4, 8), sleeveMaterial);
+  sleeve.position.set(0, 0.02, -0.14);
+  sleeve.rotation.x = Math.PI / 2;
   sleeve.renderOrder = 10001;
   pivot.add(sleeve);
 
-  const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.08), cuffMaterial);
-  cuff.position.set(0, 0.01, -0.39);
+  const cuff = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.19, 0.07), cuffMaterial);
+  cuff.position.set(0, 0.01, -0.38);
   cuff.renderOrder = 10002;
   pivot.add(cuff);
 
-  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.2, 0.25), skinMaterial);
-  hand.position.set(0, -0.01, -0.56);
+  const hand = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.1, 4, 8), skinMaterial);
+  hand.position.set(0.01, -0.01, -0.52);
+  hand.rotation.x = Math.PI / 2;
+  hand.scale.set(1.08, 0.82, 0.9);
   hand.renderOrder = 10003;
   pivot.add(hand);
 
-  const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.11, 0.16), shadowMaterial);
-  thumb.position.set(-0.14, -0.02, -0.52);
-  thumb.rotation.z = 0.12;
+  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.034, 0.09, 3, 6), shadowMaterial);
+  thumb.position.set(-0.105, -0.025, -0.49);
+  thumb.rotation.set(0.75, 0.1, 0.28);
   thumb.renderOrder = 10004;
   pivot.add(thumb);
 
@@ -564,18 +608,18 @@ function createFirstPersonArmViewModel() {
 function updateFirstPersonArmViewModel(viewModel, delta, isWalking, frameTime) {
   const bob = isWalking ? Math.sin(frameTime * 0.012) : Math.sin(frameTime * 0.004) * 0.18;
   viewModel.swing = Math.max(0, viewModel.swing - delta);
-  const swingProgress = viewModel.swing > 0 ? 1 - viewModel.swing / 0.32 : 1;
+  const swingProgress = viewModel.swing > 0 ? 1 - viewModel.swing / FIRST_PERSON_ARM_SWING_SECONDS : 1;
   const punch = viewModel.swing > 0 ? Math.sin(swingProgress * Math.PI) : 0;
 
   viewModel.pivot.position.copy(viewModel.basePosition);
-  viewModel.pivot.position.x += Math.sin(frameTime * 0.009) * (isWalking ? 0.025 : 0.006);
-  viewModel.pivot.position.y += bob * (isWalking ? 0.028 : 0.01) - punch * 0.075;
-  viewModel.pivot.position.z -= punch * 0.26;
+  viewModel.pivot.position.x += Math.sin(frameTime * 0.009) * (isWalking ? 0.018 : 0.004);
+  viewModel.pivot.position.y += bob * (isWalking ? 0.02 : 0.007) - punch * 0.032;
+  viewModel.pivot.position.z -= punch * 0.13;
 
   viewModel.pivot.rotation.copy(viewModel.baseRotation);
-  viewModel.pivot.rotation.x -= punch * 0.58;
-  viewModel.pivot.rotation.y += Math.sin(frameTime * 0.01) * (isWalking ? 0.035 : 0.012);
-  viewModel.pivot.rotation.z += punch * 0.18;
+  viewModel.pivot.rotation.x -= punch * 0.28;
+  viewModel.pivot.rotation.y += Math.sin(frameTime * 0.01) * (isWalking ? 0.024 : 0.008);
+  viewModel.pivot.rotation.z += punch * 0.1;
 }
 
 function createCompanionDachshund(equippedSkin) {

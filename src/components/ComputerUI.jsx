@@ -1,5 +1,4 @@
 ﻿import {
-  BarChart3,
   BookOpen,
   CalendarDays,
   ChevronDown,
@@ -14,12 +13,10 @@
   FileText,
   FolderOpen,
   Globe2,
-  Library,
   Maximize2,
   Minimize2,
   MonitorUp,
   Music2,
-  NotebookPen,
   PanelRightOpen,
   Pause,
   PawPrint,
@@ -97,24 +94,6 @@ const DESKTOP_APPS = [
     functional: true
   },
   {
-    id: 'biblioteca',
-    title: 'Biblioteca',
-    subtitle: 'Coleccion local',
-    description: 'Material guardado para organizar proximas sesiones.',
-    icon: Library,
-    state: 'Proximo',
-    functional: false
-  },
-  {
-    id: 'apuntes',
-    title: 'Mis apuntes',
-    subtitle: 'Cuaderno',
-    description: 'Notas personales del estudiante dentro del Room.',
-    icon: NotebookPen,
-    state: 'Proximo',
-    functional: false
-  },
-  {
     id: 'agenda',
     title: 'Agenda',
     subtitle: 'Plan semanal',
@@ -140,15 +119,6 @@ const DESKTOP_APPS = [
     icon: PawPrint,
     state: 'Listo',
     functional: true
-  },
-  {
-    id: 'progreso',
-    title: 'Progreso',
-    subtitle: 'Actividad',
-    description: 'Resumen visual del avance de la sesion.',
-    icon: BarChart3,
-    state: 'Proximo',
-    functional: false
   },
   {
     id: 'settings',
@@ -447,6 +417,7 @@ export function ComputerUI({
   );
   const activeLayout = SCREEN_LAYOUTS.find((layout) => layout.id === screenLayout) ?? SCREEN_LAYOUTS[0];
   const visibleWindows = openWindows.filter((appId) => !minimizedWindows.includes(appId));
+  const taskbarAppIds = FUNCTIONAL_APP_IDS.filter((appId) => openWindows.includes(appId));
   const clockLabel = useMemo(
     () =>
       clockTime.toLocaleTimeString('es-AR', {
@@ -1214,8 +1185,6 @@ export function ComputerUI({
                     onScreenLayoutChange={changeScreenLayout}
                     onClearAllScreens={clearAllScreens}
                     onMuteAllScreens={muteAllScreens}
-                    onClearAgenda={clearAgendaItems}
-                    onRestoreAgenda={restoreInitialAgendaItems}
                   />
                 </OSWindow>
               )}
@@ -1223,30 +1192,29 @@ export function ComputerUI({
           </div>
 
           <footer className="os-system-bar" aria-label="Barra del sistema">
-            <button type="button" className="os-main-button" onClick={() => openApp('estudiemos')}>
-              <Square size={15} aria-hidden="true" />
-              <span>Estudiemos OS</span>
-            </button>
-
             <div className="os-running-apps" aria-label="Aplicaciones abiertas">
-              {FUNCTIONAL_APP_IDS.map((appId) => {
-                const app = findDesktopApp(appId);
-                const Icon = app.icon;
-                const isOpen = openWindows.includes(appId);
-                const isMinimized = minimizedWindows.includes(appId);
-                return (
-                  <button
-                    key={appId}
-                    type="button"
-                    className={`${focusedWindow === appId ? 'is-focused' : ''}${isMinimized ? ' is-minimized' : ''}`}
-                    onClick={() => openApp(appId)}
-                    aria-pressed={isOpen && !isMinimized}
-                  >
-                    <Icon size={17} aria-hidden="true" />
-                    <span>{app.title}</span>
-                  </button>
-                );
-              })}
+              {taskbarAppIds.length > 0 ? (
+                taskbarAppIds.map((appId) => {
+                  const app = findDesktopApp(appId);
+                  const Icon = app.icon;
+                  const isOpen = openWindows.includes(appId);
+                  const isMinimized = minimizedWindows.includes(appId);
+                  return (
+                    <button
+                      key={appId}
+                      type="button"
+                      className={`${focusedWindow === appId ? 'is-focused' : ''}${isMinimized ? ' is-minimized' : ''}`}
+                      onClick={() => openApp(appId)}
+                      aria-pressed={isOpen && !isMinimized}
+                    >
+                      <Icon size={17} aria-hidden="true" />
+                      <span>{app.title}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <span className="os-running-apps-empty">Sin ventanas abiertas</span>
+              )}
             </div>
 
             <button type="button" className="os-screen-button" onClick={() => setDrawerOpen(true)}>
@@ -1257,11 +1225,6 @@ export function ComputerUI({
             <div className="os-clock" aria-label={`Hora del sistema ${clockLabel}`}>
               <strong>{clockLabel}</strong>
               <span>{dateLabel}</span>
-            </div>
-
-            <div className="os-user-chip">
-              <UserCircle size={19} aria-hidden="true" />
-              <span>Perfil</span>
             </div>
 
             <button type="button" className="computer-close os-close-button" onClick={onClose} aria-label="Cerrar computadora">
@@ -1988,9 +1951,7 @@ function SettingsApp({
   onSettingChange,
   onScreenLayoutChange,
   onClearAllScreens,
-  onMuteAllScreens,
-  onClearAgenda,
-  onRestoreAgenda
+  onMuteAllScreens
 }) {
   const activeScreenCount = ZONES.filter((zone) => Boolean(screenZones[zone.id]?.videoId || screenZones[zone.id]?.resourceUrl)).length;
 
@@ -2058,14 +2019,6 @@ function SettingsApp({
           <button type="button" onClick={onMuteAllScreens}>
             <VolumeX size={17} aria-hidden="true" />
             <span>Silenciar todo</span>
-          </button>
-          <button type="button" onClick={onClearAgenda}>
-            <Eraser size={17} aria-hidden="true" />
-            <span>Vaciar agenda</span>
-          </button>
-          <button type="button" onClick={onRestoreAgenda}>
-            <CalendarDays size={17} aria-hidden="true" />
-            <span>Restaurar agenda</span>
           </button>
         </div>
       </section>

@@ -365,8 +365,8 @@ function App() {
 
       {!computerOpen && !screenRemoteOpen && !wallAgendaOpen && !isPointerLocked && (
         <div className="camera-lock-prompt">
-          <strong>Click para tomar la camara</strong>
-          <span>Mover el mouse para mirar. Presiona Esc para liberar.</span>
+          <strong>La camara sigue el mouse</strong>
+          <span>Click activa giro continuo. Esc libera el mouse.</span>
         </div>
       )}
 

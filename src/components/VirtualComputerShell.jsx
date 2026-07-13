@@ -1,9 +1,7 @@
 import {
-  BarChart3,
   CalendarDays,
   Coins,
   Globe2,
-  MonitorUp,
   Music2,
   PawPrint,
   Settings,
@@ -171,16 +169,6 @@ export function VirtualComputerShell(props) {
 
               <div className="virtual-mini-grid">
                 <div>
-                  <MonitorUp size={18} aria-hidden="true" />
-                  <strong>Pantallas</strong>
-                  <span>Control desde la sala</span>
-                </div>
-                <div>
-                  <BarChart3 size={18} aria-hidden="true" />
-                  <strong>Progreso</strong>
-                  <span>Rango {equippedSkin.rank}</span>
-                </div>
-                <div>
                   <Coins size={18} aria-hidden="true" />
                   <strong>Monedas</strong>
                   <span>{focusEconomy?.progress.coins ?? 0} disponibles</span>
@@ -214,12 +202,6 @@ export function VirtualComputerShell(props) {
             </aside>
           </section>
 
-          <footer className="virtual-dock" aria-label="Dock">
-            <button type="button" className="virtual-dock-button is-active" onClick={() => openComputer('estudiemos')}>
-              <Sparkles size={20} aria-hidden="true" />
-              <span>Estudiemos</span>
-            </button>
-          </footer>
         </main>
       </div>
     </section>
