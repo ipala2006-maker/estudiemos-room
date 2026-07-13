@@ -44,15 +44,15 @@ const COMPANION_STILL_SPEED = 0.16;
 const COMPANION_MIN_PLAYER_DISTANCE = 2.35;
 const INTERIOR_LOOK_TARGET = activeMap.interiorSpawnLookAt ?? new THREE.Vector3(84, 2.1, -24);
 const GIANT_SCREEN_WORLD = {
-  center: new THREE.Vector3(90, 8, -34.25),
-  width: 38.9,
-  height: 14.39
+  center: new THREE.Vector3(90, 8.25, -34.25),
+  width: 48,
+  height: 13.5
 };
 const GIANT_SCREEN_INTERACTION_PADDING = 2.4;
 const GIANT_SCREEN_INTERACTION_DISTANCE = 44;
 const GIANT_SCREEN_DOM_SIZE = {
-  width: 1730,
-  height: 640
+  width: 2560,
+  height: 720
 };
 const COMPUTER_MONITOR_OCCLUDER_WORLD = {
   center: new THREE.Vector3(78.6, 2.15, -14.86),
@@ -2734,19 +2734,19 @@ function addCasa1Interior(scene, textures) {
   ceiling.receiveShadow = true;
   room.add(ceiling);
 
-  const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(41.7, 15.6, 0.26), makeMaterial(0x0f1214, 0.42, 0.16, textures.brushedMetal));
-  screenFrame.position.set(0, 8, -28.55);
+  const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(50.6, 15.4, 0.26), makeMaterial(0x0f1214, 0.42, 0.16, textures.brushedMetal));
+  screenFrame.position.set(0, 8.25, -28.55);
   screenFrame.castShadow = true;
   room.add(screenFrame);
 
   const screenCanvas = document.createElement('canvas');
-  screenCanvas.width = 1024;
-  screenCanvas.height = 512;
+  screenCanvas.width = GIANT_SCREEN_DOM_SIZE.width;
+  screenCanvas.height = GIANT_SCREEN_DOM_SIZE.height;
   const screenTexture = new THREE.CanvasTexture(screenCanvas);
   screenTexture.colorSpace = THREE.SRGBColorSpace;
 
   const screenSurface = new THREE.Mesh(
-    new THREE.BoxGeometry(38.9, 14.39, 0.12),
+    new THREE.BoxGeometry(GIANT_SCREEN_WORLD.width, GIANT_SCREEN_WORLD.height, 0.12),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       map: screenTexture,
@@ -2756,7 +2756,7 @@ function addCasa1Interior(scene, textures) {
       metalness: 0.04
     })
   );
-  screenSurface.position.set(0, 8, -28.25);
+  screenSurface.position.set(0, 8.25, -28.25);
   room.add(screenSurface);
 
   const keyLight = new THREE.SpotLight(0xffc27a, 4.8, 36, Math.PI / 5.8, 0.55, 1.35);

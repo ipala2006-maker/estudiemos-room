@@ -1,4 +1,4 @@
-name: Apply Estudiemos Room Backspace 32x9 Patch
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -6,28 +6,50 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
-  apply-patch:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+          node-version: 24
+          cache: npm
 
-      - name: Download patch
-        run: |
-          curl -L "https://litter.catbox.moe/bbu7za.tgz" -o /tmp/estudiemos-room-backspace-32x9.tgz
-          tar -xzf /tmp/estudiemos-room-backspace-32x9.tgz
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Commit patch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/components/ComputerUI.jsx src/components/VirtualComputerShell.jsx src/components/FirstPersonWorld.jsx src/styles/app.css src/data/buildInfo.js .github/workflows/deploy.yml
-          git status --short
-          git commit -m "fix: make computer backspace and screen ratio reliable" || exit 0
-          git push
+      - name: Build
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

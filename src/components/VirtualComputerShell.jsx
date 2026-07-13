@@ -10,7 +10,7 @@ import {
   Sparkles,
   Wifi
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DachshundMascot } from './DachshundMascot.jsx';
 import { getEquippedSkinState } from '../data/focusEconomy.js';
 import { studyAgendaItems } from '../data/studyAgenda.js';
@@ -67,6 +67,11 @@ const DESKTOP_APPS = [
   }
 ];
 
+function isTextEntryElement(element) {
+  const tagName = element?.tagName?.toLowerCase();
+  return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable);
+}
+
 export function VirtualComputerShell(props) {
   const { agendaItems = studyAgendaItems, focusEconomy } = props;
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
@@ -74,6 +79,21 @@ export function VirtualComputerShell(props) {
   const agendaLead = agendaPreviewItems[0] ?? agendaItems[0] ?? null;
   const [appOpen, setAppOpen] = useState(false);
   const [initialApp, setInitialApp] = useState('estudiemos');
+
+  useEffect(() => {
+    if (!appOpen) return undefined;
+
+    function onBackspaceFallback(event) {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key !== 'Backspace' || isTextEntryElement(event.target)) return;
+
+      event.preventDefault();
+      setAppOpen(false);
+    }
+
+    document.addEventListener('keydown', onBackspaceFallback);
+    return () => document.removeEventListener('keydown', onBackspaceFallback);
+  }, [appOpen]);
 
   if (appOpen) {
     return <ComputerUI {...props} initialApp={initialApp} onBackToDesktop={() => setAppOpen(false)} />;

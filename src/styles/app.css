@@ -300,9 +300,10 @@ button {
 
 .physical-screen-content[data-layout="side-by-side"] {
   grid-template-rows: 1fr !important;
-  gap: 28px;
+  gap: 36px;
   align-items: center;
-  padding: 48px 46px;
+  justify-items: center;
+  padding: 40px 48px;
 }
 
 .physical-screen-slot {
@@ -317,8 +318,10 @@ button {
 }
 
 .physical-screen-content[data-layout="side-by-side"] .physical-screen-slot {
-  width: 100%;
+  width: auto;
+  height: 100%;
   max-height: 100%;
+  max-width: 100%;
   aspect-ratio: 16 / 9;
   border-top: 0;
   border-left: 2px solid rgba(215, 194, 138, 0.62);
@@ -333,6 +336,19 @@ button {
 
 .physical-screen-slot:first-child {
   border-top: 0;
+}
+
+.physical-screen-content[data-layout="single"] {
+  place-items: center;
+  padding: 40px 48px;
+}
+
+.physical-screen-content[data-layout="single"] .physical-screen-slot {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
 }
 
 .physical-screen-slot iframe {

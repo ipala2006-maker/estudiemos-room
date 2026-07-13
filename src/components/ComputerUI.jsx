@@ -354,6 +354,7 @@ export function ComputerUI({
   const [spotifyDraft, setSpotifyDraft] = useState('');
   const [spotifyError, setSpotifyError] = useState('');
   const [spotifyContent, setSpotifyContent] = useState(loadStoredSpotifyContent);
+  const computerRootRef = useRef(null);
   const feedbackTimerRef = useRef(0);
 
   useEffect(() => {
@@ -511,6 +512,42 @@ export function ComputerUI({
     onBackToDesktop?.();
   }
 
+  function shouldKeepBackspaceForTextEntry(element) {
+    if (!isTextEntryElement(element)) return false;
+    if (element?.isContentEditable) return true;
+
+    const tagName = element?.tagName?.toLowerCase();
+    if (tagName === 'select') return true;
+
+    const value = String(element?.value ?? '');
+    if (value.length === 0) return false;
+
+    const selectionStart = Number(element?.selectionStart ?? value.length);
+    const selectionEnd = Number(element?.selectionEnd ?? value.length);
+    return selectionStart !== selectionEnd || selectionStart > 0;
+  }
+
+  function handleComputerShortcut(event) {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return false;
+
+    if (event.key === 'Backspace' && !shouldKeepBackspaceForTextEntry(event.target)) {
+      event.preventDefault();
+      event.stopPropagation();
+      goBackOneInstance();
+      return true;
+    }
+
+    if (event.key === 'Enter' && !isTextEntryElement(event.target)) {
+      if (confirmKeyboardAction()) {
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   function confirmKeyboardAction() {
     const activeElement = document.activeElement;
     if (isKeyboardActionElement(activeElement) && !activeElement?.disabled) {
@@ -530,24 +567,16 @@ export function ComputerUI({
   }
 
   useEffect(() => {
+    computerRootRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
     function onComputerKeyDown(event) {
-      if (event.altKey || event.ctrlKey || event.metaKey) return;
-
-      if (event.key === 'Backspace' && !isTextEntryElement(event.target)) {
-        event.preventDefault();
-        goBackOneInstance();
-        return;
-      }
-
-      if (event.key === 'Enter' && !isTextEntryElement(event.target)) {
-        if (confirmKeyboardAction()) {
-          event.preventDefault();
-        }
-      }
+      handleComputerShortcut(event);
     }
 
-    window.addEventListener('keydown', onComputerKeyDown);
-    return () => window.removeEventListener('keydown', onComputerKeyDown);
+    document.addEventListener('keydown', onComputerKeyDown, true);
+    return () => document.removeEventListener('keydown', onComputerKeyDown, true);
   }, [
     drawerOpen,
     estudiemosRoute,
@@ -855,7 +884,13 @@ export function ComputerUI({
     .join(' ');
 
   return (
-    <section className={computerOverlayClass} aria-label="Computadora de Casa 1">
+    <section
+      ref={computerRootRef}
+      className={computerOverlayClass}
+      tabIndex={-1}
+      onKeyDownCapture={handleComputerShortcut}
+      aria-label="Computadora de Casa 1"
+    >
       <div className="computer-window computer-window-wide mediahub-window game-computer-window estudiemos-os-live-desktop">
         <div className="computer-boot-glow" aria-hidden="true" />
         {actionFeedback && (
