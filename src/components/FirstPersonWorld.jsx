@@ -831,7 +831,6 @@ function createStudyPlayerAvatar() {
     part.castShadow = false;
     part.receiveShadow = false;
   });
-  addGroupEdges(group, 0x071011, 0.18);
 
   return {
     group,
