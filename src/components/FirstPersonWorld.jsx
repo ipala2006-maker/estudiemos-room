@@ -6,6 +6,9 @@ import { getEquippedSkinState, getSkinVisuals } from '../data/focusEconomy.js';
 import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
 import { Casa1 } from '../maps/Casa1.js';
 import { buildYouTubeEmbedUrl } from '../utils/youtube.js';
+import playerAvatarBackUrl from '../assets/player-avatar-back.png';
+import playerAvatarFrontUrl from '../assets/player-avatar-front.png';
+import playerHandViewModelUrl from '../assets/player-hand-viewmodel.png';
 
 const activeMap = Casa1;
 const startPosition = activeMap.startPosition;
@@ -47,6 +50,9 @@ const CAMERA_VIEW_TRANSITION = 11;
 const FREE_MOUSE_LOOK_SCALE = 0.62;
 const FREE_MOUSE_JUMP_LIMIT = 180;
 const FIRST_PERSON_ARM_SWING_SECONDS = 0.26;
+const PLAYER_AVATAR_FRONT_ASPECT = 364 / 1024;
+const PLAYER_AVATAR_BACK_ASPECT = 380 / 1024;
+const PLAYER_HAND_VIEWMODEL_ASPECT = 960 / 583;
 const EDGE_OPACITY_SCALE = 0.28;
 const MIN_EDGE_OPACITY = 0.04;
 const COMPANION_SIDE_OFFSET = -2.35;
@@ -611,6 +617,34 @@ function createViewModelMaterial(color) {
   });
 }
 
+function getImageAssetTexture(url) {
+  const cacheKey = `asset-texture:${url}`;
+  if (textureCache.has(cacheKey)) return textureCache.get(cacheKey);
+  const texture = new THREE.TextureLoader().load(url);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  textureCache.set(cacheKey, texture);
+  return texture;
+}
+
+function createImageAssetMaterial(
+  url,
+  { depthTest = true, depthWrite = false, alphaTest = 0.16, opacity = 1, side = THREE.DoubleSide } = {}
+) {
+  return new THREE.MeshBasicMaterial({
+    map: getImageAssetTexture(url),
+    transparent: true,
+    alphaTest,
+    opacity,
+    depthTest,
+    depthWrite,
+    side,
+    fog: false
+  });
+}
+
 function addViewModelMesh(parent, geometry, material, position, scale = [1, 1, 1], rotation = [0, 0, 0], renderOrder = 10001) {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(...position);
@@ -621,7 +655,43 @@ function addViewModelMesh(parent, geometry, material, position, scale = [1, 1, 1
   return mesh;
 }
 
+function createIllustratedFirstPersonArmViewModel() {
+  const group = new THREE.Group();
+  group.name = 'first-person-illustrated-study-hand-v3';
+  group.renderOrder = 10000;
+
+  const pivot = new THREE.Group();
+  pivot.position.set(0.43, -0.47, -1.05);
+  pivot.rotation.set(-0.05, -0.05, 0.02);
+  group.add(pivot);
+
+  const width = 1.55;
+  const handPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, width / PLAYER_HAND_VIEWMODEL_ASPECT),
+    createImageAssetMaterial(playerHandViewModelUrl, {
+      depthTest: false,
+      depthWrite: false,
+      alphaTest: 0.18
+    })
+  );
+  handPlane.name = 'illustrated-first-person-hand-plane';
+  handPlane.position.set(0, 0, 0);
+  handPlane.renderOrder = 10002;
+  pivot.add(handPlane);
+
+  return {
+    group,
+    pivot,
+    handPlane,
+    basePosition: pivot.position.clone(),
+    baseRotation: pivot.rotation.clone(),
+    swing: 0
+  };
+}
+
 function createFirstPersonArmViewModel() {
+  return createIllustratedFirstPersonArmViewModel();
+
   const group = new THREE.Group();
   group.name = 'first-person-professional-study-hand';
   group.renderOrder = 10000;
@@ -779,9 +849,84 @@ function updateFirstPersonArmViewModel(viewModel, delta, isWalking, frameTime) {
   viewModel.pivot.rotation.x -= punch * 0.28;
   viewModel.pivot.rotation.y += Math.sin(frameTime * 0.01) * (isWalking ? 0.024 : 0.008);
   viewModel.pivot.rotation.z += punch * 0.1;
+
+  if (viewModel.handPlane) {
+    const walkScale = isWalking ? Math.sin(frameTime * 0.012) * 0.012 : 0;
+    viewModel.handPlane.scale.setScalar(1 + punch * 0.035 + walkScale);
+    viewModel.handPlane.rotation.z = punch * 0.025 + Math.sin(frameTime * 0.004) * 0.006;
+  }
+}
+
+function createIllustratedStudyPlayerAvatar() {
+  const group = new THREE.Group();
+  group.name = 'estudiemos-player-illustrated-skin-v3';
+  group.visible = false;
+
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.58, 32),
+    new THREE.MeshBasicMaterial({
+      color: 0x050706,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false
+    })
+  );
+  shadow.name = 'illustrated-player-contact-shadow';
+  shadow.position.set(0, 0.035, 0);
+  shadow.scale.set(1.06, 0.46, 1);
+  shadow.rotation.x = -Math.PI / 2;
+  group.add(shadow);
+
+  const artGroup = new THREE.Group();
+  artGroup.name = 'illustrated-player-art-rig';
+  group.add(artGroup);
+
+  const avatarHeight = 2.36;
+  const frontPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(avatarHeight * PLAYER_AVATAR_FRONT_ASPECT, avatarHeight),
+    createImageAssetMaterial(playerAvatarFrontUrl, {
+      alphaTest: 0.2,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.FrontSide
+    })
+  );
+  frontPlane.name = 'illustrated-player-front-sprite';
+  frontPlane.position.set(0, avatarHeight * 0.5, -0.04);
+  frontPlane.rotation.y = Math.PI;
+  frontPlane.renderOrder = 18;
+  artGroup.add(frontPlane);
+
+  const backPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(avatarHeight * PLAYER_AVATAR_BACK_ASPECT, avatarHeight),
+    createImageAssetMaterial(playerAvatarBackUrl, {
+      alphaTest: 0.2,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.FrontSide
+    })
+  );
+  backPlane.name = 'illustrated-player-back-sprite';
+  backPlane.position.set(0, avatarHeight * 0.5, 0.04);
+  backPlane.renderOrder = 18;
+  artGroup.add(backPlane);
+
+  return {
+    kind: 'illustrated-avatar',
+    group,
+    artGroup,
+    frontPlane,
+    backPlane,
+    shadow,
+    baseArtPosition: artGroup.position.clone(),
+    baseArtRotation: artGroup.rotation.clone(),
+    baseShadowScale: shadow.scale.clone()
+  };
 }
 
 function createStudyPlayerAvatar() {
+  return createIllustratedStudyPlayerAvatar();
+
   const group = new THREE.Group();
   group.name = 'estudiemos-player-avatar-skin-v2';
   group.visible = false;
@@ -1039,6 +1184,33 @@ function updateStudyPlayerAvatar(avatar, playerPosition, yaw, isWalking, velocit
 
   avatar.group.position.set(playerPosition.x, playerPosition.y - eyeHeight, playerPosition.z);
   avatar.group.rotation.y = dampAngle(avatar.group.rotation.y, yaw, 14, delta);
+
+  if (avatar.kind === 'illustrated-avatar') {
+    const speed = clamp(velocity.length() / WALK_SPEED, 0, 1);
+    const walk = isWalking ? speed : 0;
+    const phase = frameTime * 0.0115;
+    const idle = Math.sin(frameTime * 0.0024);
+    const bounce = Math.abs(Math.sin(phase)) * 0.038 * walk + idle * 0.006;
+    const sway = Math.sin(phase) * 0.025 * walk;
+    const lean = clamp(speed, 0, 1) * 0.028;
+
+    avatar.frontPlane.visible = cameraMode === 'front-person';
+    avatar.backPlane.visible = cameraMode !== 'front-person';
+
+    avatar.artGroup.position.copy(avatar.baseArtPosition);
+    avatar.artGroup.position.y += bounce;
+    avatar.artGroup.position.x += sway * 0.18;
+    avatar.artGroup.rotation.copy(avatar.baseArtRotation);
+    avatar.artGroup.rotation.x = -lean;
+    avatar.artGroup.rotation.z = sway + idle * 0.004;
+    avatar.artGroup.scale.set(1 - walk * 0.012, 1 + walk * 0.01, 1);
+
+    avatar.shadow.scale.copy(avatar.baseShadowScale);
+    avatar.shadow.scale.x += walk * 0.08;
+    avatar.shadow.scale.y += walk * 0.03;
+    avatar.shadow.material.opacity = 0.2 + walk * 0.05;
+    return;
+  }
 
   const speed = clamp(velocity.length() / WALK_SPEED, 0, 1);
   const walk = isWalking ? speed : 0;
