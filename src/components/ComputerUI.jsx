@@ -323,6 +323,7 @@ function useArrowKeyScroll(active, targetRef) {
 
 export function ComputerUI({
   onClose,
+  onBackToDesktop,
   screenZones,
   screenLayout = 'side-by-side',
   initialApp = 'estudiemos',
@@ -498,18 +499,17 @@ export function ComputerUI({
       return true;
     }
 
-    if (focusedWindow && openWindows.includes(focusedWindow)) {
-      closeWindow(focusedWindow);
-      return true;
-    }
-
-    if (openWindows.length > 0) {
-      closeWindow(openWindows.at(-1));
-      return true;
-    }
-
-    onClose?.();
+    returnToComputerDesktop();
     return true;
+  }
+
+  function returnToComputerDesktop() {
+    setDrawerOpen(false);
+    setOpenWindows((current) => (current.length > 0 ? current : [normalizedInitialApp]));
+    setMinimizedWindows([]);
+    setFocusedWindow((current) => current || normalizedInitialApp);
+    setSystemNote('Inicio de la computadora');
+    onBackToDesktop?.();
   }
 
   function confirmKeyboardAction() {
@@ -558,6 +558,7 @@ export function ComputerUI({
     resourceView,
     selectedContent,
     selectedContentOrigin,
+    onBackToDesktop,
     spotifyDraft,
     spotifyError
   ]);

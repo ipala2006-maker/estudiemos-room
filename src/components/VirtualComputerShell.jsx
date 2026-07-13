@@ -76,7 +76,7 @@ export function VirtualComputerShell(props) {
   const [initialApp, setInitialApp] = useState('estudiemos');
 
   if (appOpen) {
-    return <ComputerUI {...props} initialApp={initialApp} />;
+    return <ComputerUI {...props} initialApp={initialApp} onBackToDesktop={() => setAppOpen(false)} />;
   }
 
   function openComputer(appId) {
