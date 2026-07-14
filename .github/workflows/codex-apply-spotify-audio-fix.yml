@@ -1,0 +1,481 @@
+name: Codex Apply Spotify Audio Fix
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply Spotify audio fix
+        run: |
+          set -euo pipefail
+          cat > /tmp/codex-spotify-audio-fix.patch <<'PATCH'
+--- a/src/utils/spotify.js
++++ b/src/utils/spotify.js
+@@ -8,6 +8,7 @@
+ };
+ 
+ const SPOTIFY_ID_PATTERN = /^[A-Za-z0-9]{12,32}$/;
++const SPOTIFY_HOST_PATTERN = /^(?:www\.)?open\.spotify\.com$/i;
+ 
+ export function parseSpotifyUrl(inputValue) {
+   const input = String(inputValue ?? '').trim();
+@@ -27,7 +28,7 @@
+     return { ok: false, error: 'El link no parece una URL valida de Spotify.' };
+   }
+ 
+-  if (url.hostname !== 'open.spotify.com') {
++  if (!SPOTIFY_HOST_PATTERN.test(url.hostname)) {
+     return { ok: false, error: 'Usa un link de open.spotify.com.' };
+   }
+ 
+@@ -65,6 +66,7 @@
+       id: cleanId,
+       label: SPOTIFY_SUPPORTED_TYPES[type],
+       inputUrl: originalUrl,
++      uri: `spotify:${type}:${cleanId}`,
+       watchUrl,
+       embedUrl,
+       title: `Spotify - ${SPOTIFY_SUPPORTED_TYPES[type]}`
+--- a/src/main.jsx
++++ b/src/main.jsx
+@@ -188,15 +188,26 @@
+     const now = Date.now();
+     setScreenZones((current) => ({
+       ...current,
+-      [zoneId]: {
+-        ...current[zoneId],
+-        ...video,
+-        paused: false,
+-        seekSeconds: 0,
+-        lastPlaybackAt: now,
+-        playerCommand: null,
+-        updatedAt: now
+-      }
++      [zoneId]: (() => {
++        const nextZone = {
++          ...current[zoneId],
++          ...video,
++          paused: false,
++          seekSeconds: 0,
++          lastPlaybackAt: now,
++          playerCommand: null,
++          updatedAt: now
++        };
++
++        if (nextZone.contentType === 'youtube' && nextZone.videoId) {
++          nextZone.playerCommand = createScreenCommand('sync-audio', {
++            muted: nextZone.muted,
++            volume: nextZone.volume
++          });
++        }
++
++        return nextZone;
++      })()
+     }));
+   }
+ 
+@@ -223,7 +234,11 @@
+           ...(hasRefreshStamp ? { updatedAt } : {})
+         };
+ 
+-        if (Object.prototype.hasOwnProperty.call(zonePatch, 'muted') || Object.prototype.hasOwnProperty.call(zonePatch, 'volume')) {
++        if (
++          nextZone.contentType === 'youtube' &&
++          nextZone.videoId &&
++          (Object.prototype.hasOwnProperty.call(zonePatch, 'muted') || Object.prototype.hasOwnProperty.call(zonePatch, 'volume'))
++        ) {
+           nextZone.playerCommand = createScreenCommand('sync-audio', {
+             muted: nextZone.muted,
+             volume: nextZone.volume
+--- a/src/components/ComputerUI.jsx
++++ b/src/components/ComputerUI.jsx
+@@ -82,6 +82,30 @@
+   { id: 'split-30-70', label: '30/70', description: 'Secundaria grande' }
+ ];
+ 
++function zoneHasContent(zone) {
++  return Boolean(zone?.videoId || zone?.resourceUrl);
++}
++
++function canUseScreenAudioControls(zone) {
++  return !zoneHasContent(zone) || zone?.contentType === 'youtube';
++}
++
++function getAudioToggleLabel(zone) {
++  return zone?.muted ? 'Activar audio' : 'Silenciar';
++}
++
++function getAudioControlHint(zone) {
++  if (zone?.contentType === 'spotify' && zoneHasContent(zone)) {
++    return 'Spotify se escucha y se controla desde su reproductor embebido.';
++  }
++
++  if (zoneHasContent(zone) && zone?.contentType !== 'youtube') {
++    return 'Este contenido no tiene controles de audio externos.';
++  }
++
++  return '';
++}
++
+ const DESKTOP_APPS = [
+   {
+     id: 'estudiemos',
+@@ -816,6 +840,7 @@
+       muted: false,
+       volume: 70,
+       displayScale: 100,
++      paused: false,
+       updatedAt: Date.now()
+     });
+     setSystemNote('Spotify enviado a pantalla derecha');
+@@ -926,9 +951,13 @@
+   }
+ 
+   function muteAllScreens() {
+-    ZONES.forEach((zone) => onUpdateZone(zone.id, { muted: true }));
+-    setSystemNote('Audio silenciado en pantallas');
+-    showActionFeedback('Pantallas en mute');
++    ZONES.forEach((zone) => {
++      if (canUseScreenAudioControls(screenZones[zone.id])) {
++        onUpdateZone(zone.id, { muted: true });
++      }
++    });
++    setSystemNote('Audio de YouTube en mute. Spotify se controla desde su reproductor.');
++    showActionFeedback('Audio de pantallas ajustado');
+   }
+ 
+   const computerOverlayClass = [
+@@ -2101,12 +2130,13 @@
+         <div>
+           <span>Musica de fondo</span>
+           <h2>Spotify</h2>
+-          <p>Carga canciones, playlists, albumes o podcasts con el reproductor oficial embebido.</p>
++          <p>Carga canciones, playlists, albumes o podcasts y presiona Play dentro del reproductor oficial.</p>
+         </div>
+         <div className="spotify-current-card">
+           <Music2 size={24} aria-hidden="true" />
+           <span>{content ? content.label : 'Sin contenido'}</span>
+           <strong>{content?.title ?? 'Pega un link para empezar'}</strong>
++          {content && <small>Activo dentro de la computadora. El audio queda en el player de Spotify.</small>}
+           <ScrollPad targetRef={shellRef} label="Mover Spotify" tone="dark" />
+         </div>
+       </section>
+@@ -2159,9 +2189,11 @@
+       <section className={`spotify-player-panel${content ? ' is-loaded' : ''}`} aria-label="Reproductor de Spotify">
+         {content ? (
+           <iframe
++            key={content.embedUrl}
+             title={content.title}
+             src={content.embedUrl}
+             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
++            referrerPolicy="strict-origin-when-cross-origin"
+             loading="lazy"
+           />
+         ) : (
+@@ -2618,8 +2650,11 @@
+           <div className="drawer-zone-list">
+             {ZONES.map((zone) => {
+               const current = screenZones[zone.id];
+-              const hasContent = Boolean(current.videoId || current.resourceUrl);
++              const hasContent = zoneHasContent(current);
+               const canControlPlayback = current.contentType === 'youtube' && Boolean(current.videoId);
++              const canUseAudioControls = canUseScreenAudioControls(current);
++              const audioToggleLabel = getAudioToggleLabel(current);
++              const audioHint = getAudioControlHint(current);
+               const isPaused = Boolean(current.paused);
+               return (
+                 <div className="drawer-zone-card" key={zone.id}>
+@@ -2660,9 +2695,11 @@
+                       min="0"
+                       max="100"
+                       value={current.volume}
++                      disabled={!canUseAudioControls}
+                       onChange={(event) => onUpdateZone(zone.id, { volume: Number(event.target.value) })}
+                     />
+                   </label>
++                  {audioHint && <p className="drawer-audio-hint">{audioHint}</p>}
+ 
+                   <label className="drawer-volume">
+                     <span>Tamano {current.displayScale ?? 100}%</span>
+@@ -2677,9 +2714,9 @@
+                   </label>
+ 
+                   <div className="drawer-zone-actions">
+-                    <button type="button" onClick={() => onUpdateZone(zone.id, { muted: !current.muted })}>
+-                      {current.muted ? <VolumeX size={17} aria-hidden="true" /> : <Volume2 size={17} aria-hidden="true" />}
+-                      <span>{current.muted ? 'Mute' : 'Audio'}</span>
++                    <button type="button" onClick={() => onUpdateZone(zone.id, { muted: !current.muted })} disabled={!canUseAudioControls}>
++                      {current.muted ? <Volume2 size={17} aria-hidden="true" /> : <VolumeX size={17} aria-hidden="true" />}
++                      <span>{audioToggleLabel}</span>
+                     </button>
+                     <button type="button" onClick={() => onClearZone(zone.id)}>
+                       <Eraser size={17} aria-hidden="true" />
+--- a/src/components/ScreenRemoteControl.jsx
++++ b/src/components/ScreenRemoteControl.jsx
+@@ -46,6 +46,30 @@
+   return selectionStart !== selectionEnd || selectionStart > 0;
+ }
+ 
++function zoneHasContent(zone) {
++  return Boolean(zone?.videoId || zone?.resourceUrl);
++}
++
++function canUseRemoteAudioControls(zone) {
++  return !zoneHasContent(zone) || zone?.contentType === 'youtube';
++}
++
++function getRemoteAudioActionLabel(zone) {
++  return zone?.muted ? 'Activar audio' : 'Silenciar';
++}
++
++function getRemoteAudioHint(zone) {
++  if (zone?.contentType === 'spotify' && zoneHasContent(zone)) {
++    return 'Spotify se escucha desde su reproductor. Usa Play y volumen dentro del embed.';
++  }
++
++  if (zoneHasContent(zone) && zone?.contentType !== 'youtube') {
++    return 'Este contenido no permite audio externo desde el control.';
++  }
++
++  return '';
++}
++
+ export function ScreenRemoteControl({
+   screenZones,
+   screenLayout,
+@@ -67,8 +91,11 @@
+     () => REMOTE_ZONES.find((zone) => zone.id === activeZoneId)?.label ?? 'Pantalla',
+     [activeZoneId]
+   );
+-  const hasContent = Boolean(activeZone.videoId || activeZone.resourceUrl);
++  const hasContent = zoneHasContent(activeZone);
+   const canControlPlayback = activeZone.contentType === 'youtube' && Boolean(activeZone.videoId);
++  const canUseAudioControls = canUseRemoteAudioControls(activeZone);
++  const audioActionLabel = getRemoteAudioActionLabel(activeZone);
++  const audioHint = getRemoteAudioHint(activeZone);
+   const isPaused = Boolean(activeZone.paused);
+ 
+   useEffect(() => () => window.clearTimeout(noteTimerRef.current), []);
+@@ -165,11 +192,21 @@
+   }
+ 
+   function toggleMute() {
++    if (!canUseAudioControls) {
++      announce(audioHint || 'Audio externo no disponible');
++      return;
++    }
++
+     onUpdateZone(activeZoneId, { muted: !activeZone.muted });
+     announce(`${activeZone.muted ? 'Audio activo' : 'Mute activo'} en ${activeZoneLabel}`);
+   }
+ 
+   function updateVolume(value) {
++    if (!canUseAudioControls) {
++      announce(audioHint || 'Audio externo no disponible');
++      return;
++    }
++
+     onUpdateZone(activeZoneId, { volume: value });
+     announce(`Volumen ${value}% en ${activeZoneLabel}`);
+   }
+@@ -231,10 +268,11 @@
+ 
+         <section className="screen-remote-now">
+           <span>Reproduciendo</span>
+-          <strong>{hasContent ? activeZone.title || activeZone.videoId || 'Contenido cargado' : 'Sin video'}</strong>
++          <strong>{hasContent ? activeZone.title || activeZone.videoId || 'Contenido cargado' : 'Sin contenido'}</strong>
+           <small>{hasContent ? activeZone.watchUrl || activeZone.resourceUrl || 'Pantalla activa' : 'Pega un link de YouTube'}</small>
+         </section>
+         <div className="screen-remote-note" role="status">{remoteNote}</div>
++        {audioHint && <div className="screen-remote-audio-hint">{audioHint}</div>}
+ 
+         <form className="screen-remote-link" onSubmit={submitLink}>
+           <label htmlFor="screen-remote-youtube">YouTube</label>
+@@ -272,9 +310,9 @@
+         </section>
+ 
+         <section className="screen-remote-controls" aria-label="Controles de pantalla">
+-          <button type="button" onClick={toggleMute}>
+-            {activeZone.muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
+-            <span>{activeZone.muted ? 'Mute' : 'Audio'}</span>
++          <button type="button" onClick={toggleMute} disabled={!canUseAudioControls}>
++            {activeZone.muted ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
++            <span>{audioActionLabel}</span>
+           </button>
+           <button type="button" onClick={restartVideo} disabled={!hasContent}>
+             <RotateCcw size={18} aria-hidden="true" />
+@@ -294,6 +332,7 @@
+               min="0"
+               max="100"
+               value={activeZone.volume}
++              disabled={!canUseAudioControls}
+               onChange={(event) => updateVolume(Number(event.target.value))}
+             />
+           </label>
+--- a/src/components/FirstPersonWorld.jsx
++++ b/src/components/FirstPersonWorld.jsx
+@@ -2187,33 +2187,42 @@
+   if (!command || zone?.contentType !== 'youtube' || !iframe.contentWindow) return false;
+ 
+   if (command.action === 'play') {
+-    return postYouTubeCommand(iframe, 'playVideo');
++    return postYouTubeCommandWithRetry(iframe, 'playVideo');
+   }
+ 
+   if (command.action === 'pause') {
+-    return postYouTubeCommand(iframe, 'pauseVideo');
++    return postYouTubeCommandWithRetry(iframe, 'pauseVideo');
+   }
+ 
+   if (command.action === 'restart') {
+     postYouTubeCommand(iframe, 'seekTo', [0, true]);
+-    return postYouTubeCommand(iframe, 'playVideo');
++    return postYouTubeCommandWithRetry(iframe, 'playVideo');
+   }
+ 
+   if (command.action === 'seek') {
+     const seconds = Math.max(0, Math.round(Number(command.payload?.seconds ?? 0)));
+     postYouTubeCommand(iframe, 'seekTo', [seconds, true]);
+-    return command.payload?.play === false ? postYouTubeCommand(iframe, 'pauseVideo') : postYouTubeCommand(iframe, 'playVideo');
++    return command.payload?.play === false
++      ? postYouTubeCommandWithRetry(iframe, 'pauseVideo')
++      : postYouTubeCommandWithRetry(iframe, 'playVideo');
+   }
+ 
+   if (command.action === 'sync-audio') {
+     const volume = Math.min(100, Math.max(0, Math.round(Number(command.payload?.volume ?? zone.volume ?? 70))));
+     postYouTubeCommand(iframe, 'setVolume', [volume]);
+-    return postYouTubeCommand(iframe, command.payload?.muted ? 'mute' : 'unMute');
++    return postYouTubeCommandWithRetry(iframe, command.payload?.muted ? 'mute' : 'unMute');
+   }
+ 
+   return false;
+ }
+ 
++function postYouTubeCommandWithRetry(iframe, func, args = []) {
++  postYouTubeCommand(iframe, func, args);
++  window.setTimeout(() => postYouTubeCommand(iframe, func, args), 180);
++  window.setTimeout(() => postYouTubeCommand(iframe, func, args), 650);
++  return true;
++}
++
+ function postYouTubeCommand(iframe, func, args = []) {
+   iframe.contentWindow?.postMessage(
+     JSON.stringify({
+--- a/src/styles/app.css
++++ b/src/styles/app.css
+@@ -3347,6 +3347,19 @@
+   accent-color: #4f6f78;
+ }
+ 
++.drawer-volume input:disabled {
++  opacity: 0.42;
++  cursor: not-allowed;
++}
++
++.drawer-audio-hint {
++  margin: -4px 0 0;
++  color: #6a7c77;
++  font-size: 0.76rem;
++  font-weight: 760;
++  line-height: 1.35;
++}
++
+ .drawer-zone-actions {
+   display: grid;
+   grid-template-columns: repeat(2, minmax(0, 1fr));
+@@ -3385,6 +3398,11 @@
+   font-weight: 820;
+ }
+ 
++.drawer-zone-actions button:disabled {
++  opacity: 0.46;
++  cursor: default;
++}
++
+ .estudiemos-resource-shell {
+   grid-template-columns: minmax(0, 1fr) minmax(310px, 380px);
+ }
+@@ -3969,6 +3987,18 @@
+   text-align: center;
+ }
+ 
++.screen-remote-audio-hint {
++  margin: -2px 0 0;
++  padding: 10px 12px;
++  border: 1px solid rgba(159, 193, 176, 0.28);
++  border-radius: 8px;
++  color: rgba(220, 239, 231, 0.86);
++  background: rgba(36, 72, 64, 0.24);
++  font-size: 0.76rem;
++  font-weight: 760;
++  line-height: 1.35;
++}
++
+ .screen-remote-now span,
+ .screen-remote-link label,
+ .screen-remote-sliders span {
+@@ -4097,6 +4127,11 @@
+   accent-color: #e0c47a;
+ }
+ 
++.screen-remote-sliders input:disabled {
++  opacity: 0.42;
++  cursor: not-allowed;
++}
++
+ .screen-remote-layouts {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+--- a/src/styles/computer-os-corrections.css
++++ b/src/styles/computer-os-corrections.css
+@@ -1147,6 +1147,13 @@
+   white-space: nowrap;
+ }
+ 
++.spotify-current-card small {
++  color: rgba(234, 244, 238, 0.62);
++  font-size: 0.78rem;
++  font-weight: 720;
++  line-height: 1.35;
++}
++
+ .spotify-workspace {
+   min-width: 0;
+   display: grid;
+--- a/src/data/buildInfo.js
++++ b/src/data/buildInfo.js
+@@ -1,2 +1,2 @@
+-export const BUILD_LABEL = 'Pages build 2026-07-14 15:37 ART';
+-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-14-1537-first-person-sky-hand';
++export const BUILD_LABEL = 'Pages build 2026-07-14 17:14 ART';
++export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-14-1714-spotify-audio-fix';
+
+PATCH
+          git apply --check /tmp/codex-spotify-audio-fix.patch
+          git apply /tmp/codex-spotify-audio-fix.patch
+          npm ci
+          npm run build
+          git config user.name "codex-agent"
+          git config user.email "codex-agent@users.noreply.github.com"
+          git add src/utils/spotify.js src/main.jsx src/components/ComputerUI.jsx src/components/ScreenRemoteControl.jsx src/components/FirstPersonWorld.jsx src/styles/app.css src/styles/computer-os-corrections.css src/data/buildInfo.js
+          git rm --ignore-unmatch .github/workflows/codex-apply-spotify-audio-fix.yml
+          git status --short
+          git commit -m "fix: improve spotify audio controls" || exit 0
+          git push
