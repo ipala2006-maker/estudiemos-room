@@ -46,6 +46,30 @@ function shouldKeepRemoteBackspaceForText(element) {
   return selectionStart !== selectionEnd || selectionStart > 0;
 }
 
+function zoneHasContent(zone) {
+  return Boolean(zone?.videoId || zone?.resourceUrl);
+}
+
+function canUseRemoteAudioControls(zone) {
+  return !zoneHasContent(zone) || zone?.contentType === 'youtube';
+}
+
+function getRemoteAudioActionLabel(zone) {
+  return zone?.muted ? 'Activar audio' : 'Silenciar';
+}
+
+function getRemoteAudioHint(zone) {
+  if (zone?.contentType === 'spotify' && zoneHasContent(zone)) {
+    return 'Spotify se escucha desde su reproductor. Usa Play y volumen dentro del embed.';
+  }
+
+  if (zoneHasContent(zone) && zone?.contentType !== 'youtube') {
+    return 'Este contenido no permite audio externo desde el control.';
+  }
+
+  return '';
+}
+
 export function ScreenRemoteControl({
   screenZones,
   screenLayout,
@@ -67,8 +91,11 @@ export function ScreenRemoteControl({
     () => REMOTE_ZONES.find((zone) => zone.id === activeZoneId)?.label ?? 'Pantalla',
     [activeZoneId]
   );
-  const hasContent = Boolean(activeZone.videoId || activeZone.resourceUrl);
+  const hasContent = zoneHasContent(activeZone);
   const canControlPlayback = activeZone.contentType === 'youtube' && Boolean(activeZone.videoId);
+  const canUseAudioControls = canUseRemoteAudioControls(activeZone);
+  const audioActionLabel = getRemoteAudioActionLabel(activeZone);
+  const audioHint = getRemoteAudioHint(activeZone);
   const isPaused = Boolean(activeZone.paused);
 
   useEffect(() => () => window.clearTimeout(noteTimerRef.current), []);
@@ -165,11 +192,21 @@ export function ScreenRemoteControl({
   }
 
   function toggleMute() {
+    if (!canUseAudioControls) {
+      announce(audioHint || 'Audio externo no disponible');
+      return;
+    }
+
     onUpdateZone(activeZoneId, { muted: !activeZone.muted });
     announce(`${activeZone.muted ? 'Audio activo' : 'Mute activo'} en ${activeZoneLabel}`);
   }
 
   function updateVolume(value) {
+    if (!canUseAudioControls) {
+      announce(audioHint || 'Audio externo no disponible');
+      return;
+    }
+
     onUpdateZone(activeZoneId, { volume: value });
     announce(`Volumen ${value}% en ${activeZoneLabel}`);
   }
@@ -231,10 +268,11 @@ export function ScreenRemoteControl({
 
         <section className="screen-remote-now">
           <span>Reproduciendo</span>
-          <strong>{hasContent ? activeZone.title || activeZone.videoId || 'Contenido cargado' : 'Sin video'}</strong>
+          <strong>{hasContent ? activeZone.title || activeZone.videoId || 'Contenido cargado' : 'Sin contenido'}</strong>
           <small>{hasContent ? activeZone.watchUrl || activeZone.resourceUrl || 'Pantalla activa' : 'Pega un link de YouTube'}</small>
         </section>
         <div className="screen-remote-note" role="status">{remoteNote}</div>
+        {audioHint && <div className="screen-remote-audio-hint">{audioHint}</div>}
 
         <form className="screen-remote-link" onSubmit={submitLink}>
           <label htmlFor="screen-remote-youtube">YouTube</label>
@@ -272,9 +310,9 @@ export function ScreenRemoteControl({
         </section>
 
         <section className="screen-remote-controls" aria-label="Controles de pantalla">
-          <button type="button" onClick={toggleMute}>
-            {activeZone.muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
-            <span>{activeZone.muted ? 'Mute' : 'Audio'}</span>
+          <button type="button" onClick={toggleMute} disabled={!canUseAudioControls}>
+            {activeZone.muted ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
+            <span>{audioActionLabel}</span>
           </button>
           <button type="button" onClick={restartVideo} disabled={!hasContent}>
             <RotateCcw size={18} aria-hidden="true" />
@@ -294,6 +332,7 @@ export function ScreenRemoteControl({
               min="0"
               max="100"
               value={activeZone.volume}
+              disabled={!canUseAudioControls}
               onChange={(event) => updateVolume(Number(event.target.value))}
             />
           </label>

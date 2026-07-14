@@ -3347,6 +3347,19 @@ select {
   accent-color: #4f6f78;
 }
 
+.drawer-volume input:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.drawer-audio-hint {
+  margin: -4px 0 0;
+  color: #6a7c77;
+  font-size: 0.76rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
 .drawer-zone-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3383,6 +3396,11 @@ select {
   gap: 7px;
   color: #172426;
   font-weight: 820;
+}
+
+.drawer-zone-actions button:disabled {
+  opacity: 0.46;
+  cursor: default;
 }
 
 .estudiemos-resource-shell {
@@ -3969,6 +3987,18 @@ select {
   text-align: center;
 }
 
+.screen-remote-audio-hint {
+  margin: -2px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(159, 193, 176, 0.28);
+  border-radius: 8px;
+  color: rgba(220, 239, 231, 0.86);
+  background: rgba(36, 72, 64, 0.24);
+  font-size: 0.76rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
 .screen-remote-now span,
 .screen-remote-link label,
 .screen-remote-sliders span {
@@ -4095,6 +4125,11 @@ select {
 .screen-remote-sliders input {
   width: 100%;
   accent-color: #e0c47a;
+}
+
+.screen-remote-sliders input:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
 }
 
 .screen-remote-layouts {

@@ -188,15 +188,26 @@ function App() {
     const now = Date.now();
     setScreenZones((current) => ({
       ...current,
-      [zoneId]: {
-        ...current[zoneId],
-        ...video,
-        paused: false,
-        seekSeconds: 0,
-        lastPlaybackAt: now,
-        playerCommand: null,
-        updatedAt: now
-      }
+      [zoneId]: (() => {
+        const nextZone = {
+          ...current[zoneId],
+          ...video,
+          paused: false,
+          seekSeconds: 0,
+          lastPlaybackAt: now,
+          playerCommand: null,
+          updatedAt: now
+        };
+
+        if (nextZone.contentType === 'youtube' && nextZone.videoId) {
+          nextZone.playerCommand = createScreenCommand('sync-audio', {
+            muted: nextZone.muted,
+            volume: nextZone.volume
+          });
+        }
+
+        return nextZone;
+      })()
     }));
   }
 
@@ -223,7 +234,11 @@ function App() {
           ...(hasRefreshStamp ? { updatedAt } : {})
         };
 
-        if (Object.prototype.hasOwnProperty.call(zonePatch, 'muted') || Object.prototype.hasOwnProperty.call(zonePatch, 'volume')) {
+        if (
+          nextZone.contentType === 'youtube' &&
+          nextZone.videoId &&
+          (Object.prototype.hasOwnProperty.call(zonePatch, 'muted') || Object.prototype.hasOwnProperty.call(zonePatch, 'volume'))
+        ) {
           nextZone.playerCommand = createScreenCommand('sync-audio', {
             muted: nextZone.muted,
             volume: nextZone.volume

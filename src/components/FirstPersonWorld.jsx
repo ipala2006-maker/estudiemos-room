@@ -2187,31 +2187,40 @@ function applyScreenCommandToIframe(iframe, command, zone) {
   if (!command || zone?.contentType !== 'youtube' || !iframe.contentWindow) return false;
 
   if (command.action === 'play') {
-    return postYouTubeCommand(iframe, 'playVideo');
+    return postYouTubeCommandWithRetry(iframe, 'playVideo');
   }
 
   if (command.action === 'pause') {
-    return postYouTubeCommand(iframe, 'pauseVideo');
+    return postYouTubeCommandWithRetry(iframe, 'pauseVideo');
   }
 
   if (command.action === 'restart') {
     postYouTubeCommand(iframe, 'seekTo', [0, true]);
-    return postYouTubeCommand(iframe, 'playVideo');
+    return postYouTubeCommandWithRetry(iframe, 'playVideo');
   }
 
   if (command.action === 'seek') {
     const seconds = Math.max(0, Math.round(Number(command.payload?.seconds ?? 0)));
     postYouTubeCommand(iframe, 'seekTo', [seconds, true]);
-    return command.payload?.play === false ? postYouTubeCommand(iframe, 'pauseVideo') : postYouTubeCommand(iframe, 'playVideo');
+    return command.payload?.play === false
+      ? postYouTubeCommandWithRetry(iframe, 'pauseVideo')
+      : postYouTubeCommandWithRetry(iframe, 'playVideo');
   }
 
   if (command.action === 'sync-audio') {
     const volume = Math.min(100, Math.max(0, Math.round(Number(command.payload?.volume ?? zone.volume ?? 70))));
     postYouTubeCommand(iframe, 'setVolume', [volume]);
-    return postYouTubeCommand(iframe, command.payload?.muted ? 'mute' : 'unMute');
+    return postYouTubeCommandWithRetry(iframe, command.payload?.muted ? 'mute' : 'unMute');
   }
 
   return false;
+}
+
+function postYouTubeCommandWithRetry(iframe, func, args = []) {
+  postYouTubeCommand(iframe, func, args);
+  window.setTimeout(() => postYouTubeCommand(iframe, func, args), 180);
+  window.setTimeout(() => postYouTubeCommand(iframe, func, args), 650);
+  return true;
 }
 
 function postYouTubeCommand(iframe, func, args = []) {

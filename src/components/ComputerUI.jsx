@@ -82,6 +82,30 @@ const SCREEN_LAYOUTS = [
   { id: 'split-30-70', label: '30/70', description: 'Secundaria grande' }
 ];
 
+function zoneHasContent(zone) {
+  return Boolean(zone?.videoId || zone?.resourceUrl);
+}
+
+function canUseScreenAudioControls(zone) {
+  return !zoneHasContent(zone) || zone?.contentType === 'youtube';
+}
+
+function getAudioToggleLabel(zone) {
+  return zone?.muted ? 'Activar audio' : 'Silenciar';
+}
+
+function getAudioControlHint(zone) {
+  if (zone?.contentType === 'spotify' && zoneHasContent(zone)) {
+    return 'Spotify se escucha y se controla desde su reproductor embebido.';
+  }
+
+  if (zoneHasContent(zone) && zone?.contentType !== 'youtube') {
+    return 'Este contenido no tiene controles de audio externos.';
+  }
+
+  return '';
+}
+
 const DESKTOP_APPS = [
   {
     id: 'estudiemos',
@@ -816,6 +840,7 @@ export function ComputerUI({
       muted: false,
       volume: 70,
       displayScale: 100,
+      paused: false,
       updatedAt: Date.now()
     });
     setSystemNote('Spotify enviado a pantalla derecha');
@@ -926,9 +951,13 @@ export function ComputerUI({
   }
 
   function muteAllScreens() {
-    ZONES.forEach((zone) => onUpdateZone(zone.id, { muted: true }));
-    setSystemNote('Audio silenciado en pantallas');
-    showActionFeedback('Pantallas en mute');
+    ZONES.forEach((zone) => {
+      if (canUseScreenAudioControls(screenZones[zone.id])) {
+        onUpdateZone(zone.id, { muted: true });
+      }
+    });
+    setSystemNote('Audio de YouTube en mute. Spotify se controla desde su reproductor.');
+    showActionFeedback('Audio de pantallas ajustado');
   }
 
   const computerOverlayClass = [
@@ -2101,12 +2130,13 @@ function SpotifyApp({ active, draft, error, content, onDraftChange, onLoad, onCl
         <div>
           <span>Musica de fondo</span>
           <h2>Spotify</h2>
-          <p>Carga canciones, playlists, albumes o podcasts con el reproductor oficial embebido.</p>
+          <p>Carga canciones, playlists, albumes o podcasts y presiona Play dentro del reproductor oficial.</p>
         </div>
         <div className="spotify-current-card">
           <Music2 size={24} aria-hidden="true" />
           <span>{content ? content.label : 'Sin contenido'}</span>
           <strong>{content?.title ?? 'Pega un link para empezar'}</strong>
+          {content && <small>Activo dentro de la computadora. El audio queda en el player de Spotify.</small>}
           <ScrollPad targetRef={shellRef} label="Mover Spotify" tone="dark" />
         </div>
       </section>
@@ -2159,9 +2189,11 @@ function SpotifyApp({ active, draft, error, content, onDraftChange, onLoad, onCl
       <section className={`spotify-player-panel${content ? ' is-loaded' : ''}`} aria-label="Reproductor de Spotify">
         {content ? (
           <iframe
+            key={content.embedUrl}
             title={content.title}
             src={content.embedUrl}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            referrerPolicy="strict-origin-when-cross-origin"
             loading="lazy"
           />
         ) : (
@@ -2618,8 +2650,11 @@ function ScreenControlDrawer({
           <div className="drawer-zone-list">
             {ZONES.map((zone) => {
               const current = screenZones[zone.id];
-              const hasContent = Boolean(current.videoId || current.resourceUrl);
+              const hasContent = zoneHasContent(current);
               const canControlPlayback = current.contentType === 'youtube' && Boolean(current.videoId);
+              const canUseAudioControls = canUseScreenAudioControls(current);
+              const audioToggleLabel = getAudioToggleLabel(current);
+              const audioHint = getAudioControlHint(current);
               const isPaused = Boolean(current.paused);
               return (
                 <div className="drawer-zone-card" key={zone.id}>
@@ -2660,9 +2695,11 @@ function ScreenControlDrawer({
                       min="0"
                       max="100"
                       value={current.volume}
+                      disabled={!canUseAudioControls}
                       onChange={(event) => onUpdateZone(zone.id, { volume: Number(event.target.value) })}
                     />
                   </label>
+                  {audioHint && <p className="drawer-audio-hint">{audioHint}</p>}
 
                   <label className="drawer-volume">
                     <span>Tamano {current.displayScale ?? 100}%</span>
@@ -2677,9 +2714,9 @@ function ScreenControlDrawer({
                   </label>
 
                   <div className="drawer-zone-actions">
-                    <button type="button" onClick={() => onUpdateZone(zone.id, { muted: !current.muted })}>
-                      {current.muted ? <VolumeX size={17} aria-hidden="true" /> : <Volume2 size={17} aria-hidden="true" />}
-                      <span>{current.muted ? 'Mute' : 'Audio'}</span>
+                    <button type="button" onClick={() => onUpdateZone(zone.id, { muted: !current.muted })} disabled={!canUseAudioControls}>
+                      {current.muted ? <Volume2 size={17} aria-hidden="true" /> : <VolumeX size={17} aria-hidden="true" />}
+                      <span>{audioToggleLabel}</span>
                     </button>
                     <button type="button" onClick={() => onClearZone(zone.id)}>
                       <Eraser size={17} aria-hidden="true" />

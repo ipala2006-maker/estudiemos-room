@@ -8,6 +8,7 @@ const SPOTIFY_SUPPORTED_TYPES = {
 };
 
 const SPOTIFY_ID_PATTERN = /^[A-Za-z0-9]{12,32}$/;
+const SPOTIFY_HOST_PATTERN = /^(?:www\.)?open\.spotify\.com$/i;
 
 export function parseSpotifyUrl(inputValue) {
   const input = String(inputValue ?? '').trim();
@@ -27,7 +28,7 @@ export function parseSpotifyUrl(inputValue) {
     return { ok: false, error: 'El link no parece una URL valida de Spotify.' };
   }
 
-  if (url.hostname !== 'open.spotify.com') {
+  if (!SPOTIFY_HOST_PATTERN.test(url.hostname)) {
     return { ok: false, error: 'Usa un link de open.spotify.com.' };
   }
 
@@ -65,6 +66,7 @@ function buildSpotifyResult(type, id, originalUrl) {
       id: cleanId,
       label: SPOTIFY_SUPPORTED_TYPES[type],
       inputUrl: originalUrl,
+      uri: `spotify:${type}:${cleanId}`,
       watchUrl,
       embedUrl,
       title: `Spotify - ${SPOTIFY_SUPPORTED_TYPES[type]}`

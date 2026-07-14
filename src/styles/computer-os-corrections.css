@@ -1147,6 +1147,13 @@
   white-space: nowrap;
 }
 
+.spotify-current-card small {
+  color: rgba(234, 244, 238, 0.62);
+  font-size: 0.78rem;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
 .spotify-workspace {
   min-width: 0;
   display: grid;
