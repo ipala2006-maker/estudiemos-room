@@ -6,7 +6,6 @@ import { getEquippedSkinState, getSkinVisuals } from '../data/focusEconomy.js';
 import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
 import { Casa1 } from '../maps/Casa1.js';
 import { buildYouTubeEmbedUrl } from '../utils/youtube.js';
-import environmentMeadowBackdropUrl from '../assets/environment-meadow-backdrop.jpg';
 import playerAvatarBackUrl from '../assets/player-avatar-back.png';
 import playerAvatarFrontUrl from '../assets/player-avatar-front.png';
 import playerAvatarSideUrl from '../assets/player-avatar-side.png';
@@ -47,9 +46,7 @@ const CAMERA_SENSITIVITY = {
   pitch: 0.0017
 };
 const CAMERA_VIEW_MODES = [
-  { id: 'first-person', label: 'Primera persona' },
-  { id: 'third-person', label: 'Tercera persona' },
-  { id: 'front-person', label: 'Camara frontal' }
+  { id: 'first-person', label: 'Primera persona' }
 ];
 const CAMERA_VIEW_TRANSITION = 11;
 const FREE_MOUSE_LOOK_SCALE = 0.62;
@@ -236,8 +233,6 @@ export function FirstPersonWorld({
     scene.add(companionMascot.group);
     const firstPersonArm = createFirstPersonArmViewModel();
     camera.add(firstPersonArm.group);
-    const playerAvatar = createStudyPlayerAvatar();
-    scene.add(playerAvatar.group);
 
     const keys = {
       forward: false,
@@ -265,8 +260,7 @@ export function FirstPersonWorld({
     let pitch = 0;
     let targetYaw = 0;
     let targetPitch = 0;
-    let cameraModeIndex = 0;
-    let cameraMode = CAMERA_VIEW_MODES[cameraModeIndex].id;
+    const cameraMode = CAMERA_VIEW_MODES[0].id;
     let pointerLocked = false;
     let lastFreeMouseX = null;
     let lastFreeMouseY = null;
@@ -315,18 +309,9 @@ export function FirstPersonWorld({
     }
 
     function applyCameraModeVisuals() {
-      const isFirstPerson = cameraMode === 'first-person';
-      firstPersonArm.group.visible = isFirstPerson;
-      playerAvatar.group.visible = !isFirstPerson;
+      firstPersonArm.group.visible = true;
       mount.dataset.cameraMode = cameraMode;
-      mount.dataset.cameraModeLabel = CAMERA_VIEW_MODES[cameraModeIndex].label;
-    }
-
-    function cycleCameraMode() {
-      cameraModeIndex = (cameraModeIndex + 1) % CAMERA_VIEW_MODES.length;
-      cameraMode = CAMERA_VIEW_MODES[cameraModeIndex].id;
-      applyCameraModeVisuals();
-      resetFreeMouseLook();
+      mount.dataset.cameraModeLabel = CAMERA_VIEW_MODES[0].label;
     }
 
     resetRef.current = resetCamera;
@@ -353,12 +338,6 @@ export function FirstPersonWorld({
     function onKeyDown(event) {
       if (!controlsEnabledRef.current) {
         clearMovementInput();
-        return;
-      }
-
-      if (event.code === 'F5' || event.key === 'F5') {
-        event.preventDefault();
-        cycleCameraMode();
         return;
       }
 
@@ -535,7 +514,6 @@ export function FirstPersonWorld({
         updateCssAgendaContent(cssAgendaBoard, agendaItemsRef.current, 4);
       }
       updateCompanionDachshund(companionMascot, playerViewProxy, delta, doorOpenRef.current, focusProgressRef.current);
-      updateStudyPlayerAvatar(playerAvatar, playerPosition, yaw, hasMovementInput, movementVelocity, delta, frameTime, cameraMode, eyeHeight);
       updateFirstPersonArmViewModel(firstPersonArm, delta, hasMovementInput, frameTime);
       updateCameraForViewMode(
         camera,
@@ -670,11 +648,11 @@ function createIllustratedFirstPersonArmViewModel() {
   group.renderOrder = 10000;
 
   const pivot = new THREE.Group();
-  pivot.position.set(0.43, -0.47, -1.05);
-  pivot.rotation.set(-0.05, -0.05, 0.02);
+  pivot.position.set(0.58, -0.52, -1.08);
+  pivot.rotation.set(-0.06, -0.08, 0.02);
   group.add(pivot);
 
-  const width = 1.55;
+  const width = 1.34;
   const handPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(width, width / PLAYER_HAND_VIEWMODEL_ASPECT),
     createImageAssetMaterial(playerHandViewModelUrl, {
@@ -2428,46 +2406,13 @@ function addNeighborhood(scene, materials) {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  addAiMeadowEnvironmentBackdrop(scene);
+  addStaticSkyDome(scene);
   addModelNeighborhoodHouses(scene);
   addModelNatureAssets(scene);
   addProfessionalGrassLayer(scene);
   addInfiniteMeadowBackdrop(scene);
   addExteriorIdentityDetails(scene, textures);
   addExteriorCinematicLighting(scene);
-}
-
-function addAiMeadowEnvironmentBackdrop(scene) {
-  const backdropGroup = new THREE.Group();
-  backdropGroup.name = 'ai-generated-meadow-environment-backdrop';
-  const radius = 188;
-  const height = 172;
-  const texture = getImageAssetTexture(environmentMeadowBackdropUrl);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.repeat.set(1, 1);
-  texture.offset.set(0, 0);
-  texture.needsUpdate = true;
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-    side: THREE.BackSide,
-    depthWrite: false,
-    fog: false,
-    transparent: false
-  });
-
-  const panorama = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, height, 56, 1, true),
-    material
-  );
-  panorama.name = 'ai-meadow-horizon-panorama';
-  panorama.position.y = height * 0.42;
-  panorama.rotation.y = -Math.PI * 0.62;
-  panorama.renderOrder = -22;
-  panorama.frustumCulled = false;
-  backdropGroup.add(panorama);
-
-  scene.add(backdropGroup);
 }
 
 function addInfiniteMeadowBackdrop(scene) {
