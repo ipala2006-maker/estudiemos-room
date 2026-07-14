@@ -6,9 +6,12 @@ import { getEquippedSkinState, getSkinVisuals } from '../data/focusEconomy.js';
 import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
 import { Casa1 } from '../maps/Casa1.js';
 import { buildYouTubeEmbedUrl } from '../utils/youtube.js';
+import environmentMeadowBackdropUrl from '../assets/environment-meadow-backdrop.jpg';
 import playerAvatarBackUrl from '../assets/player-avatar-back.png';
 import playerAvatarFrontUrl from '../assets/player-avatar-front.png';
 import playerHandViewModelUrl from '../assets/player-hand-viewmodel.png';
+import playerVehicleBackUrl from '../assets/player-vehicle-back.png';
+import playerVehicleFrontUrl from '../assets/player-vehicle-front.png';
 
 const activeMap = Casa1;
 const startPosition = activeMap.startPosition;
@@ -22,9 +25,9 @@ const modelLoader = new GLTFLoader();
 const PERFORMANCE_PROFILE = {
   maxPixelRatio: 1,
   grassBlades: 24,
-  horizonTrees: 18,
-  horizonShrubs: 22,
-  horizonFlowers: 28,
+  horizonTrees: 8,
+  horizonShrubs: 8,
+  horizonFlowers: 12,
   skyWidthSegments: 24,
   skyHeightSegments: 12
 };
@@ -53,6 +56,9 @@ const FIRST_PERSON_ARM_SWING_SECONDS = 0.26;
 const PLAYER_AVATAR_FRONT_ASPECT = 364 / 1024;
 const PLAYER_AVATAR_BACK_ASPECT = 380 / 1024;
 const PLAYER_HAND_VIEWMODEL_ASPECT = 960 / 583;
+const PLAYER_VEHICLE_BACK_ASPECT = 960 / 424;
+const PLAYER_VEHICLE_FRONT_ASPECT = 960 / 364;
+const ENVIRONMENT_MEADOW_BACKDROP_ASPECT = 1536 / 669;
 const EDGE_OPACITY_SCALE = 0.28;
 const MIN_EDGE_OPACITY = 0.04;
 const COMPANION_SIDE_OFFSET = -2.35;
@@ -879,9 +885,45 @@ function createIllustratedStudyPlayerAvatar() {
 
   const artGroup = new THREE.Group();
   artGroup.name = 'illustrated-player-art-rig';
+  artGroup.position.y = 0.14;
   group.add(artGroup);
 
+  const vehicleGroup = new THREE.Group();
+  vehicleGroup.name = 'illustrated-player-hover-vehicle';
+  vehicleGroup.position.y = 0.18;
+  group.add(vehicleGroup);
+
   const avatarHeight = 2.36;
+  const vehicleWidth = 1.74;
+  const vehicleBackPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(vehicleWidth, vehicleWidth / PLAYER_VEHICLE_BACK_ASPECT),
+    createImageAssetMaterial(playerVehicleBackUrl, {
+      alphaTest: 0.18,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.FrontSide
+    })
+  );
+  vehicleBackPlane.name = 'illustrated-player-vehicle-back-sprite';
+  vehicleBackPlane.position.set(0, vehicleWidth / PLAYER_VEHICLE_BACK_ASPECT / 2, 0.075);
+  vehicleBackPlane.renderOrder = 16;
+  vehicleGroup.add(vehicleBackPlane);
+
+  const vehicleFrontPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(vehicleWidth, vehicleWidth / PLAYER_VEHICLE_FRONT_ASPECT),
+    createImageAssetMaterial(playerVehicleFrontUrl, {
+      alphaTest: 0.18,
+      depthTest: true,
+      depthWrite: false,
+      side: THREE.FrontSide
+    })
+  );
+  vehicleFrontPlane.name = 'illustrated-player-vehicle-front-sprite';
+  vehicleFrontPlane.position.set(0, vehicleWidth / PLAYER_VEHICLE_FRONT_ASPECT / 2, -0.075);
+  vehicleFrontPlane.rotation.y = Math.PI;
+  vehicleFrontPlane.renderOrder = 16;
+  vehicleGroup.add(vehicleFrontPlane);
+
   const frontPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(avatarHeight * PLAYER_AVATAR_FRONT_ASPECT, avatarHeight),
     createImageAssetMaterial(playerAvatarFrontUrl, {
@@ -915,11 +957,16 @@ function createIllustratedStudyPlayerAvatar() {
     kind: 'illustrated-avatar',
     group,
     artGroup,
+    vehicleGroup,
     frontPlane,
     backPlane,
+    vehicleFrontPlane,
+    vehicleBackPlane,
     shadow,
     baseArtPosition: artGroup.position.clone(),
     baseArtRotation: artGroup.rotation.clone(),
+    baseVehiclePosition: vehicleGroup.position.clone(),
+    baseVehicleRotation: vehicleGroup.rotation.clone(),
     baseShadowScale: shadow.scale.clone()
   };
 }
@@ -1186,29 +1233,21 @@ function updateStudyPlayerAvatar(avatar, playerPosition, yaw, isWalking, velocit
   avatar.group.rotation.y = dampAngle(avatar.group.rotation.y, yaw, 14, delta);
 
   if (avatar.kind === 'illustrated-avatar') {
-    const speed = clamp(velocity.length() / WALK_SPEED, 0, 1);
-    const walk = isWalking ? speed : 0;
-    const phase = frameTime * 0.0115;
-    const idle = Math.sin(frameTime * 0.0024);
-    const bounce = Math.abs(Math.sin(phase)) * 0.038 * walk + idle * 0.006;
-    const sway = Math.sin(phase) * 0.025 * walk;
-    const lean = clamp(speed, 0, 1) * 0.028;
-
-    avatar.frontPlane.visible = cameraMode === 'front-person';
-    avatar.backPlane.visible = cameraMode !== 'front-person';
-
+    const showFront = cameraMode === 'front-person';
+    avatar.frontPlane.visible = showFront;
+    avatar.backPlane.visible = !showFront;
+    avatar.vehicleFrontPlane.visible = showFront;
+    avatar.vehicleBackPlane.visible = !showFront;
     avatar.artGroup.position.copy(avatar.baseArtPosition);
-    avatar.artGroup.position.y += bounce;
-    avatar.artGroup.position.x += sway * 0.18;
     avatar.artGroup.rotation.copy(avatar.baseArtRotation);
-    avatar.artGroup.rotation.x = -lean;
-    avatar.artGroup.rotation.z = sway + idle * 0.004;
-    avatar.artGroup.scale.set(1 - walk * 0.012, 1 + walk * 0.01, 1);
-
+    avatar.artGroup.scale.set(1, 1, 1);
+    avatar.vehicleGroup.position.copy(avatar.baseVehiclePosition);
+    avatar.vehicleGroup.rotation.copy(avatar.baseVehicleRotation);
+    avatar.vehicleGroup.scale.set(1, 1, 1);
     avatar.shadow.scale.copy(avatar.baseShadowScale);
-    avatar.shadow.scale.x += walk * 0.08;
-    avatar.shadow.scale.y += walk * 0.03;
-    avatar.shadow.material.opacity = 0.2 + walk * 0.05;
+    avatar.shadow.scale.x = 1.32;
+    avatar.shadow.scale.y = 0.54;
+    avatar.shadow.material.opacity = 0.24;
     return;
   }
 
@@ -2351,12 +2390,42 @@ function addNeighborhood(scene, materials) {
   ground.receiveShadow = true;
   scene.add(ground);
 
+  addAiMeadowEnvironmentBackdrop(scene);
   addModelNeighborhoodHouses(scene);
   addModelNatureAssets(scene);
   addProfessionalGrassLayer(scene);
   addInfiniteMeadowBackdrop(scene);
   addExteriorIdentityDetails(scene, textures);
   addExteriorCinematicLighting(scene);
+}
+
+function addAiMeadowEnvironmentBackdrop(scene) {
+  const backdropGroup = new THREE.Group();
+  backdropGroup.name = 'ai-generated-meadow-environment-backdrop';
+  const width = 560;
+  const height = width / ENVIRONMENT_MEADOW_BACKDROP_ASPECT;
+  const distance = 164;
+  const material = new THREE.MeshBasicMaterial({
+    map: getImageAssetTexture(environmentMeadowBackdropUrl),
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    fog: false,
+    transparent: false
+  });
+
+  [
+    { position: [0, height * 0.43, -distance], rotationY: 0 },
+    { position: [0, height * 0.43, distance], rotationY: Math.PI }
+  ].forEach((spec) => {
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(width, height, 1, 1), material);
+    panel.name = 'ai-meadow-horizon-panel';
+    panel.position.set(...spec.position);
+    panel.rotation.y = spec.rotationY;
+    panel.renderOrder = -18;
+    backdropGroup.add(panel);
+  });
+
+  scene.add(backdropGroup);
 }
 
 function addInfiniteMeadowBackdrop(scene) {
