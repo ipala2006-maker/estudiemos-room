@@ -1,0 +1,52 @@
+name: Codex Apply Windows 11 Computer UI
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Decode patch
+        run: |
+          python3 - <<'PY'
+          import base64, gzip
+          data = '''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'''
+          open('codex.patch', 'wb').write(gzip.decompress(base64.b64decode(data)))
+          PY
+
+      - name: Apply patch
+        run: git apply codex.patch
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit changes
+        run: |
+          git config user.name "codex-agent"
+          git config user.email "codex-agent@users.noreply.github.com"
+          git add src/components/VirtualComputerShell.jsx src/components/ComputerUI.jsx src/styles/computer-os-corrections.css src/data/buildInfo.js
+          git rm --ignore-unmatch .github/workflows/codex-apply-windows11-computer-ui-20260715.yml
+          git status --short
+          git commit -m "style: refresh virtual computer desktop" || exit 0
+          git push
