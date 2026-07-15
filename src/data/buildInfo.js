@@ -1,2 +1,2 @@
-export const BUILD_LABEL = 'Pages build 2026-07-15 13:07 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-15-1307-taskbar-profile-polish-pages';
+export const BUILD_LABEL = 'Pages build 2026-07-15 13:14 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-15-1314-static-computer-no-scrollbars-pages';
