@@ -1,0 +1,52 @@
+name: Codex Apply Taskbar Profile Polish
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Decode patch
+        run: |
+          python3 - <<'PY'
+          import base64, gzip
+          data = '''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'''
+          open('codex.patch', 'wb').write(gzip.decompress(base64.b64decode(data)))
+          PY
+
+      - name: Apply patch
+        run: git apply codex.patch
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit changes
+        run: |
+          git config user.name "codex-agent"
+          git config user.email "codex-agent@users.noreply.github.com"
+          git add src/components/VirtualComputerShell.jsx src/components/ComputerUI.jsx src/styles/computer-os-corrections.css src/data/buildInfo.js
+          git rm --ignore-unmatch .github/workflows/codex-apply-taskbar-profile-polish-20260715.yml
+          git status --short
+          git commit -m "fix: polish virtual computer taskbar" || exit 0
+          git push
