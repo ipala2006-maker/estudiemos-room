@@ -13,6 +13,9 @@ import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
 import './styles/computer-os-corrections.css';
 import './styles/camera-controls.css';
+import './styles/computer-keyboard-controls.css';
+import './styles/computer-keyboard-scroll.css';
+import './utils/installComputerKeyboardController.js';
 
 function createEmptyScreenZone() {
   return {
