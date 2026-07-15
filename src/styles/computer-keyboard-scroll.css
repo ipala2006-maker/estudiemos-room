@@ -1,0 +1,45 @@
+/* App content can scroll with the real arrow keys while the OS chrome stays fixed. */
+.computer-overlay .estudiemos-os-live-desktop :is(
+  .agenda-app-shell,
+  .settings-app-shell,
+  .spotify-app-shell,
+  .focus-profile-app,
+  .estudiemos-real-page,
+  .links-card-panel,
+  .mediahub-context-panel,
+  .screen-control-drawer
+) {
+  overflow: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(224, 196, 122, 0.46) rgba(255, 255, 255, 0.055) !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop :is(
+  .agenda-app-shell,
+  .settings-app-shell,
+  .spotify-app-shell,
+  .focus-profile-app,
+  .estudiemos-real-page,
+  .links-card-panel,
+  .mediahub-context-panel,
+  .screen-control-drawer
+)::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+  display: block !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop :is(
+  .agenda-app-shell,
+  .settings-app-shell,
+  .spotify-app-shell,
+  .focus-profile-app,
+  .estudiemos-real-page,
+  .links-card-panel,
+  .mediahub-context-panel,
+  .screen-control-drawer
+)::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(7, 12, 13, 0.84) !important;
+  border-radius: 999px !important;
+  background: rgba(224, 196, 122, 0.46) !important;
+}
