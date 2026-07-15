@@ -1,9 +1,12 @@
 import {
+  getArrowScrollDelta,
   isKeyboardActionElement,
   isTextEntryElement,
   moveFocusByArrow,
   shouldPreserveNativeArrowKey
 } from './keyboardNavigation.js';
+
+const REQUEST_DESKTOP_EVENT = 'estudiemos:computer-request-desktop';
 
 function getComputerRoot() {
   return document.querySelector('.computer-overlay .estudiemos-os-live-desktop');
@@ -29,11 +32,6 @@ function clickElement(element) {
 
 function closeDrawer(root) {
   return clickElement(root.querySelector('.screen-control-drawer button[aria-label="Cerrar panel"]'));
-}
-
-function closeFocusedWindow(root) {
-  const focusedWindow = root.querySelector('.os-window.is-focused');
-  return clickElement(focusedWindow?.querySelector('.os-window-actions button[aria-label^="Cerrar"]'));
 }
 
 function isEstudiemosAtRoot(windowElement) {
@@ -66,6 +64,10 @@ function shouldLetComputerHandleBackspace(windowElement) {
   return false;
 }
 
+function requestComputerDesktop() {
+  window.dispatchEvent(new CustomEvent(REQUEST_DESKTOP_EVENT));
+}
+
 function handleBackspace(root, event) {
   if (isTextEntryElement(event.target)) return false;
 
@@ -79,19 +81,85 @@ function handleBackspace(root, event) {
   const focusedWindow = root.querySelector('.os-window.is-focused');
   if (shouldLetComputerHandleBackspace(focusedWindow)) return false;
 
-  if (closeFocusedWindow(root)) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    return true;
+  if (root.classList.contains('computer-landing-desktop')) return false;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  requestComputerDesktop();
+  return true;
+}
+
+function canScrollElement(element, left, top) {
+  if (!element || element === document || element === window) return false;
+  const style = window.getComputedStyle(element);
+  const overflowX = `${style.overflowX} ${style.overflow}`;
+  const overflowY = `${style.overflowY} ${style.overflow}`;
+  const canScrollX = left !== 0 && element.scrollWidth > element.clientWidth + 2 && /(auto|scroll|overlay)/.test(overflowX);
+  const canScrollY = top !== 0 && element.scrollHeight > element.clientHeight + 2 && /(auto|scroll|overlay)/.test(overflowY);
+  return canScrollX || canScrollY;
+}
+
+function findScrollableFromElement(element, boundary, left, top) {
+  let current = element;
+  while (current && current !== document.body && current !== boundary?.parentElement) {
+    if (boundary && !boundary.contains(current)) return null;
+    if (canScrollElement(current, left, top)) return current;
+    current = current.parentElement;
+  }
+  return null;
+}
+
+function findKeyboardScrollTarget(scope, left, top) {
+  if (!scope) return null;
+
+  const activeCandidate = findScrollableFromElement(document.activeElement, scope, left, top);
+  if (activeCandidate) return activeCandidate;
+
+  const preferredSelectors = [
+    '.estudiemos-real-page',
+    '.estudiemos-container',
+    '.mediahub-context-panel',
+    '.links-card-panel',
+    '.settings-app-shell',
+    '.focus-profile-app',
+    '.agenda-app-shell',
+    '.spotify-app-shell',
+    '.screen-control-drawer',
+    '.os-window-content'
+  ];
+
+  for (const selector of preferredSelectors) {
+    const candidate = scope.matches?.(selector) ? scope : scope.querySelector?.(selector);
+    if (canScrollElement(candidate, left, top)) return candidate;
   }
 
-  return false;
+  const candidates = [scope, ...(scope.querySelectorAll?.('*') ?? [])];
+  return candidates.find((candidate) => canScrollElement(candidate, left, top)) ?? null;
+}
+
+function scrollElementBy(element, left, top) {
+  element?.scrollBy?.({
+    left,
+    top,
+    behavior: 'smooth'
+  });
 }
 
 function handleArrow(root, event) {
   if (!event.key.startsWith('Arrow') || shouldPreserveNativeArrowKey(event.target)) return false;
 
   const scope = getActiveComputerScope(root);
+  const scrollDelta = getArrowScrollDelta(event.key);
+  if (scrollDelta) {
+    const scrollTarget = findKeyboardScrollTarget(scope, scrollDelta[0], scrollDelta[1]);
+    if (scrollTarget) {
+      scrollElementBy(scrollTarget, scrollDelta[0], scrollDelta[1]);
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return true;
+    }
+  }
+
   if (!moveFocusByArrow(scope, event.key)) return false;
 
   event.preventDefault();
