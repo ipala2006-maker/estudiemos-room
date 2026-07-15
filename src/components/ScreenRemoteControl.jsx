@@ -1,17 +1,20 @@
 import {
-  Eraser,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Maximize2,
+  Minus,
+  MonitorUp,
   Pause,
   Play,
-  Maximize2,
-  MonitorUp,
-  RotateCcw,
+  Plus,
+  Power,
   Send,
   SkipBack,
   SkipForward,
-  Smartphone,
   Volume2,
-  VolumeX,
-  X
+  VolumeX
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseYouTubeUrl } from '../utils/youtube.js';
@@ -70,6 +73,10 @@ function getRemoteAudioHint(zone) {
   return '';
 }
 
+function clampRemoteValue(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function ScreenRemoteControl({
   screenZones,
   screenLayout,
@@ -90,6 +97,10 @@ export function ScreenRemoteControl({
   const activeZoneLabel = useMemo(
     () => REMOTE_ZONES.find((zone) => zone.id === activeZoneId)?.label ?? 'Pantalla',
     [activeZoneId]
+  );
+  const currentLayout = useMemo(
+    () => REMOTE_LAYOUTS.find((layout) => layout.id === screenLayout) ?? REMOTE_LAYOUTS[0],
+    [screenLayout]
   );
   const hasContent = zoneHasContent(activeZone);
   const canControlPlayback = activeZone.contentType === 'youtube' && Boolean(activeZone.videoId);
@@ -211,9 +222,19 @@ export function ScreenRemoteControl({
     announce(`Volumen ${value}% en ${activeZoneLabel}`);
   }
 
+  function adjustVolume(delta) {
+    const currentVolume = Number(activeZone.volume ?? 0);
+    updateVolume(clampRemoteValue(currentVolume + delta, 0, 100));
+  }
+
   function updateDisplayScale(value) {
     onUpdateZone(activeZoneId, { displayScale: value });
     announce(`Tamano ${value}% en ${activeZoneLabel}`);
+  }
+
+  function adjustDisplayScale(delta) {
+    const currentScale = Number(activeZone.displayScale ?? 100);
+    updateDisplayScale(clampRemoteValue(currentScale + delta, 80, 100));
   }
 
   function clearActiveZone() {
@@ -228,6 +249,15 @@ export function ScreenRemoteControl({
     announce(`Layout ${label}`);
   }
 
+  function cycleLayout(direction = 1) {
+    const currentIndex = Math.max(
+      0,
+      REMOTE_LAYOUTS.findIndex((layout) => layout.id === screenLayout)
+    );
+    const nextLayout = REMOTE_LAYOUTS[(currentIndex + direction + REMOTE_LAYOUTS.length) % REMOTE_LAYOUTS.length];
+    changeLayout(nextLayout.id);
+  }
+
   return (
     <section className="screen-remote-overlay" aria-label="Control remoto de pantalla">
       <div className="screen-remote-backdrop" onClick={onClose} />
@@ -236,21 +266,35 @@ export function ScreenRemoteControl({
         className="screen-remote-phone"
         role="dialog"
         aria-modal="true"
-        aria-label="Celular de control"
+        aria-label="Control remoto"
         tabIndex={-1}
       >
-        <header className="screen-remote-header">
-          <div>
-            <span>
-              <Smartphone size={16} aria-hidden="true" />
-              Control Room
-            </span>
-            <strong>{activeZoneLabel}</strong>
+        <header className="screen-remote-device-head">
+          <button type="button" className="screen-remote-key screen-remote-power" onClick={onClose} aria-label="Cerrar control">
+            <Power size={15} aria-hidden="true" />
+          </button>
+          <div className="screen-remote-brand">
+            <span>Estudiemos</span>
+            <strong>Room</strong>
           </div>
-          <button type="button" className="screen-remote-icon-button" onClick={onClose} aria-label="Cerrar control">
-            <X size={20} aria-hidden="true" />
+          <button
+            type="button"
+            className="screen-remote-key screen-remote-top-action"
+            onClick={toggleMute}
+            disabled={!canUseAudioControls}
+            aria-label={audioActionLabel}
+          >
+            {activeZone.muted ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
           </button>
         </header>
+
+        <section className="screen-remote-display" aria-label="Estado de pantalla">
+          <span>{activeZoneLabel}</span>
+          <strong>{hasContent ? activeZone.title || activeZone.videoId || 'Contenido cargado' : 'Sin contenido'}</strong>
+          <small>{remoteNote}</small>
+        </section>
+
+        {audioHint && <div className="screen-remote-audio-hint">{audioHint}</div>}
 
         <div className="screen-remote-targets" aria-label="Seleccionar pantalla">
           {REMOTE_ZONES.map((zone) => (
@@ -266,13 +310,111 @@ export function ScreenRemoteControl({
           ))}
         </div>
 
-        <section className="screen-remote-now">
-          <span>Reproduciendo</span>
-          <strong>{hasContent ? activeZone.title || activeZone.videoId || 'Contenido cargado' : 'Sin contenido'}</strong>
-          <small>{hasContent ? activeZone.watchUrl || activeZone.resourceUrl || 'Pantalla activa' : 'Pega un link de YouTube'}</small>
+        <section className="screen-remote-dpad" aria-label="Control principal">
+          <button
+            type="button"
+            className="screen-remote-key screen-remote-dpad-up"
+            onClick={() => adjustVolume(10)}
+            disabled={!canUseAudioControls}
+            aria-label="Subir volumen"
+          >
+            <ChevronUp size={18} aria-hidden="true" />
+            <span>VOL</span>
+          </button>
+          <button
+            type="button"
+            className="screen-remote-key screen-remote-dpad-left"
+            onClick={() => seekRelative(-15)}
+            disabled={!canControlPlayback}
+            aria-label="Retroceder 15 segundos"
+          >
+            <ChevronLeft size={20} aria-hidden="true" />
+            <SkipBack size={13} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="screen-remote-key screen-remote-dpad-center"
+            onClick={togglePlayback}
+            disabled={!canControlPlayback}
+            aria-label={isPaused ? 'Reproducir' : 'Pausar'}
+          >
+            {isPaused ? <Play size={18} aria-hidden="true" /> : <Pause size={18} aria-hidden="true" />}
+            <span>OK</span>
+          </button>
+          <button
+            type="button"
+            className="screen-remote-key screen-remote-dpad-right"
+            onClick={() => seekRelative(15)}
+            disabled={!canControlPlayback}
+            aria-label="Avanzar 15 segundos"
+          >
+            <SkipForward size={13} aria-hidden="true" />
+            <ChevronRight size={20} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="screen-remote-key screen-remote-dpad-down"
+            onClick={() => adjustVolume(-10)}
+            disabled={!canUseAudioControls}
+            aria-label="Bajar volumen"
+          >
+            <ChevronDown size={18} aria-hidden="true" />
+            <span>VOL</span>
+          </button>
         </section>
-        <div className="screen-remote-note" role="status">{remoteNote}</div>
-        {audioHint && <div className="screen-remote-audio-hint">{audioHint}</div>}
+
+        <section className="screen-remote-color-row" aria-label="Acciones rapidas">
+          <button
+            type="button"
+            className="screen-remote-color-key is-red"
+            onClick={clearActiveZone}
+            disabled={!hasContent}
+            aria-label="Limpiar pantalla"
+          >
+            CLR
+          </button>
+          <button
+            type="button"
+            className="screen-remote-color-key is-green"
+            onClick={skipAd}
+            disabled={!canControlPlayback}
+            aria-label="Saltar anuncio"
+          >
+            ADS
+          </button>
+          <button
+            type="button"
+            className="screen-remote-color-key is-yellow"
+            onClick={() => cycleLayout(1)}
+            aria-label="Cambiar formato"
+          >
+            FMT
+          </button>
+          <button
+            type="button"
+            className="screen-remote-color-key is-blue"
+            onClick={restartVideo}
+            disabled={!hasContent}
+            aria-label="Reiniciar contenido"
+          >
+            RPT
+          </button>
+        </section>
+
+        <section className="screen-remote-utility-row" aria-label="Ajuste de imagen">
+          <button type="button" className="screen-remote-key" onClick={() => adjustDisplayScale(-5)} aria-label="Achicar pantalla">
+            <Minus size={16} aria-hidden="true" />
+            <span>ZOOM</span>
+          </button>
+          <div className="screen-remote-format-readout">
+            <Maximize2 size={15} aria-hidden="true" />
+            <span>{currentLayout.label}</span>
+          </div>
+          <button type="button" className="screen-remote-key" onClick={() => adjustDisplayScale(5)} aria-label="Agrandar pantalla">
+            <Plus size={16} aria-hidden="true" />
+            <span>ZOOM</span>
+          </button>
+        </section>
 
         <form className="screen-remote-link" onSubmit={submitLink}>
           <label htmlFor="screen-remote-youtube">YouTube</label>
@@ -281,87 +423,14 @@ export function ScreenRemoteControl({
               id="screen-remote-youtube"
               value={linkDraft}
               onChange={(event) => setLinkDraft(event.target.value)}
-              placeholder="youtube.com/watch?v=..."
+              placeholder="Link de YouTube"
             />
-            <button type="submit" aria-label="Enviar a pantalla">
+            <button type="submit" className="screen-remote-key" aria-label="Enviar a pantalla">
               <Send size={18} aria-hidden="true" />
             </button>
           </div>
           {linkError && <p>{linkError}</p>}
         </form>
-
-        <section className="screen-remote-playback" aria-label="Controles de reproduccion">
-          <button type="button" onClick={togglePlayback} disabled={!canControlPlayback}>
-            {isPaused ? <Play size={18} aria-hidden="true" /> : <Pause size={18} aria-hidden="true" />}
-            <span>{isPaused ? 'Play' : 'Pausa'}</span>
-          </button>
-          <button type="button" onClick={() => seekRelative(-15)} disabled={!canControlPlayback}>
-            <SkipBack size={18} aria-hidden="true" />
-            <span>15s</span>
-          </button>
-          <button type="button" onClick={() => seekRelative(15)} disabled={!canControlPlayback}>
-            <SkipForward size={18} aria-hidden="true" />
-            <span>15s</span>
-          </button>
-          <button type="button" onClick={skipAd} disabled={!canControlPlayback}>
-            <SkipForward size={18} aria-hidden="true" />
-            <span>Anuncio</span>
-          </button>
-        </section>
-
-        <section className="screen-remote-controls" aria-label="Controles de pantalla">
-          <button type="button" onClick={toggleMute} disabled={!canUseAudioControls}>
-            {activeZone.muted ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
-            <span>{audioActionLabel}</span>
-          </button>
-          <button type="button" onClick={restartVideo} disabled={!hasContent}>
-            <RotateCcw size={18} aria-hidden="true" />
-            <span>Reiniciar</span>
-          </button>
-          <button type="button" onClick={clearActiveZone} disabled={!hasContent}>
-            <Eraser size={18} aria-hidden="true" />
-            <span>Limpiar</span>
-          </button>
-        </section>
-
-        <section className="screen-remote-sliders">
-          <label>
-            <span>Volumen {activeZone.volume}%</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={activeZone.volume}
-              disabled={!canUseAudioControls}
-              onChange={(event) => updateVolume(Number(event.target.value))}
-            />
-          </label>
-          <label>
-            <span>Tamano {activeZone.displayScale ?? 100}%</span>
-            <input
-              type="range"
-              min="80"
-              max="100"
-              step="5"
-              value={activeZone.displayScale ?? 100}
-              onChange={(event) => updateDisplayScale(Number(event.target.value))}
-            />
-          </label>
-        </section>
-
-        <section className="screen-remote-layouts" aria-label="Formato de pantalla">
-          {REMOTE_LAYOUTS.map((layout) => (
-            <button
-              key={layout.id}
-              type="button"
-              className={screenLayout === layout.id ? 'is-selected' : ''}
-              onClick={() => changeLayout(layout.id)}
-            >
-              <Maximize2 size={16} aria-hidden="true" />
-              <span>{layout.label}</span>
-            </button>
-          ))}
-        </section>
       </aside>
     </section>
   );

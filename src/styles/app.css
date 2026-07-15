@@ -195,14 +195,11 @@ button {
 .drawer-zone-actions button:focus-visible,
 .zone-icon-button:focus-visible,
 .zone-controls input:focus-visible,
-.screen-remote-icon-button:focus-visible,
+.screen-remote-key:focus-visible,
+.screen-remote-color-key:focus-visible,
 .screen-remote-targets button:focus-visible,
-.screen-remote-playback button:focus-visible,
-.screen-remote-controls button:focus-visible,
-.screen-remote-layouts button:focus-visible,
 .screen-remote-link button:focus-visible,
-.screen-remote-link input:focus-visible,
-.screen-remote-sliders input:focus-visible {
+.screen-remote-link input:focus-visible {
   outline: 3px solid rgba(79, 111, 120, 0.5);
   outline-offset: 3px;
 }
@@ -3833,9 +3830,7 @@ select {
 .screen-remote-backdrop {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 72% 72%, rgba(224, 196, 122, 0.13), transparent 34%),
-    linear-gradient(90deg, rgba(3, 6, 8, 0.12), rgba(3, 6, 8, 0.68));
+  background: linear-gradient(90deg, rgba(3, 6, 8, 0.16), rgba(3, 6, 8, 0.7));
   pointer-events: auto;
   animation: remote-fade-in 130ms ease-out both;
 }
@@ -3843,37 +3838,38 @@ select {
 .screen-remote-phone {
   position: relative;
   z-index: 1;
-  width: min(406px, 100%);
+  width: min(252px, calc(100vw - 28px));
   max-height: min(780px, calc(100vh - 28px));
   display: grid;
-  gap: 12px;
-  padding: 18px;
-  border: 1px solid rgba(255, 244, 215, 0.16);
-  border-radius: 26px;
+  gap: 10px;
+  padding: 18px 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 30px 30px 36px 36px;
   overflow: auto;
   background:
-    radial-gradient(circle at 20% 0%, rgba(224, 196, 122, 0.13), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025) 44%, rgba(0, 0, 0, 0.18)),
-    #071011;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055), transparent 16%, transparent 84%, rgba(255, 255, 255, 0.045)),
+    linear-gradient(180deg, #343835 0%, #171b19 44%, #090b0a 100%);
   box-shadow:
-    0 30px 92px rgba(0, 0, 0, 0.62),
-    inset 0 0 0 7px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  color: #f7f1e4;
+    0 30px 82px rgba(0, 0, 0, 0.62),
+    inset 0 0 0 5px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  color: #f3f4ef;
   scrollbar-width: thin;
-  scrollbar-color: rgba(224, 196, 122, 0.42) rgba(255, 255, 255, 0.06);
+  scrollbar-color: rgba(194, 199, 188, 0.36) rgba(255, 255, 255, 0.06);
   pointer-events: auto;
   animation: remote-phone-in 160ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
 }
 
 .screen-remote-phone::before {
   content: "";
-  justify-self: center;
-  width: 72px;
-  height: 5px;
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 48px;
+  height: 3px;
   border-radius: 999px;
-  background: rgba(255, 244, 215, 0.22);
-  box-shadow: 0 0 18px rgba(224, 196, 122, 0.12);
+  background: rgba(229, 232, 224, 0.24);
+  transform: translateX(-50%);
 }
 
 .screen-remote-header,
@@ -4135,6 +4131,378 @@ select {
 .screen-remote-layouts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.screen-remote-device-head {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 8px;
+}
+
+.screen-remote-brand {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  color: rgba(232, 235, 226, 0.66);
+  text-transform: uppercase;
+}
+
+.screen-remote-brand span {
+  font-size: 0.58rem;
+  font-weight: 880;
+}
+
+.screen-remote-brand strong {
+  color: rgba(246, 248, 239, 0.92);
+  font-size: 0.8rem;
+  font-weight: 920;
+  letter-spacing: 0.08em;
+}
+
+.screen-remote-key,
+.screen-remote-targets button,
+.screen-remote-color-key {
+  border: 0;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.03)),
+    #c8cbc4;
+  color: #141716;
+  font-weight: 900;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2),
+    0 4px 10px rgba(0, 0, 0, 0.28);
+  transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+}
+
+.screen-remote-key {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 9px;
+  font-size: 0.62rem;
+}
+
+.screen-remote-power {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02)),
+    #bb2424;
+  color: #230909;
+}
+
+.screen-remote-top-action {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02)),
+    #d4d7d0;
+}
+
+.screen-remote-display {
+  min-height: 74px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid rgba(196, 207, 194, 0.18);
+  border-radius: 13px;
+  background:
+    linear-gradient(180deg, rgba(147, 167, 154, 0.18), rgba(22, 32, 29, 0.36)),
+    #09100f;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 10px 22px rgba(0, 0, 0, 0.36);
+}
+
+.screen-remote-display span {
+  color: rgba(224, 196, 122, 0.82);
+  font-size: 0.63rem;
+  font-weight: 880;
+  text-transform: uppercase;
+}
+
+.screen-remote-display strong,
+.screen-remote-display small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screen-remote-display strong {
+  color: #f8f4df;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.screen-remote-display small {
+  color: rgba(226, 236, 225, 0.66);
+  font-size: 0.68rem;
+  font-weight: 760;
+}
+
+.screen-remote-audio-hint {
+  margin: -2px 0 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(159, 193, 176, 0.22);
+  border-radius: 10px;
+  color: rgba(220, 239, 231, 0.8);
+  background: rgba(7, 14, 13, 0.52);
+  font-size: 0.66rem;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
+.screen-remote-targets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.screen-remote-targets button {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+  font-size: 0.64rem;
+}
+
+.screen-remote-targets button.is-selected {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.04)),
+    #e0c47a;
+  color: #15140d;
+}
+
+.screen-remote-dpad {
+  position: relative;
+  justify-self: center;
+  width: 146px;
+  height: 146px;
+  display: grid;
+  grid-template-columns: repeat(3, 46px);
+  grid-template-rows: repeat(3, 46px);
+  gap: 4px;
+  place-content: center;
+  margin: 1px 0;
+}
+
+.screen-remote-dpad::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.08)),
+    #aeb3ac;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.16),
+    0 8px 16px rgba(0, 0, 0, 0.34);
+}
+
+.screen-remote-dpad .screen-remote-key {
+  position: relative;
+  z-index: 1;
+  min-height: 46px;
+  width: 46px;
+  padding: 0;
+  color: #111513;
+  background: transparent;
+  box-shadow: none;
+}
+
+.screen-remote-dpad .screen-remote-key span {
+  font-size: 0.48rem;
+  line-height: 1;
+}
+
+.screen-remote-dpad-up {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+
+.screen-remote-dpad-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.screen-remote-dpad-center {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.06)),
+    #dce0d8 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+.screen-remote-dpad-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.screen-remote-dpad-down {
+  grid-column: 2;
+  grid-row: 3;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+
+.screen-remote-color-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.screen-remote-color-key {
+  min-height: 24px;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.56rem;
+  letter-spacing: 0.02em;
+}
+
+.screen-remote-color-key.is-red {
+  background: #d02b2b;
+}
+
+.screen-remote-color-key.is-green {
+  background: #2ca15c;
+}
+
+.screen-remote-color-key.is-yellow {
+  background: #d5b839;
+  color: #201c07;
+}
+
+.screen-remote-color-key.is-blue {
+  background: #2f67b7;
+}
+
+.screen-remote-utility-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  gap: 8px;
+  align-items: center;
+}
+
+.screen-remote-utility-row .screen-remote-key {
+  min-height: 36px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  gap: 0;
+}
+
+.screen-remote-format-readout {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(8, 12, 11, 0.78);
+  color: rgba(237, 239, 231, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.screen-remote-format-readout span {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.62rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screen-remote-link {
+  display: grid;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 9px;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(5, 7, 7, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.screen-remote-link label {
+  color: rgba(231, 234, 225, 0.62);
+  font-size: 0.6rem;
+  font-weight: 880;
+  text-transform: uppercase;
+}
+
+.screen-remote-link div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 7px;
+}
+
+.screen-remote-link input {
+  min-width: 0;
+  height: 34px;
+  border: 1px solid rgba(247, 241, 228, 0.12);
+  border-radius: 999px;
+  padding: 0 10px;
+  color: #f6f4e7;
+  background: rgba(2, 4, 4, 0.82);
+  font-size: 0.72rem;
+  font-weight: 760;
+}
+
+.screen-remote-link button {
+  min-height: 34px;
+  width: 34px;
+  padding: 0;
+}
+
+.screen-remote-link input::placeholder {
+  color: rgba(247, 241, 228, 0.34);
+}
+
+.screen-remote-link p {
+  margin: 0;
+  color: #ffb7a8;
+  font-size: 0.68rem;
+  font-weight: 790;
+}
+
+.screen-remote-key:disabled,
+.screen-remote-targets button:disabled,
+.screen-remote-color-key:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.screen-remote-key:hover,
+.screen-remote-targets button:hover,
+.screen-remote-color-key:hover {
+  filter: brightness(1.08);
+}
+
+.screen-remote-key:active,
+.screen-remote-targets button:active,
+.screen-remote-color-key:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow:
+    inset 0 2px 3px rgba(0, 0, 0, 0.24),
+    0 2px 5px rgba(0, 0, 0, 0.28);
 }
 
 .screen-remote-prompt {
