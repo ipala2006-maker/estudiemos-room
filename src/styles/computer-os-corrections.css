@@ -3504,6 +3504,122 @@ button.focus-skin-preview {
   height: auto;
 }
 
+/* Strong taskbar lock: app workspace always above, taskbar always at the bottom. */
+.computer-overlay .estudiemos-os-live-desktop:not(.computer-landing-desktop) .os-screen-grid {
+  display: grid !important;
+  grid-template-areas:
+    "workspace"
+    "taskbar" !important;
+  grid-template-rows: minmax(0, 1fr) 58px !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop:not(.computer-landing-desktop) .os-photo-desktop {
+  grid-area: workspace !important;
+  position: relative !important;
+  inset: auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop:not(.computer-landing-desktop) .os-system-bar {
+  grid-area: taskbar !important;
+  position: relative !important;
+  inset: auto !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
+  height: 58px !important;
+  min-height: 58px !important;
+  max-height: 58px !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+/* Desktop side panel polish: tighter, intentional, and never cut by the taskbar. */
+.computer-landing-desktop .virtual-side-panel {
+  top: clamp(72px, 9vw, 86px);
+  right: clamp(14px, 2vw, 24px);
+  bottom: 76px;
+  width: min(330px, 34vw);
+  max-height: none;
+  align-content: start;
+  gap: 10px;
+  padding: 11px;
+  overflow: hidden !important;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+    rgba(8, 18, 24, 0.58);
+}
+
+.computer-landing-desktop .virtual-focus-card,
+.computer-landing-desktop .virtual-profile-card,
+.computer-landing-desktop .virtual-mini-grid > div,
+.computer-landing-desktop .virtual-agenda-list {
+  border-radius: 13px;
+  padding: 11px;
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.computer-landing-desktop .virtual-focus-card {
+  gap: 5px;
+}
+
+.computer-landing-desktop .virtual-focus-card p {
+  max-width: none;
+  font-size: 0.82rem;
+  line-height: 1.36;
+}
+
+.computer-landing-desktop .virtual-profile-card {
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.computer-landing-desktop .virtual-profile-orb {
+  width: 34px;
+  border-radius: 11px;
+}
+
+.computer-landing-desktop .virtual-profile-card strong,
+.computer-landing-desktop .virtual-mini-grid strong,
+.computer-landing-desktop .virtual-agenda-list span {
+  font-size: 0.82rem;
+}
+
+.computer-landing-desktop .virtual-mini-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.computer-landing-desktop .virtual-mini-grid > div {
+  min-height: 62px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 8px;
+}
+
+.computer-landing-desktop .virtual-agenda-list {
+  gap: 6px;
+  min-height: 0;
+}
+
+.computer-landing-desktop .virtual-agenda-list span {
+  gap: 8px;
+}
+
+@media (max-height: 620px) {
+  .computer-landing-desktop .virtual-side-panel {
+    top: 64px;
+    bottom: 66px;
+    gap: 8px;
+  }
+
+  .computer-landing-desktop .virtual-focus-card p,
+  .computer-landing-desktop .virtual-agenda-list {
+    display: none;
+  }
+}
+
 @media (max-width: 560px) {
   .computer-landing-desktop .virtual-desktop-shell {
     padding: 14px 14px 8px;

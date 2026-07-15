@@ -4830,6 +4830,80 @@ select {
   }
 }
 
+/* HUD visual polish: cleaner first impression when entering the room. */
+.hud.hud-compact {
+  width: min(238px, calc(100vw - 24px));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 244, 215, 0.15);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035)),
+    rgba(14, 23, 21, 0.7);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.hud-heading {
+  display: flex !important;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px !important;
+}
+
+.hud-heading strong {
+  color: #fff6dc;
+}
+
+.hud-heading span {
+  text-align: right;
+}
+
+.hud-mini-guide span {
+  border-color: rgba(255, 244, 215, 0.16);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.hud.hud-compact .hud-focus-card {
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px !important;
+  padding: 8px;
+  border-color: rgba(255, 244, 215, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(224, 196, 122, 0.16), rgba(255, 255, 255, 0.08)),
+    rgba(246, 250, 238, 0.1);
+}
+
+.hud.hud-compact .dachshund-mascot-hud {
+  width: 48px;
+  flex-basis: 48px;
+}
+
+.hud.hud-compact .dachshund-render-card {
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.hud.hud-compact .hud-focus-kicker {
+  color: #cfeee3 !important;
+}
+
+.hud.hud-compact .hud-focus-progress {
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.hud.hud-compact .hud-actions {
+  justify-content: flex-start;
+}
+
+.hud.hud-compact button {
+  border-color: rgba(255, 244, 215, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff6dc;
+}
+
 /* Product polish pass: quieter entry, cleaner HUD, and prompts that never overlap. */
 .build-version-pill,
 .hud-build-version {
