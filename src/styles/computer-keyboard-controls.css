@@ -1,0 +1,12 @@
+.estudiemos-os-live-desktop :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid rgba(174, 230, 212, 0.92);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 5px rgba(174, 230, 212, 0.14),
+    0 12px 26px rgba(0, 0, 0, 0.24);
+}
+
+.estudiemos-os-live-desktop :is(.virtual-app-tile, .os-desktop-icon, .os-running-apps button, .settings-back-button):focus-visible {
+  border-color: rgba(174, 230, 212, 0.62);
+  transform: translateY(-1px);
+}
