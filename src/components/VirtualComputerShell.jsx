@@ -4,7 +4,6 @@ import {
   Globe2,
   Music2,
   PawPrint,
-  Search,
   Settings,
   Sparkles,
   Wifi
@@ -233,11 +232,6 @@ export function VirtualComputerShell(props) {
             <div className="virtual-start-button" aria-hidden="true">
               <Sparkles size={18} />
               <span>Estudiemos</span>
-            </div>
-
-            <div className="virtual-search-pill" aria-hidden="true">
-              <Search size={16} />
-              <span>Buscar apps, recursos y agenda</span>
             </div>
 
             <div className="virtual-taskbar-tray" aria-label="Estado">
