@@ -44,3 +44,225 @@
     width: min(260px, calc(100vw - 20px));
   }
 }
+
+/* Final polish layer: imported last so it fixes the entry HUD and virtual desktop tray consistently. */
+.hud.hud-compact {
+  left: 12px;
+  top: 12px;
+  width: min(262px, calc(100vw - 24px));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(238, 224, 184, 0.16);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+    rgba(9, 15, 15, 0.72);
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.hud-heading {
+  gap: 4px !important;
+}
+
+.hud-heading strong {
+  color: #fff3cf;
+  font-size: 0.96rem;
+}
+
+.hud-heading span {
+  max-width: 112px;
+  color: rgba(241, 235, 216, 0.74) !important;
+  font-size: 0.66rem !important;
+}
+
+.hud-mini-guide {
+  gap: 5px !important;
+}
+
+.hud-mini-guide span {
+  min-height: 22px;
+  padding: 0 8px;
+  border-color: rgba(238, 224, 184, 0.13);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 246, 222, 0.78) !important;
+}
+
+.hud.hud-compact .hud-focus-card {
+  grid-template-columns: 48px minmax(0, 1fr);
+  min-height: 74px;
+  gap: 9px !important;
+  padding: 8px;
+  border: 1px solid rgba(238, 224, 184, 0.13);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(222, 190, 112, 0.13), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.065);
+}
+
+.hud.hud-compact .dachshund-mascot-hud {
+  width: 48px;
+  flex-basis: 48px;
+}
+
+.hud.hud-compact .dachshund-render-card {
+  border-radius: 9px;
+}
+
+.hud.hud-compact .hud-focus-card strong {
+  color: #fff3cf;
+  font-size: 0.82rem;
+}
+
+.hud.hud-compact .hud-focus-card span:not(.hud-focus-kicker),
+.hud.hud-compact .hud-focus-card small {
+  color: rgba(241, 235, 216, 0.7);
+  font-size: 0.66rem;
+}
+
+.hud.hud-compact .hud-focus-kicker {
+  color: #aee6d4 !important;
+}
+
+.hud.hud-compact .hud-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px !important;
+}
+
+.hud.hud-compact button {
+  min-height: 30px;
+  justify-content: center;
+  border-color: rgba(238, 224, 184, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.computer-landing-desktop .virtual-side-panel {
+  top: clamp(72px, 10vh, 88px);
+  right: clamp(16px, 2.4vw, 28px);
+  bottom: 82px;
+  width: clamp(268px, 28vw, 322px);
+  max-height: calc(100% - 156px);
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, auto);
+  gap: 9px;
+  padding: 12px;
+  overflow: hidden !important;
+  border-color: rgba(220, 238, 232, 0.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 38%),
+    linear-gradient(180deg, rgba(8, 18, 24, 0.78), rgba(5, 12, 15, 0.62));
+  box-shadow:
+    0 22px 52px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.computer-landing-desktop .virtual-focus-card,
+.computer-landing-desktop .virtual-profile-card,
+.computer-landing-desktop .virtual-mini-grid > div,
+.computer-landing-desktop .virtual-agenda-list {
+  border: 1px solid rgba(220, 238, 232, 0.13);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.065);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.computer-landing-desktop .virtual-focus-card {
+  padding: 11px 12px;
+}
+
+.computer-landing-desktop .virtual-focus-card span,
+.computer-landing-desktop .virtual-profile-card span {
+  color: rgba(223, 238, 232, 0.68);
+  font-size: 0.66rem;
+}
+
+.computer-landing-desktop .virtual-focus-card strong {
+  color: #fff4d8;
+  font-size: 0.96rem;
+}
+
+.computer-landing-desktop .virtual-focus-card p {
+  margin-top: 1px;
+  color: rgba(235, 242, 236, 0.78);
+  font-size: 0.76rem;
+}
+
+.computer-landing-desktop .virtual-profile-card {
+  min-height: 66px;
+  padding: 10px;
+}
+
+.computer-landing-desktop .virtual-profile-card strong,
+.computer-landing-desktop .virtual-mini-grid strong {
+  color: #fff4d8;
+  font-size: 0.8rem;
+}
+
+.computer-landing-desktop .virtual-profile-card small,
+.computer-landing-desktop .virtual-mini-grid span {
+  color: rgba(235, 242, 236, 0.68);
+  font-size: 0.66rem;
+}
+
+.computer-landing-desktop .virtual-mini-grid {
+  gap: 9px;
+}
+
+.computer-landing-desktop .virtual-mini-grid > div {
+  min-height: 58px;
+  padding: 10px;
+}
+
+.computer-landing-desktop .virtual-agenda-list {
+  min-height: 48px;
+  max-height: 86px;
+  padding: 10px;
+  overflow: hidden !important;
+}
+
+.computer-landing-desktop .virtual-agenda-list span {
+  min-width: 0;
+  color: rgba(235, 242, 236, 0.78);
+  font-size: 0.68rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px), (max-height: 640px) {
+  .hud.hud-compact {
+    width: min(232px, calc(100vw - 20px));
+    padding: 9px;
+  }
+
+  .hud-heading span {
+    max-width: 94px;
+  }
+
+  .hud.hud-compact .hud-focus-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+    min-height: 64px;
+  }
+
+  .hud.hud-compact .dachshund-mascot-hud {
+    width: 42px;
+    flex-basis: 42px;
+  }
+
+  .computer-landing-desktop .virtual-side-panel {
+    top: 68px;
+    bottom: 74px;
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .computer-landing-desktop .virtual-focus-card p,
+  .computer-landing-desktop .virtual-agenda-list span:nth-child(n + 3) {
+    display: none;
+  }
+}
