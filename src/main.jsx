@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { FirstPersonWorld } from './components/FirstPersonWorld.jsx';
 import { Hud } from './components/Hud.jsx';
+import { RoomSpeakerPlayer, dispatchRoomSpeakerCommand } from './components/RoomSpeakerPlayer.jsx';
 import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
+import { SpeakerRemoteControl } from './components/SpeakerRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
 import { WallAgendaEditor } from './components/WallAgendaEditor.jsx';
@@ -39,6 +41,8 @@ function createEmptyScreenZone() {
 }
 
 const AGENDA_STORAGE_KEY = 'estudiemos-room-agenda';
+const SPOTIFY_STORAGE_KEY = 'estudiemos-room-spotify-content';
+const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
 
 function createAgendaItemId(item, index) {
   const titleSlug = String(item?.title ?? 'bloque')
@@ -81,6 +85,29 @@ function loadStoredAgendaItems() {
   }
 }
 
+function loadStoredSpotifyContent() {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const savedContent = JSON.parse(window.localStorage.getItem(SPOTIFY_STORAGE_KEY) ?? 'null');
+    if (!savedContent || typeof savedContent !== 'object') return null;
+
+    const uri = String(savedContent.uri ?? '').trim();
+    const embedUrl = String(savedContent.embedUrl ?? '').trim();
+    if (!uri || !embedUrl) return null;
+
+    return {
+      ...savedContent,
+      uri,
+      embedUrl,
+      title: String(savedContent.title ?? 'Spotify').slice(0, 80),
+      label: String(savedContent.label ?? 'Spotify').slice(0, 40)
+    };
+  } catch {
+    return null;
+  }
+}
+
 function getEstimatedPlaybackSeconds(zone) {
   const baseSeconds = Math.max(0, Number(zone?.seekSeconds ?? 0));
   const lastPlaybackAt = Number(zone?.lastPlaybackAt ?? 0);
@@ -92,15 +119,24 @@ function App() {
   const [hasStarted, setHasStarted] = useState(false);
   const [computerOpen, setComputerOpen] = useState(false);
   const [screenRemoteOpen, setScreenRemoteOpen] = useState(false);
+  const [speakerRemoteOpen, setSpeakerRemoteOpen] = useState(false);
   const [wallAgendaOpen, setWallAgendaOpen] = useState(false);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
   const [isAimingAgendaBoard, setIsAimingAgendaBoard] = useState(false);
   const [isAimingScreen, setIsAimingScreen] = useState(false);
+  const [isAimingSpeaker, setIsAimingSpeaker] = useState(false);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [screenLayout, setScreenLayout] = useState('side-by-side');
   const [agendaItems, setAgendaItems] = useState(loadStoredAgendaItems);
+  const [roomSpotifyContent, setRoomSpotifyContent] = useState(loadStoredSpotifyContent);
+  const [speakerCommand, setSpeakerCommand] = useState(null);
+  const [speakerState, setSpeakerState] = useState({
+    apiState: 'idle',
+    paused: true,
+    note: 'Parlante sin musica cargada'
+  });
   const [screenZones, setScreenZones] = useState({
     upper: createEmptyScreenZone(),
     lower: createEmptyScreenZone()
@@ -114,10 +150,51 @@ function App() {
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
   const screenCommandCounterRef = useRef(0);
+  const speakerCommandCounterRef = useRef(0);
+  const spotifyStorageSnapshotRef = useRef('');
 
   useEffect(() => {
     window.localStorage.setItem(AGENDA_STORAGE_KEY, JSON.stringify(agendaItems));
   }, [agendaItems]);
+
+  useEffect(() => {
+    const serializedContent = roomSpotifyContent ? JSON.stringify(roomSpotifyContent) : '';
+    spotifyStorageSnapshotRef.current = serializedContent;
+
+    if (roomSpotifyContent) {
+      window.localStorage.setItem(SPOTIFY_STORAGE_KEY, serializedContent);
+      return;
+    }
+
+    window.localStorage.removeItem(SPOTIFY_STORAGE_KEY);
+  }, [roomSpotifyContent]);
+
+  useEffect(() => {
+    function syncSpotifyFromStorage() {
+      const rawContent = window.localStorage.getItem(SPOTIFY_STORAGE_KEY) ?? '';
+      if (rawContent === spotifyStorageSnapshotRef.current) return;
+
+      spotifyStorageSnapshotRef.current = rawContent;
+      setRoomSpotifyContent(loadStoredSpotifyContent());
+    }
+
+    syncSpotifyFromStorage();
+    const timer = window.setInterval(syncSpotifyFromStorage, 850);
+    window.addEventListener('focus', syncSpotifyFromStorage);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', syncSpotifyFromStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    function onSpeakerAimChange(event) {
+      setIsAimingSpeaker(Boolean(event.detail?.isAiming));
+    }
+
+    window.addEventListener(SPEAKER_AIM_EVENT, onSpeakerAimChange);
+    return () => window.removeEventListener(SPEAKER_AIM_EVENT, onSpeakerAimChange);
+  }, []);
 
   useEffect(() => {
     function onPointerLockChange() {
@@ -131,6 +208,11 @@ function App() {
   useEffect(() => {
     function onKeyDown(event) {
       const key = event.key.toLowerCase();
+      if (speakerRemoteOpen && key === 'escape') {
+        setSpeakerRemoteOpen(false);
+        return;
+      }
+
       if (computerOpen && key === 'escape') {
         setComputerOpen(false);
         return;
@@ -146,7 +228,7 @@ function App() {
         return;
       }
 
-      if (!hasStarted || computerOpen || screenRemoteOpen || wallAgendaOpen) return;
+      if (!hasStarted || computerOpen || screenRemoteOpen || speakerRemoteOpen || wallAgendaOpen) return;
 
       if (isNearDoor && key === 'e') {
         toggleDoorRef.current();
@@ -156,6 +238,12 @@ function App() {
       if (isAimingScreen && key === 'q') {
         document.exitPointerLock?.();
         setScreenRemoteOpen(true);
+        return;
+      }
+
+      if (isAimingSpeaker && key === 'q') {
+        document.exitPointerLock?.();
+        setSpeakerRemoteOpen(true);
         return;
       }
 
@@ -173,14 +261,27 @@ function App() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [computerOpen, hasStarted, isAimingAgendaBoard, isAimingScreen, isNearComputer, isNearDoor, screenRemoteOpen, wallAgendaOpen]);
+  }, [
+    computerOpen,
+    hasStarted,
+    isAimingAgendaBoard,
+    isAimingScreen,
+    isAimingSpeaker,
+    isNearComputer,
+    isNearDoor,
+    screenRemoteOpen,
+    speakerRemoteOpen,
+    wallAgendaOpen
+  ]);
 
   function backToStart() {
     setComputerOpen(false);
     setScreenRemoteOpen(false);
+    setSpeakerRemoteOpen(false);
     setWallAgendaOpen(false);
     setIsAimingAgendaBoard(false);
     setIsAimingScreen(false);
+    setIsAimingSpeaker(false);
     setHasStarted(false);
     setIsNearComputer(false);
     setIsNearDoor(false);
@@ -221,6 +322,36 @@ function App() {
       action,
       payload
     };
+  }
+
+  function commandRoomSpeaker(action, payload = {}) {
+    speakerCommandCounterRef.current += 1;
+    const command = {
+      id: `${Date.now()}-${speakerCommandCounterRef.current}`,
+      action,
+      payload
+    };
+
+    dispatchRoomSpeakerCommand(command);
+    setSpeakerCommand(command);
+  }
+
+  function loadSpotifyOnRoomSpeaker(content) {
+    setRoomSpotifyContent(content);
+    setSpeakerState((current) => ({
+      ...current,
+      paused: true,
+      note: content ? 'Spotify cargado en el parlante de sala' : 'Parlante sin musica cargada'
+    }));
+  }
+
+  function clearSpotifyFromRoomSpeaker() {
+    setRoomSpotifyContent(null);
+    setSpeakerState({
+      apiState: 'idle',
+      paused: true,
+      note: 'Parlante sin musica cargada'
+    });
   }
 
   function updateScreenZone(zoneId, patch) {
@@ -317,7 +448,7 @@ function App() {
     }));
   }
 
-  const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !wallAgendaOpen;
+  const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen;
   const interactionPrompts = [
     canShowWorldPrompts && isNearDoor
       ? { key: 'door', label: `E - ${isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}` }
@@ -330,6 +461,9 @@ function App() {
       : null,
     canShowWorldPrompts && isAimingScreen
       ? { key: 'screen', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
+      : null,
+    canShowWorldPrompts && isAimingSpeaker
+      ? { key: 'speaker', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
       : null
   ].filter(Boolean);
 
@@ -338,7 +472,11 @@ function App() {
   }
 
   return (
-    <main className={`game-shell${computerOpen ? ' is-computer-open' : ''}${screenRemoteOpen ? ' is-screen-remote-open' : ''}`}>
+    <main
+      className={`game-shell${computerOpen ? ' is-computer-open' : ''}${screenRemoteOpen ? ' is-screen-remote-open' : ''}${
+        speakerRemoteOpen ? ' is-speaker-remote-open' : ''
+      }`}
+    >
       <FirstPersonWorld
         onDoorOpenChange={setIsDoorOpen}
         onNearComputerChange={setIsNearComputer}
@@ -347,7 +485,7 @@ function App() {
         onScreenAimChange={setIsAimingScreen}
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
-        controlsEnabled={!computerOpen && !screenRemoteOpen && !wallAgendaOpen}
+        controlsEnabled={!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen}
         screenContentEnabled={!computerOpen}
         screenZones={screenZones}
         screenLayout={screenLayout}
@@ -381,7 +519,13 @@ function App() {
         </div>
       )}
 
-      {!computerOpen && !screenRemoteOpen && !wallAgendaOpen && !isPointerLocked && (
+      <RoomSpeakerPlayer
+        content={roomSpotifyContent}
+        command={speakerCommand}
+        onPlayerStateChange={(nextState) => setSpeakerState((current) => ({ ...current, ...nextState }))}
+      />
+
+      {!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !isPointerLocked && (
         <div className="camera-lock-prompt">
           <strong>La camara sigue el mouse</strong>
           <span>Click activa giro continuo. Esc libera el mouse.</span>
@@ -422,6 +566,17 @@ function App() {
           onScreenLayoutChange={setScreenLayout}
           onScreenCommand={commandScreenZone}
           onClose={() => setScreenRemoteOpen(false)}
+        />
+      )}
+
+      {speakerRemoteOpen && (
+        <SpeakerRemoteControl
+          content={roomSpotifyContent}
+          speakerState={speakerState}
+          onLoadSpotify={loadSpotifyOnRoomSpeaker}
+          onClearSpotify={clearSpotifyFromRoomSpeaker}
+          onSpeakerCommand={commandRoomSpeaker}
+          onClose={() => setSpeakerRemoteOpen(false)}
         />
       )}
     </main>
