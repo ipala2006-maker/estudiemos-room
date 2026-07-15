@@ -458,7 +458,7 @@ export function ComputerUI({
   );
   const activeLayout = SCREEN_LAYOUTS.find((layout) => layout.id === screenLayout) ?? SCREEN_LAYOUTS[0];
   const visibleWindows = openWindows.filter((appId) => !minimizedWindows.includes(appId));
-  const taskbarAppIds = FUNCTIONAL_APP_IDS.filter((appId) => openWindows.includes(appId));
+  const taskbarAppIds = FUNCTIONAL_APP_IDS;
   const clockLabel = useMemo(
     () =>
       clockTime.toLocaleTimeString('es-AR', {
@@ -1023,7 +1023,7 @@ export function ComputerUI({
             </div>
           </header>
 
-          <div className="computer-desktop mediahub-desktop game-os-desktop os-desktop">
+          <div className="computer-desktop mediahub-desktop game-os-desktop os-desktop os-photo-desktop">
             <aside className="os-desktop-icons" aria-label="Accesos del escritorio">
               {DESKTOP_APPS.map((app) => {
                 const Icon = app.icon;

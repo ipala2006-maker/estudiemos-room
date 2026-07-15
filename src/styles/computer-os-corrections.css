@@ -2642,9 +2642,689 @@ button.focus-skin-preview {
   background: rgba(224, 196, 122, 0.86);
 }
 
+/* Windows 11-inspired visual pass for the Casa 1 computer. */
+.estudiemos-os-live-desktop {
+  --win-glass: rgba(244, 249, 252, 0.72);
+  --win-glass-strong: rgba(255, 255, 255, 0.84);
+  --win-ink: #13202b;
+  --win-accent: #78b8df;
+  cursor: default;
+}
+
+.estudiemos-os-live-desktop .os-wallpaper {
+  background:
+    linear-gradient(132deg, rgba(12, 29, 38, 0.74), rgba(19, 42, 50, 0.16) 38%, rgba(70, 51, 76, 0.52) 72%, rgba(15, 22, 31, 0.72)),
+    linear-gradient(38deg, rgba(120, 184, 223, 0.34) 0 18%, transparent 18% 48%, rgba(224, 196, 122, 0.22) 48% 62%, transparent 62%),
+    linear-gradient(160deg, #d7edf4 0%, #6ea8bf 24%, #38475d 55%, #181d2a 100%);
+}
+
+.estudiemos-os-live-desktop .os-wallpaper::before {
+  display: block;
+  background:
+    linear-gradient(116deg, transparent 0 16%, rgba(255, 255, 255, 0.24) 16% 17%, transparent 17% 42%, rgba(255, 255, 255, 0.16) 42% 43%, transparent 43%),
+    linear-gradient(24deg, transparent 0 22%, rgba(120, 184, 223, 0.22) 22% 46%, transparent 46% 100%);
+  opacity: 0.9;
+}
+
+.estudiemos-os-live-desktop .os-wallpaper::after {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 30%, rgba(6, 12, 18, 0.32)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 46%, rgba(0, 0, 0, 0.24));
+}
+
+.estudiemos-os-live-desktop .os-desktop {
+  padding: clamp(16px, 2vw, 24px) clamp(16px, 2.2vw, 28px) 0;
+}
+
+.estudiemos-os-live-desktop .os-photo-desktop .os-desktop-icons {
+  left: clamp(18px, 2.4vw, 30px);
+  top: clamp(18px, 2.4vw, 30px);
+  width: min(248px, calc(100% - 56px));
+  display: grid;
+  grid-template-columns: repeat(2, 94px);
+  grid-auto-rows: minmax(96px, auto);
+  gap: 12px 16px;
+}
+
+.estudiemos-os-live-desktop .os-desktop-icon {
+  width: 94px;
+  min-height: 96px;
+  display: grid;
+  grid-template-rows: 50px auto;
+  justify-items: center;
+  align-content: start;
+  gap: 7px;
+  padding: 8px 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #f8fbff;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.72);
+  box-shadow: none;
+  cursor: default;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+
+.estudiemos-os-live-desktop .os-desktop-icon:hover,
+.estudiemos-os-live-desktop .os-desktop-icon:focus-visible,
+.estudiemos-os-live-desktop .os-desktop-icon.is-open {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 223, 0.18);
+}
+
+.estudiemos-os-live-desktop .os-desktop-icon:active {
+  transform: scale(0.98);
+}
+
+.estudiemos-os-live-desktop .os-icon-tile {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #123044;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(219, 238, 246, 0.86)),
+    #eef8fb;
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.estudiemos-os-live-desktop .os-desktop-icon.is-open .os-icon-tile {
+  color: #061b2a;
+  background: linear-gradient(145deg, #d8f0fb, #78b8df);
+}
+
+.estudiemos-os-live-desktop .os-icon-copy {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.estudiemos-os-live-desktop .os-icon-copy strong {
+  max-width: 78px;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 820;
+  line-height: 1.14;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.estudiemos-os-live-desktop .os-icon-copy small,
+.estudiemos-os-live-desktop .os-icon-state {
+  display: none;
+}
+
+.estudiemos-os-live-desktop .os-window {
+  inset: clamp(10px, 1.5vw, 18px) clamp(10px, 1.5vw, 18px) clamp(10px, 1.5vw, 18px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(248, 252, 253, 0.92);
+  box-shadow:
+    0 24px 70px rgba(7, 16, 24, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.estudiemos-os-live-desktop .os-window-titlebar {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px 0 12px;
+  border-bottom: 1px solid rgba(19, 32, 43, 0.08);
+  background: rgba(246, 250, 252, 0.86);
+  color: var(--win-ink);
+}
+
+.estudiemos-os-live-desktop .os-window-title {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.estudiemos-os-live-desktop .os-window-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #0e2a3c;
+  background: linear-gradient(145deg, #e9f8fe, #9bd0e8);
+}
+
+.estudiemos-os-live-desktop .os-window-title strong,
+.estudiemos-os-live-desktop .os-window-title span {
+  display: block;
+  max-width: 36vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.estudiemos-os-live-desktop .os-window-title strong {
+  color: #13202b;
+  font-size: 0.84rem;
+  font-weight: 820;
+}
+
+.estudiemos-os-live-desktop .os-window-title span {
+  color: #5b6c77;
+  font-size: 0.68rem;
+  font-weight: 720;
+}
+
+.estudiemos-os-live-desktop .os-window-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.estudiemos-os-live-desktop .os-window-actions button {
+  width: 38px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #394b57;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.estudiemos-os-live-desktop .os-window-actions button:hover {
+  background: rgba(19, 32, 43, 0.08);
+}
+
+.estudiemos-os-live-desktop .os-window-actions button:last-child:hover,
+.estudiemos-os-live-desktop .os-close-button:hover {
+  background: rgba(224, 72, 72, 0.92);
+  color: #ffffff;
+}
+
+.estudiemos-os-live-desktop .os-window-content {
+  background: rgba(249, 252, 252, 0.96);
+}
+
+.estudiemos-os-live-desktop .os-system-bar {
+  min-height: 60px;
+  grid-template-columns: minmax(104px, auto) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(239, 246, 249, 0.74);
+  color: var(--win-ink);
+  box-shadow:
+    0 -18px 46px rgba(8, 18, 28, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+.estudiemos-os-live-desktop .os-running-apps {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow: 0 8px 28px rgba(18, 42, 55, 0.1);
+}
+
+.estudiemos-os-live-desktop .os-running-apps button {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #1d3442;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+.estudiemos-os-live-desktop .os-running-apps button:hover,
+.estudiemos-os-live-desktop .os-running-apps button.is-focused,
+.estudiemos-os-live-desktop .os-running-apps button[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 5px 16px rgba(23, 46, 58, 0.12);
+}
+
+.estudiemos-os-live-desktop .os-running-apps button::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 5px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(26, 84, 122, 0.58);
+  opacity: 0;
+  transform: translateX(-50%);
+}
+
+.estudiemos-os-live-desktop .os-running-apps button[aria-pressed="true"]::after,
+.estudiemos-os-live-desktop .os-running-apps button.is-focused::after {
+  opacity: 1;
+}
+
+.estudiemos-os-live-desktop .os-running-apps button span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.estudiemos-os-live-desktop .os-screen-button {
+  min-height: 42px;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #1d3442;
+  box-shadow: 0 8px 24px rgba(18, 42, 55, 0.08);
+}
+
+.estudiemos-os-live-desktop .os-clock {
+  min-height: 42px;
+  display: grid;
+  align-content: center;
+  justify-items: end;
+  padding: 0 10px;
+  border-radius: 11px;
+  color: #1d3442;
+}
+
+.estudiemos-os-live-desktop .os-clock strong {
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.estudiemos-os-live-desktop .os-clock span {
+  color: #526979;
+  font-size: 0.66rem;
+  font-weight: 760;
+}
+
+.estudiemos-os-live-desktop .os-close-button {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  color: #1d3442;
+  box-shadow: none;
+}
+
+.estudiemos-os-live-desktop .os-action-toast {
+  border-radius: 12px;
+  background: rgba(244, 249, 252, 0.84);
+  color: #13202b;
+}
+
 @media (max-width: 640px) {
   .game-shell::after {
     width: 6px;
     height: 6px;
+  }
+}
+
+/* Final Windows 11 desktop treatment: cosmetic only, no app behavior changes. */
+.computer-landing-desktop {
+  color: #f8fbff;
+  background:
+    radial-gradient(circle at 22% 20%, rgba(111, 194, 242, 0.5), transparent 29%),
+    radial-gradient(circle at 80% 24%, rgba(224, 196, 122, 0.22), transparent 26%),
+    linear-gradient(135deg, rgba(7, 21, 31, 0.82), rgba(16, 33, 47, 0.3) 45%, rgba(55, 38, 68, 0.66)),
+    linear-gradient(160deg, #102033 0%, #24627b 35%, #2f405c 62%, #101827 100%);
+}
+
+.computer-landing-desktop .virtual-desktop-shell {
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0;
+  padding: clamp(18px, 2.3vw, 30px) clamp(18px, 2.5vw, 34px) 10px;
+  background:
+    linear-gradient(112deg, transparent 0 28%, rgba(255, 255, 255, 0.16) 28% 29%, transparent 29% 58%, rgba(120, 184, 223, 0.18) 58% 74%, transparent 74%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(2, 8, 16, 0.16));
+}
+
+.computer-landing-desktop .virtual-desktop-content {
+  position: relative;
+  display: block;
+  min-width: 0;
+  min-height: 0;
+}
+
+.computer-landing-desktop .virtual-desktop-topbar {
+  position: absolute;
+  top: clamp(16px, 2vw, 24px);
+  right: clamp(16px, 2vw, 24px);
+  z-index: 3;
+  width: min(320px, calc(100% - 32px));
+  min-height: 48px;
+  padding: 9px 12px;
+  border-color: rgba(255, 255, 255, 0.22);
+  border-radius: 16px;
+  background: rgba(9, 20, 30, 0.46);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.computer-landing-desktop .virtual-brand {
+  align-items: center;
+  gap: 8px;
+}
+
+.computer-landing-desktop .virtual-brand span {
+  color: rgba(248, 251, 255, 0.62);
+}
+
+.computer-landing-desktop .virtual-brand strong {
+  color: #ffffff;
+  font-size: 0.94rem;
+}
+
+.computer-landing-desktop .virtual-status-tray span {
+  min-height: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(248, 251, 255, 0.82);
+}
+
+.computer-landing-desktop .virtual-status-tray span:not(:first-child) {
+  display: none;
+}
+
+.computer-landing-desktop .virtual-app-grid {
+  width: min(248px, 44vw);
+  max-height: calc(100% - 18px);
+  grid-template-columns: repeat(2, 94px);
+  grid-auto-rows: minmax(96px, auto);
+  align-content: start;
+  gap: 12px 16px;
+  padding: 0;
+  overflow: visible;
+}
+
+.computer-landing-desktop .virtual-app-tile {
+  width: 94px;
+  min-height: 96px;
+  display: grid;
+  grid-template-rows: 52px auto;
+  justify-items: center;
+  align-content: start;
+  gap: 7px;
+  padding: 8px 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #ffffff;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.72);
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+
+.computer-landing-desktop .virtual-app-tile.is-ready:hover,
+.computer-landing-desktop .virtual-app-tile.is-ready:focus-visible {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(120, 184, 223, 0.18);
+}
+
+.computer-landing-desktop .virtual-app-tile.is-ready:active {
+  transform: scale(0.98);
+}
+
+.computer-landing-desktop .virtual-app-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  color: #0e2a3c;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(218, 239, 248, 0.88)),
+    #edf8fc;
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+}
+
+.computer-landing-desktop .virtual-app-copy {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+}
+
+.computer-landing-desktop .virtual-app-copy strong {
+  max-width: 82px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 820;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.computer-landing-desktop .virtual-app-copy small,
+.computer-landing-desktop .virtual-app-state {
+  display: none;
+}
+
+.computer-landing-desktop .virtual-side-panel {
+  position: absolute;
+  top: clamp(88px, 12vw, 112px);
+  right: clamp(16px, 2vw, 24px);
+  z-index: 2;
+  width: min(330px, 36vw);
+  max-height: calc(100% - 130px);
+  padding: 12px;
+  border-color: rgba(255, 255, 255, 0.22);
+  border-radius: 18px;
+  background: rgba(9, 20, 30, 0.44);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.computer-landing-desktop .virtual-focus-card,
+.computer-landing-desktop .virtual-agenda-list,
+.computer-landing-desktop .virtual-mini-grid > div,
+.computer-landing-desktop .virtual-mascot-card {
+  border-color: rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.computer-landing-desktop .virtual-focus-card strong,
+.computer-landing-desktop .virtual-mini-grid strong,
+.computer-landing-desktop .virtual-agenda-list strong {
+  color: #fff6dc;
+}
+
+.virtual-windows-taskbar {
+  position: relative;
+  z-index: 4;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: auto minmax(180px, 420px) auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(820px, calc(100% - 18px));
+  margin: 10px auto 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 18px;
+  color: #112130;
+  background: rgba(239, 246, 249, 0.72);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.virtual-start-button,
+.virtual-search-pill,
+.virtual-taskbar-tray {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.virtual-start-button {
+  gap: 8px;
+  padding: 0 13px;
+  font-weight: 860;
+}
+
+.virtual-search-pill {
+  min-width: 0;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 14px;
+  color: #4e6574;
+  font-size: 0.82rem;
+  font-weight: 740;
+}
+
+.virtual-search-pill span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.virtual-taskbar-tray {
+  gap: 8px;
+  padding: 0 12px;
+  font-size: 0.76rem;
+  font-weight: 820;
+}
+
+.virtual-taskbar-tray span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.virtual-taskbar-tray strong {
+  font-size: 0.74rem;
+}
+
+.estudiemos-os-live-desktop .os-window {
+  background: rgba(13, 22, 31, 0.94);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.estudiemos-os-live-desktop .os-window-titlebar {
+  background: rgba(12, 22, 31, 0.92);
+  color: #f8fbff;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.estudiemos-os-live-desktop .os-window-title strong {
+  color: #ffffff;
+}
+
+.estudiemos-os-live-desktop .os-window-title span {
+  color: rgba(248, 251, 255, 0.6);
+}
+
+.estudiemos-os-live-desktop .os-window-actions button {
+  color: rgba(248, 251, 255, 0.78);
+}
+
+.estudiemos-os-live-desktop .os-window-actions button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.estudiemos-os-live-desktop .os-window-content {
+  background: rgba(9, 16, 22, 0.96);
+}
+
+.estudiemos-os-live-desktop .os-system-bar {
+  background: rgba(15, 24, 33, 0.78);
+  border-top-color: rgba(255, 255, 255, 0.18);
+  color: #f8fbff;
+}
+
+.estudiemos-os-live-desktop .os-running-apps {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.estudiemos-os-live-desktop .os-running-apps button,
+.estudiemos-os-live-desktop .os-screen-button,
+.estudiemos-os-live-desktop .os-clock,
+.estudiemos-os-live-desktop .os-close-button {
+  color: #f8fbff;
+}
+
+.estudiemos-os-live-desktop .os-running-apps button:hover,
+.estudiemos-os-live-desktop .os-running-apps button.is-focused,
+.estudiemos-os-live-desktop .os-running-apps button[aria-pressed="true"],
+.estudiemos-os-live-desktop .os-screen-button,
+.estudiemos-os-live-desktop .os-close-button {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.estudiemos-os-live-desktop .os-clock span {
+  color: rgba(248, 251, 255, 0.58);
+}
+
+@media (max-width: 900px) {
+  .computer-landing-desktop .virtual-desktop-topbar,
+  .computer-landing-desktop .virtual-side-panel {
+    display: none;
+  }
+
+  .computer-landing-desktop .virtual-app-grid {
+    width: min(248px, 68vw);
+  }
+
+  .virtual-windows-taskbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .computer-landing-desktop .virtual-desktop-shell {
+    padding: 14px 14px 8px;
+  }
+
+  .computer-landing-desktop .virtual-app-grid {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+    gap: 9px;
+  }
+
+  .computer-landing-desktop .virtual-app-tile {
+    width: auto;
+  }
+
+  .virtual-windows-taskbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    min-height: 54px;
+  }
+
+  .virtual-start-button span,
+  .virtual-taskbar-tray {
+    display: none;
   }
 }
