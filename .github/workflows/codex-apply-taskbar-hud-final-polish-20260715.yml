@@ -1,0 +1,44 @@
+name: Codex Apply Final Taskbar HUD Polish
+
+on:
+  push:
+    paths:
+      - '.github/workflows/codex-apply-taskbar-hud-final-polish-20260715.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply Codex patch
+        shell: bash
+        run: |
+          cat > /tmp/codex.patch.b64 <<'PATCH_B64'
+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
+PATCH_B64
+          base64 -d /tmp/codex.patch.b64 | gzip -d > /tmp/codex.patch
+          git apply /tmp/codex.patch
+          rm .github/workflows/codex-apply-taskbar-hud-final-polish-20260715.yml
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name "codex-agent"
+          git config user.email "codex-agent@users.noreply.github.com"
+          git add src/styles/app.css src/styles/computer-os-corrections.css src/data/buildInfo.js .github/workflows/codex-apply-taskbar-hud-final-polish-20260715.yml
+          git commit -m "fix: polish virtual desktop and entry HUD"
+          git push origin main
