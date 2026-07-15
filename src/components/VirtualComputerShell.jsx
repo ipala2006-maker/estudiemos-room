@@ -8,25 +8,18 @@ import {
   Sparkles,
   Wifi
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getEquippedSkinState } from '../data/focusEconomy.js';
 import { studyAgendaItems } from '../data/studyAgenda.js';
+import {
+  isKeyboardActionElement,
+  isTextEntryElement,
+  moveFocusByArrow,
+  shouldPreserveNativeArrowKey
+} from '../utils/keyboardNavigation.js';
 import { ComputerUI } from './ComputerUI.jsx';
 
-const TEXT_ENTRY_INPUT_TYPES = new Set([
-  'date',
-  'datetime-local',
-  'email',
-  'month',
-  'number',
-  'password',
-  'search',
-  'tel',
-  'text',
-  'time',
-  'url',
-  'week'
-]);
+const REQUEST_DESKTOP_EVENT = 'estudiemos:computer-request-desktop';
 
 const DESKTOP_APPS = [
   {
@@ -79,15 +72,6 @@ const DESKTOP_APPS = [
   }
 ];
 
-function isTextEntryElement(element) {
-  const tagName = element?.tagName?.toLowerCase();
-  if (tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable)) return true;
-  if (tagName !== 'input') return false;
-
-  const inputType = String(element.getAttribute?.('type') || element.type || 'text').toLowerCase();
-  return TEXT_ENTRY_INPUT_TYPES.has(inputType);
-}
-
 export function VirtualComputerShell(props) {
   const { agendaItems = studyAgendaItems, focusEconomy, onClose } = props;
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
@@ -95,24 +79,57 @@ export function VirtualComputerShell(props) {
   const agendaLead = agendaPreviewItems[0] ?? agendaItems[0] ?? null;
   const [appOpen, setAppOpen] = useState(false);
   const [initialApp, setInitialApp] = useState('estudiemos');
+  const desktopRootRef = useRef(null);
 
   useEffect(() => {
     function onBackspaceFallback(event) {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
-      if (event.key !== 'Backspace' || isTextEntryElement(event.target)) return;
 
-      event.preventDefault();
-      if (appOpen) {
-        setAppOpen(false);
+      if (event.key === 'Backspace') {
+        if (isTextEntryElement(event.target)) return;
+
+        event.preventDefault();
+        if (appOpen) {
+          setAppOpen(false);
+          return;
+        }
+
+        onClose?.();
         return;
       }
 
-      onClose?.();
+      if (appOpen || shouldPreserveNativeArrowKey(event.target)) return;
+
+      if (event.key.startsWith('Arrow') && moveFocusByArrow(desktopRootRef.current, event.key)) {
+        event.preventDefault();
+        return;
+      }
+
+      if (event.key === 'Enter' && !isTextEntryElement(event.target)) {
+        const activeElement = document.activeElement;
+        if (isKeyboardActionElement(activeElement) && desktopRootRef.current?.contains(activeElement)) {
+          event.preventDefault();
+          activeElement.click();
+        }
+      }
     }
 
     document.addEventListener('keydown', onBackspaceFallback);
     return () => document.removeEventListener('keydown', onBackspaceFallback);
   }, [appOpen, onClose]);
+
+  useEffect(() => {
+    if (!appOpen) desktopRootRef.current?.focus({ preventScroll: true });
+  }, [appOpen]);
+
+  useEffect(() => {
+    function onComputerDesktopRequest() {
+      setAppOpen(false);
+    }
+
+    window.addEventListener(REQUEST_DESKTOP_EVENT, onComputerDesktopRequest);
+    return () => window.removeEventListener(REQUEST_DESKTOP_EVENT, onComputerDesktopRequest);
+  }, []);
 
   if (appOpen) {
     return <ComputerUI {...props} initialApp={initialApp} onBackToDesktop={() => setAppOpen(false)} />;
@@ -125,8 +142,10 @@ export function VirtualComputerShell(props) {
 
   return (
     <section
+      ref={desktopRootRef}
       className="computer-overlay mediahub-boot-overlay"
       data-computer-shell-state="desktop"
+      tabIndex={-1}
       aria-label="Escritorio de la computadora de Casa 1"
     >
       <div className="computer-window computer-window-wide mediahub-window game-computer-window estudiemos-os-live-desktop computer-landing-desktop">
