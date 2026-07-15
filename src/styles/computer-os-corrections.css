@@ -1372,11 +1372,11 @@
   font-weight: 690;
 }
 
-.virtual-mascot-card {
+.virtual-profile-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 38px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 11px;
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 8px;
@@ -1384,23 +1384,37 @@
   box-shadow: 0 20px 52px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.virtual-mascot-card div {
+.virtual-profile-orb {
+  width: 38px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #102019;
+  background: linear-gradient(145deg, #e0c47a, #9fc1b0);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.virtual-profile-card div {
   min-width: 0;
   display: grid;
   gap: 3px;
 }
 
-.virtual-mascot-card span,
-.virtual-mascot-card small {
+.virtual-profile-card div span,
+.virtual-profile-card small {
   color: rgba(244, 248, 244, 0.68);
   font-size: 0.76rem;
   font-weight: 760;
 }
 
-.virtual-mascot-card strong {
+.virtual-profile-card strong {
   color: #fff4d7;
   font-size: 1.04rem;
   font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .focus-profile-app {
@@ -3145,7 +3159,7 @@ button.focus-skin-preview {
 .computer-landing-desktop .virtual-focus-card,
 .computer-landing-desktop .virtual-agenda-list,
 .computer-landing-desktop .virtual-mini-grid > div,
-.computer-landing-desktop .virtual-mascot-card {
+.computer-landing-desktop .virtual-profile-card {
   border-color: rgba(255, 255, 255, 0.14);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.08);
@@ -3176,6 +3190,14 @@ button.focus-skin-preview {
   color: #112130;
   background: rgba(239, 246, 249, 0.72);
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.computer-landing-desktop .virtual-profile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #112130;
+  background: rgba(224, 196, 122, 0.78);
 }
 
 .virtual-start-button,
@@ -3266,14 +3288,68 @@ button.focus-skin-preview {
 }
 
 .estudiemos-os-live-desktop .os-system-bar {
+  position: relative;
+  z-index: 20;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
   background: rgba(15, 24, 33, 0.78);
   border-top-color: rgba(255, 255, 255, 0.18);
   color: #f8fbff;
 }
 
+.estudiemos-os-live-desktop .os-taskbar-start {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: #102238;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(158, 214, 238, 0.9)),
+    #eaf8fd;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
 .estudiemos-os-live-desktop .os-running-apps {
+  justify-self: center;
+  min-width: 0;
+  max-width: min(392px, 100%);
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  overflow: hidden;
+  padding: 4px;
+  border-radius: 15px;
   border-color: rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.08);
+}
+
+.estudiemos-os-live-desktop .os-running-apps button {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  border-radius: 11px;
+}
+
+.estudiemos-os-live-desktop .os-running-apps button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.estudiemos-os-live-desktop .os-system-tray {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 6px;
 }
 
 .estudiemos-os-live-desktop .os-running-apps button,
@@ -3295,6 +3371,23 @@ button.focus-skin-preview {
   color: rgba(248, 251, 255, 0.58);
 }
 
+.estudiemos-os-live-desktop .os-screen-button {
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 12px;
+}
+
+.estudiemos-os-live-desktop .os-clock {
+  min-width: 76px;
+  min-height: 40px;
+  padding: 0 8px;
+}
+
+.estudiemos-os-live-desktop .os-close-button {
+  width: 40px;
+  height: 40px;
+}
+
 @media (max-width: 900px) {
   .computer-landing-desktop .virtual-desktop-topbar,
   .computer-landing-desktop .virtual-side-panel {
@@ -3307,6 +3400,40 @@ button.focus-skin-preview {
 
   .virtual-windows-taskbar {
     grid-template-columns: auto auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .estudiemos-os-live-desktop .os-system-bar {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding-inline: 8px;
+  }
+
+  .estudiemos-os-live-desktop .os-taskbar-start,
+  .estudiemos-os-live-desktop .os-close-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .estudiemos-os-live-desktop .os-running-apps {
+    max-width: 300px;
+  }
+
+  .estudiemos-os-live-desktop .os-running-apps button {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+  }
+
+  .estudiemos-os-live-desktop .os-screen-button span,
+  .estudiemos-os-live-desktop .os-clock span {
+    display: none;
+  }
+
+  .estudiemos-os-live-desktop .os-clock {
+    min-width: 50px;
   }
 }
 

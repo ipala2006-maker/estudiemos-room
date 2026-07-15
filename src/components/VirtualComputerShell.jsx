@@ -9,7 +9,6 @@ import {
   Wifi
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { DachshundMascot } from './DachshundMascot.jsx';
 import { getEquippedSkinState } from '../data/focusEconomy.js';
 import { studyAgendaItems } from '../data/studyAgenda.js';
 import { ComputerUI } from './ComputerUI.jsx';
@@ -145,6 +144,12 @@ export function VirtualComputerShell(props) {
                 <Wifi size={16} aria-hidden="true" />
                 Red local
               </span>
+              {focusEconomy && (
+                <span className="virtual-profile-pill">
+                  <PawPrint size={16} aria-hidden="true" />
+                  {focusEconomy.progress.coins} Monedas
+                </span>
+              )}
               <span>Modo enfoque</span>
             </div>
           </header>
@@ -183,12 +188,14 @@ export function VirtualComputerShell(props) {
                 <p>Abre Estudiemos, organiza la agenda o manda material a la pantalla de la sala.</p>
               </div>
               {focusEconomy && (
-                <div className="virtual-mascot-card">
-                  <DachshundMascot skinId={equippedSkin.skin.id} rank={equippedSkin.rank} size="desktop" />
+                <div className="virtual-profile-card">
+                  <span className="virtual-profile-orb">
+                    <PawPrint size={18} aria-hidden="true" />
+                  </span>
                   <div>
                     <span>Perfil</span>
-                    <strong>{focusEconomy.progress.coins} Monedas</strong>
-                    <small>{equippedSkin.skin.name} R{equippedSkin.rank}</small>
+                    <strong>{equippedSkin.skin.name}</strong>
+                    <small>{focusEconomy.progress.coins} monedas - Rango {equippedSkin.rank}</small>
                   </div>
                 </div>
               )}

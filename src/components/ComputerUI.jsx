@@ -1241,6 +1241,10 @@ export function ComputerUI({
           </div>
 
           <footer className="os-system-bar" aria-label="Barra del sistema">
+            <div className="os-taskbar-start" aria-hidden="true">
+              <Sparkles size={18} />
+            </div>
+
             <div className="os-running-apps" aria-label="Aplicaciones abiertas">
               {taskbarAppIds.length > 0 ? (
                 taskbarAppIds.map((appId) => {
@@ -1266,19 +1270,21 @@ export function ComputerUI({
               )}
             </div>
 
-            <button type="button" className="os-screen-button" onClick={() => setDrawerOpen(true)}>
-              <PanelRightOpen size={18} aria-hidden="true" />
-              <span>Pantallas</span>
-            </button>
+            <div className="os-system-tray">
+              <button type="button" className="os-screen-button" onClick={() => setDrawerOpen(true)}>
+                <PanelRightOpen size={18} aria-hidden="true" />
+                <span>Pantallas</span>
+              </button>
 
-            <div className="os-clock" aria-label={`Hora del sistema ${clockLabel}`}>
-              <strong>{clockLabel}</strong>
-              <span>{dateLabel}</span>
+              <div className="os-clock" aria-label={`Hora del sistema ${clockLabel}`}>
+                <strong>{clockLabel}</strong>
+                <span>{dateLabel}</span>
+              </div>
+
+              <button type="button" className="computer-close os-close-button" onClick={onClose} aria-label="Cerrar computadora">
+                <X size={20} aria-hidden="true" />
+              </button>
             </div>
-
-            <button type="button" className="computer-close os-close-button" onClick={onClose} aria-label="Cerrar computadora">
-              <X size={20} aria-hidden="true" />
-            </button>
           </footer>
         </div>
 
