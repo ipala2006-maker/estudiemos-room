@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 const ROOM_GROUP_POSITION = { x: 90, z: -6 };
-const ROOM_SPEAKER_LOCAL = new THREE.Vector3(-5.5, 0, -19.5);
+const ROOM_SPEAKER_LOCAL = new THREE.Vector3(-24.6, 0, -24.2);
 const ROOM_SPEAKER_WORLD = new THREE.Vector3(
   ROOM_GROUP_POSITION.x + ROOM_SPEAKER_LOCAL.x,
   2.9,
@@ -228,7 +228,7 @@ function applySpeakerVerificationView(scene, camera) {
   const room = findCasaRoom(scene);
   if (room) room.visible = true;
 
-  camera.position.set(104, 3.15, -18.5);
+  camera.position.set(79, 3.15, -8.5);
   camera.lookAt(ROOM_SPEAKER_WORLD.x, 3.1, ROOM_SPEAKER_WORLD.z);
 }
 
