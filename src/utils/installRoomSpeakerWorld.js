@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 
 const ROOM_GROUP_POSITION = { x: 90, z: -6 };
-const ROOM_SPEAKER_LOCAL = new THREE.Vector3(-16, 0, -16.2);
+const ROOM_SPEAKER_LOCAL = new THREE.Vector3(-5.5, 0, -19.5);
 const ROOM_SPEAKER_WORLD = new THREE.Vector3(
   ROOM_GROUP_POSITION.x + ROOM_SPEAKER_LOCAL.x,
   2.9,
   ROOM_GROUP_POSITION.z + ROOM_SPEAKER_LOCAL.z
 );
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
-const SPEAKER_INTERACTION_DISTANCE = 26;
-const SPEAKER_AIM_DOT = 0.62;
+const SPEAKER_INTERACTION_DISTANCE = 34;
+const SPEAKER_AIM_DOT = 0.5;
 const INTERIOR_BOUNDS = {
   minX: 62,
   maxX: 118,
@@ -141,15 +141,17 @@ function addRoomSpeaker(room) {
   const ringMaterial = makeStandardMaterial(0xd7c28a, 0.42, 0.12);
   const greenMaterial = makeEmissiveMaterial(0x1ed760, 1.1);
   const displayMaterial = makeEmissiveMaterial(0xb8ffd0, 0.72);
+  const visiblePanelMaterial = new THREE.MeshBasicMaterial({ color: 0x1ed760 });
 
-  addBox(speaker, [2.95, 0.32, 2.18], [0, 0.16, 0.08], sideMaterial, true);
-  addBox(speaker, [2.08, 5.3, 1.26], [0, 2.82, 0], cabinetMaterial, true);
-  addBox(speaker, [1.82, 4.65, 0.08], [0, 2.78, 0.68], grilleMaterial, true);
-  addBox(speaker, [1.14, 0.28, 0.12], [0, 5.18, 0.75], displayMaterial, false);
+  addBox(speaker, [4.7, 0.36, 2.55], [0, 0.18, 0.08], sideMaterial, true);
+  addBox(speaker, [3.75, 5.9, 1.55], [0, 3.02, 0], cabinetMaterial, true);
+  addBox(speaker, [3.35, 5.15, 0.12], [0, 3.0, 0.86], grilleMaterial, true);
+  addBox(speaker, [3.05, 4.55, 0.08], [0, 3.0, 0.94], visiblePanelMaterial, false);
+  addBox(speaker, [1.36, 0.32, 0.18], [0, 5.72, 1.04], displayMaterial, false);
 
-  addDriver(speaker, 0.42, 4.02, ringMaterial, grilleMaterial);
-  addDriver(speaker, 0.66, 2.72, ringMaterial, grilleMaterial);
-  addDriver(speaker, 0.44, 1.34, ringMaterial, grilleMaterial);
+  addDriver(speaker, 0.52, 4.48, ringMaterial, grilleMaterial);
+  addDriver(speaker, 0.86, 3.02, ringMaterial, grilleMaterial);
+  addDriver(speaker, 0.58, 1.48, ringMaterial, grilleMaterial);
 
   for (let index = 0; index < 6; index += 1) {
     addBox(
@@ -161,16 +163,16 @@ function addRoomSpeaker(room) {
     );
   }
 
-  const remoteBody = addBox(speaker, [0.62, 0.13, 0.92], [1.32, 1.05, 0.84], cabinetMaterial, true);
+  const remoteBody = addBox(speaker, [0.75, 0.16, 1.08], [2.38, 1.05, 0.84], cabinetMaterial, true);
   remoteBody.rotation.z = -0.2;
-  const remoteButton = addBox(speaker, [0.3, 0.045, 0.1], [1.32, 1.17, 1.08], greenMaterial, false);
+  const remoteButton = addBox(speaker, [0.38, 0.055, 0.12], [2.38, 1.19, 1.1], greenMaterial, false);
   remoteButton.rotation.z = -0.2;
 
   const label = createSpeakerLabel();
   if (label) speaker.add(label);
 
   const floorGlow = new THREE.Mesh(
-    new THREE.CircleGeometry(2.25, 36),
+    new THREE.CircleGeometry(3.45, 36),
     new THREE.MeshBasicMaterial({
       color: 0x1ed760,
       transparent: true,
@@ -182,7 +184,7 @@ function addRoomSpeaker(room) {
   floorGlow.position.set(0, 0.02, 0.18);
   speaker.add(floorGlow);
 
-  const speakerLight = new THREE.PointLight(0x1ed760, 0.92, 8.5, 2.1);
+  const speakerLight = new THREE.PointLight(0x1ed760, 1.55, 12.5, 2.1);
   speakerLight.position.set(0, 3.4, 1.05);
   speaker.add(speakerLight);
 
