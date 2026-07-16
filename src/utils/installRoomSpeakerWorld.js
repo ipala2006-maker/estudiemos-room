@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 
 const ROOM_GROUP_POSITION = { x: 90, z: -6 };
-const ROOM_SPEAKER_LOCAL = new THREE.Vector3(-26.2, 0, -22.5);
+const ROOM_SPEAKER_LOCAL = new THREE.Vector3(-16, 0, -16.2);
 const ROOM_SPEAKER_WORLD = new THREE.Vector3(
   ROOM_GROUP_POSITION.x + ROOM_SPEAKER_LOCAL.x,
   2.9,
   ROOM_GROUP_POSITION.z + ROOM_SPEAKER_LOCAL.z
 );
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
-const SPEAKER_INTERACTION_DISTANCE = 50;
-const SPEAKER_AIM_DOT = 0.7;
+const SPEAKER_INTERACTION_DISTANCE = 26;
+const SPEAKER_AIM_DOT = 0.62;
 const INTERIOR_BOUNDS = {
   minX: 62,
   maxX: 118,
@@ -83,7 +83,7 @@ function createSpeakerLabel() {
   context.font = '900 44px Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.fillText('SP', 84, 90);
+  context.fillText('Q', 84, 90);
 
   context.textAlign = 'left';
   context.fillStyle = '#ffffff';
@@ -106,14 +106,14 @@ function createSpeakerLabel() {
       side: THREE.DoubleSide
     })
   );
-  label.name = 'spotify-room-speaker-front-label';
+  label.name = 'spotify-room-speaker-control-label';
   label.position.set(0, 5.95, 0.88);
   return label;
 }
 
 function addSpeakerEdges(group) {
   group.traverse((child) => {
-    if (!child?.isMesh || child.name === 'spotify-room-speaker-front-label') return;
+    if (!child?.isMesh || child.name.includes('spotify-room-speaker')) return;
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(child.geometry, 25),
       new THREE.LineBasicMaterial({
@@ -160,6 +160,11 @@ function addRoomSpeaker(room) {
       false
     );
   }
+
+  const remoteBody = addBox(speaker, [0.62, 0.13, 0.92], [1.32, 1.05, 0.84], cabinetMaterial, true);
+  remoteBody.rotation.z = -0.2;
+  const remoteButton = addBox(speaker, [0.3, 0.045, 0.1], [1.32, 1.17, 1.08], greenMaterial, false);
+  remoteButton.rotation.z = -0.2;
 
   const label = createSpeakerLabel();
   if (label) speaker.add(label);
