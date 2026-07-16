@@ -49,7 +49,7 @@
 .hud.hud-compact {
   left: 12px;
   top: 12px;
-  width: min(262px, calc(100vw - 24px));
+  width: min(188px, calc(100vw - 24px));
   gap: 8px;
   padding: 10px;
   border: 1px solid rgba(238, 224, 184, 0.16);
@@ -91,10 +91,10 @@
 }
 
 .hud.hud-compact .hud-focus-card {
-  grid-template-columns: 48px minmax(0, 1fr);
-  min-height: 74px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  min-height: 58px;
   gap: 9px !important;
-  padding: 8px;
+  padding: 7px;
   border: 1px solid rgba(238, 224, 184, 0.13);
   border-radius: 10px;
   background:
@@ -103,8 +103,8 @@
 }
 
 .hud.hud-compact .dachshund-mascot-hud {
-  width: 48px;
-  flex-basis: 48px;
+  width: 44px;
+  flex-basis: 44px;
 }
 
 .hud.hud-compact .dachshund-render-card {
@@ -123,6 +123,9 @@
 }
 
 .hud.hud-compact .hud-focus-kicker {
+  width: fit-content;
+  padding: 0;
+  background: transparent;
   color: #aee6d4 !important;
 }
 
