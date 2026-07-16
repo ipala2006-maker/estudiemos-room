@@ -16,10 +16,14 @@ const INTERIOR_BOUNDS = {
   minZ: -36,
   maxZ: 23
 };
+const SPEAKER_OBJECT_NAME = 'spotify-room-speaker-visible-prop';
+const SPEAKER_ANCHOR_NAME = 'spotify-room-speaker-scene-anchor';
 
 const aimDirection = new THREE.Vector3();
 const flatAimDirection = new THREE.Vector3();
 const toSpeaker = new THREE.Vector3();
+let lastSpeakerScene = null;
+let lastSpeakerCamera = null;
 
 function makeStandardMaterial(color, roughness = 0.62, metalness = 0.03) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -132,7 +136,7 @@ function addRoomSpeaker(room) {
   room.userData.estudiemosRoomSpeakerInjected = true;
 
   const speaker = new THREE.Group();
-  speaker.name = 'spotify-room-speaker-visible-prop';
+  speaker.name = SPEAKER_OBJECT_NAME;
   speaker.position.copy(ROOM_SPEAKER_LOCAL);
 
   const cabinetMaterial = makeStandardMaterial(0x0b1112, 0.62, 0.07);
@@ -192,10 +196,22 @@ function addRoomSpeaker(room) {
   room.add(speaker);
 }
 
+function addSceneRoomSpeaker(scene) {
+  if (!scene || scene.userData.estudiemosSceneSpeakerInjected) return;
+  scene.userData.estudiemosSceneSpeakerInjected = true;
+
+  const anchor = new THREE.Group();
+  anchor.name = SPEAKER_ANCHOR_NAME;
+  anchor.position.set(ROOM_GROUP_POSITION.x, 0, ROOM_GROUP_POSITION.z);
+  scene.add(anchor);
+  addRoomSpeaker(anchor);
+}
+
 function findCasaRoom(scene) {
   let room = null;
   scene?.traverse?.((child) => {
     if (room || !child?.isGroup) return;
+    if (child.name === SPEAKER_ANCHOR_NAME) return;
     if (
       Math.abs(child.position.x - ROOM_GROUP_POSITION.x) < 0.05 &&
       Math.abs(child.position.z - ROOM_GROUP_POSITION.z) < 0.05
@@ -204,6 +220,93 @@ function findCasaRoom(scene) {
     }
   });
   return room;
+}
+
+function applySpeakerVerificationView(scene, camera) {
+  if (!window.__estudiemosForceSpeakerView || !camera?.isCamera) return;
+
+  const room = findCasaRoom(scene);
+  if (room) room.visible = true;
+
+  camera.position.set(104, 3.15, -18.5);
+  camera.lookAt(ROOM_SPEAKER_WORLD.x, 3.1, ROOM_SPEAKER_WORLD.z);
+}
+
+function updateSpeakerDebugHandle(scene, camera) {
+  if (typeof window === 'undefined') return;
+
+  window.__estudiemosRoomSpeakerDebug = {
+    hasSpeaker: Boolean(scene?.getObjectByName?.(SPEAKER_OBJECT_NAME)),
+    forceSpeakerView(enabled = true) {
+      window.__estudiemosForceSpeakerView = Boolean(enabled);
+    },
+    getState() {
+      const speaker = scene?.getObjectByName?.(SPEAKER_OBJECT_NAME);
+      return {
+        hasSpeaker: Boolean(speaker),
+        speakerWorldPosition: speaker
+          ? {
+              x: Number(speaker.getWorldPosition(new THREE.Vector3()).x.toFixed(2)),
+              y: Number(speaker.getWorldPosition(new THREE.Vector3()).y.toFixed(2)),
+              z: Number(speaker.getWorldPosition(new THREE.Vector3()).z.toFixed(2))
+            }
+          : null,
+        cameraPosition: camera?.position
+          ? {
+              x: Number(camera.position.x.toFixed(2)),
+              y: Number(camera.position.y.toFixed(2)),
+              z: Number(camera.position.z.toFixed(2))
+            }
+          : null
+      };
+    }
+  };
+}
+
+function refreshSpeakerRuntime(scene = lastSpeakerScene, camera = lastSpeakerCamera) {
+  if (scene) {
+    addSceneRoomSpeaker(scene);
+  }
+
+  if (scene && camera) {
+    applySpeakerVerificationView(scene, camera);
+    updateSpeakerDebugHandle(scene, camera);
+    updateSpeakerAim(camera);
+  }
+}
+
+function installSceneAddHook() {
+  if (THREE.Object3D.prototype.__estudiemosSpeakerAddHooked) return;
+  THREE.Object3D.prototype.__estudiemosSpeakerAddHooked = true;
+
+  const originalAdd = THREE.Object3D.prototype.add;
+  THREE.Object3D.prototype.add = function addWithRoomSpeaker(...objects) {
+    const result = originalAdd.apply(this, objects);
+
+    if (this?.isScene) {
+      lastSpeakerScene = this;
+      objects.forEach((object) => {
+        if (object?.isCamera) {
+          lastSpeakerCamera = object;
+        }
+      });
+      refreshSpeakerRuntime(this, lastSpeakerCamera);
+    }
+
+    return result;
+  };
+}
+
+function installCameraUpdateHook() {
+  if (THREE.Camera.prototype.__estudiemosSpeakerCameraHooked) return;
+  THREE.Camera.prototype.__estudiemosSpeakerCameraHooked = true;
+
+  const originalUpdateMatrixWorld = THREE.Camera.prototype.updateMatrixWorld;
+  THREE.Camera.prototype.updateMatrixWorld = function updateMatrixWorldWithRoomSpeaker(...args) {
+    lastSpeakerCamera = this;
+    refreshSpeakerRuntime(lastSpeakerScene, this);
+    return originalUpdateMatrixWorld.apply(this, args);
+  };
 }
 
 function dispatchSpeakerAim(isAiming) {
@@ -246,14 +349,9 @@ function installRoomSpeakerWorld() {
   if (typeof window === 'undefined' || window.__estudiemosRoomSpeakerWorldInstalled) return;
   window.__estudiemosRoomSpeakerWorldInstalled = true;
   window.__estudiemosRoomSpeakerAimState = false;
-
-  const originalRender = THREE.WebGLRenderer.prototype.render;
-  THREE.WebGLRenderer.prototype.render = function renderWithRoomSpeaker(scene, camera) {
-    const room = findCasaRoom(scene);
-    if (room) addRoomSpeaker(room);
-    updateSpeakerAim(camera);
-    return originalRender.call(this, scene, camera);
-  };
+  window.__estudiemosRoomSpeakerInstallMode = 'object3d-camera';
+  installSceneAddHook();
+  installCameraUpdateHook();
 }
 
 installRoomSpeakerWorld();
