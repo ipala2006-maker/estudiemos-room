@@ -43,3 +43,81 @@
   border-radius: 999px !important;
   background: rgba(224, 196, 122, 0.46) !important;
 }
+
+/* Clean-copy pass: keep the entry and HUD readable with less visible text. */
+.start-content-minimal {
+  gap: 18px !important;
+}
+
+.start-content-minimal h1 {
+  margin-bottom: 2px;
+}
+
+.hud.hud-clean {
+  width: min(204px, calc(100vw - 24px)) !important;
+}
+
+.hud.hud-clean .hud-heading {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px !important;
+}
+
+.hud.hud-clean .hud-heading strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud.hud-clean .hud-context-key {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 244, 215, 0.2);
+  border-radius: 8px;
+  color: #fff3cf !important;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.78rem !important;
+  font-weight: 900;
+}
+
+.hud.hud-clean .hud-focus-card {
+  min-height: 68px;
+}
+
+.hud.hud-clean .hud-focus-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.hud.hud-clean .hud-focus-card strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud.hud-clean .hud-rank-pill {
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 244, 215, 0.16);
+  border-radius: 999px;
+  color: rgba(255, 246, 222, 0.72);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.62rem;
+  font-weight: 850;
+}
+
+.hud.hud-clean .hud-actions button {
+  min-height: 32px;
+  padding: 0;
+}
