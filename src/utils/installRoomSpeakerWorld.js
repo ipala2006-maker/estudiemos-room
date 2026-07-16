@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 
 const ROOM_GROUP_POSITION = { x: 90, z: -6 };
-const ROOM_SPEAKER_LOCAL = new THREE.Vector3(6.2, 0, -23.2);
+const ROOM_SPEAKER_LOCAL = new THREE.Vector3(-26.2, 0, -22.5);
 const ROOM_SPEAKER_WORLD = new THREE.Vector3(
   ROOM_GROUP_POSITION.x + ROOM_SPEAKER_LOCAL.x,
   2.9,
   ROOM_GROUP_POSITION.z + ROOM_SPEAKER_LOCAL.z
 );
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
-const SPEAKER_INTERACTION_DISTANCE = 28;
-const SPEAKER_AIM_DOT = 0.76;
+const SPEAKER_INTERACTION_DISTANCE = 50;
+const SPEAKER_AIM_DOT = 0.7;
 const INTERIOR_BOUNDS = {
   minX: 62,
   maxX: 118,
@@ -21,75 +21,84 @@ const aimDirection = new THREE.Vector3();
 const flatAimDirection = new THREE.Vector3();
 const toSpeaker = new THREE.Vector3();
 
-function makeStandardMaterial(color, roughness = 0.58, metalness = 0.02) {
+function makeStandardMaterial(color, roughness = 0.62, metalness = 0.03) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
 }
 
-function makeEmissiveMaterial(color, intensity = 0.5) {
+function makeEmissiveMaterial(color, intensity = 0.75) {
   return new THREE.MeshStandardMaterial({
     color,
     emissive: color,
     emissiveIntensity: intensity,
-    roughness: 0.36,
-    metalness: 0.05
+    roughness: 0.24,
+    metalness: 0.02
   });
+}
+
+function addBox(group, size, position, material, receivesShadow = true) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+  mesh.position.set(...position);
+  mesh.castShadow = true;
+  mesh.receiveShadow = receivesShadow;
+  group.add(mesh);
+  return mesh;
+}
+
+function addDriver(group, radius, y, ringMaterial, grilleMaterial) {
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.095, 32), ringMaterial);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.set(0, y, 0.78);
+  ring.castShadow = true;
+  group.add(ring);
+
+  const cone = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.55, radius * 0.82, 0.13, 32), grilleMaterial);
+  cone.rotation.x = Math.PI / 2;
+  cone.position.set(0, y, 0.87);
+  cone.castShadow = true;
+  group.add(cone);
 }
 
 function createSpeakerLabel() {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
+  canvas.width = 640;
   canvas.height = 180;
   const context = canvas.getContext('2d');
   if (!context) return null;
 
-  const drawRoundedRect = (x, y, width, height, radius) => {
-    context.beginPath();
-    context.moveTo(x + radius, y);
-    context.lineTo(x + width - radius, y);
-    context.quadraticCurveTo(x + width, y, x + width, y + radius);
-    context.lineTo(x + width, y + height - radius);
-    context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    context.lineTo(x + radius, y + height);
-    context.quadraticCurveTo(x, y + height, x, y + height - radius);
-    context.lineTo(x, y + radius);
-    context.quadraticCurveTo(x, y, x + radius, y);
-    context.closePath();
-  };
-
-  const gradient = context.createLinearGradient(0, 0, 512, 180);
-  gradient.addColorStop(0, 'rgba(30, 215, 96, 0.96)');
-  gradient.addColorStop(1, 'rgba(6, 18, 15, 0.92)');
+  const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, '#1ed760');
+  gradient.addColorStop(0.52, '#0f2b1c');
+  gradient.addColorStop(1, '#050a09');
   context.fillStyle = gradient;
-  drawRoundedRect(10, 10, 492, 160, 34);
-  context.fill();
-  context.strokeStyle = 'rgba(236, 255, 242, 0.72)';
-  context.lineWidth = 4;
-  context.stroke();
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = 'rgba(245,255,247,0.72)';
+  context.lineWidth = 6;
+  context.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-  context.fillStyle = '#062012';
+  context.fillStyle = '#06120b';
   context.beginPath();
-  context.arc(74, 90, 40, 0, Math.PI * 2);
+  context.arc(84, 90, 48, 0, Math.PI * 2);
   context.fill();
-  context.fillStyle = '#e9fff0';
-  context.font = '900 42px Arial, sans-serif';
+  context.fillStyle = '#effff3';
+  context.font = '900 44px Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.fillText('SP', 74, 90);
+  context.fillText('SP', 84, 90);
 
   context.textAlign = 'left';
-  context.fillStyle = '#f5fff7';
-  context.font = '900 44px Arial, sans-serif';
-  context.fillText('PARLANTE', 136, 77);
-  context.fillStyle = 'rgba(245, 255, 247, 0.76)';
-  context.font = '800 25px Arial, sans-serif';
-  context.fillText('Spotify sala', 138, 118);
+  context.fillStyle = '#ffffff';
+  context.font = '900 48px Arial, sans-serif';
+  context.fillText('PARLANTE', 158, 76);
+  context.fillStyle = 'rgba(245,255,247,0.78)';
+  context.font = '800 28px Arial, sans-serif';
+  context.fillText('Spotify sala', 160, 120);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;
 
   const label = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.75, 0.96),
+    new THREE.PlaneGeometry(3.28, 0.92),
     new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
@@ -97,18 +106,25 @@ function createSpeakerLabel() {
       side: THREE.DoubleSide
     })
   );
-  label.name = 'spotify-room-speaker-visible-label';
-  label.position.set(-1.04, 5.28, 0);
-  label.rotation.y = -Math.PI / 2;
+  label.name = 'spotify-room-speaker-front-label';
+  label.position.set(0, 5.95, 0.88);
   return label;
 }
 
-function addSpeakerEdges(mesh, color = 0x050809, opacity = 0.22) {
-  const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(mesh.geometry, 25),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false })
-  );
-  mesh.add(edges);
+function addSpeakerEdges(group) {
+  group.traverse((child) => {
+    if (!child?.isMesh || child.name === 'spotify-room-speaker-front-label') return;
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(child.geometry, 25),
+      new THREE.LineBasicMaterial({
+        color: 0x030505,
+        transparent: true,
+        opacity: 0.08,
+        depthWrite: false
+      })
+    );
+    child.add(edges);
+  });
 }
 
 function addRoomSpeaker(room) {
@@ -116,80 +132,56 @@ function addRoomSpeaker(room) {
   room.userData.estudiemosRoomSpeakerInjected = true;
 
   const speaker = new THREE.Group();
-  speaker.name = 'spotify-room-speaker-corner-control';
+  speaker.name = 'spotify-room-speaker-visible-prop';
   speaker.position.copy(ROOM_SPEAKER_LOCAL);
-  speaker.rotation.y = -0.08;
 
-  const cabinetMaterial = makeStandardMaterial(0x101819, 0.62, 0.05);
-  const sideMaterial = makeStandardMaterial(0x243432, 0.72, 0.02);
-  const grilleMaterial = makeStandardMaterial(0x050809, 0.82, 0.01);
-  const ringMaterial = makeStandardMaterial(0xd7c28a, 0.46, 0.1);
-  const glowMaterial = makeEmissiveMaterial(0x1ed760, 0.9);
-  const screenMaterial = makeEmissiveMaterial(0x8ee6b2, 0.48);
+  const cabinetMaterial = makeStandardMaterial(0x0b1112, 0.62, 0.07);
+  const sideMaterial = makeStandardMaterial(0x172524, 0.74, 0.03);
+  const grilleMaterial = makeStandardMaterial(0x030607, 0.88, 0.02);
+  const ringMaterial = makeStandardMaterial(0xd7c28a, 0.42, 0.12);
+  const greenMaterial = makeEmissiveMaterial(0x1ed760, 1.1);
+  const displayMaterial = makeEmissiveMaterial(0xb8ffd0, 0.72);
 
-  const base = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.24, 1.72), sideMaterial);
-  base.position.set(0, 0.12, 0);
-  base.receiveShadow = true;
-  speaker.add(base);
+  addBox(speaker, [2.95, 0.32, 2.18], [0, 0.16, 0.08], sideMaterial, true);
+  addBox(speaker, [2.08, 5.3, 1.26], [0, 2.82, 0], cabinetMaterial, true);
+  addBox(speaker, [1.82, 4.65, 0.08], [0, 2.78, 0.68], grilleMaterial, true);
+  addBox(speaker, [1.14, 0.28, 0.12], [0, 5.18, 0.75], displayMaterial, false);
 
-  const cabinet = new THREE.Mesh(new THREE.BoxGeometry(1.5, 4.65, 1.12), cabinetMaterial);
-  cabinet.position.set(0, 2.48, 0);
-  cabinet.castShadow = true;
-  cabinet.receiveShadow = true;
-  speaker.add(cabinet);
-  addSpeakerEdges(cabinet);
+  addDriver(speaker, 0.42, 4.02, ringMaterial, grilleMaterial);
+  addDriver(speaker, 0.66, 2.72, ringMaterial, grilleMaterial);
+  addDriver(speaker, 0.44, 1.34, ringMaterial, grilleMaterial);
 
-  const frontPanel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 4.1, 0.96), grilleMaterial);
-  frontPanel.position.set(-0.79, 2.52, 0);
-  frontPanel.castShadow = true;
-  speaker.add(frontPanel);
-
-  [
-    { y: 3.65, radius: 0.42 },
-    { y: 2.52, radius: 0.58 },
-    { y: 1.32, radius: 0.38 }
-  ].forEach((driver) => {
-    const ring = new THREE.Mesh(new THREE.CylinderGeometry(driver.radius, driver.radius, 0.085, 32), ringMaterial);
-    ring.rotation.z = Math.PI / 2;
-    ring.position.set(-0.86, driver.y, 0);
-    speaker.add(ring);
-
-    const cone = new THREE.Mesh(new THREE.CylinderGeometry(driver.radius * 0.58, driver.radius * 0.82, 0.105, 32), grilleMaterial);
-    cone.rotation.z = Math.PI / 2;
-    cone.position.set(-0.92, driver.y, 0);
-    speaker.add(cone);
-  });
-
-  const miniDisplay = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.38, 0.68), screenMaterial);
-  miniDisplay.position.set(-0.94, 4.2, 0);
-  speaker.add(miniDisplay);
-
-  const visibleLabel = createSpeakerLabel();
-  if (visibleLabel) speaker.add(visibleLabel);
-
-  for (let index = 0; index < 5; index += 1) {
-    const led = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.17 + index * 0.06, 0.06), glowMaterial);
-    led.position.set(-0.96, 0.78 + index * 0.18, -0.48);
-    speaker.add(led);
+  for (let index = 0; index < 6; index += 1) {
+    addBox(
+      speaker,
+      [0.11, 0.18 + index * 0.055, 0.08],
+      [-0.68 + index * 0.27, 0.78 + index * 0.025, 0.84],
+      greenMaterial,
+      false
+    );
   }
 
+  const label = createSpeakerLabel();
+  if (label) speaker.add(label);
+
   const floorGlow = new THREE.Mesh(
-    new THREE.CircleGeometry(1.95, 36),
+    new THREE.CircleGeometry(2.25, 36),
     new THREE.MeshBasicMaterial({
       color: 0x1ed760,
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.14,
       depthWrite: false
     })
   );
   floorGlow.rotation.x = -Math.PI / 2;
-  floorGlow.position.set(0, 0.014, 0);
+  floorGlow.position.set(0, 0.02, 0.18);
   speaker.add(floorGlow);
 
-  const speakerGlow = new THREE.PointLight(0x1ed760, 0.75, 7.5, 2.1);
-  speakerGlow.position.set(-0.96, 2.8, 0);
-  speaker.add(speakerGlow);
+  const speakerLight = new THREE.PointLight(0x1ed760, 0.92, 8.5, 2.1);
+  speakerLight.position.set(0, 3.4, 1.05);
+  speaker.add(speakerLight);
 
+  addSpeakerEdges(speaker);
   room.add(speaker);
 }
 
@@ -240,7 +232,7 @@ function updateSpeakerAim(camera) {
   }
 
   const aimDot = toSpeaker.normalize().dot(flatAimDirection.normalize());
-  dispatchSpeakerAim(aimDot > SPEAKER_AIM_DOT || distance < 3.35);
+  dispatchSpeakerAim(aimDot > SPEAKER_AIM_DOT || distance < 5.2);
 }
 
 function installRoomSpeakerWorld() {
