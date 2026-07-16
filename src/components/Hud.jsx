@@ -15,7 +15,6 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
         ? 'Control de pantalla'
         : '';
   const contextKey = isNearComputer || isNearDoor ? 'E' : isDoorOpen ? 'Q' : '';
-  const skinName = equippedSkin.skin.name.replace(/^Salchicha\s+/i, '');
 
   return (
     <aside className="hud hud-compact hud-clean">
@@ -31,18 +30,14 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBa
 
       {focusEconomy && (
         <section className="hud-focus-card" aria-label="Monedas de Enfoque">
-          <DachshundMascot skinId={equippedSkin.skin.id} rank={equippedSkin.rank} size="hud" />
+          <DachshundMascot skinId={equippedSkin.skin.id} rank={equippedSkin.rank} size="hud" showBadges={false} />
           <div>
             <div className="hud-focus-meta">
               <span className="hud-focus-kicker" aria-label={`${focusEconomy.progress.coins} monedas`}>
                 <Coins size={15} aria-hidden="true" />
                 {focusEconomy.progress.coins}
               </span>
-              <span className="hud-rank-pill" aria-label={`Rango ${equippedSkin.rank}`}>
-                R{equippedSkin.rank}
-              </span>
             </div>
-            <strong>{skinName}</strong>
             <div className="hud-focus-progress" aria-label={`Progreso a proxima recompensa ${nextRewardPercent}%`}>
               <span style={{ width: `${nextRewardPercent}%` }} />
             </div>
