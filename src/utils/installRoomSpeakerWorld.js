@@ -396,6 +396,7 @@ function addSceneRoomSpeaker(scene) {
   const anchor = new THREE.Group();
   anchor.name = SPEAKER_ANCHOR_NAME;
   anchor.position.set(ROOM_GROUP_POSITION.x, 0, ROOM_GROUP_POSITION.z);
+  anchor.visible = false;
   scene.add(anchor);
   addRoomSpeaker(anchor);
 }
@@ -435,8 +436,10 @@ function updateSpeakerDebugHandle(scene, camera) {
     },
     getState() {
       const speaker = scene?.getObjectByName?.(SPEAKER_OBJECT_NAME);
+      const anchor = scene?.getObjectByName?.(SPEAKER_ANCHOR_NAME);
       return {
         hasSpeaker: Boolean(speaker),
+        speakerVisible: Boolean(speaker && speaker.visible && (!anchor || anchor.visible)),
         speakerWorldPosition: speaker
           ? {
               x: Number(speaker.getWorldPosition(new THREE.Vector3()).x.toFixed(2)),
@@ -456,6 +459,13 @@ function updateSpeakerDebugHandle(scene, camera) {
   };
 }
 
+function updateSpeakerSceneVisibility(scene, camera) {
+  const anchor = scene?.getObjectByName?.(SPEAKER_ANCHOR_NAME);
+  if (!anchor) return;
+
+  anchor.visible = Boolean(window.__estudiemosForceSpeakerView || (camera?.isCamera && isCameraInsideRoom(camera)));
+}
+
 function refreshSpeakerRuntime(scene = lastSpeakerScene, camera = lastSpeakerCamera) {
   if (scene) {
     addSceneRoomSpeaker(scene);
@@ -463,6 +473,7 @@ function refreshSpeakerRuntime(scene = lastSpeakerScene, camera = lastSpeakerCam
 
   if (scene && camera) {
     applySpeakerVerificationView(scene, camera);
+    updateSpeakerSceneVisibility(scene, camera);
     updateSpeakerDebugHandle(scene, camera);
     updateSpeakerAim(camera);
   }
