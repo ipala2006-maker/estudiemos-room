@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
 const ROOM_GROUP_POSITION = { x: 90, z: -6 };
 const ROOM_SPEAKER_LOCAL = new THREE.Vector3(-24.6, 0, -24.2);
@@ -7,9 +8,14 @@ const ROOM_SPEAKER_WORLD = new THREE.Vector3(
   2.9,
   ROOM_GROUP_POSITION.z + ROOM_SPEAKER_LOCAL.z
 );
+const ROOM_SPEAKER_OCCLUDER_WORLD = new THREE.Vector3(ROOM_SPEAKER_WORLD.x, 3.35, ROOM_SPEAKER_WORLD.z + 1.18);
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
 const SPEAKER_INTERACTION_DISTANCE = 34;
 const SPEAKER_AIM_DOT = 0.5;
+const SPEAKER_OCCLUDER_DOM_SIZE = {
+  width: 520,
+  height: 760
+};
 const INTERIOR_BOUNDS = {
   minX: 62,
   maxX: 118,
@@ -18,12 +24,199 @@ const INTERIOR_BOUNDS = {
 };
 const SPEAKER_OBJECT_NAME = 'spotify-room-speaker-visible-prop';
 const SPEAKER_ANCHOR_NAME = 'spotify-room-speaker-scene-anchor';
+const SPEAKER_OCCLUDER_NAME = 'spotify-room-speaker-css-occluder';
+const SPEAKER_OCCLUDER_STYLE_ID = 'estudiemos-room-speaker-occluder-style';
 
 const aimDirection = new THREE.Vector3();
 const flatAimDirection = new THREE.Vector3();
 const toSpeaker = new THREE.Vector3();
 let lastSpeakerScene = null;
 let lastSpeakerCamera = null;
+
+function isCss3DObjectLike(object) {
+  return Boolean(object?.isCSS3DObject || object?.element instanceof HTMLElement);
+}
+
+function ensureSpeakerOccluderStyles() {
+  if (typeof document === 'undefined' || document.getElementById(SPEAKER_OCCLUDER_STYLE_ID)) return;
+
+  const style = document.createElement('style');
+  style.id = SPEAKER_OCCLUDER_STYLE_ID;
+  style.textContent = `
+    .room-speaker-css-occluder {
+      width: ${SPEAKER_OCCLUDER_DOM_SIZE.width}px;
+      height: ${SPEAKER_OCCLUDER_DOM_SIZE.height}px;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-rows: 76px minmax(0, 1fr) 50px;
+      justify-items: center;
+      align-items: end;
+      pointer-events: none;
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+      opacity: 1;
+    }
+
+    .room-speaker-css-occluder * {
+      box-sizing: border-box;
+    }
+
+    .room-speaker-css-label {
+      width: 360px;
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+      padding: 8px 16px 8px 10px;
+      border: 8px solid #080d0e;
+      border-radius: 8px 8px 0 0;
+      color: #f4fff4;
+      background:
+        linear-gradient(90deg, #1ed760, #102c1b 54%, #050908),
+        #0a1011;
+      box-shadow:
+        inset 0 0 0 3px rgba(255, 255, 255, 0.16),
+        0 12px 28px rgba(0, 0, 0, 0.4);
+    }
+
+    .room-speaker-css-label span {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #06120b;
+      background: #ecfff0;
+      font: 900 25px/1 Arial, sans-serif;
+    }
+
+    .room-speaker-css-label strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font: 900 31px/1 Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .room-speaker-css-cabinet {
+      width: 390px;
+      height: 590px;
+      display: grid;
+      place-items: center;
+      padding: 42px 34px;
+      border: 20px solid #070b0c;
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, #080d0e, #172524 8%, #0b1112 22%, #0b1112 78%, #050809),
+        #0b1112;
+      box-shadow:
+        inset 0 0 0 5px rgba(255, 255, 255, 0.035),
+        inset 0 0 48px rgba(0, 0, 0, 0.72),
+        0 28px 50px rgba(0, 0, 0, 0.42);
+    }
+
+    .room-speaker-css-grille {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 38px;
+      border-radius: 4px;
+      background:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 10px),
+        linear-gradient(180deg, #1ed760, #12aa4e 52%, #0c522a),
+        #1ed760;
+      box-shadow:
+        inset 0 0 0 6px rgba(2, 8, 5, 0.26),
+        inset 0 0 46px rgba(0, 0, 0, 0.24);
+    }
+
+    .room-speaker-css-driver {
+      display: block;
+      border-radius: 50%;
+      border: 14px solid #d7c28a;
+      background:
+        radial-gradient(circle at 50% 48%, #020505 0 22%, #071010 23% 54%, #020303 55% 100%);
+      box-shadow:
+        inset 0 0 0 7px rgba(255, 255, 255, 0.035),
+        0 10px 24px rgba(0, 0, 0, 0.32);
+    }
+
+    .room-speaker-css-driver:first-child {
+      width: 116px;
+      height: 116px;
+    }
+
+    .room-speaker-css-driver:nth-child(2) {
+      width: 174px;
+      height: 174px;
+    }
+
+    .room-speaker-css-driver:nth-child(3) {
+      width: 128px;
+      height: 128px;
+    }
+
+    .room-speaker-css-base {
+      width: 470px;
+      height: 42px;
+      border-radius: 50% 50% 12px 12px;
+      background:
+        radial-gradient(ellipse at 50% 46%, rgba(30, 215, 96, 0.38), transparent 52%),
+        linear-gradient(180deg, #172524, #080d0e);
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.42);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function createSpeakerOccluderElement() {
+  ensureSpeakerOccluderStyles();
+
+  const root = document.createElement('div');
+  root.className = 'room-speaker-css-occluder';
+
+  const label = document.createElement('div');
+  label.className = 'room-speaker-css-label';
+  const key = document.createElement('span');
+  key.textContent = 'Q';
+  const title = document.createElement('strong');
+  title.textContent = 'PARLANTE';
+  label.append(key, title);
+
+  const cabinet = document.createElement('div');
+  cabinet.className = 'room-speaker-css-cabinet';
+  const grille = document.createElement('div');
+  grille.className = 'room-speaker-css-grille';
+
+  for (let index = 0; index < 3; index += 1) {
+    const driver = document.createElement('i');
+    driver.className = 'room-speaker-css-driver';
+    grille.appendChild(driver);
+  }
+
+  cabinet.appendChild(grille);
+
+  const base = document.createElement('div');
+  base.className = 'room-speaker-css-base';
+  root.append(label, cabinet, base);
+
+  return root;
+}
+
+function addCssSpeakerOccluder(scene) {
+  if (!scene || scene.userData.estudiemosSpeakerCssOccluderInjected || typeof document === 'undefined') return;
+  scene.userData.estudiemosSpeakerCssOccluderInjected = true;
+
+  const object = new CSS3DObject(createSpeakerOccluderElement());
+  object.name = SPEAKER_OCCLUDER_NAME;
+  object.position.copy(ROOM_SPEAKER_OCCLUDER_WORLD);
+  object.scale.setScalar(4.7 / SPEAKER_OCCLUDER_DOM_SIZE.width);
+  scene.add(object);
+}
 
 function makeStandardMaterial(color, roughness = 0.62, metalness = 0.03) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -284,6 +477,11 @@ function installSceneAddHook() {
     const result = originalAdd.apply(this, objects);
 
     if (this?.isScene) {
+      if (objects.some(isCss3DObjectLike)) {
+        addCssSpeakerOccluder(this);
+        return result;
+      }
+
       lastSpeakerScene = this;
       objects.forEach((object) => {
         if (object?.isCamera) {
