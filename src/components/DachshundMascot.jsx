@@ -15,7 +15,13 @@ const SKIN_IMAGES = {
   engineer: dachshundMascotEngineer
 };
 
-export function DachshundMascot({ skinId = 'classic', rank = 1, size = 'medium', label = 'Perro salchicha de Estudiemos' }) {
+export function DachshundMascot({
+  skinId = 'classic',
+  rank = 1,
+  size = 'medium',
+  label = 'Perro salchicha de Estudiemos',
+  showBadges = true
+}) {
   const skin = getSkinDefinition(skinId);
   const visuals = getSkinVisuals(skin.id, rank);
   const badge = SKIN_BADGES[skin.id] ?? skin.name.slice(0, 2).toUpperCase();
@@ -43,10 +49,10 @@ export function DachshundMascot({ skinId = 'classic', rank = 1, size = 'medium',
       <div className="dachshund-render-card" aria-hidden="true">
         <span className="dachshund-render-aura" />
         <img className="dachshund-render-image" src={mascotImage} alt="" draggable="false" />
-        <span className="dachshund-render-skin-tag">{badge}</span>
+        {showBadges && <span className="dachshund-render-skin-tag">{badge}</span>}
       </div>
 
-      <span className="dachshund-rank-badge">R{rank}</span>
+      {showBadges && <span className="dachshund-rank-badge">R{rank}</span>}
     </div>
   );
 }
