@@ -18,6 +18,7 @@ import './styles/camera-controls.css';
 import './styles/computer-keyboard-controls.css';
 import './styles/computer-keyboard-scroll.css';
 import './utils/installComputerKeyboardController.js';
+import './utils/installRoomSpeakerWorld.js';
 
 function createEmptyScreenZone() {
   return {
