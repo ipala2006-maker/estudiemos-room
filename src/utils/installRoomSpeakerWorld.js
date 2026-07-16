@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 
-const ROOM_SPEAKER_WORLD = new THREE.Vector3(114.2, 2.7, -29.1);
 const ROOM_GROUP_POSITION = { x: 90, z: -6 };
-const ROOM_SPEAKER_LOCAL = new THREE.Vector3(24.2, 0, -23.1);
+const ROOM_SPEAKER_LOCAL = new THREE.Vector3(24.4, 0, -22.4);
+const ROOM_SPEAKER_WORLD = new THREE.Vector3(
+  ROOM_GROUP_POSITION.x + ROOM_SPEAKER_LOCAL.x,
+  2.9,
+  ROOM_GROUP_POSITION.z + ROOM_SPEAKER_LOCAL.z
+);
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
-const SPEAKER_INTERACTION_DISTANCE = 26;
-const SPEAKER_AIM_DOT = 0.94;
+const SPEAKER_INTERACTION_DISTANCE = 24;
+const SPEAKER_AIM_DOT = 0.84;
 const INTERIOR_BOUNDS = {
   minX: 62,
   maxX: 118,
@@ -14,6 +18,7 @@ const INTERIOR_BOUNDS = {
 };
 
 const aimDirection = new THREE.Vector3();
+const flatAimDirection = new THREE.Vector3();
 const toSpeaker = new THREE.Vector3();
 
 function makeStandardMaterial(color, roughness = 0.58, metalness = 0.02) {
@@ -30,10 +35,10 @@ function makeEmissiveMaterial(color, intensity = 0.5) {
   });
 }
 
-function addSpeakerEdges(mesh, color = 0x050809, opacity = 0.16) {
+function addSpeakerEdges(mesh, color = 0x050809, opacity = 0.22) {
   const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(mesh.geometry),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity })
+    new THREE.EdgesGeometry(mesh.geometry, 25),
+    new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false })
   );
   mesh.add(edges);
 }
@@ -45,76 +50,90 @@ function addRoomSpeaker(room) {
   const speaker = new THREE.Group();
   speaker.name = 'spotify-room-speaker-corner-control';
   speaker.position.copy(ROOM_SPEAKER_LOCAL);
+  speaker.rotation.y = -0.08;
 
-  const cabinetMaterial = makeStandardMaterial(0x101819, 0.62, 0.04);
-  const sideMaterial = makeStandardMaterial(0x243432, 0.7, 0.02);
-  const grilleMaterial = makeStandardMaterial(0x070b0c, 0.74, 0.01);
-  const ringMaterial = makeStandardMaterial(0xd7c28a, 0.42, 0.08);
-  const glowMaterial = makeEmissiveMaterial(0x1ed760, 0.78);
-  const screenMaterial = makeEmissiveMaterial(0x8ed7d2, 0.38);
+  const cabinetMaterial = makeStandardMaterial(0x101819, 0.62, 0.05);
+  const sideMaterial = makeStandardMaterial(0x243432, 0.72, 0.02);
+  const grilleMaterial = makeStandardMaterial(0x050809, 0.82, 0.01);
+  const ringMaterial = makeStandardMaterial(0xd7c28a, 0.46, 0.1);
+  const glowMaterial = makeEmissiveMaterial(0x1ed760, 0.9);
+  const screenMaterial = makeEmissiveMaterial(0x8ee6b2, 0.48);
 
-  const base = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.26, 1.72), sideMaterial);
-  base.position.set(0, 0.13, 0);
-  base.castShadow = true;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.24, 1.72), sideMaterial);
+  base.position.set(0, 0.12, 0);
   base.receiveShadow = true;
   speaker.add(base);
 
-  const cabinet = new THREE.Mesh(new THREE.BoxGeometry(1.35, 4.3, 1.12), cabinetMaterial);
-  cabinet.position.set(0, 2.35, 0);
+  const cabinet = new THREE.Mesh(new THREE.BoxGeometry(1.5, 4.65, 1.12), cabinetMaterial);
+  cabinet.position.set(0, 2.48, 0);
   cabinet.castShadow = true;
   cabinet.receiveShadow = true;
   speaker.add(cabinet);
   addSpeakerEdges(cabinet);
 
-  const frontPanel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.76, 0.94), grilleMaterial);
-  frontPanel.position.set(-0.72, 2.43, 0);
+  const frontPanel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 4.1, 0.96), grilleMaterial);
+  frontPanel.position.set(-0.79, 2.52, 0);
   frontPanel.castShadow = true;
   speaker.add(frontPanel);
 
   [
-    { y: 3.42, radius: 0.39 },
-    { y: 2.42, radius: 0.52 },
-    { y: 1.38, radius: 0.35 }
+    { y: 3.65, radius: 0.42 },
+    { y: 2.52, radius: 0.58 },
+    { y: 1.32, radius: 0.38 }
   ].forEach((driver) => {
-    const ring = new THREE.Mesh(new THREE.CylinderGeometry(driver.radius, driver.radius, 0.08, 28), ringMaterial);
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(driver.radius, driver.radius, 0.085, 32), ringMaterial);
     ring.rotation.z = Math.PI / 2;
-    ring.position.set(-0.79, driver.y, 0);
+    ring.position.set(-0.86, driver.y, 0);
     speaker.add(ring);
 
-    const cone = new THREE.Mesh(new THREE.CylinderGeometry(driver.radius * 0.62, driver.radius * 0.82, 0.095, 28), grilleMaterial);
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(driver.radius * 0.58, driver.radius * 0.82, 0.105, 32), grilleMaterial);
     cone.rotation.z = Math.PI / 2;
-    cone.position.set(-0.84, driver.y, 0);
+    cone.position.set(-0.92, driver.y, 0);
     speaker.add(cone);
   });
 
-  for (let index = 0; index < 4; index += 1) {
-    const led = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.18 + index * 0.07, 0.055), glowMaterial);
-    led.position.set(-0.86, 0.85 + index * 0.18, -0.44);
+  const miniDisplay = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.38, 0.68), screenMaterial);
+  miniDisplay.position.set(-0.94, 4.2, 0);
+  speaker.add(miniDisplay);
+
+  for (let index = 0; index < 5; index += 1) {
+    const led = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.17 + index * 0.06, 0.06), glowMaterial);
+    led.position.set(-0.96, 0.78 + index * 0.18, -0.48);
     speaker.add(led);
   }
 
-  const miniDisplay = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.36, 0.66), screenMaterial);
-  miniDisplay.position.set(-0.86, 3.96, 0);
-  speaker.add(miniDisplay);
+  const floorGlow = new THREE.Mesh(
+    new THREE.CircleGeometry(1.95, 36),
+    new THREE.MeshBasicMaterial({
+      color: 0x1ed760,
+      transparent: true,
+      opacity: 0.16,
+      depthWrite: false
+    })
+  );
+  floorGlow.rotation.x = -Math.PI / 2;
+  floorGlow.position.set(0, 0.014, 0);
+  speaker.add(floorGlow);
 
-  const remotePad = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.44, 0.76), makeStandardMaterial(0x1b2829, 0.58, 0.04));
-  remotePad.position.set(-0.91, 0.67, 0);
-  speaker.add(remotePad);
-
-  const speakerGlow = new THREE.PointLight(0x1ed760, 0.58, 5.6, 2.2);
-  speakerGlow.position.set(-0.8, 2.9, 0);
+  const speakerGlow = new THREE.PointLight(0x1ed760, 0.75, 7.5, 2.1);
+  speakerGlow.position.set(-0.96, 2.8, 0);
   speaker.add(speakerGlow);
 
   room.add(speaker);
 }
 
 function findCasaRoom(scene) {
-  return scene?.children?.find(
-    (child) =>
-      child?.isGroup &&
+  let room = null;
+  scene?.traverse?.((child) => {
+    if (room || !child?.isGroup) return;
+    if (
       Math.abs(child.position.x - ROOM_GROUP_POSITION.x) < 0.05 &&
       Math.abs(child.position.z - ROOM_GROUP_POSITION.z) < 0.05
-  );
+    ) {
+      room = child;
+    }
+  });
+  return room;
 }
 
 function dispatchSpeakerAim(isAiming) {
@@ -135,15 +154,22 @@ function updateSpeakerAim(camera) {
   }
 
   camera.getWorldDirection(aimDirection);
+  flatAimDirection.set(aimDirection.x, 0, aimDirection.z);
+  if (flatAimDirection.lengthSq() < 0.001) {
+    dispatchSpeakerAim(false);
+    return;
+  }
+
   toSpeaker.copy(ROOM_SPEAKER_WORLD).sub(camera.position);
+  toSpeaker.y = 0;
   const distance = toSpeaker.length();
   if (distance < 1.4 || distance > SPEAKER_INTERACTION_DISTANCE) {
     dispatchSpeakerAim(false);
     return;
   }
 
-  const aimDot = toSpeaker.normalize().dot(aimDirection);
-  dispatchSpeakerAim(aimDot > SPEAKER_AIM_DOT || distance < 2.65);
+  const aimDot = toSpeaker.normalize().dot(flatAimDirection.normalize());
+  dispatchSpeakerAim(aimDot > SPEAKER_AIM_DOT || distance < 3.35);
 }
 
 function installRoomSpeakerWorld() {

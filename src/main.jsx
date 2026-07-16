@@ -42,6 +42,7 @@ function createEmptyScreenZone() {
 
 const AGENDA_STORAGE_KEY = 'estudiemos-room-agenda';
 const SPOTIFY_STORAGE_KEY = 'estudiemos-room-spotify-content';
+const SPOTIFY_ROOM_CONTENT_EVENT = 'estudiemos:spotify-room-content';
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
 
 function createAgendaItemId(item, index) {
@@ -85,24 +86,28 @@ function loadStoredAgendaItems() {
   }
 }
 
+function normalizeSpotifyContent(savedContent) {
+  if (!savedContent || typeof savedContent !== 'object') return null;
+
+  const uri = String(savedContent.uri ?? '').trim();
+  const embedUrl = String(savedContent.embedUrl ?? '').trim();
+  if (!uri || !embedUrl) return null;
+
+  return {
+    ...savedContent,
+    uri,
+    embedUrl,
+    title: String(savedContent.title ?? 'Spotify').slice(0, 80),
+    label: String(savedContent.label ?? 'Spotify').slice(0, 40)
+  };
+}
+
 function loadStoredSpotifyContent() {
   if (typeof window === 'undefined') return null;
 
   try {
     const savedContent = JSON.parse(window.localStorage.getItem(SPOTIFY_STORAGE_KEY) ?? 'null');
-    if (!savedContent || typeof savedContent !== 'object') return null;
-
-    const uri = String(savedContent.uri ?? '').trim();
-    const embedUrl = String(savedContent.embedUrl ?? '').trim();
-    if (!uri || !embedUrl) return null;
-
-    return {
-      ...savedContent,
-      uri,
-      embedUrl,
-      title: String(savedContent.title ?? 'Spotify').slice(0, 80),
-      label: String(savedContent.label ?? 'Spotify').slice(0, 40)
-    };
+    return normalizeSpotifyContent(savedContent);
   } catch {
     return null;
   }
@@ -188,21 +193,21 @@ function App() {
   }, []);
 
   useEffect(() => {
-    function onSpeakerAimChange(event) {
-      setIsAimingSpeaker(Boolean(event.detail?.isAiming));
-    }
-
-    window.addEventListener(SPEAKER_AIM_EVENT, onSpeakerAimChange);
-    return () => window.removeEventListener(SPEAKER_AIM_EVENT, onSpeakerAimChange);
-  }, []);
-
-  useEffect(() => {
     function onPointerLockChange() {
       setIsPointerLocked(Boolean(document.pointerLockElement));
     }
 
     document.addEventListener('pointerlockchange', onPointerLockChange);
     return () => document.removeEventListener('pointerlockchange', onPointerLockChange);
+  }, []);
+
+  useEffect(() => {
+    function onSpeakerAimChange(event) {
+      setIsAimingSpeaker(Boolean(event.detail?.isAiming));
+    }
+
+    window.addEventListener(SPEAKER_AIM_EVENT, onSpeakerAimChange);
+    return () => window.removeEventListener(SPEAKER_AIM_EVENT, onSpeakerAimChange);
   }, []);
 
   useEffect(() => {
@@ -354,6 +359,26 @@ function App() {
     });
   }
 
+  useEffect(() => {
+    function onSpotifyRoomContent(event) {
+      if (event.detail?.action === 'clear') {
+        clearSpotifyFromRoomSpeaker();
+        return;
+      }
+
+      const nextContent = normalizeSpotifyContent(event.detail?.content);
+      if (!nextContent) return;
+
+      loadSpotifyOnRoomSpeaker(nextContent);
+      if (event.detail?.command === 'play') {
+        window.setTimeout(() => commandRoomSpeaker('play'), 480);
+      }
+    }
+
+    window.addEventListener(SPOTIFY_ROOM_CONTENT_EVENT, onSpotifyRoomContent);
+    return () => window.removeEventListener(SPOTIFY_ROOM_CONTENT_EVENT, onSpotifyRoomContent);
+  }, []);
+
   function updateScreenZone(zoneId, patch) {
     const hasRefreshStamp = Object.prototype.hasOwnProperty.call(patch, 'updatedAt');
     const { updatedAt, ...zonePatch } = patch;
@@ -483,6 +508,7 @@ function App() {
         onNearDoorChange={setIsNearDoor}
         onAgendaBoardAimChange={setIsAimingAgendaBoard}
         onScreenAimChange={setIsAimingScreen}
+        onSpeakerAimChange={setIsAimingSpeaker}
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
         controlsEnabled={!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen}
