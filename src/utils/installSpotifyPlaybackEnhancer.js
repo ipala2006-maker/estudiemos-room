@@ -1,5 +1,3 @@
-import { loadSpotifyIframeApi } from './spotifyIframeApi.js';
-
 const SPOTIFY_EMBED_PREFIX = 'https://open.spotify.com/embed/';
 const SPOTIFY_ROOM_CONTENT_EVENT = 'estudiemos:spotify-room-content';
 const SPEAKER_COMMAND_EVENT = 'estudiemos:room-speaker-command';
@@ -85,7 +83,6 @@ function enhanceSpotifyFrame(iframe) {
 
   const roomSpotifyContent = parseSpotifyEmbedContent(iframe.src);
   if (!roomSpotifyContent?.uri) return;
-  const { uri } = roomSpotifyContent;
 
   iframe.dataset.estudiemosSpotifyEnhanced = 'true';
 
@@ -93,83 +90,43 @@ function enhanceSpotifyFrame(iframe) {
   if (!panel || panel.querySelector('.spotify-embed-enhancer')) return;
 
   const wrapper = document.createElement('div');
-  wrapper.className = 'spotify-embed-enhancer';
+  wrapper.className = 'spotify-embed-enhancer spotify-room-speaker-panel';
 
   const toolbar = document.createElement('div');
   toolbar.className = 'spotify-player-toolbar';
 
   const status = document.createElement('p');
   status.className = 'spotify-api-status';
-  status.dataset.state = 'loading';
-  status.textContent = 'Preparando reproductor oficial de Spotify...';
+  status.dataset.state = 'ready';
+  status.textContent = 'Spotify sale por el parlante de la sala para que no se corte al cerrar la computadora.';
 
-  const host = document.createElement('div');
-  host.className = 'spotify-embed-host';
-
-  let controller = null;
-
-  const callController = (methodName, feedback) => {
-    if (methodName === 'play') {
-      notifyRoomSpotifyContent(roomSpotifyContent, 'play');
-    } else if (methodName === 'pause') {
-      dispatchSpeakerCommand('pause');
+  const routeToRoomSpeaker = (command, feedback) => {
+    notifyRoomSpotifyContent(roomSpotifyContent, command === 'play' ? 'play' : '');
+    if (command === 'pause' || command === 'reload') {
+      dispatchSpeakerCommand(command);
     }
-
-    if (controller && typeof controller[methodName] === 'function') {
-      controller[methodName]();
-      setStatus(wrapper, feedback, 'ready');
-      return;
-    }
-
-    setStatus(wrapper, 'Si el navegador bloquea el comando, toca Play dentro del reproductor de Spotify.', 'fallback');
-    iframe.focus?.();
+    setStatus(wrapper, feedback, 'ready');
   };
 
   toolbar.append(
-    makeToolbarButton('Play', 'P', () => callController('play', 'Intentando reproducir Spotify...')),
-    makeToolbarButton('Pausa', 'II', () => callController('pause', 'Spotify pausado.')),
+    makeToolbarButton('Play', 'P', () =>
+      routeToRoomSpeaker('play', 'Enviando Spotify al parlante de la sala...')
+    ),
+    makeToolbarButton('Pausa', 'II', () =>
+      routeToRoomSpeaker('pause', 'Spotify pausado desde la computadora.')
+    ),
     makeToolbarButton('Recargar', 'R', () => {
-      controller?.destroy?.();
-      controller = null;
-      host.textContent = '';
-      iframe.src = iframe.src;
-      notifyRoomSpotifyContent(roomSpotifyContent);
-      dispatchSpeakerCommand('reload');
-      setStatus(wrapper, 'Reproductor recargado. Toca Play para escuchar.', 'idle');
+      routeToRoomSpeaker('reload', 'Reproductor del parlante recargado. Toca Play si no arranca.');
     }),
     makeToolbarLink('Abrir Spotify', iframe.src.replace('/embed/', '/'))
   );
 
-  wrapper.append(toolbar, status, host);
+  wrapper.append(toolbar, status);
   panel.insertBefore(wrapper, iframe);
-  iframe.classList.add('spotify-fallback-frame');
+  iframe.classList.add('spotify-fallback-frame', 'is-routed-to-room-speaker');
+  iframe.setAttribute('tabindex', '-1');
 
-  loadSpotifyIframeApi()
-    .then((IFrameAPI) => {
-      IFrameAPI.createController(
-        host,
-        {
-          uri,
-          width: '100%',
-          height: '100%',
-          theme: 'dark'
-        },
-        (embedController) => {
-          controller = embedController;
-          iframe.classList.add('is-api-ready');
-          setStatus(wrapper, 'Reproductor listo. Toca Play para escuchar dentro de Estudiemos Room.', 'ready');
-
-          embedController?.addListener?.('playback_update', (event) => {
-            if (event?.data?.isPaused === false) {
-              setStatus(wrapper, 'Spotify reproduciendo dentro de Estudiemos Room.', 'ready');
-            }
-          });
-        }
-      );
-    })
-    .catch(() => {
-      setStatus(wrapper, 'El API oficial no cargo. Usa el Play del reproductor embebido.', 'fallback');
-    });
+  notifyRoomSpotifyContent(roomSpotifyContent);
 }
 
 function enhanceSpotifyPlayers() {

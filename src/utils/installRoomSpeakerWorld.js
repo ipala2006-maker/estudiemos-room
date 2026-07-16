@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 
 const ROOM_GROUP_POSITION = { x: 90, z: -6 };
-const ROOM_SPEAKER_LOCAL = new THREE.Vector3(24.4, 0, -22.4);
+const ROOM_SPEAKER_LOCAL = new THREE.Vector3(6.2, 0, -23.2);
 const ROOM_SPEAKER_WORLD = new THREE.Vector3(
   ROOM_GROUP_POSITION.x + ROOM_SPEAKER_LOCAL.x,
   2.9,
   ROOM_GROUP_POSITION.z + ROOM_SPEAKER_LOCAL.z
 );
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
-const SPEAKER_INTERACTION_DISTANCE = 24;
-const SPEAKER_AIM_DOT = 0.84;
+const SPEAKER_INTERACTION_DISTANCE = 28;
+const SPEAKER_AIM_DOT = 0.76;
 const INTERIOR_BOUNDS = {
   minX: 62,
   maxX: 118,
@@ -33,6 +33,74 @@ function makeEmissiveMaterial(color, intensity = 0.5) {
     roughness: 0.36,
     metalness: 0.05
   });
+}
+
+function createSpeakerLabel() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 180;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  const drawRoundedRect = (x, y, width, height, radius) => {
+    context.beginPath();
+    context.moveTo(x + radius, y);
+    context.lineTo(x + width - radius, y);
+    context.quadraticCurveTo(x + width, y, x + width, y + radius);
+    context.lineTo(x + width, y + height - radius);
+    context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    context.lineTo(x + radius, y + height);
+    context.quadraticCurveTo(x, y + height, x, y + height - radius);
+    context.lineTo(x, y + radius);
+    context.quadraticCurveTo(x, y, x + radius, y);
+    context.closePath();
+  };
+
+  const gradient = context.createLinearGradient(0, 0, 512, 180);
+  gradient.addColorStop(0, 'rgba(30, 215, 96, 0.96)');
+  gradient.addColorStop(1, 'rgba(6, 18, 15, 0.92)');
+  context.fillStyle = gradient;
+  drawRoundedRect(10, 10, 492, 160, 34);
+  context.fill();
+  context.strokeStyle = 'rgba(236, 255, 242, 0.72)';
+  context.lineWidth = 4;
+  context.stroke();
+
+  context.fillStyle = '#062012';
+  context.beginPath();
+  context.arc(74, 90, 40, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = '#e9fff0';
+  context.font = '900 42px Arial, sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText('SP', 74, 90);
+
+  context.textAlign = 'left';
+  context.fillStyle = '#f5fff7';
+  context.font = '900 44px Arial, sans-serif';
+  context.fillText('PARLANTE', 136, 77);
+  context.fillStyle = 'rgba(245, 255, 247, 0.76)';
+  context.font = '800 25px Arial, sans-serif';
+  context.fillText('Spotify sala', 138, 118);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  const label = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.75, 0.96),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    })
+  );
+  label.name = 'spotify-room-speaker-visible-label';
+  label.position.set(-1.04, 5.28, 0);
+  label.rotation.y = -Math.PI / 2;
+  return label;
 }
 
 function addSpeakerEdges(mesh, color = 0x050809, opacity = 0.22) {
@@ -95,6 +163,9 @@ function addRoomSpeaker(room) {
   const miniDisplay = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.38, 0.68), screenMaterial);
   miniDisplay.position.set(-0.94, 4.2, 0);
   speaker.add(miniDisplay);
+
+  const visibleLabel = createSpeakerLabel();
+  if (visibleLabel) speaker.add(visibleLabel);
 
   for (let index = 0; index < 5; index += 1) {
     const led = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.17 + index * 0.06, 0.06), glowMaterial);
