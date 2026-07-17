@@ -96,9 +96,9 @@ function ensureOverlayElement() {
   element.setAttribute('aria-hidden', 'true');
   Object.assign(element.style, {
     position: 'absolute',
-    right: 'clamp(-96px, -6vw, -44px)',
-    bottom: 'clamp(-54px, -4vh, -24px)',
-    width: 'clamp(390px, 52vw, 700px)',
+    right: 'clamp(18px, 4.8vw, 72px)',
+    bottom: 'clamp(-42px, -3.2vh, -20px)',
+    width: 'clamp(340px, 46vw, 620px)',
     height: 'auto',
     zIndex: '12',
     display: 'block',
