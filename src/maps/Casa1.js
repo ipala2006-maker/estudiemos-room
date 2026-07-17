@@ -20,10 +20,10 @@ export const Casa1 = {
     }
   },
   neighborhoodBounds: {
-    minX: -27.5,
-    maxX: 27.5,
-    minZ: -27.5,
-    maxZ: 27.5
+    minX: -54,
+    maxX: 54,
+    minZ: -50,
+    maxZ: 34
   },
   interiorBounds: {
     minX: 62,
