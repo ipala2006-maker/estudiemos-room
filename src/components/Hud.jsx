@@ -3,18 +3,12 @@ import { DachshundMascot } from './DachshundMascot.jsx';
 import { BUILD_LABEL, BUILD_MARKER } from '../data/buildInfo.js';
 import { getEquippedSkinState } from '../data/focusEconomy.js';
 
-export function Hud({ isDoorOpen, isNearComputer, isNearDoor, focusEconomy, onBackHome, onReset }) {
+export function Hud({ isDoorOpen, interactionHint, focusEconomy, onBackHome, onReset }) {
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
   const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy?.nextRewardProgress ?? 0) * 100)));
   const sceneTitle = isDoorOpen ? 'Casa 1' : 'Lobby 3D';
-  const contextLabel = isNearComputer
-    ? 'Abrir computadora'
-    : isNearDoor
-      ? isDoorOpen ? 'Salir al barrio' : 'Entrar a Casa 1'
-      : isDoorOpen
-        ? 'Control de pantalla'
-        : '';
-  const contextKey = isNearComputer || isNearDoor ? 'E' : isDoorOpen ? 'Q' : '';
+  const contextLabel = interactionHint?.title ?? '';
+  const contextKey = interactionHint?.control ?? '';
 
   return (
     <aside className="hud hud-compact hud-clean">
