@@ -23,16 +23,20 @@ const COMPUTER_TARGET = {
 const AGENDA_TARGET = {
   oldLocalCenter: new THREE.Vector3(-27.6, 5.6, -12.8),
   legacyCenter: new THREE.Vector3(62.4, 5.6, -18.8),
-  center: new THREE.Vector3(62.4, 5.05, -21.65),
-  width: 5.75,
-  domWidth: 640,
-  domHeight: 390,
-  padding: 1.35,
-  distance: 18,
-  wallAssistZPadding: 12.5,
-  proximityDistance: 16,
-  proximityMaxX: 82,
-  proximityFacingLimit: 0.92
+  center: new THREE.Vector3(104, 5.45, 22.62),
+  localCenter: new THREE.Vector3(14, 5.45, 28.62),
+  width: 9.2,
+  domWidth: 860,
+  domHeight: 520,
+  padding: 1.65,
+  distance: 26,
+  legacyDistance: 18,
+  wallAssistPadding: 13.5,
+  proximityDistance: 13,
+  proximityMaxZ: 23.5,
+  rotationY: Math.PI,
+  physicalBoardScale: new THREE.Vector3(6.15, 4.15, 1),
+  physicalFrameScale: 2.32
 };
 
 const ROOM_SPEAKER_TARGET = {
@@ -192,15 +196,15 @@ function getScreenHit(position, direction) {
 }
 
 function getAgendaHit(position, direction) {
-  const movedHit = getAgendaPlaneHit(position, direction, AGENDA_TARGET.center, AGENDA_TARGET.width, AGENDA_TARGET.distance);
-  const legacyHit = getAgendaPlaneHit(position, direction, AGENDA_TARGET.legacyCenter, 4.8, AGENDA_TARGET.distance);
+  const movedHit = getAgendaZPlaneHit(position, direction, AGENDA_TARGET.center, AGENDA_TARGET.width, AGENDA_TARGET.distance);
+  const legacyHit = getAgendaXPlaneHit(position, direction, AGENDA_TARGET.legacyCenter, 4.8, AGENDA_TARGET.legacyDistance);
   const assistedHit = getAgendaWallAssistHit(position, direction);
   const proximityHit = getAgendaProximityHit(position, direction);
 
   return [movedHit, legacyHit, assistedHit, proximityHit].filter(Boolean).sort((a, b) => a.distance - b.distance)[0] ?? null;
 }
 
-function getAgendaPlaneHit(position, direction, center, width, maxDistance) {
+function getAgendaXPlaneHit(position, direction, center, width, maxDistance) {
   if (Math.abs(direction.x) < 0.001) return null;
 
   const distance = (center.x - position.x) / direction.x;
@@ -220,33 +224,53 @@ function getAgendaPlaneHit(position, direction, center, width, maxDistance) {
   return isInside ? { id: 'agenda', distance } : null;
 }
 
+function getAgendaZPlaneHit(position, direction, center, width, maxDistance) {
+  if (Math.abs(direction.z) < 0.001) return null;
+
+  const distance = (center.z - position.z) / direction.z;
+  if (distance < 0.8 || distance > maxDistance) return null;
+
+  const hitX = position.x + direction.x * distance;
+  const hitY = position.y + direction.y * distance;
+  const halfWidth = width / 2 + AGENDA_TARGET.padding;
+  const halfHeight = (width * (AGENDA_TARGET.domHeight / AGENDA_TARGET.domWidth)) / 2 + AGENDA_TARGET.padding;
+
+  const isInside =
+    hitX >= center.x - halfWidth &&
+    hitX <= center.x + halfWidth &&
+    hitY >= center.y - halfHeight &&
+    hitY <= center.y + halfHeight;
+
+  return isInside ? { id: 'agenda', distance } : null;
+}
+
 function getAgendaWallAssistHit(position, direction) {
   const distanceToMovedCenter = Math.hypot(position.x - AGENDA_TARGET.center.x, position.z - AGENDA_TARGET.center.z);
   const distanceToLegacyCenter = Math.hypot(position.x - AGENDA_TARGET.legacyCenter.x, position.z - AGENDA_TARGET.legacyCenter.z);
   const distanceToAgenda = Math.min(distanceToMovedCenter, distanceToLegacyCenter);
   if (distanceToAgenda > AGENDA_TARGET.distance) return null;
-  if (direction.x > AGENDA_TARGET.proximityFacingLimit) return null;
 
-  const nearMovedZ = Math.abs(position.z - AGENDA_TARGET.center.z) <= AGENDA_TARGET.wallAssistZPadding;
-  const nearLegacyZ = Math.abs(position.z - AGENDA_TARGET.legacyCenter.z) <= AGENDA_TARGET.wallAssistZPadding;
-  if (!nearMovedZ && !nearLegacyZ) return null;
+  const nearMovedX = Math.abs(position.x - AGENDA_TARGET.center.x) <= AGENDA_TARGET.wallAssistPadding;
+  const nearMovedZ = Math.abs(position.z - AGENDA_TARGET.center.z) <= AGENDA_TARGET.wallAssistPadding;
+  const nearLegacyZ = Math.abs(position.z - AGENDA_TARGET.legacyCenter.z) <= AGENDA_TARGET.wallAssistPadding;
+  if (!((nearMovedX && nearMovedZ) || nearLegacyZ)) return null;
 
-  const distanceToWall = Math.max(0.35, position.x - AGENDA_TARGET.center.x);
+  const distanceToWall = nearMovedZ ? Math.max(0.35, AGENDA_TARGET.center.z - position.z) : Math.max(0.35, position.x - AGENDA_TARGET.legacyCenter.x);
   return { id: 'agenda', distance: distanceToWall };
 }
 
 function getAgendaProximityHit(position, direction) {
-  if (position.x > AGENDA_TARGET.proximityMaxX || position.x < INTERIOR_BOUNDS.minX - 0.4) return null;
-  if (direction.x > AGENDA_TARGET.proximityFacingLimit) return null;
+  if (position.z > AGENDA_TARGET.proximityMaxZ || position.z < INTERIOR_BOUNDS.minZ - 0.4) return null;
 
   const distanceToMovedCenter = Math.hypot(position.x - AGENDA_TARGET.center.x, position.z - AGENDA_TARGET.center.z);
   const distanceToLegacyCenter = Math.hypot(position.x - AGENDA_TARGET.legacyCenter.x, position.z - AGENDA_TARGET.legacyCenter.z);
   const distanceToAgenda = Math.min(distanceToMovedCenter, distanceToLegacyCenter);
   if (distanceToAgenda > AGENDA_TARGET.proximityDistance) return null;
 
-  const nearMovedZ = Math.abs(position.z - AGENDA_TARGET.center.z) <= AGENDA_TARGET.wallAssistZPadding;
-  const nearLegacyZ = Math.abs(position.z - AGENDA_TARGET.legacyCenter.z) <= AGENDA_TARGET.wallAssistZPadding;
-  if (!nearMovedZ && !nearLegacyZ) return null;
+  const nearMovedX = Math.abs(position.x - AGENDA_TARGET.center.x) <= AGENDA_TARGET.wallAssistPadding;
+  const nearMovedZ = Math.abs(position.z - AGENDA_TARGET.center.z) <= AGENDA_TARGET.wallAssistPadding;
+  const nearLegacyZ = Math.abs(position.z - AGENDA_TARGET.legacyCenter.z) <= AGENDA_TARGET.wallAssistPadding;
+  if (!((nearMovedX && nearMovedZ) || nearLegacyZ)) return null;
 
   return { id: 'agenda', distance: 0.04 + distanceToAgenda * 0.012 };
 }
@@ -281,27 +305,30 @@ function patchPhysicalAgenda(scene) {
     if (!isOldAgendaPiece(object.position)) return;
 
     object.userData[AGENDA_PATCH_FLAG] = true;
-    const localZ = AGENDA_TARGET.center.z + 6;
+    const localCenter = AGENDA_TARGET.localCenter;
 
     if (Math.abs(object.position.y - 6.95) < 0.16) {
-      object.position.set(-27.5, 6.78, localZ);
-      object.scale.z *= 1.33;
+      object.position.set(localCenter.x, localCenter.y + 1.9, localCenter.z - 0.06);
+      object.rotation.y = Math.PI / 2;
+      object.scale.z *= AGENDA_TARGET.physicalFrameScale;
       return;
     }
 
     if (Math.abs(object.position.y - 4.25) < 0.16) {
-      object.position.set(-27.5, 3.32, localZ);
-      object.scale.z *= 1.33;
+      object.position.set(localCenter.x, localCenter.y - 1.9, localCenter.z - 0.06);
+      object.rotation.y = Math.PI / 2;
+      object.scale.z *= AGENDA_TARGET.physicalFrameScale;
       return;
     }
 
-    object.position.set(object.position.x, 5.05, localZ);
-    object.scale.y *= 1.3;
-    object.scale.z *= 1.33;
-
     if (object.scale.x > 2.5 && object.scale.y > 2) {
-      object.scale.set(4.35, 3.05, object.scale.z || 1);
+      object.position.copy(localCenter);
+      object.rotation.y = AGENDA_TARGET.rotationY;
+      object.scale.copy(AGENDA_TARGET.physicalBoardScale);
+      return;
     }
+
+    object.visible = false;
   });
 }
 
@@ -322,6 +349,7 @@ function patchCssAgenda(scene) {
     object.element.style.width = `${AGENDA_TARGET.domWidth}px`;
     object.element.style.height = `${AGENDA_TARGET.domHeight}px`;
     object.position.copy(AGENDA_TARGET.center);
+    object.rotation.y = AGENDA_TARGET.rotationY;
     object.scale.setScalar(AGENDA_TARGET.width / AGENDA_TARGET.domWidth);
   });
 }
