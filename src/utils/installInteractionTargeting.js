@@ -4,7 +4,7 @@ import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 const TARGET_EVENT = 'estudiemos:interaction-target';
 const PATCH_FLAG = '__estudiemosInteractionTargetingInstalled';
 const AGENDA_PATCH_FLAG = '__estudiemosAgendaMoved';
-const NEIGHBORHOOD_PATCH_FLAG = '__estudiemosVisibleNeighborhoodFix2336';
+const NEIGHBORHOOD_PATCH_FLAG = '__estudiemosVisibleNeighborhoodFix1349CleanSigns';
 
 const GIANT_SCREEN_WORLD = {
   center: new THREE.Vector3(90, 8.25, -34.25),
@@ -335,7 +335,9 @@ function patchNeighborhood(scene) {
   };
   scene.userData[NEIGHBORHOOD_PATCH_FLAG] = state;
 
-  const exterior = scene.getObjectByName?.('estudiemos-room-exterior-neighborhood') ?? scene;
+  const exterior = scene.getObjectByName?.('estudiemos-room-exterior-neighborhood');
+  removeStrayNeighborhoodSigns(scene, exterior);
+  if (!exterior) return;
 
   if (!state.signsAdded) {
     hideLegacyNeighborhoodSigns(exterior);
@@ -362,6 +364,19 @@ function patchNeighborhood(scene) {
   });
 }
 
+function removeStrayNeighborhoodSigns(scene, exterior) {
+  const staleGroups = [];
+  scene.traverse((object) => {
+    if (!object?.name?.startsWith?.('estudiemos-neighborhood-visible-signs')) return;
+    if (exterior && object.parent === exterior && object.name === 'estudiemos-neighborhood-visible-signs-clean') return;
+    staleGroups.push(object);
+  });
+
+  staleGroups.forEach((object) => {
+    object.parent?.remove(object);
+  });
+}
+
 function hideLegacyNeighborhoodSigns(exterior) {
   exterior.traverse((object) => {
     if (!object?.isMesh || !object.position) return;
@@ -385,31 +400,18 @@ function hideLegacyNeighborhoodSigns(exterior) {
 
 function createNeighborhoodSignGroup() {
   const group = new THREE.Group();
-  group.name = 'estudiemos-neighborhood-visible-signs-2318';
+  group.name = 'estudiemos-neighborhood-visible-signs-clean';
 
   group.add(
     createProfessionalSign({
       title: 'CASA 1',
       subtitle: 'Modo enfoque',
       accent: '#e0c47a',
-      position: [-8.2, 2.55, 6.55],
+      position: [-8.2, 2.16, 6.35],
       rotationY: 0.24,
-      width: 6.4,
-      height: 2.28,
-      postSpread: 4.2
-    })
-  );
-
-  group.add(
-    createProfessionalSign({
-      title: 'CASA 1',
-      subtitle: 'Entrar y estudiar',
-      accent: '#9fc1b0',
-      position: [7.1, 1.8, -12.4],
-      rotationY: -0.26,
-      width: 3.35,
-      height: 1.28,
-      postSpread: 0
+      width: 4.85,
+      height: 1.68,
+      postSpread: 3.3
     })
   );
 
@@ -447,31 +449,26 @@ function createProfessionalSign({ title, subtitle, accent, position, rotationY, 
   group.position.set(...position);
   group.rotation.y = rotationY;
 
-  const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x111817, depthTest: false, depthWrite: false });
-  const postMaterial = new THREE.MeshBasicMaterial({ color: 0x48554f, depthTest: false, depthWrite: false });
-  const accentMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(accent), depthTest: false, depthWrite: false });
+  const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x111817 });
+  const postMaterial = new THREE.MeshBasicMaterial({ color: 0x48554f });
+  const accentMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(accent) });
 
   const back = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, height + 0.16, 0.16), frameMaterial);
   back.castShadow = true;
-  back.renderOrder = 36;
   group.add(back);
 
   const face = new THREE.Mesh(
     new THREE.PlaneGeometry(width, height),
     new THREE.MeshBasicMaterial({
       map: createSignTexture({ title, subtitle, accent }),
-      side: THREE.DoubleSide,
-      depthTest: false,
-      depthWrite: false
+      side: THREE.DoubleSide
     })
   );
   face.position.z = 0.18;
-  face.renderOrder = 38;
   group.add(face);
 
   const rail = new THREE.Mesh(new THREE.BoxGeometry(width + 0.32, 0.08, 0.22), accentMaterial);
   rail.position.set(0, height / 2 + 0.1, 0.02);
-  rail.renderOrder = 39;
   group.add(rail);
 
   const postOffsets = postSpread > 0 ? [-postSpread / 2, postSpread / 2] : [0];
@@ -479,7 +476,6 @@ function createProfessionalSign({ title, subtitle, accent, position, rotationY, 
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, position[1] * 1.55, 0.16), postMaterial);
     post.position.set(x, -position[1] * 0.5, -0.05);
     post.castShadow = true;
-    post.renderOrder = 35;
     group.add(post);
   });
 
