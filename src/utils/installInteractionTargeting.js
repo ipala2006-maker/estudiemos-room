@@ -21,12 +21,14 @@ const COMPUTER_TARGET = {
 
 const AGENDA_TARGET = {
   oldLocalCenter: new THREE.Vector3(-27.6, 5.6, -12.8),
+  legacyCenter: new THREE.Vector3(62.4, 5.6, -18.8),
   center: new THREE.Vector3(62.32, 5.05, -21.65),
   width: 5.45,
   domWidth: 640,
   domHeight: 390,
-  padding: 0.34,
-  distance: 8.75
+  padding: 1.05,
+  distance: 11.5,
+  wallAssistZPadding: 5.8
 };
 
 const ROOM_SPEAKER_TARGET = {
@@ -125,23 +127,46 @@ function getScreenHit(position, direction) {
 }
 
 function getAgendaHit(position, direction) {
+  const movedHit = getAgendaPlaneHit(position, direction, AGENDA_TARGET.center, AGENDA_TARGET.width, AGENDA_TARGET.distance);
+  const legacyHit = getAgendaPlaneHit(position, direction, AGENDA_TARGET.legacyCenter, 4.8, AGENDA_TARGET.distance);
+  const assistedHit = getAgendaWallAssistHit(position, direction);
+
+  return [movedHit, legacyHit, assistedHit].filter(Boolean).sort((a, b) => a.distance - b.distance)[0] ?? null;
+}
+
+function getAgendaPlaneHit(position, direction, center, width, maxDistance) {
   if (Math.abs(direction.x) < 0.001) return null;
 
-  const distance = (AGENDA_TARGET.center.x - position.x) / direction.x;
-  if (distance < 1.2 || distance > AGENDA_TARGET.distance) return null;
+  const distance = (center.x - position.x) / direction.x;
+  if (distance < 0.25 || distance > maxDistance) return null;
 
   const hitY = position.y + direction.y * distance;
   const hitZ = position.z + direction.z * distance;
-  const halfWidth = AGENDA_TARGET.width / 2 + AGENDA_TARGET.padding;
-  const halfHeight = (AGENDA_TARGET.width * (AGENDA_TARGET.domHeight / AGENDA_TARGET.domWidth)) / 2 + AGENDA_TARGET.padding;
+  const halfWidth = width / 2 + AGENDA_TARGET.padding;
+  const halfHeight = (width * (AGENDA_TARGET.domHeight / AGENDA_TARGET.domWidth)) / 2 + AGENDA_TARGET.padding;
 
   const isInside =
-    hitZ >= AGENDA_TARGET.center.z - halfWidth &&
-    hitZ <= AGENDA_TARGET.center.z + halfWidth &&
-    hitY >= AGENDA_TARGET.center.y - halfHeight &&
-    hitY <= AGENDA_TARGET.center.y + halfHeight;
+    hitZ >= center.z - halfWidth &&
+    hitZ <= center.z + halfWidth &&
+    hitY >= center.y - halfHeight &&
+    hitY <= center.y + halfHeight;
 
   return isInside ? { id: 'agenda', distance } : null;
+}
+
+function getAgendaWallAssistHit(position, direction) {
+  const distanceToMovedCenter = Math.hypot(position.x - AGENDA_TARGET.center.x, position.z - AGENDA_TARGET.center.z);
+  const distanceToLegacyCenter = Math.hypot(position.x - AGENDA_TARGET.legacyCenter.x, position.z - AGENDA_TARGET.legacyCenter.z);
+  const distanceToAgenda = Math.min(distanceToMovedCenter, distanceToLegacyCenter);
+  if (distanceToAgenda > AGENDA_TARGET.distance) return null;
+  if (direction.x > -0.2) return null;
+
+  const nearMovedZ = Math.abs(position.z - AGENDA_TARGET.center.z) <= AGENDA_TARGET.wallAssistZPadding;
+  const nearLegacyZ = Math.abs(position.z - AGENDA_TARGET.legacyCenter.z) <= AGENDA_TARGET.wallAssistZPadding;
+  if (!nearMovedZ && !nearLegacyZ) return null;
+
+  const distanceToWall = Math.max(0.35, position.x - AGENDA_TARGET.center.x);
+  return { id: 'agenda', distance: distanceToWall };
 }
 
 function getSphereHit(id, position, direction, target) {
