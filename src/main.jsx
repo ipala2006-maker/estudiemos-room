@@ -45,6 +45,8 @@ const AGENDA_STORAGE_KEY = 'estudiemos-room-agenda';
 const SPOTIFY_STORAGE_KEY = 'estudiemos-room-spotify-content';
 const SPOTIFY_ROOM_CONTENT_EVENT = 'estudiemos:spotify-room-content';
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
+const INTERACTION_TARGET_EVENT = 'estudiemos:interaction-target';
+const INTERACTION_TARGETS = new Set(['computer', 'agenda', 'screen', 'speaker']);
 
 function createAgendaItemId(item, index) {
   const titleSlug = String(item?.title ?? 'bloque')
@@ -133,6 +135,7 @@ function App() {
   const [isAimingAgendaBoard, setIsAimingAgendaBoard] = useState(false);
   const [isAimingScreen, setIsAimingScreen] = useState(false);
   const [isAimingSpeaker, setIsAimingSpeaker] = useState(false);
+  const [aimedInteractionTarget, setAimedInteractionTarget] = useState(undefined);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [screenLayout, setScreenLayout] = useState('side-by-side');
   const [agendaItems, setAgendaItems] = useState(loadStoredAgendaItems);
@@ -153,6 +156,11 @@ function App() {
     hasScreenContent,
     computerOpen
   });
+  const hasInteractionTargetSignal = aimedInteractionTarget !== undefined;
+  const canTargetComputer = hasInteractionTargetSignal ? aimedInteractionTarget === 'computer' : isNearComputer;
+  const canTargetAgenda = hasInteractionTargetSignal ? aimedInteractionTarget === 'agenda' : isAimingAgendaBoard;
+  const canTargetScreen = hasInteractionTargetSignal ? aimedInteractionTarget === 'screen' : isAimingScreen;
+  const canTargetSpeaker = hasInteractionTargetSignal ? aimedInteractionTarget === 'speaker' : isAimingSpeaker;
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
   const screenCommandCounterRef = useRef(0);
@@ -212,6 +220,16 @@ function App() {
   }, []);
 
   useEffect(() => {
+    function onInteractionTargetChange(event) {
+      const nextTarget = String(event.detail?.target ?? '');
+      setAimedInteractionTarget(INTERACTION_TARGETS.has(nextTarget) ? nextTarget : null);
+    }
+
+    window.addEventListener(INTERACTION_TARGET_EVENT, onInteractionTargetChange);
+    return () => window.removeEventListener(INTERACTION_TARGET_EVENT, onInteractionTargetChange);
+  }, []);
+
+  useEffect(() => {
     function onKeyDown(event) {
       const key = event.key.toLowerCase();
       if (speakerRemoteOpen && key === 'escape') {
@@ -236,32 +254,32 @@ function App() {
 
       if (!hasStarted || computerOpen || screenRemoteOpen || speakerRemoteOpen || wallAgendaOpen) return;
 
-      if (isNearDoor && key === 'e') {
-        toggleDoorRef.current();
-        return;
-      }
-
-      if (isAimingScreen && key === 'q') {
+      if (canTargetScreen && key === 'q') {
         document.exitPointerLock?.();
         setScreenRemoteOpen(true);
         return;
       }
 
-      if (isAimingSpeaker && key === 'q') {
+      if (canTargetSpeaker && key === 'q') {
         document.exitPointerLock?.();
         setSpeakerRemoteOpen(true);
         return;
       }
 
-      if (isAimingAgendaBoard && key === 'e') {
+      if (canTargetAgenda && key === 'e') {
         document.exitPointerLock?.();
         setWallAgendaOpen(true);
         return;
       }
 
-      if (isNearComputer && key === 'e') {
+      if (canTargetComputer && key === 'e') {
         document.exitPointerLock?.();
         setComputerOpen(true);
+        return;
+      }
+
+      if (isNearDoor && key === 'e') {
+        toggleDoorRef.current();
       }
     }
 
@@ -269,11 +287,11 @@ function App() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [
     computerOpen,
+    canTargetAgenda,
+    canTargetComputer,
+    canTargetScreen,
+    canTargetSpeaker,
     hasStarted,
-    isAimingAgendaBoard,
-    isAimingScreen,
-    isAimingSpeaker,
-    isNearComputer,
     isNearDoor,
     screenRemoteOpen,
     speakerRemoteOpen,
@@ -288,6 +306,7 @@ function App() {
     setIsAimingAgendaBoard(false);
     setIsAimingScreen(false);
     setIsAimingSpeaker(false);
+    setAimedInteractionTarget(null);
     setHasStarted(false);
     setIsNearComputer(false);
     setIsNearDoor(false);
@@ -475,23 +494,25 @@ function App() {
   }
 
   const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen;
-  const interactionPrompts = [
-    canShowWorldPrompts && isNearDoor
-      ? { key: 'door', label: `E - ${isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}` }
-      : null,
-    canShowWorldPrompts && isNearComputer
-      ? { key: 'computer', label: 'E - abrir computadora' }
-      : null,
-    canShowWorldPrompts && isAimingAgendaBoard
-      ? { key: 'agenda', label: 'E - editar agenda de pared' }
-      : null,
-    canShowWorldPrompts && isAimingScreen
-      ? { key: 'screen', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
-      : null,
-    canShowWorldPrompts && isAimingSpeaker
-      ? { key: 'speaker', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
-      : null
-  ].filter(Boolean);
+  const activeInteractionPrompt = canShowWorldPrompts
+    ? canTargetComputer
+      ? { key: 'computer', control: 'E', title: 'Abrir computadora', label: 'E - abrir computadora' }
+      : canTargetAgenda
+        ? { key: 'agenda', control: 'E', title: 'Editar agenda de pared', label: 'E - editar agenda' }
+        : canTargetScreen
+          ? { key: 'screen', control: 'Q', title: 'Control de pantalla', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
+          : canTargetSpeaker
+            ? { key: 'speaker', control: 'Q', title: 'Control de parlante', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
+            : isNearDoor
+              ? {
+                  key: 'door',
+                  control: 'E',
+                  title: isDoorOpen ? 'Salir al barrio' : 'Entrar a Casa 1',
+                  label: `E - ${isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}`
+                }
+              : null
+    : null;
+  const interactionPrompts = activeInteractionPrompt ? [activeInteractionPrompt] : [];
 
   if (!hasStarted) {
     return <StartScreen onEnter={() => setHasStarted(true)} />;
@@ -522,8 +543,7 @@ function App() {
 
       <Hud
         isDoorOpen={isDoorOpen}
-        isNearComputer={isNearComputer}
-        isNearDoor={isNearDoor}
+        interactionHint={activeInteractionPrompt}
         focusEconomy={focusEconomy}
         onBackHome={backToStart}
         onReset={() => resetWorldRef.current()}
