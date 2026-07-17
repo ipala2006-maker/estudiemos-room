@@ -18,7 +18,10 @@ import './styles/camera-controls.css';
 import './styles/computer-keyboard-controls.css';
 import './styles/computer-keyboard-scroll.css';
 import './utils/installComputerKeyboardController.js';
+import { installInteractionTargeting } from './utils/installInteractionTargeting.js';
 import './utils/installRoomSpeakerWorld.js';
+
+installInteractionTargeting();
 
 function createEmptyScreenZone() {
   return {
@@ -158,7 +161,7 @@ function App() {
   });
   const hasInteractionTargetSignal = aimedInteractionTarget !== undefined;
   const canTargetComputer = hasInteractionTargetSignal ? aimedInteractionTarget === 'computer' : isNearComputer;
-  const canTargetAgenda = hasInteractionTargetSignal ? aimedInteractionTarget === 'agenda' : isAimingAgendaBoard;
+  const canTargetAgenda = hasInteractionTargetSignal ? aimedInteractionTarget === 'agenda' || isAimingAgendaBoard : isAimingAgendaBoard;
   const canTargetScreen = hasInteractionTargetSignal ? aimedInteractionTarget === 'screen' : isAimingScreen;
   const canTargetSpeaker = hasInteractionTargetSignal ? aimedInteractionTarget === 'speaker' : isAimingSpeaker;
   const resetWorldRef = useRef(() => {});
