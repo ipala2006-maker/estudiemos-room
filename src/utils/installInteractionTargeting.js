@@ -50,6 +50,8 @@ const INTERIOR_BOUNDS = {
 
 const directionScratch = new THREE.Vector3();
 let lastTarget = undefined;
+let lastWorldScene = null;
+let lastWorldCamera = null;
 
 export function installInteractionTargeting() {
   if (typeof window === 'undefined' || window[PATCH_FLAG]) return;
@@ -58,15 +60,16 @@ export function installInteractionTargeting() {
 
   patchWebGlRender();
   patchCss3dRender();
+  installSceneHooks();
 }
 
 function patchWebGlRender() {
   const originalRender = THREE.WebGLRenderer.prototype.render;
   THREE.WebGLRenderer.prototype.render = function renderWithInteractionTarget(scene, camera, ...args) {
-    if (scene?.userData?.performancePass && camera?.isCamera) {
-      patchPhysicalAgenda(scene);
-      patchNeighborhood(scene);
-      publishInteractionTarget(camera);
+    if (isWorldScene(scene) && camera?.isCamera) {
+      lastWorldScene = scene;
+      lastWorldCamera = camera;
+      refreshInteractionRuntime();
     }
 
     return originalRender.call(this, scene, camera, ...args);
@@ -79,6 +82,64 @@ function patchCss3dRender() {
     patchCssAgenda(scene);
     return originalRender.call(this, scene, camera, ...args);
   };
+}
+
+function installSceneHooks() {
+  if (!THREE.Object3D.prototype.__estudiemosInteractionAddHooked) {
+    THREE.Object3D.prototype.__estudiemosInteractionAddHooked = true;
+    const originalAdd = THREE.Object3D.prototype.add;
+
+    THREE.Object3D.prototype.add = function addWithInteractionTargeting(...objects) {
+      const result = originalAdd.apply(this, objects);
+
+      if (this?.isScene && isWorldScene(this)) {
+        lastWorldScene = this;
+        objects.forEach((object) => {
+          if (object?.isCamera) lastWorldCamera = object;
+        });
+      }
+
+      if (this?.isScene && objects.some(isAgendaCssObjectLike)) {
+        patchCssAgenda(this);
+      }
+
+      if (lastWorldScene) {
+        refreshInteractionRuntime();
+      }
+
+      return result;
+    };
+  }
+
+  if (!THREE.Camera.prototype.__estudiemosInteractionCameraHooked) {
+    THREE.Camera.prototype.__estudiemosInteractionCameraHooked = true;
+    const originalUpdateMatrixWorld = THREE.Camera.prototype.updateMatrixWorld;
+
+    THREE.Camera.prototype.updateMatrixWorld = function updateMatrixWorldWithInteractionTargeting(...args) {
+      lastWorldCamera = this;
+      refreshInteractionRuntime();
+      return originalUpdateMatrixWorld.apply(this, args);
+    };
+  }
+}
+
+function isWorldScene(scene) {
+  return Boolean(scene?.isScene && (scene.userData?.performancePass || scene.getObjectByName?.('estudiemos-room-exterior-neighborhood')));
+}
+
+function isAgendaCssObjectLike(object) {
+  return Boolean(object?.element?.classList?.contains('css-agenda-board') || object?.isCSS3DObject);
+}
+
+function refreshInteractionRuntime() {
+  if (lastWorldScene) {
+    patchPhysicalAgenda(lastWorldScene);
+    patchNeighborhood(lastWorldScene);
+  }
+
+  if (lastWorldCamera?.isCamera) {
+    publishInteractionTarget(lastWorldCamera);
+  }
 }
 
 function publishInteractionTarget(camera) {
