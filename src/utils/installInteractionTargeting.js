@@ -4,7 +4,7 @@ import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 const TARGET_EVENT = 'estudiemos:interaction-target';
 const PATCH_FLAG = '__estudiemosInteractionTargetingInstalled';
 const AGENDA_PATCH_FLAG = '__estudiemosAgendaMoved';
-const NEIGHBORHOOD_PATCH_FLAG = '__estudiemosVisibleNeighborhoodFix2318';
+const NEIGHBORHOOD_PATCH_FLAG = '__estudiemosVisibleNeighborhoodFix2336';
 
 const GIANT_SCREEN_WORLD = {
   center: new THREE.Vector3(90, 8.25, -34.25),
@@ -28,11 +28,11 @@ const AGENDA_TARGET = {
   domWidth: 640,
   domHeight: 390,
   padding: 1.35,
-  distance: 15,
-  wallAssistZPadding: 9.6,
-  proximityDistance: 13.5,
-  proximityMaxX: 77,
-  proximityFacingLimit: 0.65
+  distance: 18,
+  wallAssistZPadding: 12.5,
+  proximityDistance: 16,
+  proximityMaxX: 82,
+  proximityFacingLimit: 0.92
 };
 
 const ROOM_SPEAKER_TARGET = {
@@ -51,11 +51,10 @@ const INTERIOR_BOUNDS = {
 const directionScratch = new THREE.Vector3();
 let lastTarget = undefined;
 
-installInteractionTargeting();
-
-function installInteractionTargeting() {
+export function installInteractionTargeting() {
   if (typeof window === 'undefined' || window[PATCH_FLAG]) return;
   window[PATCH_FLAG] = true;
+  document.documentElement.dataset.estudiemosInteractionTargeting = '2336';
 
   patchWebGlRender();
   patchCss3dRender();
@@ -188,7 +187,7 @@ function getAgendaProximityHit(position, direction) {
   const nearLegacyZ = Math.abs(position.z - AGENDA_TARGET.legacyCenter.z) <= AGENDA_TARGET.wallAssistZPadding;
   if (!nearMovedZ && !nearLegacyZ) return null;
 
-  return { id: 'agenda', distance: 0.18 + distanceToAgenda * 0.025 };
+  return { id: 'agenda', distance: 0.04 + distanceToAgenda * 0.012 };
 }
 
 function getSphereHit(id, position, direction, target) {
@@ -267,6 +266,7 @@ function patchCssAgenda(scene) {
 }
 
 function patchNeighborhood(scene) {
+  document.documentElement.dataset.estudiemosNeighborhoodPatch = 'ran';
   const state = scene.userData[NEIGHBORHOOD_PATCH_FLAG] ?? {
     signsAdded: false,
     leftHouseMoved: false,
@@ -277,6 +277,7 @@ function patchNeighborhood(scene) {
   const exterior = scene.getObjectByName?.('estudiemos-room-exterior-neighborhood') ?? scene;
 
   if (!state.signsAdded) {
+    hideLegacyNeighborhoodSigns(exterior);
     exterior.add(createNeighborhoodSignGroup());
     state.signsAdded = true;
   }
@@ -287,15 +288,36 @@ function patchNeighborhood(scene) {
     if (!object?.name || !object.position) return;
 
     if (!state.leftHouseMoved && object.name === 'suburban-house-2') {
-      object.position.set(-24, 0, -22);
+      object.position.set(-35, 0, -25);
       object.rotation.y = Math.PI;
       state.leftHouseMoved = true;
     }
 
     if (!state.rightHouseMoved && object.name === 'suburban-house-3') {
-      object.position.set(24, 0, -22);
+      object.position.set(35, 0, -25);
       object.rotation.y = Math.PI;
       state.rightHouseMoved = true;
+    }
+  });
+}
+
+function hideLegacyNeighborhoodSigns(exterior) {
+  exterior.traverse((object) => {
+    if (!object?.isMesh || !object.position) return;
+
+    const nearMainSign =
+      Math.abs(object.position.x + 7.2) < 3.4 &&
+      Math.abs(object.position.z - 5.35) < 2.2 &&
+      object.position.y > 0.4 &&
+      object.position.y < 3.6;
+    const nearCasa1Marker =
+      Math.abs(object.position.x - 5.7) < 1.8 &&
+      Math.abs(object.position.z + 12.8) < 1.8 &&
+      object.position.y > 0.4 &&
+      object.position.y < 2.5;
+
+    if (nearMainSign || nearCasa1Marker) {
+      object.visible = false;
     }
   });
 }
@@ -306,13 +328,13 @@ function createNeighborhoodSignGroup() {
 
   group.add(
     createProfessionalSign({
-      title: 'ESTUDIEMOS ROOM',
-      subtitle: 'Casa 1 - modo enfoque',
+      title: 'CASA 1',
+      subtitle: 'Modo enfoque',
       accent: '#e0c47a',
-      position: [-8.1, 2.55, 6.15],
+      position: [-8.2, 2.55, 6.55],
       rotationY: 0.24,
-      width: 5.45,
-      height: 1.82,
+      width: 6.4,
+      height: 2.28,
       postSpread: 4.2
     })
   );
@@ -320,12 +342,12 @@ function createNeighborhoodSignGroup() {
   group.add(
     createProfessionalSign({
       title: 'CASA 1',
-      subtitle: 'Computadora + pantalla',
+      subtitle: 'Entrar y estudiar',
       accent: '#9fc1b0',
-      position: [6.2, 1.78, -12.4],
+      position: [7.1, 1.8, -12.4],
       rotationY: -0.26,
-      width: 2.9,
-      height: 1.18,
+      width: 3.35,
+      height: 1.28,
       postSpread: 0
     })
   );
@@ -335,10 +357,10 @@ function createNeighborhoodSignGroup() {
       title: 'CASA 2',
       subtitle: 'Proximamente',
       accent: '#b9c8df',
-      position: [-20.8, 1.85, -7.4],
+      position: [-24, 1.85, -7.6],
       rotationY: 0.18,
-      width: 2.9,
-      height: 1.18,
+      width: 3.2,
+      height: 1.22,
       postSpread: 1.8
     })
   );
@@ -348,10 +370,10 @@ function createNeighborhoodSignGroup() {
       title: 'CASA 3',
       subtitle: 'Materiales',
       accent: '#d8c47e',
-      position: [20.8, 1.85, -7.4],
+      position: [24, 1.85, -7.6],
       rotationY: -0.18,
-      width: 2.9,
-      height: 1.18,
+      width: 3.2,
+      height: 1.22,
       postSpread: 1.8
     })
   );
@@ -364,26 +386,31 @@ function createProfessionalSign({ title, subtitle, accent, position, rotationY, 
   group.position.set(...position);
   group.rotation.y = rotationY;
 
-  const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x111817 });
-  const postMaterial = new THREE.MeshBasicMaterial({ color: 0x48554f });
-  const accentMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(accent) });
+  const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x111817, depthTest: false, depthWrite: false });
+  const postMaterial = new THREE.MeshBasicMaterial({ color: 0x48554f, depthTest: false, depthWrite: false });
+  const accentMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(accent), depthTest: false, depthWrite: false });
 
   const back = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, height + 0.16, 0.16), frameMaterial);
   back.castShadow = true;
+  back.renderOrder = 36;
   group.add(back);
 
   const face = new THREE.Mesh(
     new THREE.PlaneGeometry(width, height),
     new THREE.MeshBasicMaterial({
       map: createSignTexture({ title, subtitle, accent }),
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false
     })
   );
-  face.position.z = 0.09;
+  face.position.z = 0.18;
+  face.renderOrder = 38;
   group.add(face);
 
   const rail = new THREE.Mesh(new THREE.BoxGeometry(width + 0.32, 0.08, 0.22), accentMaterial);
   rail.position.set(0, height / 2 + 0.1, 0.02);
+  rail.renderOrder = 39;
   group.add(rail);
 
   const postOffsets = postSpread > 0 ? [-postSpread / 2, postSpread / 2] : [0];
@@ -391,6 +418,7 @@ function createProfessionalSign({ title, subtitle, accent, position, rotationY, 
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, position[1] * 1.55, 0.16), postMaterial);
     post.position.set(x, -position[1] * 0.5, -0.05);
     post.castShadow = true;
+    post.renderOrder = 35;
     group.add(post);
   });
 
@@ -399,44 +427,47 @@ function createProfessionalSign({ title, subtitle, accent, position, rotationY, 
 
 function createSignTexture({ title, subtitle, accent }) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 384;
+  canvas.width = 1280;
+  canvas.height = 512;
   const ctx = canvas.getContext('2d');
 
   const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, '#18211f');
-  gradient.addColorStop(0.62, '#101817');
-  gradient.addColorStop(1, '#070d0e');
+  gradient.addColorStop(0, '#22302b');
+  gradient.addColorStop(0.58, '#121c1a');
+  gradient.addColorStop(1, '#090f10');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-  ctx.lineWidth = 8;
-  ctx.strokeRect(42, 42, canvas.width - 84, canvas.height - 84);
+  ctx.fillStyle = 'rgba(255,255,255,0.045)';
+  ctx.fillRect(58, 58, canvas.width - 116, canvas.height - 116);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 10;
+  ctx.strokeRect(54, 54, canvas.width - 108, canvas.height - 108);
 
   ctx.fillStyle = accent;
-  ctx.fillRect(42, 42, canvas.width - 84, 14);
-  ctx.fillRect(82, canvas.height - 68, 245, 10);
+  ctx.fillRect(54, 54, canvas.width - 108, 18);
+  ctx.fillRect(92, canvas.height - 92, 330, 14);
 
   ctx.fillStyle = '#fff8df';
-  ctx.font = `900 ${title.length > 11 ? 72 : 92}px system-ui, sans-serif`;
+  ctx.font = `900 ${title.length > 6 ? 132 : 178}px system-ui, sans-serif`;
   ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(0,0,0,0.45)';
-  ctx.shadowBlur = 14;
-  ctx.fillText(title, 82, 170);
+  ctx.shadowBlur = 18;
+  ctx.fillText(title, 92, 226);
 
   ctx.shadowBlur = 0;
-  ctx.fillStyle = 'rgba(245,238,218,0.82)';
-  ctx.font = '700 42px system-ui, sans-serif';
-  ctx.fillText(subtitle, 86, 250);
+  ctx.fillStyle = 'rgba(245,238,218,0.88)';
+  ctx.font = '800 72px system-ui, sans-serif';
+  ctx.fillText(subtitle, 98, 346);
 
   ctx.fillStyle = accent;
   ctx.beginPath();
-  ctx.arc(870, 105, 32, 0, Math.PI * 2);
+  ctx.arc(1110, 142, 46, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,0.72)';
   ctx.beginPath();
-  ctx.arc(900, 105, 15, 0, Math.PI * 2);
+  ctx.arc(1152, 142, 21, 0, Math.PI * 2);
   ctx.fill();
 
   const texture = new THREE.CanvasTexture(canvas);
