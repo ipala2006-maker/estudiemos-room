@@ -339,8 +339,8 @@ function patchNeighborhood(scene) {
 
   if (!state.signsAdded) {
     hideLegacyNeighborhoodSigns(exterior);
-    exterior.add(createNeighborhoodSignGroup());
     state.signsAdded = true;
+    exterior.add(createNeighborhoodSignGroup());
   }
 
   if (state.leftHouseMoved && state.rightHouseMoved) return;
