@@ -22,7 +22,6 @@ const COMPUTER_TARGET = {
 
 const AGENDA_TARGET = {
   oldLocalCenter: new THREE.Vector3(-27.6, 5.6, -12.8),
-  legacyCenter: new THREE.Vector3(62.4, 5.6, -18.8),
   center: new THREE.Vector3(104, 5.45, 22.62),
   localCenter: new THREE.Vector3(14, 5.45, 28.62),
   width: 9.2,
@@ -30,10 +29,6 @@ const AGENDA_TARGET = {
   domHeight: 520,
   padding: 1.65,
   distance: 26,
-  legacyDistance: 18,
-  wallAssistPadding: 13.5,
-  proximityDistance: 13,
-  proximityMaxZ: 23.5,
   rotationY: Math.PI,
   physicalBoardScale: new THREE.Vector3(6.15, 4.15, 1),
   physicalFrameScale: 2.32
@@ -196,32 +191,7 @@ function getScreenHit(position, direction) {
 }
 
 function getAgendaHit(position, direction) {
-  const movedHit = getAgendaZPlaneHit(position, direction, AGENDA_TARGET.center, AGENDA_TARGET.width, AGENDA_TARGET.distance);
-  const legacyHit = getAgendaXPlaneHit(position, direction, AGENDA_TARGET.legacyCenter, 4.8, AGENDA_TARGET.legacyDistance);
-  const assistedHit = getAgendaWallAssistHit(position, direction);
-  const proximityHit = getAgendaProximityHit(position, direction);
-
-  return [movedHit, legacyHit, assistedHit, proximityHit].filter(Boolean).sort((a, b) => a.distance - b.distance)[0] ?? null;
-}
-
-function getAgendaXPlaneHit(position, direction, center, width, maxDistance) {
-  if (Math.abs(direction.x) < 0.001) return null;
-
-  const distance = (center.x - position.x) / direction.x;
-  if (distance < 0.25 || distance > maxDistance) return null;
-
-  const hitY = position.y + direction.y * distance;
-  const hitZ = position.z + direction.z * distance;
-  const halfWidth = width / 2 + AGENDA_TARGET.padding;
-  const halfHeight = (width * (AGENDA_TARGET.domHeight / AGENDA_TARGET.domWidth)) / 2 + AGENDA_TARGET.padding;
-
-  const isInside =
-    hitZ >= center.z - halfWidth &&
-    hitZ <= center.z + halfWidth &&
-    hitY >= center.y - halfHeight &&
-    hitY <= center.y + halfHeight;
-
-  return isInside ? { id: 'agenda', distance } : null;
+  return getAgendaZPlaneHit(position, direction, AGENDA_TARGET.center, AGENDA_TARGET.width, AGENDA_TARGET.distance);
 }
 
 function getAgendaZPlaneHit(position, direction, center, width, maxDistance) {
@@ -242,37 +212,6 @@ function getAgendaZPlaneHit(position, direction, center, width, maxDistance) {
     hitY <= center.y + halfHeight;
 
   return isInside ? { id: 'agenda', distance } : null;
-}
-
-function getAgendaWallAssistHit(position, direction) {
-  const distanceToMovedCenter = Math.hypot(position.x - AGENDA_TARGET.center.x, position.z - AGENDA_TARGET.center.z);
-  const distanceToLegacyCenter = Math.hypot(position.x - AGENDA_TARGET.legacyCenter.x, position.z - AGENDA_TARGET.legacyCenter.z);
-  const distanceToAgenda = Math.min(distanceToMovedCenter, distanceToLegacyCenter);
-  if (distanceToAgenda > AGENDA_TARGET.distance) return null;
-
-  const nearMovedX = Math.abs(position.x - AGENDA_TARGET.center.x) <= AGENDA_TARGET.wallAssistPadding;
-  const nearMovedZ = Math.abs(position.z - AGENDA_TARGET.center.z) <= AGENDA_TARGET.wallAssistPadding;
-  const nearLegacyZ = Math.abs(position.z - AGENDA_TARGET.legacyCenter.z) <= AGENDA_TARGET.wallAssistPadding;
-  if (!((nearMovedX && nearMovedZ) || nearLegacyZ)) return null;
-
-  const distanceToWall = nearMovedZ ? Math.max(0.35, AGENDA_TARGET.center.z - position.z) : Math.max(0.35, position.x - AGENDA_TARGET.legacyCenter.x);
-  return { id: 'agenda', distance: distanceToWall };
-}
-
-function getAgendaProximityHit(position, direction) {
-  if (position.z > AGENDA_TARGET.proximityMaxZ || position.z < INTERIOR_BOUNDS.minZ - 0.4) return null;
-
-  const distanceToMovedCenter = Math.hypot(position.x - AGENDA_TARGET.center.x, position.z - AGENDA_TARGET.center.z);
-  const distanceToLegacyCenter = Math.hypot(position.x - AGENDA_TARGET.legacyCenter.x, position.z - AGENDA_TARGET.legacyCenter.z);
-  const distanceToAgenda = Math.min(distanceToMovedCenter, distanceToLegacyCenter);
-  if (distanceToAgenda > AGENDA_TARGET.proximityDistance) return null;
-
-  const nearMovedX = Math.abs(position.x - AGENDA_TARGET.center.x) <= AGENDA_TARGET.wallAssistPadding;
-  const nearMovedZ = Math.abs(position.z - AGENDA_TARGET.center.z) <= AGENDA_TARGET.wallAssistPadding;
-  const nearLegacyZ = Math.abs(position.z - AGENDA_TARGET.legacyCenter.z) <= AGENDA_TARGET.wallAssistPadding;
-  if (!((nearMovedX && nearMovedZ) || nearLegacyZ)) return null;
-
-  return { id: 'agenda', distance: 0.04 + distanceToAgenda * 0.012 };
 }
 
 function getSphereHit(id, position, direction, target) {
