@@ -4,5 +4,5 @@ import '../utils/installInteractionTargeting.js';
 import '../utils/installRoomSpeakerWorld.js';
 import '../utils/installSpotifyPlaybackEnhancer.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-17 14:08 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-17-1408-clean-signs-wide-neighborhood';
+export const BUILD_LABEL = 'Pages build 2026-07-17 17:45 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-17-1745-agenda-opposite-wall';
