@@ -78,6 +78,11 @@ function normalizeAgendaItems(items) {
       time: /^\d{2}:\d{2}$/.test(String(item?.time ?? '').slice(0, 5)) ? String(item?.time ?? '').slice(0, 5) : '',
       title: String(item?.title ?? '').trim().slice(0, 48),
       detail: String(item?.detail ?? '').trim().slice(0, 96),
+      subject: String(item?.subject ?? '').trim().slice(0, 32),
+      durationMinutes: Number.isFinite(Number(item?.durationMinutes)) ? Math.max(15, Math.min(360, Number(item.durationMinutes))) : undefined,
+      priority: String(item?.priority ?? '').trim().slice(0, 16),
+      type: String(item?.type ?? '').trim().slice(0, 24),
+      resourceUrl: String(item?.resourceUrl ?? '').trim().slice(0, 240),
       completed: Boolean(item?.completed)
     }));
 }
