@@ -94,6 +94,7 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
   const [draftDetail, setDraftDetail] = useState('');
   const [draftTime, setDraftTime] = useState(() => getNextAgendaTime(agendaItems, initialDate));
   const titleInputRef = useRef(null);
+  const detailInputRef = useRef(null);
   const sortedAgendaItems = useMemo(() => sortAgendaItems(agendaItems), [agendaItems]);
   const selectedItems = useMemo(
     () => sortedAgendaItems.filter((item) => item.date === selectedDate),
@@ -147,12 +148,25 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
   function addItem(event) {
     event.preventDefault();
     const targetDate = selectedDate || getTodayDateValue();
+    const title = draftTitle.trim();
+    const detail = draftDetail.trim();
+
+    if (!title) {
+      titleInputRef.current?.focus({ preventScroll: true });
+      return;
+    }
+
+    if (!detail) {
+      detailInputRef.current?.focus({ preventScroll: true });
+      return;
+    }
+
     const nextAgendaItem = {
       id: `wall-agenda-${Date.now()}-${agendaItems.length}`,
       date: targetDate,
       time: draftTime || getNextAgendaTime(agendaItems, targetDate),
-      title: draftTitle.trim() || 'Nuevo bloque',
-      detail: draftDetail.trim() || 'Objetivo de estudio',
+      title,
+      detail,
       completed: false
     };
 
@@ -176,7 +190,7 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
           <div>
             <span>Agenda de pared</span>
             <h2>{formatAgendaDateLabel(selectedDate)}</h2>
-            <p>{nextItem ? `${nextItem.time || '--:--'} · ${nextItem.title || 'Bloque sin titulo'}` : 'Agenda vacia'}</p>
+            <p>{nextItem ? `${nextItem.time || '--:--'} - ${nextItem.title || 'Bloque sin titulo'}` : 'Agenda vacia'}</p>
           </div>
           <button type="button" className="wall-agenda-close" onClick={onClose} aria-label="Cerrar agenda de pared">
             <X size={22} aria-hidden="true" />
@@ -289,6 +303,7 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
             <label>
               <small>Detalle</small>
               <input
+                ref={detailInputRef}
                 type="text"
                 value={draftDetail}
                 maxLength={96}
