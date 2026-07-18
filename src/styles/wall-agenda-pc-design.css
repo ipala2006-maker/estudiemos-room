@@ -1,0 +1,31 @@
+.game-shell .wall-agenda-pc-design {
+  width: min(1240px, calc(100vw - 32px));
+  max-height: min(820px, calc(100vh - 28px));
+  grid-template-rows: minmax(0, 1fr);
+  padding: 0;
+  overflow: hidden;
+  border-radius: 22px;
+  background: rgba(8, 13, 14, 0.98);
+}
+
+.game-shell .wall-agenda-pc-design .agenda-app-shell {
+  width: 100%;
+  height: min(820px, calc(100vh - 28px));
+  min-height: 0;
+  border-radius: inherit;
+}
+
+.game-shell .wall-agenda-pc-design .agenda-app-actions {
+  align-items: center;
+}
+
+.game-shell .wall-agenda-pc-design .agenda-close-button {
+  min-width: 42px;
+  width: 42px;
+  padding: 0;
+}
+
+.game-shell .wall-agenda-pc-design .agenda-quick-add[data-needs-student-input='true'] {
+  border-color: rgba(224, 196, 122, 0.74) !important;
+  box-shadow: 0 0 0 3px rgba(224, 196, 122, 0.16);
+}
