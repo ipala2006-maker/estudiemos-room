@@ -31,7 +31,6 @@ export function Hud({ isDoorOpen, interactionHint, focusEconomy, onBackHome, onR
         >
           <div className="hud-focus-avatar-shell">
             <DachshundMascot skinId={equippedSkin.skin.id} rank={equippedSkin.rank} size="hud" showBadges={false} />
-            <span className="hud-focus-rank-chip">R{equippedSkin.rank}</span>
           </div>
           <div className="hud-focus-xp-body">
             <div className="hud-focus-xp-top">
