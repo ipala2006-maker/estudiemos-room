@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, Plus, Square, Trash2, X } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock3, Plus, Square, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 function getTodayDateValue() {
@@ -14,6 +14,28 @@ function parseAgendaDate(value) {
   const date = new Date(year || new Date().getFullYear(), (month || 1) - 1, day || 1);
   date.setHours(12, 0, 0, 0);
   return date;
+}
+
+function addDays(date, days) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  nextDate.setHours(12, 0, 0, 0);
+  return nextDate;
+}
+
+function getDateValue(date) {
+  const normalizedDate = new Date(date);
+  normalizedDate.setHours(12, 0, 0, 0);
+  return normalizedDate.toISOString().slice(0, 10);
+}
+
+function getWeekStart(date) {
+  const weekStart = new Date(date);
+  const day = weekStart.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  weekStart.setDate(weekStart.getDate() + mondayOffset);
+  weekStart.setHours(12, 0, 0, 0);
+  return weekStart;
 }
 
 function getRoundedAgendaTime(date = new Date()) {
@@ -52,6 +74,19 @@ function formatAgendaDateLabel(dateValue) {
   });
 }
 
+function formatShortDate(dateValue) {
+  return parseAgendaDate(dateValue).toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: 'short'
+  });
+}
+
+function formatWeekday(dateValue) {
+  return parseAgendaDate(dateValue).toLocaleDateString('es-AR', {
+    weekday: 'short'
+  });
+}
+
 export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) {
   const initialDate = agendaItems[0]?.date ?? getTodayDateValue();
   const [selectedDate, setSelectedDate] = useState(initialDate);
@@ -64,7 +99,22 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
     () => sortedAgendaItems.filter((item) => item.date === selectedDate),
     [selectedDate, sortedAgendaItems]
   );
-  const nextItem = sortedAgendaItems.find((item) => !item.completed) ?? sortedAgendaItems[0] ?? null;
+  const pendingItems = useMemo(() => sortedAgendaItems.filter((item) => !item.completed), [sortedAgendaItems]);
+  const nextItem = pendingItems.find((item) => item.date >= getTodayDateValue()) ?? pendingItems[0] ?? null;
+  const weekDays = useMemo(() => {
+    const weekStart = getWeekStart(parseAgendaDate(selectedDate));
+    return Array.from({ length: 7 }, (_, index) => {
+      const dateValue = getDateValue(addDays(weekStart, index));
+      const dayItems = sortedAgendaItems.filter((item) => item.date === dateValue);
+      return {
+        value: dateValue,
+        label: formatWeekday(dateValue),
+        date: formatShortDate(dateValue),
+        total: dayItems.length,
+        completed: dayItems.filter((item) => item.completed).length
+      };
+    });
+  }, [selectedDate, sortedAgendaItems]);
 
   useEffect(() => {
     titleInputRef.current?.focus({ preventScroll: true });
@@ -126,22 +176,107 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
           <div>
             <span>Agenda de pared</span>
             <h2>{formatAgendaDateLabel(selectedDate)}</h2>
-            <p>{nextItem ? `${nextItem.time || '--:--'} ${nextItem.title || 'Bloque sin titulo'}` : 'Agenda vacia'}</p>
+            <p>{nextItem ? `${nextItem.time || '--:--'} · ${nextItem.title || 'Bloque sin titulo'}` : 'Agenda vacia'}</p>
           </div>
           <button type="button" className="wall-agenda-close" onClick={onClose} aria-label="Cerrar agenda de pared">
             <X size={22} aria-hidden="true" />
           </button>
         </header>
 
-        <section className="wall-agenda-summary wall-agenda-simple-summary" aria-label="Resumen de agenda">
-          <span>{selectedItems.length} en este dia</span>
-          <span>{agendaItems.filter((item) => !item.completed).length} pendientes</span>
-        </section>
+        <div className="wall-agenda-workspace">
+          <aside className="wall-agenda-sidebar" aria-label="Resumen de agenda">
+            <div className="wall-agenda-sidebar-card">
+              <span>Fecha</span>
+              <input type="date" value={selectedDate} onChange={(event) => chooseDate(event.target.value)} />
+            </div>
+            <button type="button" className="wall-agenda-today-button" onClick={() => chooseDate(getTodayDateValue())}>
+              <CalendarDays size={16} aria-hidden="true" />
+              <span>Hoy</span>
+            </button>
+            <div className="wall-agenda-counts">
+              <span>{selectedItems.length} en el dia</span>
+              <span>{pendingItems.length} pendientes</span>
+            </div>
+          </aside>
 
-        <form className="wall-agenda-quick-add wall-agenda-simple-entry" onSubmit={addItem}>
-          <div className="wall-agenda-simple-fields">
+          <main className="wall-agenda-main" aria-label="Calendario de pared">
+            <div className="wall-agenda-week-strip" aria-label="Semana">
+              {weekDays.map((day) => (
+                <button
+                  type="button"
+                  key={day.value}
+                  className={`wall-agenda-week-day${day.value === selectedDate ? ' is-selected' : ''}`}
+                  onClick={() => chooseDate(day.value)}
+                >
+                  <span>{day.label}</span>
+                  <strong>{day.date}</strong>
+                  <small>{day.total === 0 ? 'Libre' : `${day.completed}/${day.total}`}</small>
+                </button>
+              ))}
+            </div>
+
+            <section className="wall-agenda-day-panel" aria-label="Bloques del dia seleccionado">
+              <div className="wall-agenda-day-title">
+                <CalendarDays size={17} aria-hidden="true" />
+                <strong>{selectedItems.length === 0 ? 'Sin bloques para este dia' : 'Bloques del dia'}</strong>
+              </div>
+
+              <div className="wall-agenda-editor-list" aria-label="Bloques editables">
+                {selectedItems.length === 0 && (
+                  <div className="wall-agenda-empty">
+                    <CalendarDays size={28} aria-hidden="true" />
+                    <strong>Dia libre</strong>
+                    <span>Agrega un bloque desde el panel de la derecha.</span>
+                  </div>
+                )}
+
+                {selectedItems.map((item) => (
+                  <article className={`wall-agenda-row${item.completed ? ' is-completed' : ''}`} key={item.id}>
+                    <button
+                      type="button"
+                      className="wall-agenda-check"
+                      onClick={() => updateItem(item.id, { completed: !item.completed })}
+                      aria-label={item.completed ? 'Marcar pendiente' : 'Marcar completado'}
+                    >
+                      {item.completed ? <CheckCircle2 size={19} aria-hidden="true" /> : <Square size={19} aria-hidden="true" />}
+                    </button>
+                    <label className="wall-agenda-row-time">
+                      <span>Hora</span>
+                      <input type="time" value={item.time ?? ''} onChange={(event) => updateItem(item.id, { time: event.target.value })} />
+                    </label>
+                    <label className="wall-agenda-row-title">
+                      <span>Tarea</span>
+                      <input
+                        type="text"
+                        value={item.title ?? ''}
+                        maxLength={48}
+                        placeholder="Bloque sin titulo"
+                        onChange={(event) => updateItem(item.id, { title: event.target.value })}
+                      />
+                    </label>
+                    <label className="wall-agenda-row-detail">
+                      <span>Detalle</span>
+                      <input
+                        type="text"
+                        value={item.detail ?? ''}
+                        maxLength={96}
+                        placeholder="Objetivo o material"
+                        onChange={(event) => updateItem(item.id, { detail: event.target.value })}
+                      />
+                    </label>
+                    <button type="button" className="wall-agenda-delete" onClick={() => removeItem(item.id)} aria-label={`Eliminar ${item.title}`}>
+                      <Trash2 size={17} aria-hidden="true" />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </main>
+
+          <form className="wall-agenda-new-card" onSubmit={addItem} aria-label="Nuevo bloque">
+            <span>Nuevo bloque</span>
             <label>
-              <span>Tarea</span>
+              <small>Tarea</small>
               <input
                 ref={titleInputRef}
                 type="text"
@@ -152,91 +287,32 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
               />
             </label>
             <label>
-              <span>Detalle</span>
+              <small>Detalle</small>
               <input
                 type="text"
                 value={draftDetail}
                 maxLength={96}
-                placeholder="Material, objetivo o recordatorio"
+                placeholder="Material u objetivo"
                 onChange={(event) => setDraftDetail(event.target.value)}
               />
             </label>
-            <div className="wall-agenda-simple-when">
-              <label>
-                <span>Fecha</span>
-                <input type="date" value={selectedDate} onChange={(event) => chooseDate(event.target.value)} />
-              </label>
-              <label>
-                <span>Hora</span>
-                <input type="time" value={draftTime} onChange={(event) => setDraftTime(event.target.value)} />
-              </label>
-            </div>
-          </div>
-          <button type="submit" className="wall-agenda-primary">
-            <Plus size={18} aria-hidden="true" />
-            <span>Agregar</span>
-          </button>
-        </form>
-
-        <section className="wall-agenda-day-tools">
-          <div>
-            <CalendarDays size={18} aria-hidden="true" />
-            <strong>{selectedItems.length === 0 ? 'Sin bloques para este dia' : 'Bloques del dia'}</strong>
-          </div>
-        </section>
-
-        <div className="wall-agenda-editor-list" aria-label="Bloques editables">
-          {selectedItems.length === 0 && (
-            <div className="wall-agenda-empty">
-              <CalendarDays size={28} aria-hidden="true" />
-              <strong>Agenda lista</strong>
-              <span>Agrega un bloque para que aparezca en el cartel.</span>
-            </div>
-          )}
-
-          {selectedItems.map((item) => (
-            <article className={`wall-agenda-row${item.completed ? ' is-completed' : ''}`} key={item.id}>
-              <button
-                type="button"
-                className="wall-agenda-check"
-                onClick={() => updateItem(item.id, { completed: !item.completed })}
-                aria-label={item.completed ? 'Marcar pendiente' : 'Marcar completado'}
-              >
-                {item.completed ? <CheckCircle2 size={20} aria-hidden="true" /> : <Square size={20} aria-hidden="true" />}
-              </button>
-              <label>
-                <span>Fecha</span>
-                <input type="date" value={item.date ?? selectedDate} onChange={(event) => updateItem(item.id, { date: event.target.value })} />
-              </label>
-              <label>
-                <span>Hora</span>
-                <input type="time" value={item.time ?? ''} onChange={(event) => updateItem(item.id, { time: event.target.value })} />
-              </label>
-              <label>
-                <span>Titulo</span>
-                <input
-                  type="text"
-                  value={item.title ?? ''}
-                  maxLength={48}
-                  placeholder="Bloque sin titulo"
-                  onChange={(event) => updateItem(item.id, { title: event.target.value })}
-                />
-              </label>
-              <label>
-                <span>Detalle</span>
-                <input
-                  type="text"
-                  value={item.detail ?? ''}
-                  maxLength={96}
-                  placeholder="Objetivo o material"
-                  onChange={(event) => updateItem(item.id, { detail: event.target.value })}
-                />
-              </label>
-              <button type="button" className="wall-agenda-delete" onClick={() => removeItem(item.id)} aria-label={`Eliminar ${item.title}`}>
-                <Trash2 size={18} aria-hidden="true" />
-              </button>
-            </article>
-          ))}
+            <label>
+              <small>Fecha</small>
+              <input type="date" value={selectedDate} onChange={(event) => chooseDate(event.target.value)} />
+            </label>
+            <label>
+              <small>Hora</small>
+              <input type="time" value={draftTime} onChange={(event) => setDraftTime(event.target.value)} />
+            </label>
+            <button type="submit" className="wall-agenda-primary">
+              <Plus size={18} aria-hidden="true" />
+              <span>Agregar</span>
+            </button>
+            <p>
+              <Clock3 size={14} aria-hidden="true" />
+              Se sincroniza con el cartel de la sala.
+            </p>
+          </form>
         </div>
       </div>
     </section>
