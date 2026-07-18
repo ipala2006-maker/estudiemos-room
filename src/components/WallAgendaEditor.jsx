@@ -34,6 +34,12 @@ function addAgendaMinutes(timeValue, minutes) {
   return date.toTimeString().slice(0, 5);
 }
 
+function addAgendaDays(dateValue, days) {
+  const date = parseAgendaDate(dateValue);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 function sortAgendaItems(items) {
   return [...items].sort((a, b) => `${a.date ?? ''} ${a.time ?? ''}`.localeCompare(`${b.date ?? ''} ${b.time ?? ''}`));
 }
@@ -52,6 +58,16 @@ function formatAgendaDateLabel(dateValue) {
   });
 }
 
+function formatAgendaDateShort(dateValue) {
+  return parseAgendaDate(dateValue).toLocaleDateString('es-AR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short'
+  });
+}
+
+const TIME_PRESETS = ['08:00', '10:00', '14:00', '16:00', '18:00', '20:00'];
+
 export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) {
   const initialDate = agendaItems[0]?.date ?? getTodayDateValue();
   const [selectedDate, setSelectedDate] = useState(initialDate);
@@ -65,6 +81,17 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
     [selectedDate, sortedAgendaItems]
   );
   const nextItem = sortedAgendaItems.find((item) => !item.completed) ?? sortedAgendaItems[0] ?? null;
+  const datePresets = useMemo(() => {
+    const today = getTodayDateValue();
+    return [
+      { label: 'Hoy', value: today },
+      { label: 'Manana', value: addAgendaDays(today, 1) },
+      { label: 'Semana', value: addAgendaDays(today, 7) }
+    ];
+  }, []);
+  const previewTitle = draftTitle.trim() || 'Nuevo bloque';
+  const previewDetail = draftDetail.trim() || 'Objetivo de estudio';
+  const previewTime = draftTime || getNextAgendaTime(agendaItems, selectedDate);
 
   useEffect(() => {
     titleInputRef.current?.focus({ preventScroll: true });
@@ -118,6 +145,16 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
     onAgendaItemsChange(agendaItems.filter((item) => item.date !== selectedDate));
   }
 
+  function chooseDate(dateValue) {
+    const nextDateValue = dateValue || getTodayDateValue();
+    setSelectedDate(nextDateValue);
+    setDraftTime(getNextAgendaTime(agendaItems, nextDateValue));
+  }
+
+  function shiftDraftTime(minutes) {
+    setDraftTime((currentTime) => addAgendaMinutes(currentTime || getNextAgendaTime(agendaItems, selectedDate), minutes));
+  }
+
   return (
     <section className="wall-agenda-editor-overlay" role="dialog" aria-modal="true" aria-label="Editar agenda de pared">
       <div className="wall-agenda-editor">
@@ -147,40 +184,97 @@ export function WallAgendaEditor({ agendaItems, onAgendaItemsChange, onClose }) 
           </div>
         </section>
 
-        <form className="wall-agenda-quick-add" onSubmit={addItem}>
-          <label>
-            <span>Fecha</span>
-            <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
-          </label>
-          <label>
-            <span>Hora</span>
-            <input type="time" value={draftTime} onChange={(event) => setDraftTime(event.target.value)} />
-          </label>
-          <label>
-            <span>Titulo</span>
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={draftTitle}
-              maxLength={48}
-              placeholder="Ej: Practicar integrales"
-              onChange={(event) => setDraftTitle(event.target.value)}
-            />
-          </label>
-          <label>
-            <span>Detalle</span>
-            <input
-              type="text"
-              value={draftDetail}
-              maxLength={96}
-              placeholder="Material, objetivo o recordatorio"
-              onChange={(event) => setDraftDetail(event.target.value)}
-            />
-          </label>
-          <button type="submit" className="wall-agenda-primary">
-            <Plus size={18} aria-hidden="true" />
-            <span>Agregar</span>
-          </button>
+        <form className="wall-agenda-quick-add wall-agenda-entry" onSubmit={addItem}>
+          <section className="wall-agenda-entry-panel wall-agenda-entry-when" aria-label="Elegir fecha y hora">
+            <div className="wall-agenda-step-head">
+              <span>Paso 1</span>
+              <strong>Cuando estudiar</strong>
+            </div>
+            <div className="wall-agenda-date-presets" aria-label="Fechas rapidas">
+              {datePresets.map((preset) => (
+                <button
+                  type="button"
+                  key={preset.label}
+                  className={preset.value === selectedDate ? 'is-selected' : ''}
+                  onClick={() => chooseDate(preset.value)}
+                >
+                  <strong>{preset.label}</strong>
+                  <span>{formatAgendaDateShort(preset.value)}</span>
+                </button>
+              ))}
+            </div>
+            <div className="wall-agenda-entry-fields">
+              <label>
+                <span>Fecha exacta</span>
+                <input type="date" value={selectedDate} onChange={(event) => chooseDate(event.target.value)} />
+              </label>
+              <div className="wall-agenda-time-picker">
+                <button type="button" onClick={() => shiftDraftTime(-30)} aria-label="Restar 30 minutos">
+                  -30
+                </button>
+                <label>
+                  <span>Hora</span>
+                  <input type="time" value={draftTime} onChange={(event) => setDraftTime(event.target.value)} />
+                </label>
+                <button type="button" onClick={() => shiftDraftTime(30)} aria-label="Sumar 30 minutos">
+                  +30
+                </button>
+              </div>
+            </div>
+            <div className="wall-agenda-time-presets" aria-label="Horarios sugeridos">
+              {TIME_PRESETS.map((timePreset) => (
+                <button
+                  type="button"
+                  key={timePreset}
+                  className={timePreset === draftTime ? 'is-selected' : ''}
+                  onClick={() => setDraftTime(timePreset)}
+                >
+                  {timePreset}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="wall-agenda-entry-panel wall-agenda-entry-copy" aria-label="Detalle del bloque">
+            <div className="wall-agenda-step-head">
+              <span>Paso 2</span>
+              <strong>Que vas a estudiar</strong>
+            </div>
+            <label>
+              <span>Titulo</span>
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={draftTitle}
+                maxLength={48}
+                placeholder="Ej: Practicar integrales"
+                onChange={(event) => setDraftTitle(event.target.value)}
+              />
+            </label>
+            <label>
+              <span>Detalle</span>
+              <input
+                type="text"
+                value={draftDetail}
+                maxLength={96}
+                placeholder="Material, objetivo o recordatorio"
+                onChange={(event) => setDraftDetail(event.target.value)}
+              />
+            </label>
+          </section>
+
+          <aside className="wall-agenda-entry-preview" aria-label="Vista previa del bloque">
+            <span>Vista previa</span>
+            <strong>{previewTitle}</strong>
+            <small>
+              {formatAgendaDateLabel(selectedDate)} - {previewTime}
+            </small>
+            <p>{previewDetail}</p>
+            <button type="submit" className="wall-agenda-primary">
+              <Plus size={18} aria-hidden="true" />
+              <span>Agregar bloque</span>
+            </button>
+          </aside>
         </form>
 
         <section className="wall-agenda-day-tools">
