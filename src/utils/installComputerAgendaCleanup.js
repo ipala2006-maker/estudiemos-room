@@ -1,10 +1,10 @@
 const INSTALL_FLAG = '__estudiemosComputerAgendaCleanupInstalled';
-const AGENDA_SHELL_SELECTOR = '.agenda-app-shell';
 const QUICK_ADD_SELECTOR = '.agenda-quick-add';
 
 function getQuickAddInputs(form) {
-  const titleInput = form.querySelector('.agenda-quick-title input[type="text"]');
-  const detailInput = form.querySelector('.agenda-quick-detail input[type="text"]');
+  const textInputs = [...form.querySelectorAll('input[type="text"]')];
+  const detailInput = form.querySelector('.agenda-quick-detail input[type="text"]') ?? textInputs.at(1);
+  const titleInput = form.querySelector('.agenda-quick-title input[type="text"]') ?? textInputs.find((input) => input !== detailInput);
   return { titleInput, detailInput };
 }
 
@@ -31,39 +31,11 @@ function preventGenericAgendaSubmit(event) {
   showMissingInputFeedback(form, missingInput);
 }
 
-function cleanupAgendaShell(shell) {
-  if (!shell || shell.dataset.agendaCleanupReady === 'true') return;
-  shell.dataset.agendaCleanupReady = 'true';
-
-  shell.querySelectorAll('.agenda-app-actions button').forEach((button) => {
-    if (!/restaurar/i.test(button.textContent ?? '')) return;
-    button.hidden = true;
-    button.disabled = true;
-    button.setAttribute('aria-hidden', 'true');
-  });
-}
-
 function installComputerAgendaCleanup() {
   if (typeof window === 'undefined' || window[INSTALL_FLAG]) return;
   window[INSTALL_FLAG] = true;
 
   window.addEventListener('submit', preventGenericAgendaSubmit, true);
-
-  function startObserver() {
-    if (!document.body) {
-      window.addEventListener('DOMContentLoaded', startObserver, { once: true });
-      return;
-    }
-
-    const observer = new MutationObserver(() => {
-      document.querySelectorAll(AGENDA_SHELL_SELECTOR).forEach(cleanupAgendaShell);
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-    document.querySelectorAll(AGENDA_SHELL_SELECTOR).forEach(cleanupAgendaShell);
-  }
-
-  window.requestAnimationFrame(startObserver);
 }
 
 installComputerAgendaCleanup();
