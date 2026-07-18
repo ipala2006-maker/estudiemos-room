@@ -10,6 +10,7 @@ import '../utils/installSpeakerInteractionTargetFix.js';
 import '../utils/installSpotifyPlaybackEnhancer.js';
 import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installWallAgendaKeyboardPolish.js';
+import '../utils/installComputerAgendaCleanup.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-18 19:36 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-1936-unified-empty-agenda';
+export const BUILD_LABEL = 'Pages build 2026-07-18 19:54 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-1954-unified-empty-agenda';
