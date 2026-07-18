@@ -6,56 +6,7 @@ export function getAgendaDateValue(offsetDays = 0) {
 }
 
 export function createStudyAgendaItems() {
-  return [
-    {
-      id: `agenda-fisica-i-${getAgendaDateValue(0)}`,
-      date: getAgendaDateValue(0),
-      time: '09:00',
-      title: 'Resolver guia 4',
-      detail: 'Movimiento circular y ejercicios guiados',
-      subject: 'Fisica I',
-      durationMinutes: 90,
-      priority: 'Alta',
-      type: 'Repaso',
-      completed: false
-    },
-    {
-      id: `agenda-analisis-matematico-${getAgendaDateValue(0)}`,
-      date: getAgendaDateValue(0),
-      time: '11:00',
-      title: 'Repasar integrales',
-      detail: 'Limites, continuidad y repaso corto',
-      subject: 'Matematica',
-      durationMinutes: 75,
-      priority: 'Media',
-      type: 'Parcial',
-      completed: false
-    },
-    {
-      id: `agenda-practica-${getAgendaDateValue(1)}`,
-      date: getAgendaDateValue(1),
-      time: '15:30',
-      title: 'Ver recurso guardado',
-      detail: 'Enviar un recurso a la pantalla principal',
-      subject: 'Programacion',
-      durationMinutes: 45,
-      priority: 'Baja',
-      type: 'Entrega',
-      completed: false
-    },
-    {
-      id: `agenda-cierre-${getAgendaDateValue(2)}`,
-      date: getAgendaDateValue(2),
-      time: '18:00',
-      title: 'Resumen semanal',
-      detail: 'Resumen semanal y pendientes',
-      subject: 'Quimica',
-      durationMinutes: 60,
-      priority: 'Media',
-      type: 'Repaso',
-      completed: false
-    }
-  ];
+  return [];
 }
 
 export const studyAgendaItems = createStudyAgendaItems();
