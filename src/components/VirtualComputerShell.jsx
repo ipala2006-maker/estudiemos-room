@@ -17,6 +17,7 @@ import {
   moveFocusByArrow,
   shouldPreserveNativeArrowKey
 } from '../utils/keyboardNavigation.js';
+import { AgendaPlannerApp } from './AgendaPlannerApp.jsx';
 import { ComputerUI } from './ComputerUI.jsx';
 
 const REQUEST_DESKTOP_EVENT = 'estudiemos:computer-request-desktop';
@@ -130,6 +131,17 @@ export function VirtualComputerShell(props) {
     window.addEventListener(REQUEST_DESKTOP_EVENT, onComputerDesktopRequest);
     return () => window.removeEventListener(REQUEST_DESKTOP_EVENT, onComputerDesktopRequest);
   }, []);
+
+  if (appOpen && initialApp === 'agenda') {
+    return (
+      <AgendaPlannerApp
+        agendaItems={props.agendaItems}
+        onAgendaItemsChange={props.onAgendaItemsChange}
+        onBackToDesktop={() => setAppOpen(false)}
+        onClose={onClose}
+      />
+    );
+  }
 
   if (appOpen) {
     return <ComputerUI {...props} initialApp={initialApp} onBackToDesktop={() => setAppOpen(false)} />;
