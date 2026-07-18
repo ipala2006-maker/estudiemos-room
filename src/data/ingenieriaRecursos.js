@@ -1,7 +1,8 @@
 export const ingenieriaRecursosSource = {
   name: 'Estudiemos',
   repository: 'ipala2006-maker/ingenieria-recursos',
-  repositoryUrl: 'https://github.com/ipala2006-maker/ingenieria-recursos'
+  repositoryUrl: 'https://github.com/ipala2006-maker/ingenieria-recursos',
+  siteUrl: 'https://ipala2006-maker.github.io/ingenieria-recursos/'
 };
 
 export const ingenieriaRecursosData = {
