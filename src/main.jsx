@@ -8,8 +8,8 @@ import { SpeakerRemoteControl } from './components/SpeakerRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
 import { VirtualComputerShell } from './components/VirtualComputerShell.jsx';
 import { WallAgendaEditor } from './components/WallAgendaEditor.jsx';
-import { createStudyAgendaItems, getAgendaDateValue } from './data/studyAgenda.js';
 import { useFocusEconomy } from './hooks/useFocusEconomy.js';
+import { loadStoredAgendaItems, normalizeAgendaItems, saveAgendaItems, serializeAgendaItems, subscribeToAgendaItems } from './utils/agendaSync.js';
 import './styles/app.css';
 import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
@@ -45,58 +45,11 @@ function createEmptyScreenZone() {
   };
 }
 
-const AGENDA_STORAGE_KEY = 'estudiemos-room-agenda';
 const SPOTIFY_STORAGE_KEY = 'estudiemos-room-spotify-content';
 const SPOTIFY_ROOM_CONTENT_EVENT = 'estudiemos:spotify-room-content';
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
 const INTERACTION_TARGET_EVENT = 'estudiemos:interaction-target';
 const INTERACTION_TARGETS = new Set(['computer', 'agenda', 'screen', 'speaker']);
-
-function createAgendaItemId(item, index) {
-  const titleSlug = String(item?.title ?? 'bloque')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 28);
-
-  return `agenda-${String(item?.date ?? getAgendaDateValue())}-${String(item?.time ?? '00:00')}-${titleSlug || 'bloque'}-${index}`;
-}
-
-function normalizeAgendaDate(value) {
-  const dateValue = String(value ?? '');
-  return /^\d{4}-\d{2}-\d{2}$/.test(dateValue) ? dateValue : getAgendaDateValue();
-}
-
-function normalizeAgendaItems(items) {
-  if (!Array.isArray(items)) return createStudyAgendaItems();
-
-  return items
-    .filter((item) => item && typeof item === 'object')
-    .map((item, index) => ({
-      id: String(item?.id ?? '').trim() || createAgendaItemId(item, index),
-      date: normalizeAgendaDate(item?.date),
-      time: /^\d{2}:\d{2}$/.test(String(item?.time ?? '').slice(0, 5)) ? String(item?.time ?? '').slice(0, 5) : '',
-      title: String(item?.title ?? '').trim().slice(0, 48),
-      detail: String(item?.detail ?? '').trim().slice(0, 96),
-      subject: String(item?.subject ?? '').trim().slice(0, 32),
-      durationMinutes: Number.isFinite(Number(item?.durationMinutes)) ? Math.max(15, Math.min(360, Number(item.durationMinutes))) : undefined,
-      priority: String(item?.priority ?? '').trim().slice(0, 16),
-      type: String(item?.type ?? '').trim().slice(0, 24),
-      resourceUrl: String(item?.resourceUrl ?? '').trim().slice(0, 240),
-      completed: Boolean(item?.completed)
-    }));
-}
-
-function loadStoredAgendaItems() {
-  if (typeof window === 'undefined') return createStudyAgendaItems();
-
-  try {
-    const rawAgenda = window.localStorage.getItem(AGENDA_STORAGE_KEY);
-    return rawAgenda ? normalizeAgendaItems(JSON.parse(rawAgenda)) : createStudyAgendaItems();
-  } catch {
-    return createStudyAgendaItems();
-  }
-}
 
 function normalizeSpotifyContent(savedContent) {
   if (!savedContent || typeof savedContent !== 'object') return null;
@@ -147,7 +100,7 @@ function App() {
   const [aimedInteractionTarget, setAimedInteractionTarget] = useState(undefined);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [screenLayout, setScreenLayout] = useState('side-by-side');
-  const [agendaItems, setAgendaItems] = useState(loadStoredAgendaItems);
+  const [agendaItems, setAgendaItemsState] = useState(loadStoredAgendaItems);
   const [roomSpotifyContent, setRoomSpotifyContent] = useState(loadStoredSpotifyContent);
   const [speakerCommand, setSpeakerCommand] = useState(null);
   const [speakerState, setSpeakerState] = useState({
@@ -174,11 +127,35 @@ function App() {
   const toggleDoorRef = useRef(() => {});
   const screenCommandCounterRef = useRef(0);
   const speakerCommandCounterRef = useRef(0);
+  const agendaStorageSnapshotRef = useRef('');
   const spotifyStorageSnapshotRef = useRef('');
 
+  function setAgendaItems(nextAgendaItems) {
+    setAgendaItemsState((currentItems) => {
+      const resolvedItems = typeof nextAgendaItems === 'function' ? nextAgendaItems(currentItems) : nextAgendaItems;
+      return normalizeAgendaItems(resolvedItems);
+    });
+  }
+
   useEffect(() => {
-    window.localStorage.setItem(AGENDA_STORAGE_KEY, JSON.stringify(agendaItems));
+    const serializedItems = serializeAgendaItems(agendaItems);
+    if (serializedItems === agendaStorageSnapshotRef.current) return;
+
+    agendaStorageSnapshotRef.current = serializedItems;
+    saveAgendaItems(agendaItems);
   }, [agendaItems]);
+
+  useEffect(
+    () =>
+      subscribeToAgendaItems((nextAgendaItems) => {
+        const serializedItems = serializeAgendaItems(nextAgendaItems);
+        if (serializedItems === agendaStorageSnapshotRef.current) return;
+
+        agendaStorageSnapshotRef.current = serializedItems;
+        setAgendaItemsState(normalizeAgendaItems(nextAgendaItems));
+      }),
+    []
+  );
 
   useEffect(() => {
     const serializedContent = roomSpotifyContent ? JSON.stringify(roomSpotifyContent) : '';
