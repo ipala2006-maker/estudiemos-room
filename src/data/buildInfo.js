@@ -3,7 +3,8 @@ import '../styles/speaker-remote.css';
 import '../utils/installInteractionTargeting.js';
 import '../utils/installOpaqueHandOverlay.js';
 import '../utils/installRoomSpeakerWorld.js';
+import '../utils/installSpeakerInteractionTargetFix.js';
 import '../utils/installSpotifyPlaybackEnhancer.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-17 18:50 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-17-1850-hand-original-size';
+export const BUILD_LABEL = 'Pages build 2026-07-18 00:02 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-0002-speaker-aim-hand-side';
