@@ -1,0 +1,63 @@
+.game-shell .wall-agenda-editor svg {
+  flex: 0 0 auto;
+  overflow: visible;
+  color: currentColor;
+  stroke: currentColor;
+  opacity: 1;
+}
+
+.game-shell .wall-agenda-day-title svg,
+.game-shell .wall-agenda-empty svg,
+.game-shell .wall-agenda-today-button svg {
+  color: #dfc976;
+  filter: drop-shadow(0 0 8px rgba(223, 201, 118, 0.16));
+}
+
+.game-shell .wall-agenda-check svg {
+  color: #e7c66f;
+  stroke-width: 2.4;
+}
+
+.game-shell .wall-agenda-delete svg {
+  color: #ffd1c4;
+  stroke-width: 2.35;
+}
+
+.game-shell .wall-agenda-sidebar-card input[type='date'],
+.game-shell .wall-agenda-new-card input[type='date'],
+.game-shell .wall-agenda-row input[type='date'],
+.game-shell .wall-agenda-new-card input[type='time'],
+.game-shell .wall-agenda-row input[type='time'] {
+  overflow: visible;
+  min-width: max-content;
+  font-variant-numeric: tabular-nums;
+  text-overflow: clip;
+}
+
+.game-shell .wall-agenda-sidebar-card input::-webkit-calendar-picker-indicator,
+.game-shell .wall-agenda-new-card input::-webkit-calendar-picker-indicator,
+.game-shell .wall-agenda-row input::-webkit-calendar-picker-indicator {
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  cursor: pointer;
+  opacity: 0.9;
+  filter: invert(91%) sepia(18%) saturate(503%) hue-rotate(4deg) brightness(104%);
+}
+
+.game-shell .wall-agenda-editor:focus-visible,
+.game-shell .wall-agenda-week-day:focus-visible,
+.game-shell .wall-agenda-today-button:focus-visible,
+.game-shell .wall-agenda-close:focus-visible,
+.game-shell .wall-agenda-check:focus-visible,
+.game-shell .wall-agenda-delete:focus-visible,
+.game-shell .wall-agenda-primary:focus-visible {
+  outline: 2px solid rgba(226, 205, 130, 0.72);
+  outline-offset: 3px;
+}
+
+.game-shell .wall-agenda-week-day.is-selected {
+  box-shadow:
+    0 0 0 1px rgba(226, 205, 130, 0.16),
+    0 10px 26px rgba(0, 0, 0, 0.18);
+}
