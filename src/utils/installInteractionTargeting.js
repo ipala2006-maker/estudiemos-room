@@ -22,16 +22,16 @@ const COMPUTER_TARGET = {
 
 const AGENDA_TARGET = {
   oldLocalCenter: new THREE.Vector3(-27.6, 5.6, -12.8),
-  center: new THREE.Vector3(104, 5.45, 22.62),
-  localCenter: new THREE.Vector3(14, 5.45, 28.62),
-  width: 9.2,
-  domWidth: 860,
-  domHeight: 520,
-  padding: 1.65,
-  distance: 26,
+  center: new THREE.Vector3(90, 5.7, 22.62),
+  localCenter: new THREE.Vector3(0, 5.7, 28.62),
+  width: 12.4,
+  domWidth: 980,
+  domHeight: 560,
+  padding: 1.35,
+  distance: 30,
   rotationY: Math.PI,
-  physicalBoardScale: new THREE.Vector3(6.15, 4.15, 1),
-  physicalFrameScale: 2.32
+  physicalBoardScale: new THREE.Vector3(8.2, 5.35, 1),
+  physicalFrameScale: 3.15
 };
 
 const ROOM_SPEAKER_TARGET = {
@@ -55,7 +55,7 @@ let lastWorldCamera = null;
 export function installInteractionTargeting() {
   if (typeof window === 'undefined' || window[PATCH_FLAG]) return;
   window[PATCH_FLAG] = true;
-  document.documentElement.dataset.estudiemosInteractionTargeting = '2336';
+  document.documentElement.dataset.estudiemosInteractionTargeting = '2341-agenda-centered';
 
   patchWebGlRender();
   patchCss3dRender();
@@ -247,14 +247,14 @@ function patchPhysicalAgenda(scene) {
     const localCenter = AGENDA_TARGET.localCenter;
 
     if (Math.abs(object.position.y - 6.95) < 0.16) {
-      object.position.set(localCenter.x, localCenter.y + 1.9, localCenter.z - 0.06);
+      object.position.set(localCenter.x, localCenter.y + 2.78, localCenter.z - 0.06);
       object.rotation.y = Math.PI / 2;
       object.scale.z *= AGENDA_TARGET.physicalFrameScale;
       return;
     }
 
     if (Math.abs(object.position.y - 4.25) < 0.16) {
-      object.position.set(localCenter.x, localCenter.y - 1.9, localCenter.z - 0.06);
+      object.position.set(localCenter.x, localCenter.y - 2.78, localCenter.z - 0.06);
       object.rotation.y = Math.PI / 2;
       object.scale.z *= AGENDA_TARGET.physicalFrameScale;
       return;
