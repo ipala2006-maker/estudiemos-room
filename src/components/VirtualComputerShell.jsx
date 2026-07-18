@@ -17,8 +17,8 @@ import {
   moveFocusByArrow,
   shouldPreserveNativeArrowKey
 } from '../utils/keyboardNavigation.js';
-import { AgendaPlannerApp } from './AgendaPlannerApp.jsx';
 import { ComputerUI } from './ComputerUI.jsx';
+import { WallAgendaEditor } from './WallAgendaEditor.jsx';
 
 const REQUEST_DESKTOP_EVENT = 'estudiemos:computer-request-desktop';
 
@@ -134,11 +134,10 @@ export function VirtualComputerShell(props) {
 
   if (appOpen && initialApp === 'agenda') {
     return (
-      <AgendaPlannerApp
+      <WallAgendaEditor
         agendaItems={props.agendaItems}
         onAgendaItemsChange={props.onAgendaItemsChange}
-        onBackToDesktop={() => setAppOpen(false)}
-        onClose={onClose}
+        onClose={() => setAppOpen(false)}
       />
     );
   }
