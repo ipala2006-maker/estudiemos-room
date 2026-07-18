@@ -2,6 +2,7 @@ import { ingenieriaRecursosData, ingenieriaRecursosSource } from '../data/ingeni
 
 const LIVE_DATA_FILE = 'data/data.js';
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
+const DATA_SYNC_EVENT = 'estudiemos:published-data-sync';
 
 function getLiveDataUrl() {
   const siteUrl = new URL(ingenieriaRecursosSource.siteUrl ?? 'https://ipala2006-maker.github.io/ingenieria-recursos/');
@@ -56,7 +57,64 @@ function applyPublishedData(data) {
   if (!data.carreras.length) return false;
   ingenieriaRecursosData.carreras.splice(0, ingenieriaRecursosData.carreras.length, ...data.carreras);
   document.documentElement.dataset.estudiemosPublishedDataSync = String(Date.now());
+  window.dispatchEvent(new CustomEvent(DATA_SYNC_EVENT, { detail: { carreras: data.carreras.length } }));
+  repairEstudiemosBrowserPath();
   return true;
+}
+
+function normalizeLabel(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function findMateriaSlugFromVisiblePage() {
+  const breadcrumbLabels = [...document.querySelectorAll('.estudiemos-breadcrumbs button')]
+    .map((button) => button.textContent?.trim())
+    .filter(Boolean);
+  const materiaLabel = breadcrumbLabels.at(-1);
+  if (!materiaLabel || normalizeLabel(materiaLabel) === 'carreras') return '';
+
+  const normalizedMateriaLabel = normalizeLabel(materiaLabel);
+  for (const carrera of ingenieriaRecursosData.carreras) {
+    const materia = carrera.materias?.find((item) => normalizeLabel(item.title) === normalizedMateriaLabel);
+    if (materia?.slug) return materia.slug;
+  }
+
+  return '';
+}
+
+function repairEstudiemosBrowserPath() {
+  const address = document.querySelector('.browser-address span');
+  if (!/\/pages\/materia\/(?:undefined)?\.html/.test(address?.textContent ?? '')) return;
+
+  const materiaSlug = findMateriaSlugFromVisiblePage();
+  if (!materiaSlug) return;
+
+  address.textContent = `estudiemos.local/pages/materia/${materiaSlug}.html`;
+  document.documentElement.dataset.estudiemosBrowserPathRepair = String(Date.now());
+}
+
+function installBrowserPathRepair() {
+  if (typeof MutationObserver === 'undefined' || !document.body) return;
+
+  let pending = false;
+  const scheduleRepair = () => {
+    if (pending) return;
+    pending = true;
+    window.requestAnimationFrame(() => {
+      pending = false;
+      repairEstudiemosBrowserPath();
+    });
+  };
+
+  const observer = new MutationObserver(scheduleRepair);
+  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  window.addEventListener(DATA_SYNC_EVENT, scheduleRepair);
+  scheduleRepair();
 }
 
 async function syncPublishedEstudiemosData() {
@@ -77,6 +135,7 @@ function installLiveEstudiemosSync() {
   if (typeof window === 'undefined' || window.__estudiemosPublishedDataSyncInstalled) return;
   window.__estudiemosPublishedDataSyncInstalled = true;
 
+  installBrowserPathRepair();
   syncPublishedEstudiemosData();
   window.addEventListener('focus', syncPublishedEstudiemosData);
   window.setInterval(syncPublishedEstudiemosData, SYNC_INTERVAL_MS);
