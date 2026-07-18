@@ -18,7 +18,7 @@ const state = {
 export function installOpaqueHandOverlay() {
   if (typeof window === 'undefined' || window[INSTALL_FLAG]) return;
   window[INSTALL_FLAG] = true;
-  document.documentElement.dataset.estudiemosOpaqueHandOverlay = '1823';
+  document.documentElement.dataset.estudiemosOpaqueHandOverlay = '0002';
 
   patchFirstPersonHandMesh();
   window.addEventListener('keydown', handleKeyDown, true);
@@ -96,9 +96,9 @@ function ensureOverlayElement() {
   element.setAttribute('aria-hidden', 'true');
   Object.assign(element.style, {
     position: 'absolute',
-    right: 'clamp(18px, 4.8vw, 72px)',
-    bottom: 'clamp(-42px, -3.2vh, -20px)',
-    width: 'clamp(340px, 46vw, 620px)',
+    right: 'clamp(-8px, 1.6vw, 28px)',
+    bottom: 'clamp(-40px, -2.6vh, -18px)',
+    width: 'clamp(300px, 40vw, 540px)',
     height: 'auto',
     zIndex: '12',
     display: 'block',
