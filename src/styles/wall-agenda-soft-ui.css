@@ -100,13 +100,157 @@
 }
 
 .game-shell .wall-agenda-quick-add {
-  grid-template-columns: minmax(132px, 0.74fr) minmax(108px, 0.56fr) minmax(210px, 1.2fr) minmax(260px, 1.45fr) minmax(124px, auto);
-  gap: 9px;
-  padding: 12px;
+  grid-template-columns: minmax(250px, 1.05fr) minmax(260px, 1.12fr) minmax(210px, 0.78fr);
+  gap: 12px;
+  align-items: stretch;
+  padding: 13px;
   border-color: rgba(255, 240, 199, 0.12);
   border-radius: 16px;
   background: rgba(255, 244, 215, 0.055);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.game-shell .wall-agenda-entry-panel,
+.game-shell .wall-agenda-entry-preview {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 240, 199, 0.1);
+  border-radius: 15px;
+  background: rgba(6, 10, 10, 0.26);
+}
+
+.game-shell .wall-agenda-step-head {
+  display: grid;
+  gap: 2px;
+}
+
+.game-shell .wall-agenda-step-head span,
+.game-shell .wall-agenda-entry-preview > span {
+  color: rgba(246, 239, 217, 0.56);
+  font-size: 0.68rem;
+  font-weight: 840;
+  text-transform: uppercase;
+}
+
+.game-shell .wall-agenda-step-head strong,
+.game-shell .wall-agenda-entry-preview strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff5d9;
+  font-size: 1rem;
+  font-weight: 880;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-shell .wall-agenda-date-presets,
+.game-shell .wall-agenda-time-presets {
+  display: grid;
+  gap: 7px;
+}
+
+.game-shell .wall-agenda-date-presets {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.game-shell .wall-agenda-date-presets button,
+.game-shell .wall-agenda-time-presets button,
+.game-shell .wall-agenda-time-picker button {
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid rgba(255, 240, 199, 0.12);
+  border-radius: 12px;
+  color: rgba(246, 239, 217, 0.78);
+  background: rgba(255, 255, 255, 0.055);
+  font-weight: 820;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.game-shell .wall-agenda-date-presets button {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.game-shell .wall-agenda-date-presets button strong {
+  color: inherit;
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.game-shell .wall-agenda-date-presets button span {
+  color: rgba(246, 239, 217, 0.54);
+  font-size: 0.66rem;
+  line-height: 1.1;
+  text-transform: capitalize;
+}
+
+.game-shell .wall-agenda-date-presets button:hover,
+.game-shell .wall-agenda-time-presets button:hover,
+.game-shell .wall-agenda-time-picker button:hover {
+  border-color: rgba(224, 196, 122, 0.42);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.game-shell .wall-agenda-date-presets button:active,
+.game-shell .wall-agenda-time-presets button:active,
+.game-shell .wall-agenda-time-picker button:active {
+  transform: translateY(1px);
+}
+
+.game-shell .wall-agenda-date-presets button.is-selected,
+.game-shell .wall-agenda-time-presets button.is-selected {
+  border-color: rgba(224, 196, 122, 0.52);
+  color: #171b18;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent),
+    #dec679;
+}
+
+.game-shell .wall-agenda-date-presets button.is-selected span {
+  color: rgba(23, 27, 24, 0.62);
+}
+
+.game-shell .wall-agenda-entry-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(132px, 0.9fr);
+  gap: 8px;
+  align-items: stretch;
+}
+
+.game-shell .wall-agenda-time-picker {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 45px minmax(0, 1fr) 45px;
+  gap: 7px;
+  align-items: stretch;
+}
+
+.game-shell .wall-agenda-time-picker label {
+  min-width: 0;
+}
+
+.game-shell .wall-agenda-time-picker button {
+  min-height: auto;
+  padding: 0;
+  color: #e7c66f;
+  font-size: 0.78rem;
+}
+
+.game-shell .wall-agenda-time-presets {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.game-shell .wall-agenda-time-presets button {
+  min-height: 30px;
+  padding: 0 6px;
+  font-size: 0.74rem;
 }
 
 .game-shell .wall-agenda-quick-add label,
@@ -168,6 +312,44 @@
 
 .game-shell .wall-agenda-primary:active {
   transform: translateY(1px);
+}
+
+.game-shell .wall-agenda-primary span {
+  color: inherit;
+  font-size: 0.86rem;
+  font-weight: 880;
+  text-transform: none;
+}
+
+.game-shell .wall-agenda-entry-preview {
+  align-content: stretch;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(224, 196, 122, 0.12), transparent 34%),
+    rgba(8, 13, 13, 0.34);
+}
+
+.game-shell .wall-agenda-entry-preview small,
+.game-shell .wall-agenda-entry-preview p {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: rgba(246, 239, 217, 0.68);
+  font-size: 0.78rem;
+  font-weight: 720;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+}
+
+.game-shell .wall-agenda-entry-preview p {
+  min-height: 38px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.game-shell .wall-agenda-entry-preview .wall-agenda-primary {
+  align-self: end;
+  width: 100%;
 }
 
 .game-shell .wall-agenda-day-tools {
@@ -243,5 +425,14 @@
 
   .game-shell .wall-agenda-editor-header h2 {
     font-size: 1.55rem;
+  }
+
+  .game-shell .wall-agenda-quick-add,
+  .game-shell .wall-agenda-entry-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .game-shell .wall-agenda-time-presets {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
