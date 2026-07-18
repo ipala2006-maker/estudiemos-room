@@ -8,5 +8,5 @@ import '../utils/installSpeakerInteractionTargetFix.js';
 import '../utils/installSpotifyPlaybackEnhancer.js';
 import '../utils/installLiveEstudiemosSync.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-18 13:50 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-1350-wall-agenda-soft-ui';
+export const BUILD_LABEL = 'Pages build 2026-07-18 14:05 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-1405-wall-agenda-entry-ux';
