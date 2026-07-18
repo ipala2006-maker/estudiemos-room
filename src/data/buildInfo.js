@@ -5,6 +5,7 @@ import '../utils/installOpaqueHandOverlay.js';
 import '../utils/installRoomSpeakerWorld.js';
 import '../utils/installSpeakerInteractionTargetFix.js';
 import '../utils/installSpotifyPlaybackEnhancer.js';
+import '../utils/installLiveEstudiemosSync.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-18 00:02 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-0002-speaker-aim-hand-side';
+export const BUILD_LABEL = 'Pages build 2026-07-18 00:23 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-0023-live-estudiemos-sync';
