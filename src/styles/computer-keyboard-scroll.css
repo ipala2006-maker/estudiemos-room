@@ -65,7 +65,24 @@
 }
 
 .computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner .agenda-calendar-scroll {
-  overflow-x: hidden !important;
+  overflow: hidden !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner :is(
+  .agenda-calendar-sidebar,
+  .agenda-calendar-scroll
+) {
+  overflow: hidden !important;
+  scrollbar-width: none !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner :is(
+  .agenda-calendar-sidebar,
+  .agenda-calendar-scroll
+)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 /* Clean-copy pass: keep the entry and HUD readable with less visible text. */

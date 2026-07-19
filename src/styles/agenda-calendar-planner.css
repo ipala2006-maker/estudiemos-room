@@ -14,9 +14,9 @@
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(176px, 0.56fr) minmax(0, 1.82fr) minmax(292px, 0.9fr);
-  gap: 14px;
-  padding: 14px;
+  grid-template-columns: minmax(168px, 0.52fr) minmax(0, 1.92fr) minmax(286px, 0.84fr);
+  gap: 10px;
+  padding: 10px;
   overflow: hidden;
   border-radius: inherit;
   color: #f7f1e5;
@@ -46,9 +46,20 @@
   display: none !important;
 }
 
-.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner :is(.agenda-calendar-sidebar, .agenda-calendar-right, .agenda-calendar-scroll) {
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner .agenda-calendar-right {
   overflow: auto !important;
   scrollbar-width: thin !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner :is(.agenda-calendar-sidebar, .agenda-calendar-scroll) {
+  overflow: hidden !important;
+  scrollbar-width: none !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner :is(.agenda-calendar-sidebar, .agenda-calendar-scroll)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 .agenda-calendar-sidebar,
@@ -58,7 +69,7 @@
   min-height: 0;
   border: 1px solid rgba(247, 241, 229, 0.1);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.052);
+  background: rgba(255, 255, 255, 0.046);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.055),
     0 18px 44px rgba(0, 0, 0, 0.18);
@@ -89,24 +100,25 @@
 .agenda-calendar-sidebar {
   display: grid;
   align-content: start;
-  gap: 14px;
-  padding: 14px;
+  gap: 7px;
+  padding: 9px;
+  overflow: hidden;
 }
 
 .agenda-calendar-brand {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 7px;
   align-items: center;
-  padding-bottom: 12px;
+  padding-bottom: 7px;
   border-bottom: 1px solid rgba(247, 241, 229, 0.1);
 }
 
 .agenda-calendar-brand > svg {
-  width: 38px;
-  height: 38px;
-  padding: 9px;
-  border-radius: 14px;
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+  border-radius: 12px;
   color: #17201c;
   background: linear-gradient(135deg, #ead58f, #88d8c5);
   box-shadow: 0 12px 26px rgba(234, 213, 143, 0.14);
@@ -117,7 +129,7 @@
 .agenda-calendar-filter-group {
   min-width: 0;
   display: grid;
-  gap: 8px;
+  gap: 5px;
 }
 
 .agenda-calendar-brand span,
@@ -138,7 +150,7 @@
   min-width: 0;
   overflow: hidden;
   color: #fff8e7;
-  font-size: 0.92rem;
+  font-size: 0.8rem;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -161,10 +173,10 @@
 .agenda-date-picker-button,
 .agenda-delete-task-button {
   min-width: 0;
-  border: 1px solid rgba(247, 241, 229, 0.09);
-  border-radius: 14px;
-  color: rgba(247, 241, 229, 0.78);
-  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(247, 241, 229, 0.055);
+  border-radius: 13px;
+  color: rgba(247, 241, 229, 0.8);
+  background: rgba(255, 255, 255, 0.032);
   font: inherit;
   font-weight: 760;
   transition:
@@ -177,13 +189,20 @@
 
 .agenda-calendar-nav button,
 .agenda-calendar-filter-group button {
-  min-height: 38px;
+  min-height: 29px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 7px;
   text-align: left;
+  font-size: 0.74rem;
+}
+
+.agenda-calendar-nav button svg,
+.agenda-calendar-filter-group button svg {
+  width: 14px;
+  height: 14px;
 }
 
 .agenda-calendar-nav button:hover,
@@ -218,14 +237,14 @@
 
 .agenda-subjects-head > span {
   color: rgba(247, 241, 229, 0.6);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 850;
   letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .agenda-subject-edit-toggle {
-  min-height: 26px;
+  min-height: 23px;
   display: inline-flex;
   grid-template-columns: none;
   align-items: center;
@@ -234,22 +253,22 @@
   border-radius: 999px;
   color: rgba(247, 241, 229, 0.76);
   background: rgba(255, 255, 255, 0.04);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 860;
 }
 
 .agenda-subject-edit-list {
   min-width: 0;
   display: grid;
-  gap: 7px;
+  gap: 6px;
 }
 
 .agenda-subject-edit-row {
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  padding: 9px;
+  gap: 7px;
+  padding: 7px;
   border: 1px solid color-mix(in srgb, var(--agenda-subject-color, #ead58f) 22%, transparent);
   border-radius: 15px;
   background: var(--agenda-subject-soft, rgba(255, 255, 255, 0.045));
@@ -257,7 +276,7 @@
 
 .agenda-subject-edit-main {
   min-width: 0;
-  min-height: 34px;
+  min-height: 28px;
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: auto minmax(0, 1fr);
@@ -272,7 +291,7 @@
   color: #fff8e7;
   background: transparent;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-weight: 860;
   outline: none;
 }
@@ -281,14 +300,14 @@
   min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .agenda-subject-color-button {
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  min-height: 22px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
   padding: 0;
   border-radius: 999px;
   background: var(--agenda-color-choice, #ead58f);
@@ -300,10 +319,10 @@
 }
 
 .agenda-remove-subject-button {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   align-self: center;
   justify-self: end;
   display: grid;
@@ -320,7 +339,7 @@
 }
 
 .agenda-add-subject-button {
-  min-height: 34px;
+  min-height: 30px;
   display: inline-flex;
   grid-template-columns: none;
   align-items: center;
@@ -330,16 +349,16 @@
   border-radius: 13px;
   color: rgba(247, 241, 229, 0.82);
   background: rgba(255, 255, 255, 0.045);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 860;
 }
 
 .agenda-calendar-filter-group button em {
   position: absolute;
-  left: 36px;
-  right: 10px;
-  bottom: 5px;
-  height: 3px;
+  left: 28px;
+  right: 8px;
+  bottom: 4px;
+  height: 2px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
@@ -356,9 +375,9 @@
 
 .agenda-subject-dot,
 .agenda-task-row-dot {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 9px;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
   border-radius: 999px;
   background: var(--agenda-subject-color, #ead58f);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--agenda-subject-color, #ead58f) 18%, transparent);
@@ -374,9 +393,9 @@
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px 16px 12px;
-  border-bottom: 1px solid rgba(247, 241, 229, 0.08);
+  gap: 12px;
+  padding: 12px 14px 9px;
+  border-bottom: 1px solid rgba(247, 241, 229, 0.055);
 }
 
 .agenda-calendar-header > div:first-child {
@@ -389,7 +408,7 @@
   margin: 0;
   overflow: hidden;
   color: #fff8e7;
-  font-size: clamp(1.25rem, 2.1vw, 2.1rem);
+  font-size: clamp(1.14rem, 1.75vw, 1.72rem);
   font-weight: 920;
   line-height: 1.04;
   text-overflow: ellipsis;
@@ -401,7 +420,7 @@
   margin: 0;
   overflow: hidden;
   color: rgba(247, 241, 229, 0.62);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 680;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -411,16 +430,18 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 7px;
+  gap: 6px;
 }
 
 .agenda-calendar-actions button {
-  min-height: 36px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0 11px;
+  border: 0;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.055);
 }
 
 .agenda-calendar-actions button:hover,
@@ -436,14 +457,14 @@
 }
 
 .agenda-calendar-close {
-  width: 38px;
+  width: 34px;
   padding: 0;
 }
 
 .agenda-calendar-scroll {
   min-height: 0;
-  padding: 14px;
-  overflow-x: hidden;
+  padding: 10px 10px 8px;
+  overflow: hidden;
 }
 
 .agenda-month-board {
@@ -451,19 +472,20 @@
   min-width: 0;
   min-height: 100%;
   display: grid;
-  grid-template-rows: 26px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-rows: 20px minmax(0, 1fr);
+  gap: 6px;
+  overflow: hidden;
 }
 
 .agenda-month-weekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 
 .agenda-month-weekdays span {
   color: rgba(247, 241, 229, 0.5);
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 850;
   text-align: center;
 }
@@ -473,7 +495,8 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: repeat(6, minmax(0, 1fr));
-  gap: 7px;
+  gap: 5px;
+  overflow: hidden;
 }
 
 .agenda-month-day {
@@ -481,11 +504,12 @@
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 5px;
-  padding: 7px;
-  border: 1px solid rgba(247, 241, 229, 0.08);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.035);
+  gap: 3px;
+  padding: 5px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.032);
 }
 
 .agenda-month-day.is-outside {
@@ -493,7 +517,8 @@
 }
 
 .agenda-month-day.is-selected {
-  border-color: rgba(234, 213, 143, 0.48);
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(234, 213, 143, 0.42);
   background: rgba(234, 213, 143, 0.055);
 }
 
@@ -503,28 +528,29 @@
 
 .agenda-day-number {
   min-width: 0;
-  min-height: 25px;
+  min-height: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border: 0;
-  border-radius: 11px;
-  padding: 0 7px;
+  border-radius: 10px;
+  padding: 0 6px;
   color: #fff8e7;
   background: rgba(255, 255, 255, 0.035);
   font: inherit;
+  font-size: 0.78rem;
   font-weight: 900;
 }
 
 .agenda-day-number small {
-  min-width: 19px;
-  height: 19px;
+  min-width: 17px;
+  height: 17px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   color: #141916;
   background: #ead58f;
-  font-size: 0.64rem;
+  font-size: 0.6rem;
 }
 
 .agenda-day-task-stack {
@@ -532,7 +558,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   overflow: hidden;
 }
 
@@ -550,10 +576,12 @@
 }
 
 .agenda-task-card.is-compact {
+  max-height: 22px;
   min-height: 0;
   gap: 1px;
-  padding: 5px 6px;
-  border-radius: 10px;
+  padding: 3px 5px;
+  overflow: hidden;
+  border-radius: 9px;
 }
 
 .agenda-task-card:hover,
@@ -611,7 +639,7 @@
 
 .agenda-task-card.is-compact strong {
   overflow: hidden;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -711,8 +739,12 @@
 .agenda-calendar-right {
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 9px;
   padding: 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(234, 213, 143, 0.052), transparent 32%),
+    rgba(10, 16, 15, 0.52);
 }
 
 .agenda-new-task-button {
@@ -722,8 +754,11 @@
   justify-content: center;
   gap: 8px;
   color: #121817;
-  border-color: rgba(234, 213, 143, 0.38);
+  border: 0;
   background: linear-gradient(135deg, #ead58f, #9dd8c8);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 12px 24px rgba(0, 0, 0, 0.18);
   font-weight: 900;
 }
 
@@ -735,9 +770,12 @@
   display: grid;
   gap: 9px;
   padding: 12px;
-  border: 1px solid rgba(247, 241, 229, 0.1);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.044);
+  border: 0;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.048);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }
 
 .agenda-task-composer-simple {
@@ -779,11 +817,11 @@
   width: 100%;
   min-width: 0;
   min-height: 38px;
-  border: 1px solid rgba(247, 241, 229, 0.11);
+  border: 0;
   border-radius: 13px;
   padding: 0 11px;
   color: #fff8e7;
-  background: rgba(8, 12, 15, 0.78);
+  background: rgba(8, 12, 15, 0.58);
   font: inherit;
   font-size: 0.83rem;
   font-weight: 740;
@@ -800,6 +838,7 @@
   align-items: center;
   justify-content: flex-start;
   gap: 9px;
+  border: 0;
   padding: 0 12px;
   color: #fff8e7;
   background:
@@ -830,8 +869,9 @@
 .agenda-detail-editor-pro input:focus,
 .agenda-detail-editor-pro select:focus,
 .agenda-detail-editor-pro textarea:focus {
-  border-color: rgba(234, 213, 143, 0.62);
-  box-shadow: 0 0 0 3px rgba(234, 213, 143, 0.14);
+  box-shadow:
+    inset 0 0 0 1px rgba(234, 213, 143, 0.5),
+    0 0 0 3px rgba(234, 213, 143, 0.12);
 }
 
 .agenda-task-composer textarea,
@@ -872,10 +912,21 @@
   gap: 7px;
 }
 
+.agenda-calendar-right :is(
+  .agenda-composer-actions button,
+  .agenda-detail-actions-pro button,
+  .agenda-detail-edit-toggle,
+  .agenda-detail-secondary-actions button,
+  .agenda-delete-task-button
+) {
+  border: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 .agenda-composer-actions .is-primary,
 .agenda-detail-actions-pro .is-primary {
   color: #121817;
-  border-color: rgba(234, 213, 143, 0.38);
+  border: 0;
   background: linear-gradient(135deg, #ead58f, #9dd8c8);
 }
 
@@ -887,7 +938,7 @@
 
 .agenda-side-section {
   padding: 11px;
-  background: rgba(255, 255, 255, 0.034);
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .agenda-side-list {
@@ -896,10 +947,9 @@
 }
 
 .agenda-task-detail {
-  border-color: color-mix(in srgb, var(--agenda-subject-color, #ead58f) 25%, rgba(247, 241, 229, 0.1));
   background:
-    linear-gradient(180deg, var(--agenda-subject-soft, rgba(234, 213, 143, 0.16)), rgba(255, 255, 255, 0.035)),
-    rgba(255, 255, 255, 0.035);
+    linear-gradient(180deg, var(--agenda-subject-soft, rgba(234, 213, 143, 0.14)), rgba(255, 255, 255, 0.032)),
+    rgba(255, 255, 255, 0.038);
 }
 
 .agenda-task-detail header {
@@ -952,7 +1002,7 @@
 }
 
 .agenda-empty-panel {
-  min-height: 150px;
+  min-height: 112px;
   place-items: center;
   align-content: center;
   color: rgba(247, 241, 229, 0.66);
@@ -964,7 +1014,8 @@
 }
 
 .agenda-calendar-context-computer {
-  min-height: 560px;
+  height: 100%;
+  min-height: 0;
   border-radius: 16px;
 }
 
@@ -1018,19 +1069,28 @@
 
 @media (max-height: 690px) {
   .agenda-calendar-planner {
-    gap: 10px;
-    padding: 10px;
+    gap: 8px;
+    padding: 8px;
   }
 
   .agenda-month-board {
-    grid-template-rows: 24px minmax(0, 1fr);
+    grid-template-rows: 18px minmax(0, 1fr);
   }
 
   .agenda-month-grid {
-    gap: 6px;
+    gap: 4px;
   }
 
   .agenda-task-card {
-    min-height: 60px;
+    min-height: 48px;
+  }
+
+  .agenda-calendar-header {
+    padding: 10px 12px 8px;
+  }
+
+  .agenda-calendar-right {
+    gap: 8px;
+    padding: 10px;
   }
 }
