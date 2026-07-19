@@ -739,8 +739,8 @@
 .agenda-calendar-right {
   display: grid;
   align-content: start;
-  gap: 9px;
-  padding: 12px;
+  gap: 7px;
+  padding: 10px;
   overflow: hidden;
   background:
     radial-gradient(circle at 18% 8%, rgba(234, 213, 143, 0.052), transparent 32%),
@@ -748,17 +748,19 @@
 }
 
 .agenda-new-task-button {
-  min-height: 42px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
   color: #121817;
   border: 0;
+  border-radius: 14px;
   background: linear-gradient(135deg, #ead58f, #9dd8c8);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 12px 24px rgba(0, 0, 0, 0.18);
+    0 10px 20px rgba(0, 0, 0, 0.14);
+  font-size: 0.82rem;
   font-weight: 900;
 }
 
@@ -778,9 +780,24 @@
     inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }
 
+.agenda-calendar-right :is(
+  .agenda-task-composer,
+  .agenda-task-detail,
+  .agenda-side-section,
+  .agenda-empty-panel
+) {
+  gap: 7px;
+  padding: 10px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+}
+
 .agenda-task-composer-simple {
-  gap: 10px;
-  padding: 13px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .agenda-composer-header {
@@ -790,7 +807,7 @@
 
 .agenda-composer-header strong {
   color: #fff8e7;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 900;
   line-height: 1.12;
 }
@@ -799,13 +816,13 @@
 .agenda-detail-editor-pro label {
   min-width: 0;
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .agenda-composer-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
-  gap: 8px;
+  gap: 7px;
 }
 
 .agenda-task-composer input,
@@ -816,14 +833,14 @@
 .agenda-detail-editor-pro textarea {
   width: 100%;
   min-width: 0;
-  min-height: 38px;
+  min-height: 34px;
   border: 0;
-  border-radius: 13px;
-  padding: 0 11px;
+  border-radius: 11px;
+  padding: 0 10px;
   color: #fff8e7;
   background: rgba(8, 12, 15, 0.58);
   font: inherit;
-  font-size: 0.83rem;
+  font-size: 0.78rem;
   font-weight: 740;
   outline: none;
 }
@@ -833,13 +850,13 @@
 }
 
 .agenda-date-picker-button {
-  min-height: 42px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 9px;
+  gap: 7px;
   border: 0;
-  padding: 0 12px;
+  padding: 0 10px;
   color: #fff8e7;
   background:
     linear-gradient(135deg, rgba(234, 213, 143, 0.15), rgba(157, 216, 200, 0.1)),
@@ -876,8 +893,8 @@
 
 .agenda-task-composer textarea,
 .agenda-detail-editor-pro textarea {
-  min-height: 68px;
-  padding-top: 10px;
+  min-height: 52px;
+  padding-top: 8px;
   resize: none;
 }
 
@@ -889,7 +906,7 @@
 .agenda-composer-error {
   margin: 0;
   color: #ffd7c8;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 820;
 }
 
@@ -897,7 +914,7 @@
 .agenda-detail-actions-pro {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 7px;
 }
 
 .agenda-composer-actions button,
@@ -905,11 +922,12 @@
 .agenda-detail-edit-toggle,
 .agenda-detail-secondary-actions button,
 .agenda-delete-task-button {
-  min-height: 38px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 6px;
+  font-size: 0.78rem;
 }
 
 .agenda-calendar-right :is(
@@ -923,6 +941,58 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
+.agenda-calendar-right :is(button, input, select, textarea) {
+  letter-spacing: 0;
+}
+
+.agenda-calendar-right :is(svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.agenda-calendar-right :is(.agenda-task-composer label > span, .agenda-detail-editor-pro label > span, .agenda-composer-header span) {
+  font-size: 0.6rem;
+  opacity: 0.88;
+}
+
+.agenda-calendar-right .agenda-task-row-pro {
+  min-height: 38px;
+  gap: 7px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.034);
+}
+
+.agenda-calendar-right .agenda-task-row-pro strong {
+  font-size: 0.8rem;
+}
+
+.agenda-calendar-right .agenda-task-row-pro small,
+.agenda-calendar-right .agenda-task-row-pro em,
+.agenda-calendar-right .agenda-task-detail p,
+.agenda-calendar-right .agenda-side-section p,
+.agenda-calendar-right .agenda-empty-panel p {
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.agenda-calendar-right .agenda-side-section header strong {
+  font-size: 0.82rem;
+}
+
+.agenda-calendar-right .agenda-side-section header span {
+  min-width: 22px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  color: rgba(247, 241, 229, 0.72);
+  background: rgba(255, 255, 255, 0.055);
+  font-size: 0.64rem;
+  font-weight: 900;
+}
+
 .agenda-composer-actions .is-primary,
 .agenda-detail-actions-pro .is-primary {
   color: #121817;
@@ -933,17 +1003,17 @@
 .agenda-side-section header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
 
 .agenda-side-section {
-  padding: 11px;
+  padding: 9px;
   background: rgba(255, 255, 255, 0.035);
 }
 
 .agenda-side-list {
   display: grid;
-  gap: 7px;
+  gap: 6px;
 }
 
 .agenda-task-detail {
@@ -954,28 +1024,29 @@
 
 .agenda-task-detail header {
   display: grid;
-  gap: 7px;
+  gap: 5px;
 }
 
 .agenda-task-detail header > span {
   width: max-content;
   max-width: 100%;
-  padding: 5px 9px;
+  padding: 4px 8px;
   border-radius: 999px;
   color: #121817;
   background: var(--agenda-subject-color, #ead58f);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 900;
 }
 
 .agenda-task-detail h3 {
   margin: 0;
-  font-size: clamp(1.02rem, 1.4vw, 1.35rem);
+  font-size: clamp(0.96rem, 1.12vw, 1.16rem);
+  line-height: 1.08;
 }
 
 .agenda-detail-note {
-  padding: 8px 10px;
-  border-radius: 12px;
+  padding: 7px 9px;
+  border-radius: 11px;
   background: rgba(8, 12, 15, 0.36);
 }
 
@@ -986,13 +1057,13 @@
 
 .agenda-detail-editor-pro {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .agenda-detail-secondary-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  gap: 7px;
 }
 
 .agenda-delete-task-button {
@@ -1007,6 +1078,10 @@
   align-content: center;
   color: rgba(247, 241, 229, 0.66);
   text-align: center;
+}
+
+.agenda-calendar-right .agenda-empty-panel {
+  min-height: 88px;
 }
 
 .agenda-empty-panel strong {
@@ -1067,7 +1142,7 @@
   }
 }
 
-@media (max-height: 690px) {
+@media (max-height: 690ppx) {
   .agenda-calendar-planner {
     gap: 8px;
     padding: 8px;
