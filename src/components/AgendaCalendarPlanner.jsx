@@ -4,12 +4,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Copy,
+  Eraser,
   FileText,
   FolderOpen,
   Home,
+  ListChecks,
   PencilLine,
   Plus,
   Square,
+  Tag,
   Trash2,
   X
 } from 'lucide-react';
@@ -59,6 +63,7 @@ const DURATIONS = [
 ];
 
 const STATUS_FILTERS = [
+  { id: 'all', label: 'Todas' },
   { id: 'pending', label: 'Pendientes' },
   { id: 'completed', label: 'Completadas' },
   { id: 'unscheduled', label: 'Sin fecha' }
@@ -245,6 +250,26 @@ function getAgendaStyle(item, subjects = DEFAULT_SUBJECTS) {
   return { '--agenda-subject-color': subject.color, '--agenda-subject-soft': subject.soft };
 }
 
+function getTags(item) {
+  if (Array.isArray(item?.tags)) {
+    return item.tags.map((tag) => String(tag ?? '').trim()).filter(Boolean).slice(0, 6);
+  }
+
+  return String(item?.tags ?? '')
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
+function parseTagsInput(value) {
+  return String(value ?? '')
+    .split(',')
+    .map((tag) => tag.replace(/\s+/g, ' ').trim().slice(0, 18))
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
 function getStatusLabel(item) {
   if (item?.completed) return 'Completada';
   if (!getItemDate(item)) return 'Sin fecha';
@@ -293,26 +318,44 @@ function groupItemsByDate(items) {
 }
 
 function itemMatchesStatus(item, statusFilter) {
+  if (statusFilter === 'all') return true;
   if (statusFilter === 'completed') return Boolean(item.completed);
   if (statusFilter === 'unscheduled') return !getItemDate(item) && !item.completed;
   return !item.completed;
 }
 
-function TaskCard({ item, subjects, selected, compact = false, onClick }) {
+function TaskCard({ item, subjects, selected, compact = false, onClick, onToggleComplete, onEdit, onRemove }) {
   const title = getItemTitle(item);
+
+  function runAction(event, callback) {
+    event.stopPropagation();
+    callback?.(item);
+  }
+
   return (
-    <button
-      type="button"
+    <article
       className={`agenda-task-card${compact ? ' is-compact' : ''}${selected ? ' is-selected' : ''}${item.completed ? ' is-completed' : ''}`}
       style={getAgendaStyle(item, subjects)}
-      onClick={onClick}
     >
-      <span className="agenda-task-subject">{getSubjectMeta(item, subjects).label}</span>
-      <strong>{title || 'Tarea sin titulo'}</strong>
-      <small>
-        {getPriority(item)} - {formatDuration(getDuration(item))} - {getStatusLabel(item)}
-      </small>
-    </button>
+      <button type="button" className="agenda-task-card-main" onClick={onClick}>
+        <span className="agenda-task-subject">{getSubjectMeta(item, subjects).label}</span>
+        <strong>{title || 'Tarea sin titulo'}</strong>
+        <small>
+          {getPriority(item)} - {formatDuration(getDuration(item))} - {getStatusLabel(item)}
+        </small>
+      </button>
+      <div className="agenda-task-card-actions" aria-label={`Acciones para ${title || 'tarea'}`}>
+        <button type="button" onClick={(event) => runAction(event, onToggleComplete)} aria-label={item.completed ? 'Marcar pendiente' : 'Completar tarea'}>
+          {item.completed ? <Square size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
+        </button>
+        <button type="button" onClick={(event) => runAction(event, onEdit)} aria-label="Editar tarea">
+          <PencilLine size={12} aria-hidden="true" />
+        </button>
+        <button type="button" onClick={(event) => runAction(event, onRemove)} aria-label="Eliminar tarea">
+          <Trash2 size={12} aria-hidden="true" />
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -356,16 +399,19 @@ export function AgendaCalendarPlanner({
   const centerRef = useRef(null);
   const titleInputRef = useRef(null);
   const dateInputRef = useRef(null);
+  const feedbackTimerRef = useRef(0);
   const todayValue = getTodayDateValue();
   const safeItems = Array.isArray(agendaItems) ? agendaItems : [];
   const [viewMode, setViewMode] = useState('calendar');
   const [selectedDate, setSelectedDate] = useState(todayValue);
   const [calendarCursor, setCalendarCursor] = useState(() => parseDateValue(todayValue));
   const [subjectFilter, setSubjectFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('pending');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [panelMode, setPanelMode] = useState(safeItems.length === 0 ? 'create' : 'summary');
   const [composerOpen, setComposerOpen] = useState(safeItems.length === 0);
   const [draftError, setDraftError] = useState('');
+  const [savedNotice, setSavedNotice] = useState('');
   const [subjects, setSubjects] = useState(loadStoredSubjects);
   const [editingSubjects, setEditingSubjects] = useState(false);
   const [draft, setDraft] = useState({
@@ -374,7 +420,8 @@ export function AgendaCalendarPlanner({
     subject: subjects[0]?.label ?? DEFAULT_SUBJECTS[0].label,
     date: '',
     durationMinutes: '45',
-    priority: 'Media'
+    priority: 'Media',
+    tags: ''
   });
 
   const sortedItems = useMemo(() => sortAgendaItems(safeItems), [safeItems]);
@@ -395,7 +442,9 @@ export function AgendaCalendarPlanner({
   const completedCount = sortedItems.filter((item) => item.completed).length;
   const subjectStats = useMemo(() => createSubjectStats(sortedItems, subjects), [sortedItems, subjects]);
   const taskSubjects = useMemo(() => [...subjects, EXTRACURRICULAR_SUBJECT], [subjects]);
-  const selectedItem = filteredItems.find((item) => item.id === selectedItemId) ?? filteredItems[0] ?? sortedItems[0] ?? null;
+  const selectedItem = sortedItems.find((item) => item.id === selectedItemId) ?? null;
+  const pendingCount = sortedItems.filter((item) => !item.completed).length;
+  const currentWeekItems = sortedItems.filter((item) => isThisWeek(getItemDate(item), selectedDate));
 
   useEffect(() => {
     saveStoredSubjects(subjects);
@@ -415,15 +464,13 @@ export function AgendaCalendarPlanner({
   }, [active]);
 
   useEffect(() => {
-    if (!selectedItemId && filteredItems[0]) {
-      setSelectedItemId(filteredItems[0].id);
-      return;
+    if (selectedItemId && !sortedItems.some((item) => item.id === selectedItemId)) {
+      setSelectedItemId('');
+      setPanelMode('summary');
     }
+  }, [selectedItemId, sortedItems]);
 
-    if (selectedItemId && !filteredItems.some((item) => item.id === selectedItemId)) {
-      setSelectedItemId(filteredItems[0]?.id ?? sortedItems[0]?.id ?? '');
-    }
-  }, [filteredItems, selectedItemId, sortedItems]);
+  useEffect(() => () => window.clearTimeout(feedbackTimerRef.current), []);
 
   useEffect(() => {
     if (composerOpen) return;
@@ -442,6 +489,18 @@ export function AgendaCalendarPlanner({
         return;
       }
 
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        clearPanelSelection();
+        return;
+      }
+
+      if (event.key.toLowerCase() === 'n') {
+        event.preventDefault();
+        openComposer(panelMode === 'day' ? selectedDate : '');
+        return;
+      }
+
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         event.preventDefault();
         centerRef.current?.scrollBy({ top: event.key === 'ArrowDown' ? 260 : -260, behavior: 'smooth' });
@@ -456,18 +515,36 @@ export function AgendaCalendarPlanner({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [active, onBackToDesktop, selectedDate]);
+  }, [active, composerOpen, onBackToDesktop, panelMode, selectedDate, selectedItemId]);
 
   function commitItems(nextItemsOrUpdater) {
     const nextItems = typeof nextItemsOrUpdater === 'function' ? nextItemsOrUpdater(safeItems) : nextItemsOrUpdater;
     onAgendaItemsChange(nextItems);
   }
 
-  function selectDate(dateValue) {
+  function flashSaved(message = 'Guardado') {
+    setSavedNotice(message);
+    window.clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = window.setTimeout(() => setSavedNotice(''), 1300);
+  }
+
+  function clearPanelSelection() {
+    setComposerOpen(false);
+    setDraftError('');
+    setSelectedItemId('');
+    setPanelMode('summary');
+  }
+
+  function selectDate(dateValue, { openPanel = true } = {}) {
     if (!isValidDateValue(dateValue)) return;
     setSelectedDate(dateValue);
     setCalendarCursor(parseDateValue(dateValue));
     setViewMode((current) => (current === 'tasks' ? current : 'calendar'));
+    if (openPanel) {
+      setComposerOpen(false);
+      setSelectedItemId('');
+      setPanelMode('day');
+    }
   }
 
   function shiftMonth(offset) {
@@ -534,11 +611,14 @@ export function AgendaCalendarPlanner({
   }
 
   function openComposer(dateValue = '') {
+    const targetDate = isValidDateValue(dateValue) ? dateValue : panelMode === 'day' ? selectedDate : '';
     setComposerOpen(true);
+    setPanelMode('create');
+    setSelectedItemId('');
     setDraftError('');
     setDraft((current) => ({
       ...current,
-      date: isValidDateValue(dateValue) ? dateValue : ''
+      date: targetDate
     }));
     window.requestAnimationFrame(() => titleInputRef.current?.focus({ preventScroll: true }));
   }
@@ -576,29 +656,65 @@ export function AgendaCalendarPlanner({
       title,
       detail: draft.detail.trim(),
       subject: draft.subject,
-      durationMinutes: 45,
-      priority: 'Media',
+      durationMinutes: Math.max(15, Math.min(360, Number(draft.durationMinutes) || 45)),
+      priority: PRIORITIES.some((entry) => entry.id === draft.priority) ? draft.priority : 'Media',
+      tags: parseTagsInput(draft.tags),
       type: 'tarea',
       completed: false
     };
 
     commitItems([...safeItems, nextItem]);
     setSelectedItemId(nextItem.id);
-    if (date) selectDate(date);
+    if (date) selectDate(date, { openPanel: false });
     setComposerOpen(false);
-    setDraft((current) => ({ ...current, title: '', detail: '', date: '' }));
+    setPanelMode('task');
+    setDraft((current) => ({ ...current, title: '', detail: '', date: '', tags: '' }));
+    flashSaved('Tarea creada');
   }
 
   function updateItem(itemId, patch) {
     commitItems((items) => items.map((item) => (item.id === itemId ? { ...item, ...patch } : item)));
+    if (itemId === selectedItemId && Object.prototype.hasOwnProperty.call(patch, 'date') && isValidDateValue(patch.date)) {
+      setSelectedDate(patch.date);
+      setCalendarCursor(parseDateValue(patch.date));
+    }
+    flashSaved('Guardado');
   }
 
   function removeItem(itemId) {
     commitItems((items) => items.filter((item) => item.id !== itemId));
+    if (itemId === selectedItemId) {
+      setSelectedItemId('');
+      setPanelMode('summary');
+    }
+    flashSaved('Tarea eliminada');
+  }
+
+  function duplicateItem(item) {
+    if (!item) return;
+    const nextItem = {
+      ...item,
+      id: `agenda-task-${Date.now()}-${safeItems.length}`,
+      title: `${getItemTitle(item) || 'Tarea'} copia`,
+      completed: false
+    };
+    commitItems([...safeItems, nextItem]);
+    setSelectedItemId(nextItem.id);
+    setPanelMode('task');
+    setComposerOpen(false);
+    if (getItemDate(nextItem)) selectDate(getItemDate(nextItem), { openPanel: false });
+    flashSaved('Tarea duplicada');
+  }
+
+  function toggleItemComplete(item) {
+    if (!item) return;
+    updateItem(item.id, { completed: !item.completed });
   }
 
   function selectItem(item) {
     setSelectedItemId(item.id);
+    setComposerOpen(false);
+    setPanelMode('task');
     const itemDate = getItemDate(item);
     if (itemDate) {
       setSelectedDate(itemDate);
@@ -691,7 +807,7 @@ export function AgendaCalendarPlanner({
             </div>
           ) : (
             <>
-              <button type="button" className={subjectFilter === 'all' ? 'is-active' : ''} onClick={() => setSubjectFilter('all')}>
+              <button type="button" className={subjectFilter === 'all' && statusFilter === 'all' ? 'is-active' : ''} onClick={() => { setSubjectFilter('all'); setStatusFilter('all'); }}>
                 <i className="agenda-subject-dot" />
                 <strong>Todas</strong>
                 <small>{sortedItems.filter((item) => !item.completed).length}</small>
@@ -776,19 +892,48 @@ export function AgendaCalendarPlanner({
                     <article
                       key={day.value}
                       className={`agenda-month-day${day.isCurrentMonth ? '' : ' is-outside'}${day.value === selectedDate ? ' is-selected' : ''}${day.isToday ? ' is-today' : ''}`}
+                      onClick={() => selectDate(day.value)}
+                      onDoubleClick={() => openComposer(day.value)}
                     >
                       <button
                         type="button"
                         className="agenda-day-number"
-                        onClick={() => selectDate(day.value)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          selectDate(day.value);
+                        }}
                         aria-current={day.value === selectedDate ? 'date' : undefined}
                       >
                         <span>{day.day}</span>
                         {dayItems.length > 0 && <small>{dayItems.length}</small>}
                       </button>
+                      <button
+                        type="button"
+                        className="agenda-day-add-button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openComposer(day.value);
+                        }}
+                        aria-label={`Agregar tarea el ${formatDayLabel(day.value)}`}
+                      >
+                        <Plus size={13} aria-hidden="true" />
+                      </button>
                       <div className="agenda-day-task-stack">
                         {dayItems.slice(0, 3).map((item) => (
-                          <TaskCard key={item.id} item={item} subjects={subjects} compact selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
+                          <TaskCard
+                            key={item.id}
+                            item={item}
+                            subjects={subjects}
+                            compact
+                            selected={selectedItem?.id === item.id}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              selectItem(item);
+                            }}
+                            onToggleComplete={toggleItemComplete}
+                            onEdit={selectItem}
+                            onRemove={(targetItem) => removeItem(targetItem.id)}
+                          />
                         ))}
                         {dayItems.length > 3 && <span className="agenda-more-tasks">+{dayItems.length - 3} mas</span>}
                       </div>
@@ -809,7 +954,16 @@ export function AgendaCalendarPlanner({
               <div className="agenda-focus-list">
                 {todayItems.length === 0 && <EmptyPanel title="Sin tareas para hoy">Agrega una tarea o deja el dia despejado.</EmptyPanel>}
                 {todayItems.map((item) => (
-                  <TaskCard key={item.id} item={item} subjects={subjects} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
+                  <TaskCard
+                    key={item.id}
+                    item={item}
+                    subjects={subjects}
+                    selected={selectedItem?.id === item.id}
+                    onClick={() => selectItem(item)}
+                    onToggleComplete={toggleItemComplete}
+                    onEdit={selectItem}
+                    onRemove={(targetItem) => removeItem(targetItem.id)}
+                  />
                 ))}
               </div>
             </section>
@@ -840,27 +994,39 @@ export function AgendaCalendarPlanner({
       </main>
 
       <aside className="agenda-calendar-right" aria-label="Organizador lateral">
-        <button type="button" className="agenda-new-task-button" onClick={() => (composerOpen ? setComposerOpen(false) : openComposer())}>
+        <button type="button" className="agenda-new-task-button" onClick={() => (composerOpen ? clearPanelSelection() : openComposer())}>
           <Plus size={18} aria-hidden="true" />
           <span>{composerOpen ? 'Cerrar' : 'Nueva tarea'}</span>
         </button>
 
-        {composerOpen && (
+        {panelMode === 'create' && composerOpen && (
           <form className="agenda-task-composer agenda-task-composer-simple" onSubmit={createTask} aria-label="Crear tarea">
             <div className="agenda-composer-header">
               <span>Nueva tarea</span>
               <strong>Que tenes que estudiar?</strong>
             </div>
-            <label>
-              <span>Materia</span>
-              <select value={draft.subject} onChange={(event) => updateDraft('subject', event.target.value)}>
-                {taskSubjects.map((subject) => (
-                  <option key={subject.id} value={subject.label}>
-                    {subject.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="agenda-composer-grid">
+              <label>
+                <span>Materia</span>
+                <select value={draft.subject} onChange={(event) => updateDraft('subject', event.target.value)}>
+                  {taskSubjects.map((subject) => (
+                    <option key={subject.id} value={subject.label}>
+                      {subject.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Duracion</span>
+                <select value={draft.durationMinutes} onChange={(event) => updateDraft('durationMinutes', event.target.value)}>
+                  {DURATIONS.map((duration) => (
+                    <option key={duration.value} value={duration.value}>
+                      {duration.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <label className="agenda-date-picker-row">
               <span>Fecha</span>
               <button type="button" className="agenda-date-picker-button" onClick={openNativeDatePicker}>
@@ -876,6 +1042,16 @@ export function AgendaCalendarPlanner({
                 onChange={(event) => updateDraft('date', event.target.value)}
               />
             </label>
+            <label>
+              <span>Prioridad</span>
+              <select value={draft.priority} onChange={(event) => updateDraft('priority', event.target.value)}>
+                {PRIORITIES.map((priority) => (
+                  <option key={priority.id} value={priority.id}>
+                    {priority.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="agenda-composer-title">
               <span>Titulo</span>
               <input
@@ -888,7 +1064,17 @@ export function AgendaCalendarPlanner({
               />
             </label>
             <label>
-              <span>Descripcion</span>
+              <span>Etiquetas</span>
+              <input
+                type="text"
+                value={draft.tags}
+                maxLength={80}
+                placeholder="ej: parcial, lectura"
+                onChange={(event) => updateDraft('tags', event.target.value)}
+              />
+            </label>
+            <label>
+              <span>Notas</span>
               <textarea
                 value={draft.detail}
                 maxLength={140}
@@ -906,49 +1092,175 @@ export function AgendaCalendarPlanner({
           </form>
         )}
 
-        <TaskDetail
-          item={selectedItem}
-          subjects={subjects}
-          onUpdateItem={updateItem}
-          onRemoveItem={removeItem}
-        />
+        {panelMode === 'task' && selectedItem && (
+          <TaskDetail
+            item={selectedItem}
+            subjects={subjects}
+            savedNotice={savedNotice}
+            onUpdateItem={updateItem}
+            onRemoveItem={removeItem}
+            onDuplicateItem={duplicateItem}
+            onClearSelection={clearPanelSelection}
+          />
+        )}
 
-        <section className="agenda-side-section">
-          <header>
-            <strong>Tareas sin fecha</strong>
-            <span>{unscheduledItems.length}</span>
-          </header>
-            <div className="agenda-side-list">
-              {unscheduledItems.length === 0 && <p>No hay tareas sin planificar.</p>}
-              {unscheduledItems.slice(0, 5).map((item) => (
-              <TaskRow key={item.id} item={item} subjects={subjects} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
-            ))}
-          </div>
-        </section>
+        {panelMode === 'day' && (
+          <DayDetailPanel
+            dateValue={selectedDate}
+            items={selectedDateItems}
+            subjects={subjects}
+            onAddTask={openComposer}
+            onSelectTask={selectItem}
+            onToggleTask={toggleItemComplete}
+            onRemoveTask={(item) => removeItem(item.id)}
+            onClearSelection={clearPanelSelection}
+          />
+        )}
 
-        <section className="agenda-side-section">
-          <header>
-            <strong>Esta semana</strong>
-            <span>{weekItems.length}</span>
-          </header>
-            <div className="agenda-side-list">
-              {weekItems.length === 0 && <p>Sin pendientes para esta semana.</p>}
-              {weekItems.slice(0, 5).map((item) => (
-              <TaskRow key={item.id} item={item} subjects={subjects} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
-            ))}
-          </div>
-        </section>
+        {panelMode === 'summary' && (
+          <AgendaSummaryPanel
+            todayItems={todayItems}
+            unscheduledItems={unscheduledItems}
+            weekItems={weekItems}
+            completedCount={completedCount}
+            pendingCount={pendingCount}
+            currentWeekItems={currentWeekItems}
+            subjects={subjects}
+            selectedItemId={selectedItemId}
+            onSelectTask={selectItem}
+            onAddTask={openComposer}
+          />
+        )}
       </aside>
     </div>
   );
 }
 
-function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
-  const [editing, setEditing] = useState(false);
+function AgendaSummaryPanel({
+  todayItems,
+  unscheduledItems,
+  weekItems,
+  completedCount,
+  pendingCount,
+  currentWeekItems,
+  subjects,
+  selectedItemId,
+  onSelectTask,
+  onAddTask
+}) {
+  const weeklyLoad = getLoadMinutes(currentWeekItems);
+
+  return (
+    <section className="agenda-right-summary" aria-label="Resumen de agenda">
+      <div className="agenda-summary-hero">
+        <ListChecks size={18} aria-hidden="true" />
+        <div>
+          <span>Resumen</span>
+          <strong>{pendingCount} pendientes</strong>
+          <p>{completedCount} completadas - {formatDuration(weeklyLoad)} esta semana</p>
+        </div>
+      </div>
+
+      <AgendaSideSection title="Hoy" count={todayItems.length}>
+        {todayItems.length === 0 && <p>Sin tareas para hoy.</p>}
+        {todayItems.slice(0, 4).map((item) => (
+          <TaskRow key={item.id} item={item} subjects={subjects} selected={selectedItemId === item.id} onClick={() => onSelectTask(item)} />
+        ))}
+      </AgendaSideSection>
+
+      <AgendaSideSection title="Sin fecha" count={unscheduledItems.length} actionLabel="Crear sin fecha" onAction={() => onAddTask('')}>
+        {unscheduledItems.length === 0 && <p>No hay tareas sin planificar.</p>}
+        {unscheduledItems.slice(0, 4).map((item) => (
+          <TaskRow key={item.id} item={item} subjects={subjects} selected={selectedItemId === item.id} onClick={() => onSelectTask(item)} />
+        ))}
+      </AgendaSideSection>
+
+      <AgendaSideSection title="Esta semana" count={weekItems.length}>
+        {weekItems.length === 0 && <p>Sin pendientes para esta semana.</p>}
+        {weekItems.slice(0, 5).map((item) => (
+          <TaskRow key={item.id} item={item} subjects={subjects} selected={selectedItemId === item.id} onClick={() => onSelectTask(item)} />
+        ))}
+      </AgendaSideSection>
+    </section>
+  );
+}
+
+function AgendaSideSection({ title, count, actionLabel, onAction, children }) {
+  return (
+    <details className="agenda-side-section agenda-side-section-collapsible" open>
+      <summary>
+        <strong>{title}</strong>
+        <span>{count}</span>
+        {actionLabel && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onAction?.();
+            }}
+          >
+            {actionLabel}
+          </button>
+        )}
+      </summary>
+      <div className="agenda-side-list">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+function DayDetailPanel({ dateValue, items, subjects, onAddTask, onSelectTask, onToggleTask, onRemoveTask, onClearSelection }) {
+  const openItems = items.filter((item) => !item.completed);
+  const completedItems = items.filter((item) => item.completed);
+
+  return (
+    <section className="agenda-day-detail-panel" aria-label="Detalle del dia">
+      <header>
+        <span>Dia seleccionado</span>
+        <h3>{formatDayLabel(dateValue)}</h3>
+        <p>{openItems.length} pendientes - {completedItems.length} completadas - {formatDuration(getLoadMinutes(items))}</p>
+      </header>
+
+      <div className="agenda-day-detail-actions">
+        <button type="button" className="is-primary" onClick={() => onAddTask(dateValue)} data-enter-default>
+          <Plus size={15} aria-hidden="true" />
+          <span>Agregar a este dia</span>
+        </button>
+        <button type="button" onClick={onClearSelection}>
+          <Eraser size={15} aria-hidden="true" />
+          <span>Limpiar seleccion</span>
+        </button>
+      </div>
+
+      <div className="agenda-side-list">
+        {items.length === 0 && <p>Este dia esta libre. Doble click en el dia o usa el boton para agregar una tarea.</p>}
+        {items.map((item) => (
+          <TaskCard
+            key={item.id}
+            item={item}
+            subjects={subjects}
+            selected={false}
+            compact={false}
+            onClick={() => onSelectTask(item)}
+            onToggleComplete={onToggleTask}
+            onEdit={onSelectTask}
+            onRemove={onRemoveTask}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TaskDetail({ item, subjects, savedNotice, onUpdateItem, onRemoveItem, onDuplicateItem, onClearSelection }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const detailSubjects = useMemo(() => [...subjects, EXTRACURRICULAR_SUBJECT], [subjects]);
+  const itemTags = getTags(item);
 
   useEffect(() => {
-    setEditing(false);
+    setConfirmingDelete(false);
   }, [item?.id]);
 
   if (!item) {
@@ -956,39 +1268,64 @@ function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
   }
 
   function removeSelectedItem() {
-    setEditing(false);
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      return;
+    }
+    setConfirmingDelete(false);
     onRemoveItem(item.id);
   }
 
   return (
-    <section className={`agenda-task-detail${editing ? ' is-editing' : ''}`} style={getAgendaStyle(item, subjects)} aria-label="Detalle de tarea">
+    <section className="agenda-task-detail is-editing" style={getAgendaStyle(item, subjects)} aria-label="Detalle de tarea">
       <header>
-        <span>{getSimpleStatusLabel(item)}</span>
-        <h3>{getItemTitle(item) || 'Tarea sin titulo'}</h3>
-        <p>{getSubjectMeta(item, subjects).label}{getItemDate(item) ? ` - ${formatShortDate(getItemDate(item))}` : ' - Sin fecha'}</p>
-        {!editing && item.detail && <p className="agenda-detail-note">{item.detail}</p>}
+        <div className="agenda-detail-title-row">
+          <span>{getSimpleStatusLabel(item)}</span>
+          <button type="button" onClick={onClearSelection} aria-label="Cerrar detalle">
+            <X size={14} aria-hidden="true" />
+          </button>
+        </div>
+        <label className="agenda-detail-title-field">
+          <span>Titulo</span>
+          <input
+            type="text"
+            value={item.title ?? ''}
+            maxLength={64}
+            placeholder="Tarea sin titulo"
+            onChange={(event) => onUpdateItem(item.id, { title: event.target.value })}
+          />
+        </label>
       </header>
 
       <div className="agenda-detail-actions-pro">
         <button type="button" className="is-primary" onClick={() => onUpdateItem(item.id, { completed: !item.completed })}>
           {item.completed ? <Square size={16} aria-hidden="true" /> : <CheckCircle2 size={16} aria-hidden="true" />}
-          <span>{item.completed ? 'Marcar pendiente' : 'Marcar completada'}</span>
+          <span>{item.completed ? 'Pendiente' : 'Completada'}</span>
         </button>
-        <button type="button" className={`agenda-detail-edit-toggle${editing ? ' is-active' : ''}`} onClick={() => setEditing((current) => !current)}>
-          {editing ? <CheckCircle2 size={16} aria-hidden="true" /> : <PencilLine size={16} aria-hidden="true" />}
-          <span>{editing ? 'Listo' : 'Editar'}</span>
+        <button type="button" onClick={() => onDuplicateItem(item)}>
+          <Copy size={16} aria-hidden="true" />
+          <span>Duplicar</span>
         </button>
+        {getItemDate(item) && (
+          <button type="button" onClick={() => onUpdateItem(item.id, { date: '' })}>
+            <CalendarDays size={16} aria-hidden="true" />
+            <span>Sin fecha</span>
+          </button>
+        )}
         <button type="button" className="agenda-delete-task-button" onClick={removeSelectedItem}>
           <Trash2 size={16} aria-hidden="true" />
-          <span>Eliminar</span>
+          <span>{confirmingDelete ? 'Confirmar' : 'Eliminar'}</span>
         </button>
       </div>
 
-      {editing && (
-        <div className="agenda-detail-editor-pro">
+      <div className="agenda-detail-editor-pro">
+        <div className="agenda-detail-grid">
           <label>
-            <span>Titulo</span>
-            <input type="text" value={item.title ?? ''} maxLength={64} onChange={(event) => onUpdateItem(item.id, { title: event.target.value })} />
+            <span>Estado</span>
+            <select value={item.completed ? 'completed' : 'pending'} onChange={(event) => onUpdateItem(item.id, { completed: event.target.value === 'completed' })}>
+              <option value="pending">Pendiente</option>
+              <option value="completed">Completada</option>
+            </select>
           </label>
           <label>
             <span>Materia</span>
@@ -1005,11 +1342,58 @@ function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
             <input type="date" value={getItemDate(item)} onChange={(event) => onUpdateItem(item.id, { date: event.target.value })} />
           </label>
           <label>
-            <span>Descripcion</span>
-            <textarea value={item.detail ?? ''} maxLength={140} onChange={(event) => onUpdateItem(item.id, { detail: event.target.value })} />
+            <span>Duracion</span>
+            <select value={String(getDuration(item))} onChange={(event) => onUpdateItem(item.id, { durationMinutes: Number(event.target.value) })}>
+              {DURATIONS.map((duration) => (
+                <option key={duration.value} value={duration.value}>
+                  {duration.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Prioridad</span>
+            <select value={getPriority(item)} onChange={(event) => onUpdateItem(item.id, { priority: event.target.value })}>
+              {PRIORITIES.map((priority) => (
+                <option key={priority.id} value={priority.id}>
+                  {priority.label}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
-      )}
+
+        <label>
+          <span>Etiquetas</span>
+          <div className="agenda-tags-input-shell">
+            <Tag size={14} aria-hidden="true" />
+            <input
+              type="text"
+              value={itemTags.join(', ')}
+              maxLength={80}
+              placeholder="parcial, lectura"
+              onChange={(event) => onUpdateItem(item.id, { tags: parseTagsInput(event.target.value) })}
+            />
+          </div>
+        </label>
+
+        <label>
+          <span>Notas</span>
+          <textarea value={item.detail ?? ''} maxLength={180} placeholder="Material, objetivo o recordatorio" onChange={(event) => onUpdateItem(item.id, { detail: event.target.value })} />
+        </label>
+
+        {itemTags.length > 0 && (
+          <div className="agenda-tag-list">
+            {itemTags.map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+        )}
+
+        <p className={`agenda-save-feedback${savedNotice ? ' is-visible' : ''}`}>
+          {savedNotice || ' '}
+        </p>
+      </div>
     </section>
   );
 }

@@ -19,6 +19,14 @@ function normalizeAgendaDate(value, { allowEmpty = false } = {}) {
   return /^\d{4}-\d{2}-\d{2}$/.test(dateValue) ? dateValue : getAgendaDateValue();
 }
 
+function normalizeAgendaTags(value) {
+  const tags = Array.isArray(value) ? value : String(value ?? '').split(',');
+  return tags
+    .map((tag) => String(tag ?? '').replace(/\s+/g, ' ').trim().slice(0, 18))
+    .filter(Boolean)
+    .slice(0, 6);
+}
+
 export function normalizeAgendaItems(items) {
   if (!Array.isArray(items)) return createStudyAgendaItems();
 
@@ -33,6 +41,7 @@ export function normalizeAgendaItems(items) {
       subject: String(item?.subject ?? '').trim().slice(0, 32),
       durationMinutes: Number.isFinite(Number(item?.durationMinutes)) ? Math.max(15, Math.min(360, Number(item.durationMinutes))) : undefined,
       priority: String(item?.priority ?? '').trim().slice(0, 16),
+      tags: normalizeAgendaTags(item?.tags),
       type: String(item?.type ?? '').trim().slice(0, 24),
       resourceUrl: String(item?.resourceUrl ?? '').trim().slice(0, 240),
       completed: Boolean(item?.completed)

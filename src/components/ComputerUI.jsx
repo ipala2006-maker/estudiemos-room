@@ -40,6 +40,7 @@
   X
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AgendaCalendarPlanner } from './AgendaCalendarPlanner.jsx';
 import { DachshundMascot } from './DachshundMascot.jsx';
 import {
   DACHSHUND_SKINS,
@@ -1153,15 +1154,12 @@ export function ComputerUI({
                   onMinimize={minimizeWindow}
                   onClose={closeWindow}
                 >
-                  <AgendaApp
+                  <AgendaCalendarPlanner
                     active={focusedWindow === 'agenda'}
                     agendaItems={agendaItems}
-                    onUpdateItem={updateAgendaItem}
-                    onAddItem={addAgendaItem}
-                    onRemoveItem={removeAgendaItem}
-                    onClearDate={clearAgendaDate}
-                    onClearAll={clearAgendaItems}
-                    onRestoreInitial={restoreInitialAgendaItems}
+                    onAgendaItemsChange={onAgendaItemsChange}
+                    onBackToDesktop={returnToComputerDesktop}
+                    context="computer"
                   />
                 </OSWindow>
               )}
