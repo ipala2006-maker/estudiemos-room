@@ -1,0 +1,35 @@
+name: Apply physical props style patch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - codex-physical-props-style.patch
+      - .github/workflows/apply-physical-props-style.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply patch and clean temporary files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check --ignore-space-change --ignore-whitespace codex-physical-props-style.patch
+          git apply --ignore-space-change --ignore-whitespace codex-physical-props-style.patch
+          rm codex-physical-props-style.patch .github/workflows/apply-physical-props-style.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/FirstPersonWorld.jsx src/styles/app.css src/utils/installRoomSpeakerWorld.js codex-physical-props-style.patch .github/workflows/apply-physical-props-style.yml
+          git commit -m "Unify physical agenda and speaker styling"
+          git push origin HEAD:main
