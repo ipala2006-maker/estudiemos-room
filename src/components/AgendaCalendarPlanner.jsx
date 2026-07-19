@@ -1005,28 +1005,6 @@ export function AgendaCalendarPlanner({
               <span>Nueva tarea</span>
               <strong>Que tenes que estudiar?</strong>
             </div>
-            <div className="agenda-composer-grid">
-              <label>
-                <span>Materia</span>
-                <select value={draft.subject} onChange={(event) => updateDraft('subject', event.target.value)}>
-                  {taskSubjects.map((subject) => (
-                    <option key={subject.id} value={subject.label}>
-                      {subject.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Duracion</span>
-                <select value={draft.durationMinutes} onChange={(event) => updateDraft('durationMinutes', event.target.value)}>
-                  {DURATIONS.map((duration) => (
-                    <option key={duration.value} value={duration.value}>
-                      {duration.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
             <label className="agenda-date-picker-row">
               <span>Fecha</span>
               <button type="button" className="agenda-date-picker-button" onClick={openNativeDatePicker}>
@@ -1042,16 +1020,6 @@ export function AgendaCalendarPlanner({
                 onChange={(event) => updateDraft('date', event.target.value)}
               />
             </label>
-            <label>
-              <span>Prioridad</span>
-              <select value={draft.priority} onChange={(event) => updateDraft('priority', event.target.value)}>
-                {PRIORITIES.map((priority) => (
-                  <option key={priority.id} value={priority.id}>
-                    {priority.label}
-                  </option>
-                ))}
-              </select>
-            </label>
             <label className="agenda-composer-title">
               <span>Titulo</span>
               <input
@@ -1061,16 +1029,6 @@ export function AgendaCalendarPlanner({
                 maxLength={64}
                 placeholder="Ej: resolver guia de integrales"
                 onChange={(event) => updateDraft('title', event.target.value)}
-              />
-            </label>
-            <label>
-              <span>Etiquetas</span>
-              <input
-                type="text"
-                value={draft.tags}
-                maxLength={80}
-                placeholder="ej: parcial, lectura"
-                onChange={(event) => updateDraft('tags', event.target.value)}
               />
             </label>
             <label>
