@@ -4,6 +4,7 @@ import '../styles/wall-agenda-soft-ui.css';
 import '../styles/wall-agenda-keyboard-polish.css';
 import '../styles/wall-agenda-pc-design.css';
 import '../styles/agenda-planner.css';
+import '../styles/agenda-calendar-planner.css';
 import '../utils/installInteractionTargeting.js';
 import '../utils/installOpaqueHandOverlay.js';
 import '../utils/installRoomSpeakerWorld.js';
@@ -13,5 +14,5 @@ import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installWallAgendaKeyboardPolish.js';
 import '../utils/installComputerAgendaCleanup.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-18 20:36 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-2036-agenda-always-sync';
+export const BUILD_LABEL = 'Pages build 2026-07-18 21:18 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-2118-agenda-calendar-task-planner';
