@@ -7,7 +7,6 @@ import {
   FileText,
   FolderOpen,
   Home,
-  Play,
   Plus,
   Square,
   Trash2,
@@ -23,6 +22,23 @@ const DEFAULT_SUBJECTS = [
   { id: 'quimica', label: 'Quimica', color: '#f2b6d0', soft: 'rgba(242, 182, 208, 0.18)', aliases: ['quimica', 'molecula', 'estequiometria'] },
   { id: 'programacion', label: 'Programacion', color: '#f8bc7d', soft: 'rgba(248, 188, 125, 0.18)', aliases: ['programacion', 'codigo', 'web', 'codex'] },
   { id: 'idiomas', label: 'Idiomas', color: '#c6b4ff', soft: 'rgba(198, 180, 255, 0.18)', aliases: ['ingles', 'idioma', 'lectura'] }
+];
+
+const EXTRACURRICULAR_SUBJECT = {
+  id: 'extracurricular',
+  label: 'Extracurricular',
+  color: '#9dd8c8',
+  soft: 'rgba(157, 216, 200, 0.18)',
+  aliases: ['extracurricular', 'personal', 'club', 'actividad']
+};
+
+const SUBJECT_PALETTE = [
+  { color: '#ead58f', soft: 'rgba(234, 213, 143, 0.18)' },
+  { color: '#a9c7ff', soft: 'rgba(169, 199, 255, 0.18)' },
+  { color: '#88d8c5', soft: 'rgba(136, 216, 197, 0.18)' },
+  { color: '#f2b6d0', soft: 'rgba(242, 182, 208, 0.18)' },
+  { color: '#f8bc7d', soft: 'rgba(248, 188, 125, 0.18)' },
+  { color: '#c6b4ff', soft: 'rgba(198, 180, 255, 0.18)' }
 ];
 
 const AGENDA_SUBJECTS_STORAGE_KEY = 'estudiemos-room-agenda-subjects-v1';
@@ -44,7 +60,6 @@ const DURATIONS = [
 const STATUS_FILTERS = [
   { id: 'pending', label: 'Pendientes' },
   { id: 'completed', label: 'Completadas' },
-  { id: 'high', label: 'Prioridad alta' },
   { id: 'unscheduled', label: 'Sin fecha' }
 ];
 
@@ -157,11 +172,12 @@ function getItemDate(item) {
 }
 
 function getSubjectMeta(item, subjects = DEFAULT_SUBJECTS) {
+  const availableSubjects = [...subjects, EXTRACURRICULAR_SUBJECT];
   const storedSubject = normalizeForSearch(item?.subject);
   const searchableText = normalizeForSearch(`${item?.subject ?? ''} ${item?.title ?? ''} ${item?.detail ?? ''}`);
   return (
-    subjects.find((subject) => normalizeForSearch(subject.label) === storedSubject || subject.id === storedSubject) ??
-    subjects.find((subject) => subject.aliases.some((alias) => searchableText.includes(alias))) ??
+    availableSubjects.find((subject) => normalizeForSearch(subject.label) === storedSubject || subject.id === storedSubject) ??
+    availableSubjects.find((subject) => subject.aliases.some((alias) => searchableText.includes(alias))) ??
     subjects[0] ??
     DEFAULT_SUBJECTS[0]
   );
@@ -235,6 +251,10 @@ function getStatusLabel(item) {
   return 'Pendiente';
 }
 
+function getSimpleStatusLabel(item) {
+  return item?.completed ? 'Completada' : 'Pendiente';
+}
+
 function getLoadMinutes(items) {
   return items.reduce((total, item) => total + (item.completed ? 0 : getDuration(item)), 0);
 }
@@ -273,7 +293,6 @@ function groupItemsByDate(items) {
 
 function itemMatchesStatus(item, statusFilter) {
   if (statusFilter === 'completed') return Boolean(item.completed);
-  if (statusFilter === 'high') return getPriority(item) === 'Alta' && !item.completed;
   if (statusFilter === 'unscheduled') return !getItemDate(item) && !item.completed;
   return !item.completed;
 }
@@ -335,6 +354,7 @@ export function AgendaCalendarPlanner({
   const shellRef = useRef(null);
   const centerRef = useRef(null);
   const titleInputRef = useRef(null);
+  const dateInputRef = useRef(null);
   const todayValue = getTodayDateValue();
   const safeItems = Array.isArray(agendaItems) ? agendaItems : [];
   const [viewMode, setViewMode] = useState('calendar');
@@ -344,7 +364,6 @@ export function AgendaCalendarPlanner({
   const [statusFilter, setStatusFilter] = useState('pending');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [composerOpen, setComposerOpen] = useState(safeItems.length === 0);
-  const [activeSessionId, setActiveSessionId] = useState('');
   const [draftError, setDraftError] = useState('');
   const [subjects, setSubjects] = useState(loadStoredSubjects);
   const [editingSubjects, setEditingSubjects] = useState(false);
@@ -352,7 +371,7 @@ export function AgendaCalendarPlanner({
     title: '',
     detail: '',
     subject: subjects[0]?.label ?? DEFAULT_SUBJECTS[0].label,
-    date: todayValue,
+    date: '',
     durationMinutes: '45',
     priority: 'Media'
   });
@@ -374,10 +393,17 @@ export function AgendaCalendarPlanner({
   const todayItems = filteredItems.filter((item) => getItemDate(item) === todayValue && !item.completed);
   const completedCount = sortedItems.filter((item) => item.completed).length;
   const subjectStats = useMemo(() => createSubjectStats(sortedItems, subjects), [sortedItems, subjects]);
+  const taskSubjects = useMemo(() => [...subjects, EXTRACURRICULAR_SUBJECT], [subjects]);
   const selectedItem = filteredItems.find((item) => item.id === selectedItemId) ?? filteredItems[0] ?? sortedItems[0] ?? null;
 
   useEffect(() => {
     saveStoredSubjects(subjects);
+    if (!subjects.some((subject) => subject.id === subjectFilter)) {
+      setSubjectFilter('all');
+    }
+    if (!taskSubjects.some((subject) => subject.label === draft.subject)) {
+      setDraft((current) => ({ ...current, subject: subjects[0]?.label ?? EXTRACURRICULAR_SUBJECT.label }));
+    }
   }, [subjects]);
 
   useEffect(() => {
@@ -464,13 +490,23 @@ export function AgendaCalendarPlanner({
     );
   }
 
+  function updateSubjectColor(subjectId, paletteEntry) {
+    setSubjects((currentSubjects) =>
+      currentSubjects.map((subject) =>
+        subject.id === subjectId
+          ? { ...subject, color: paletteEntry.color, soft: paletteEntry.soft }
+          : subject
+      )
+    );
+  }
+
   function addSubject() {
     const fallback = DEFAULT_SUBJECTS[subjects.length % DEFAULT_SUBJECTS.length] ?? DEFAULT_SUBJECTS[0];
     setSubjects((currentSubjects) => [
       ...currentSubjects,
       {
         id: `materia-${Date.now()}`,
-        label: 'Nueva materia',
+        label: `Materia ${currentSubjects.length + 1}`,
         color: fallback.color,
         soft: fallback.soft,
         aliases: []
@@ -479,7 +515,24 @@ export function AgendaCalendarPlanner({
     setEditingSubjects(true);
   }
 
-  function openComposer(dateValue = selectedDate) {
+  function removeSubject(subjectId) {
+    if (subjects.length <= 1) return;
+    const subjectToRemove = subjects.find((subject) => subject.id === subjectId);
+    const nextSubjects = subjects.filter((subject) => subject.id !== subjectId);
+    setSubjects(nextSubjects);
+
+    if (subjectToRemove) {
+      commitItems((items) =>
+        items.map((item) =>
+          normalizeForSearch(item.subject) === normalizeForSearch(subjectToRemove.label)
+            ? { ...item, subject: nextSubjects[0]?.label ?? DEFAULT_SUBJECTS[0].label }
+            : item
+        )
+      );
+    }
+  }
+
+  function openComposer(dateValue = '') {
     setComposerOpen(true);
     setDraftError('');
     setDraft((current) => ({
@@ -487,6 +540,17 @@ export function AgendaCalendarPlanner({
       date: isValidDateValue(dateValue) ? dateValue : ''
     }));
     window.requestAnimationFrame(() => titleInputRef.current?.focus({ preventScroll: true }));
+  }
+
+  function openNativeDatePicker() {
+    const input = dateInputRef.current;
+    if (!input) return;
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+      return;
+    }
+    input.focus({ preventScroll: true });
+    input.click();
   }
 
   function updateDraft(key, value) {
@@ -511,9 +575,9 @@ export function AgendaCalendarPlanner({
       title,
       detail: draft.detail.trim(),
       subject: draft.subject,
-      durationMinutes: Number(draft.durationMinutes) || 45,
-      priority: draft.priority,
-      type: draft.priority === 'Alta' ? 'entrega' : 'repaso',
+      durationMinutes: 45,
+      priority: 'Media',
+      type: 'tarea',
       completed: false
     };
 
@@ -521,7 +585,7 @@ export function AgendaCalendarPlanner({
     setSelectedItemId(nextItem.id);
     if (date) selectDate(date);
     setComposerOpen(false);
-    setDraft((current) => ({ ...current, title: '', detail: '', date: selectedDate }));
+    setDraft((current) => ({ ...current, title: '', detail: '', date: '' }));
   }
 
   function updateItem(itemId, patch) {
@@ -585,16 +649,39 @@ export function AgendaCalendarPlanner({
           {editingSubjects ? (
             <div className="agenda-subject-edit-list">
               {subjects.map((subject) => (
-                <label key={subject.id} style={{ '--agenda-subject-color': subject.color, '--agenda-subject-soft': subject.soft }}>
-                  <i className="agenda-subject-dot" aria-hidden="true" />
-                  <input
-                    type="text"
-                    value={subject.label}
-                    maxLength={28}
-                    aria-label={`Editar materia ${subject.label}`}
-                    onChange={(event) => updateSubjectLabel(subject.id, event.target.value)}
-                  />
-                </label>
+                <div key={subject.id} className="agenda-subject-edit-row" style={{ '--agenda-subject-color': subject.color, '--agenda-subject-soft': subject.soft }}>
+                  <label className="agenda-subject-edit-main">
+                    <i className="agenda-subject-dot" aria-hidden="true" />
+                    <input
+                      type="text"
+                      value={subject.label}
+                      maxLength={28}
+                      aria-label={`Editar materia ${subject.label}`}
+                      onChange={(event) => updateSubjectLabel(subject.id, event.target.value)}
+                    />
+                  </label>
+                  <div className="agenda-subject-color-list" aria-label={`Color de ${subject.label}`}>
+                    {SUBJECT_PALETTE.map((paletteEntry) => (
+                      <button
+                        key={paletteEntry.color}
+                        type="button"
+                        className={`agenda-subject-color-button${paletteEntry.color === subject.color ? ' is-selected' : ''}`}
+                        style={{ '--agenda-color-choice': paletteEntry.color }}
+                        aria-label={`Usar color ${paletteEntry.color}`}
+                        onClick={() => updateSubjectColor(subject.id, paletteEntry)}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="agenda-remove-subject-button"
+                    onClick={() => removeSubject(subject.id)}
+                    disabled={subjects.length <= 1}
+                    aria-label={`Eliminar materia ${subject.label}`}
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </button>
+                </div>
               ))}
               <button type="button" className="agenda-add-subject-button" onClick={addSubject}>
                 <Plus size={14} aria-hidden="true" />
@@ -752,15 +839,44 @@ export function AgendaCalendarPlanner({
       </main>
 
       <aside className="agenda-calendar-right" aria-label="Organizador lateral">
-        <button type="button" className="agenda-new-task-button" onClick={() => openComposer(selectedDate)}>
+        <button type="button" className="agenda-new-task-button" onClick={() => (composerOpen ? setComposerOpen(false) : openComposer())}>
           <Plus size={18} aria-hidden="true" />
-          <span>Nueva tarea</span>
+          <span>{composerOpen ? 'Cerrar' : 'Nueva tarea'}</span>
         </button>
 
         {composerOpen && (
-          <form className="agenda-task-composer" onSubmit={createTask} aria-label="Crear tarea">
+          <form className="agenda-task-composer agenda-task-composer-simple" onSubmit={createTask} aria-label="Crear tarea">
+            <div className="agenda-composer-header">
+              <span>Nueva tarea</span>
+              <strong>Que tenes que estudiar?</strong>
+            </div>
+            <label>
+              <span>Materia</span>
+              <select value={draft.subject} onChange={(event) => updateDraft('subject', event.target.value)}>
+                {taskSubjects.map((subject) => (
+                  <option key={subject.id} value={subject.label}>
+                    {subject.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="agenda-date-picker-row">
+              <span>Fecha</span>
+              <button type="button" className="agenda-date-picker-button" onClick={openNativeDatePicker}>
+                <CalendarDays size={16} aria-hidden="true" />
+                <strong>{draft.date ? formatShortDate(draft.date) : 'Elegir fecha'}</strong>
+              </button>
+              <input
+                ref={dateInputRef}
+                className="agenda-date-native-input"
+                type="date"
+                value={draft.date}
+                aria-label="Fecha de la tarea"
+                onChange={(event) => updateDraft('date', event.target.value)}
+              />
+            </label>
             <label className="agenda-composer-title">
-              <span>Tarea</span>
+              <span>Titulo</span>
               <input
                 ref={titleInputRef}
                 type="text"
@@ -771,43 +887,7 @@ export function AgendaCalendarPlanner({
               />
             </label>
             <label>
-              <span>Materia</span>
-              <select value={draft.subject} onChange={(event) => updateDraft('subject', event.target.value)}>
-                {subjects.map((subject) => (
-                  <option key={subject.id} value={subject.label}>
-                    {subject.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="agenda-composer-grid">
-              <label>
-                <span>Fecha</span>
-                <input type="date" value={draft.date} onChange={(event) => updateDraft('date', event.target.value)} />
-              </label>
-              <label>
-                <span>Duracion</span>
-                <select value={draft.durationMinutes} onChange={(event) => updateDraft('durationMinutes', event.target.value)}>
-                  {DURATIONS.map((duration) => (
-                    <option key={duration.value} value={duration.value}>
-                      {duration.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label>
-              <span>Prioridad</span>
-              <select value={draft.priority} onChange={(event) => updateDraft('priority', event.target.value)}>
-                {PRIORITIES.map((priority) => (
-                  <option key={priority.id} value={priority.id}>
-                    {priority.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Notas</span>
+              <span>Descripcion</span>
               <textarea
                 value={draft.detail}
                 maxLength={140}
@@ -817,9 +897,6 @@ export function AgendaCalendarPlanner({
             </label>
             {draftError && <p className="agenda-composer-error">{draftError}</p>}
             <div className="agenda-composer-actions">
-              <button type="button" onClick={() => updateDraft('date', '')}>
-                Sin fecha
-              </button>
               <button type="submit" className="is-primary" data-enter-default>
                 <Plus size={16} aria-hidden="true" />
                 Agregar
@@ -831,8 +908,6 @@ export function AgendaCalendarPlanner({
         <TaskDetail
           item={selectedItem}
           subjects={subjects}
-          activeSessionId={activeSessionId}
-          onStartSession={setActiveSessionId}
           onUpdateItem={updateItem}
           onRemoveItem={removeItem}
         />
@@ -867,8 +942,9 @@ export function AgendaCalendarPlanner({
   );
 }
 
-function TaskDetail({ item, subjects, activeSessionId, onStartSession, onUpdateItem, onRemoveItem }) {
+function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
   const [editing, setEditing] = useState(false);
+  const detailSubjects = useMemo(() => [...subjects, EXTRACURRICULAR_SUBJECT], [subjects]);
 
   useEffect(() => {
     setEditing(false);
@@ -881,20 +957,16 @@ function TaskDetail({ item, subjects, activeSessionId, onStartSession, onUpdateI
   return (
     <section className={`agenda-task-detail${editing ? ' is-editing' : ''}`} style={getAgendaStyle(item, subjects)} aria-label="Detalle de tarea">
       <header>
-        <span>{getStatusLabel(item)}</span>
+        <span>{getSimpleStatusLabel(item)}</span>
         <h3>{getItemTitle(item) || 'Tarea sin titulo'}</h3>
-        <p>{getSubjectMeta(item, subjects).label} - {formatDuration(getDuration(item))} - {getPriority(item)}</p>
+        <p>{getSubjectMeta(item, subjects).label}{getItemDate(item) ? ` - ${formatShortDate(getItemDate(item))}` : ' - Sin fecha'}</p>
         {item.detail && <p className="agenda-detail-note">{item.detail}</p>}
       </header>
 
       <div className="agenda-detail-actions-pro">
-        <button type="button" className="is-primary" onClick={() => onStartSession(item.id)}>
-          <Play size={16} aria-hidden="true" />
-          <span>{activeSessionId === item.id ? 'Sesion activa' : 'Empezar sesion'}</span>
-        </button>
-        <button type="button" onClick={() => onUpdateItem(item.id, { completed: !item.completed })}>
+        <button type="button" className="is-primary" onClick={() => onUpdateItem(item.id, { completed: !item.completed })}>
           {item.completed ? <Square size={16} aria-hidden="true" /> : <CheckCircle2 size={16} aria-hidden="true" />}
-          <span>{item.completed ? 'Reabrir' : 'Completar'}</span>
+          <span>{item.completed ? 'Marcar pendiente' : 'Marcar completada'}</span>
         </button>
       </div>
 
@@ -911,45 +983,22 @@ function TaskDetail({ item, subjects, activeSessionId, onStartSession, onUpdateI
           <label>
             <span>Materia</span>
             <select value={getSubjectMeta(item, subjects).label} onChange={(event) => onUpdateItem(item.id, { subject: event.target.value })}>
-              {subjects.map((subject) => (
+              {detailSubjects.map((subject) => (
                 <option key={subject.id} value={subject.label}>
                   {subject.label}
                 </option>
               ))}
             </select>
           </label>
-          <div className="agenda-composer-grid">
-            <label>
-              <span>Fecha</span>
-              <input type="date" value={getItemDate(item)} onChange={(event) => onUpdateItem(item.id, { date: event.target.value })} />
-            </label>
-            <label>
-              <span>Duracion</span>
-              <select value={String(getDuration(item))} onChange={(event) => onUpdateItem(item.id, { durationMinutes: Number(event.target.value) })}>
-                {DURATIONS.map((duration) => (
-                  <option key={duration.value} value={duration.value}>
-                    {duration.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
           <label>
-            <span>Prioridad</span>
-            <select value={getPriority(item)} onChange={(event) => onUpdateItem(item.id, { priority: event.target.value })}>
-              {PRIORITIES.map((priority) => (
-                <option key={priority.id} value={priority.id}>
-                  {priority.label}
-                </option>
-              ))}
-            </select>
+            <span>Fecha</span>
+            <input type="date" value={getItemDate(item)} onChange={(event) => onUpdateItem(item.id, { date: event.target.value })} />
           </label>
           <label>
-            <span>Notas</span>
+            <span>Descripcion</span>
             <textarea value={item.detail ?? ''} maxLength={140} onChange={(event) => onUpdateItem(item.id, { detail: event.target.value })} />
           </label>
           <div className="agenda-detail-secondary-actions">
-            <button type="button" onClick={() => onUpdateItem(item.id, { date: '' })}>Sin fecha</button>
             <button type="button" className="agenda-delete-task-button" onClick={() => onRemoveItem(item.id)}>
               <Trash2 size={16} aria-hidden="true" />
               <span>Eliminar</span>

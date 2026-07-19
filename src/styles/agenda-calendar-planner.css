@@ -125,6 +125,7 @@
 .agenda-calendar-filter-group > span,
 .agenda-task-composer label > span,
 .agenda-detail-editor-pro label > span,
+.agenda-composer-header span,
 .agenda-focus-hero span {
   color: rgba(247, 241, 229, 0.6);
   font-size: 0.68rem;
@@ -154,7 +155,10 @@
 .agenda-detail-edit-toggle,
 .agenda-detail-secondary-actions button,
 .agenda-subject-edit-toggle,
+.agenda-subject-color-button,
 .agenda-add-subject-button,
+.agenda-remove-subject-button,
+.agenda-date-picker-button,
 .agenda-delete-task-button {
   min-width: 0;
   border: 1px solid rgba(247, 241, 229, 0.09);
@@ -240,17 +244,25 @@
   gap: 7px;
 }
 
-.agenda-subject-edit-list label {
+.agenda-subject-edit-row {
   min-width: 0;
-  min-height: 38px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--agenda-subject-color, #ead58f) 22%, transparent);
+  border-radius: 15px;
+  background: var(--agenda-subject-soft, rgba(255, 255, 255, 0.045));
+}
+
+.agenda-subject-edit-main {
+  min-width: 0;
+  min-height: 34px;
+  display: grid;
+  grid-column: 1 / -1;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 8px;
   align-items: center;
-  padding: 0 9px;
-  border: 1px solid color-mix(in srgb, var(--agenda-subject-color, #ead58f) 22%, transparent);
-  border-radius: 13px;
-  background: var(--agenda-subject-soft, rgba(255, 255, 255, 0.045));
 }
 
 .agenda-subject-edit-list input {
@@ -263,6 +275,48 @@
   font-size: 0.86rem;
   font-weight: 860;
   outline: none;
+}
+
+.agenda-subject-color-list {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agenda-subject-color-button {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--agenda-color-choice, #ead58f);
+}
+
+.agenda-subject-color-button.is-selected {
+  border-color: rgba(255, 248, 231, 0.8);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--agenda-color-choice, #ead58f) 28%, transparent);
+}
+
+.agenda-remove-subject-button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  align-self: center;
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 11px;
+  color: #ffd4c8;
+  background: rgba(107, 40, 36, 0.16);
+}
+
+.agenda-remove-subject-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
 }
 
 .agenda-add-subject-button {
@@ -371,6 +425,7 @@
 
 .agenda-calendar-actions button:hover,
 .agenda-new-task-button:hover,
+.agenda-date-picker-button:hover,
 .agenda-composer-actions .is-primary:hover,
 .agenda-detail-actions-pro .is-primary:hover {
   transform: translateY(-1px);
@@ -685,6 +740,23 @@
   background: rgba(255, 255, 255, 0.044);
 }
 
+.agenda-task-composer-simple {
+  gap: 10px;
+  padding: 13px;
+}
+
+.agenda-composer-header {
+  display: grid;
+  gap: 4px;
+}
+
+.agenda-composer-header strong {
+  color: #fff8e7;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.12;
+}
+
 .agenda-task-composer label,
 .agenda-detail-editor-pro label {
   min-width: 0;
@@ -716,6 +788,40 @@
   font-size: 0.83rem;
   font-weight: 740;
   outline: none;
+}
+
+.agenda-date-picker-row {
+  position: relative;
+}
+
+.agenda-date-picker-button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 0 12px;
+  color: #fff8e7;
+  background:
+    linear-gradient(135deg, rgba(234, 213, 143, 0.15), rgba(157, 216, 200, 0.1)),
+    rgba(8, 12, 15, 0.72);
+  font-weight: 900;
+}
+
+.agenda-date-picker-button svg {
+  color: #ead58f;
+}
+
+.agenda-date-native-input {
+  position: absolute;
+  left: 10px;
+  bottom: 0;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 1px !important;
+  padding: 0 !important;
+  pointer-events: none;
+  opacity: 0;
 }
 
 .agenda-task-composer input:focus,
@@ -750,7 +856,7 @@
 .agenda-composer-actions,
 .agenda-detail-actions-pro {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
@@ -835,7 +941,7 @@
 
 .agenda-detail-secondary-actions {
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
