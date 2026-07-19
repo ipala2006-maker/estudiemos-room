@@ -7,6 +7,7 @@ import {
   FileText,
   FolderOpen,
   Home,
+  PencilLine,
   Plus,
   Square,
   Trash2,
@@ -954,13 +955,18 @@ function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
     return <EmptyPanel title="Selecciona una tarea">El detalle aparece aca cuando elijas una tarjeta.</EmptyPanel>;
   }
 
+  function removeSelectedItem() {
+    setEditing(false);
+    onRemoveItem(item.id);
+  }
+
   return (
     <section className={`agenda-task-detail${editing ? ' is-editing' : ''}`} style={getAgendaStyle(item, subjects)} aria-label="Detalle de tarea">
       <header>
         <span>{getSimpleStatusLabel(item)}</span>
         <h3>{getItemTitle(item) || 'Tarea sin titulo'}</h3>
         <p>{getSubjectMeta(item, subjects).label}{getItemDate(item) ? ` - ${formatShortDate(getItemDate(item))}` : ' - Sin fecha'}</p>
-        {item.detail && <p className="agenda-detail-note">{item.detail}</p>}
+        {!editing && item.detail && <p className="agenda-detail-note">{item.detail}</p>}
       </header>
 
       <div className="agenda-detail-actions-pro">
@@ -968,11 +974,15 @@ function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
           {item.completed ? <Square size={16} aria-hidden="true" /> : <CheckCircle2 size={16} aria-hidden="true" />}
           <span>{item.completed ? 'Marcar pendiente' : 'Marcar completada'}</span>
         </button>
+        <button type="button" className={`agenda-detail-edit-toggle${editing ? ' is-active' : ''}`} onClick={() => setEditing((current) => !current)}>
+          {editing ? <CheckCircle2 size={16} aria-hidden="true" /> : <PencilLine size={16} aria-hidden="true" />}
+          <span>{editing ? 'Listo' : 'Editar'}</span>
+        </button>
+        <button type="button" className="agenda-delete-task-button" onClick={removeSelectedItem}>
+          <Trash2 size={16} aria-hidden="true" />
+          <span>Eliminar</span>
+        </button>
       </div>
-
-      <button type="button" className="agenda-detail-edit-toggle" onClick={() => setEditing((current) => !current)}>
-        {editing ? 'Cerrar edicion' : 'Editar tarea'}
-      </button>
 
       {editing && (
         <div className="agenda-detail-editor-pro">
@@ -998,12 +1008,6 @@ function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
             <span>Descripcion</span>
             <textarea value={item.detail ?? ''} maxLength={140} onChange={(event) => onUpdateItem(item.id, { detail: event.target.value })} />
           </label>
-          <div className="agenda-detail-secondary-actions">
-            <button type="button" className="agenda-delete-task-button" onClick={() => onRemoveItem(item.id)}>
-              <Trash2 size={16} aria-hidden="true" />
-              <span>Eliminar</span>
-            </button>
-          </div>
         </div>
       )}
     </section>
