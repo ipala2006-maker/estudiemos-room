@@ -3745,7 +3745,7 @@ function addAgendaBoard(room, lines, textures) {
   const board = createCanvasStudyBoard({
     title: 'Agenda',
     lines,
-    background: '#70583c',
+    background: '#111a1a',
     accent: '#e0c47a'
   });
   board.position.set(-27.6, 5.6, -12.8);
@@ -3753,7 +3753,7 @@ function addAgendaBoard(room, lines, textures) {
   board.scale.set(3.35, 2.35, 1);
   room.add(board);
 
-  const frameMaterial = makeMaterial(0x201913, 0.7, 0.02, textures.wood);
+  const frameMaterial = makeMaterial(0x0b1112, 0.68, 0.08, textures.brushedMetal);
   [
     { position: [-27.52, 5.6, -12.8], size: [0.18, 2.62, 3.88] },
     { position: [-27.5, 6.95, -12.8], size: [0.2, 0.18, 3.96] },
@@ -4031,32 +4031,45 @@ function createCanvasStudyBoard({ title, lines, background, accent }) {
   canvas.height = 384;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = background;
+  const surfaceGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  surfaceGradient.addColorStop(0, '#20322f');
+  surfaceGradient.addColorStop(0.52, background);
+  surfaceGradient.addColorStop(1, '#070b0c');
+  ctx.fillStyle = surfaceGradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  for (let i = 0; i < 90; i += 1) {
-    ctx.fillRect((i * 37) % canvas.width, (i * 59) % canvas.height, 2 + (i % 4), 1 + (i % 3));
-  }
 
+  ctx.fillStyle = 'rgba(157,216,200,0.045)';
+  for (let i = 0; i < 24; i += 1) {
+    ctx.fillRect(42 + i * 18, 110, 1, 214);
+  }
+  ctx.fillStyle = 'rgba(224,196,122,0.075)';
+  ctx.fillRect(0, 0, canvas.width, 18);
+  ctx.fillRect(0, 0, 18, canvas.height);
   ctx.fillStyle = accent;
-  ctx.fillRect(0, 0, canvas.width, 16);
-  ctx.fillRect(0, 0, 16, canvas.height);
-  ctx.fillStyle = '#fff2d2';
-  ctx.font = '900 52px system-ui, sans-serif';
-  ctx.fillText(title, 46, 78);
+  ctx.fillRect(38, 82, 142, 8);
+  ctx.fillStyle = '#fff4d7';
+  ctx.font = '900 50px system-ui, sans-serif';
+  ctx.fillText(title, 46, 70);
 
   lines.forEach((line, index) => {
     const y = 138 + index * 72;
-    ctx.fillStyle = index % 2 === 0 ? '#efe4c8' : '#c6d9cf';
-    ctx.fillRect(54, y - 28, 242 + index * 22, 46);
-    ctx.fillStyle = '#1b2524';
+    ctx.fillStyle = index % 2 === 0 ? 'rgba(234,213,143,0.18)' : 'rgba(157,216,200,0.16)';
+    ctx.beginPath();
+    ctx.roundRect(48, y - 30, 304 + index * 18, 48, 13);
+    ctx.fill();
+    ctx.fillStyle = index % 2 === 0 ? '#ead58f' : '#9dd8c8';
+    ctx.fillRect(62, y - 10, 26, 4);
+    ctx.fillStyle = '#f7f1e5';
     ctx.font = '800 24px system-ui, sans-serif';
-    ctx.fillText(line, 76, y + 3);
+    ctx.fillText(line, 104, y + 3);
   });
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-  ctx.lineWidth = 8;
+  ctx.strokeStyle = 'rgba(224,196,122,0.28)';
+  ctx.lineWidth = 7;
   ctx.strokeRect(22, 22, canvas.width - 44, canvas.height - 44);
+  ctx.strokeStyle = 'rgba(157,216,200,0.18)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(34, 34, canvas.width - 68, canvas.height - 68);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;

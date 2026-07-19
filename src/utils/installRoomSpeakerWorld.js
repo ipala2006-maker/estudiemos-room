@@ -48,7 +48,7 @@ function ensureSpeakerOccluderStyles() {
       height: ${SPEAKER_OCCLUDER_DOM_SIZE.height}px;
       box-sizing: border-box;
       display: grid;
-      grid-template-rows: 76px minmax(0, 1fr) 50px;
+      grid-template-rows: 68px minmax(0, 1fr) 44px;
       justify-items: center;
       align-items: end;
       pointer-events: none;
@@ -62,33 +62,35 @@ function ensureSpeakerOccluderStyles() {
     }
 
     .room-speaker-css-label {
-      width: 360px;
-      min-height: 58px;
+      width: 350px;
+      min-height: 56px;
       display: grid;
-      grid-template-columns: 58px minmax(0, 1fr);
+      grid-template-columns: 50px minmax(0, 1fr);
       align-items: center;
-      gap: 14px;
-      padding: 8px 16px 8px 10px;
-      border: 8px solid #080d0e;
-      border-radius: 8px 8px 0 0;
-      color: #f4fff4;
+      gap: 12px;
+      padding: 8px 15px 8px 10px;
+      border: 1px solid rgba(224, 196, 122, 0.34);
+      border-radius: 14px 14px 8px 8px;
+      color: #fff4d7;
       background:
-        linear-gradient(90deg, #1ed760, #102c1b 54%, #050908),
-        #0a1011;
+        radial-gradient(circle at 12% 18%, rgba(157, 216, 200, 0.18), transparent 34%),
+        linear-gradient(135deg, rgba(224, 196, 122, 0.14), transparent 46%),
+        linear-gradient(180deg, rgba(28, 44, 41, 0.96), rgba(8, 13, 14, 0.98));
       box-shadow:
-        inset 0 0 0 3px rgba(255, 255, 255, 0.16),
-        0 12px 28px rgba(0, 0, 0, 0.4);
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 14px 28px rgba(0, 0, 0, 0.34);
     }
 
     .room-speaker-css-label span {
-      width: 42px;
-      height: 42px;
+      width: 38px;
+      height: 38px;
       display: grid;
       place-items: center;
       border-radius: 50%;
-      color: #06120b;
-      background: #ecfff0;
-      font: 900 25px/1 Arial, sans-serif;
+      color: #111817;
+      background: linear-gradient(135deg, #ead58f, #9dd8c8);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 8px 16px rgba(0, 0, 0, 0.22);
+      font: 900 22px/1 Arial, sans-serif;
     }
 
     .room-speaker-css-label strong {
@@ -96,24 +98,25 @@ function ensureSpeakerOccluderStyles() {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font: 900 31px/1 Arial, sans-serif;
+      font: 900 25px/1 Arial, sans-serif;
       letter-spacing: 0;
     }
 
     .room-speaker-css-cabinet {
       width: 390px;
-      height: 590px;
+      height: 588px;
       display: grid;
       place-items: center;
-      padding: 42px 34px;
-      border: 20px solid #070b0c;
-      border-radius: 8px;
+      padding: 38px 34px;
+      border: 16px solid #080d0e;
+      border-radius: 24px;
       background:
-        linear-gradient(90deg, #080d0e, #172524 8%, #0b1112 22%, #0b1112 78%, #050809),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent 16%, transparent 84%, rgba(0, 0, 0, 0.32)),
+        linear-gradient(180deg, #1c2c29, #0b1112 58%, #070b0c),
         #0b1112;
       box-shadow:
-        inset 0 0 0 5px rgba(255, 255, 255, 0.035),
-        inset 0 0 48px rgba(0, 0, 0, 0.72),
+        inset 0 0 0 1px rgba(224, 196, 122, 0.18),
+        inset 0 0 44px rgba(0, 0, 0, 0.62),
         0 28px 50px rgba(0, 0, 0, 0.42);
     }
 
@@ -123,22 +126,24 @@ function ensureSpeakerOccluderStyles() {
       display: grid;
       align-content: center;
       justify-items: center;
-      gap: 38px;
-      border-radius: 4px;
+      gap: 36px;
+      border-radius: 14px;
       background:
-        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 10px),
-        linear-gradient(180deg, #1ed760, #12aa4e 52%, #0c522a),
-        #1ed760;
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.055) 0 2px, transparent 2px 10px),
+        repeating-linear-gradient(0deg, rgba(157, 216, 200, 0.06) 0 1px, transparent 1px 8px),
+        linear-gradient(180deg, #172421, #0b1112 58%, #070b0c),
+        #0b1112;
       box-shadow:
-        inset 0 0 0 6px rgba(2, 8, 5, 0.26),
-        inset 0 0 46px rgba(0, 0, 0, 0.24);
+        inset 0 0 0 3px rgba(157, 216, 200, 0.12),
+        inset 0 0 46px rgba(0, 0, 0, 0.38);
     }
 
     .room-speaker-css-driver {
       display: block;
       border-radius: 50%;
-      border: 14px solid #d7c28a;
+      border: 13px solid #d7c28a;
       background:
+        radial-gradient(circle at 42% 34%, rgba(157, 216, 200, 0.18), transparent 18%),
         radial-gradient(circle at 50% 48%, #020505 0 22%, #071010 23% 54%, #020303 55% 100%);
       box-shadow:
         inset 0 0 0 7px rgba(255, 255, 255, 0.035),
@@ -161,12 +166,12 @@ function ensureSpeakerOccluderStyles() {
     }
 
     .room-speaker-css-base {
-      width: 470px;
-      height: 42px;
+      width: 450px;
+      height: 38px;
       border-radius: 50% 50% 12px 12px;
       background:
-        radial-gradient(ellipse at 50% 46%, rgba(30, 215, 96, 0.38), transparent 52%),
-        linear-gradient(180deg, #172524, #080d0e);
+        radial-gradient(ellipse at 50% 46%, rgba(224, 196, 122, 0.22), transparent 56%),
+        linear-gradient(180deg, #1c2c29, #080d0e);
       box-shadow: 0 18px 36px rgba(0, 0, 0, 0.42);
     }
   `;
@@ -184,7 +189,7 @@ function createSpeakerOccluderElement() {
   const key = document.createElement('span');
   key.textContent = 'Q';
   const title = document.createElement('strong');
-  title.textContent = 'PARLANTE';
+  title.textContent = 'AUDIO SALA';
   label.append(key, title);
 
   const cabinet = document.createElement('div');
@@ -263,32 +268,32 @@ function createSpeakerLabel() {
   if (!context) return null;
 
   const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, '#1ed760');
-  gradient.addColorStop(0.52, '#0f2b1c');
-  gradient.addColorStop(1, '#050a09');
+  gradient.addColorStop(0, '#243936');
+  gradient.addColorStop(0.52, '#111a1a');
+  gradient.addColorStop(1, '#050809');
   context.fillStyle = gradient;
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.strokeStyle = 'rgba(245,255,247,0.72)';
+  context.strokeStyle = 'rgba(224,196,122,0.72)';
   context.lineWidth = 6;
   context.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-  context.fillStyle = '#06120b';
+  context.fillStyle = '#ead58f';
   context.beginPath();
   context.arc(84, 90, 48, 0, Math.PI * 2);
   context.fill();
-  context.fillStyle = '#effff3';
+  context.fillStyle = '#111817';
   context.font = '900 44px Arial, sans-serif';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillText('Q', 84, 90);
 
   context.textAlign = 'left';
-  context.fillStyle = '#ffffff';
+  context.fillStyle = '#fff4d7';
   context.font = '900 48px Arial, sans-serif';
-  context.fillText('PARLANTE', 158, 76);
-  context.fillStyle = 'rgba(245,255,247,0.78)';
+  context.fillText('AUDIO', 158, 76);
+  context.fillStyle = 'rgba(157,216,200,0.86)';
   context.font = '800 28px Arial, sans-serif';
-  context.fillText('Spotify sala', 160, 120);
+  context.fillText('Sala de estudio', 160, 120);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -306,6 +311,73 @@ function createSpeakerLabel() {
   label.name = 'spotify-room-speaker-control-label';
   label.position.set(0, 5.95, 0.88);
   return label;
+}
+
+function createSpeakerFrontPanelMaterial() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 760;
+  const context = canvas.getContext('2d');
+  if (!context) return new THREE.MeshBasicMaterial({ color: 0x172421 });
+
+  const background = context.createLinearGradient(0, 0, 0, canvas.height);
+  background.addColorStop(0, '#20322f');
+  background.addColorStop(0.52, '#0f1717');
+  background.addColorStop(1, '#070b0c');
+  context.fillStyle = background;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.fillStyle = 'rgba(157,216,200,0.06)';
+  for (let x = 28; x < canvas.width; x += 18) {
+    context.fillRect(x, 34, 2, canvas.height - 68);
+  }
+  context.fillStyle = 'rgba(255,255,255,0.035)';
+  for (let y = 44; y < canvas.height; y += 22) {
+    context.fillRect(36, y, canvas.width - 72, 1);
+  }
+
+  [
+    { x: 256, y: 180, outer: 76, inner: 45 },
+    { x: 256, y: 385, outer: 118, inner: 72 },
+    { x: 256, y: 596, outer: 86, inner: 52 }
+  ].forEach((driver) => {
+    const ring = context.createRadialGradient(driver.x - 18, driver.y - 18, 8, driver.x, driver.y, driver.outer);
+    ring.addColorStop(0, '#fff4d7');
+    ring.addColorStop(0.42, '#d7c28a');
+    ring.addColorStop(1, '#6f573c');
+    context.fillStyle = ring;
+    context.beginPath();
+    context.arc(driver.x, driver.y, driver.outer, 0, Math.PI * 2);
+    context.fill();
+
+    const cone = context.createRadialGradient(driver.x - 18, driver.y - 22, 4, driver.x, driver.y, driver.inner);
+    cone.addColorStop(0, '#9dd8c8');
+    cone.addColorStop(0.16, '#263b37');
+    cone.addColorStop(0.58, '#071010');
+    cone.addColorStop(1, '#020303');
+    context.fillStyle = cone;
+    context.beginPath();
+    context.arc(driver.x, driver.y, driver.inner, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = 'rgba(255,255,255,0.08)';
+    context.lineWidth = 5;
+    context.beginPath();
+    context.arc(driver.x, driver.y, driver.inner * 0.64, 0, Math.PI * 2);
+    context.stroke();
+  });
+
+  context.fillStyle = '#e0c47a';
+  context.fillRect(62, 44, 108, 8);
+  context.fillStyle = 'rgba(157,216,200,0.76)';
+  context.fillRect(62, canvas.height - 56, 52, 6);
+  context.fillRect(126, canvas.height - 56, 26, 6);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  return new THREE.MeshBasicMaterial({ map: texture });
 }
 
 function addSpeakerEdges(group) {
@@ -332,13 +404,13 @@ function addRoomSpeaker(room) {
   speaker.name = SPEAKER_OBJECT_NAME;
   speaker.position.copy(ROOM_SPEAKER_LOCAL);
 
-  const cabinetMaterial = makeStandardMaterial(0x0b1112, 0.62, 0.07);
-  const sideMaterial = makeStandardMaterial(0x172524, 0.74, 0.03);
+  const cabinetMaterial = makeStandardMaterial(0x0b1112, 0.66, 0.08);
+  const sideMaterial = makeStandardMaterial(0x1c2c29, 0.72, 0.04);
   const grilleMaterial = makeStandardMaterial(0x030607, 0.88, 0.02);
-  const ringMaterial = makeStandardMaterial(0xd7c28a, 0.42, 0.12);
-  const greenMaterial = makeEmissiveMaterial(0x1ed760, 1.1);
-  const displayMaterial = makeEmissiveMaterial(0xb8ffd0, 0.72);
-  const visiblePanelMaterial = new THREE.MeshBasicMaterial({ color: 0x1ed760 });
+  const ringMaterial = makeStandardMaterial(0xd7c28a, 0.46, 0.1);
+  const greenMaterial = makeEmissiveMaterial(0x9dd8c8, 0.7);
+  const displayMaterial = makeEmissiveMaterial(0xead58f, 0.5);
+  const visiblePanelMaterial = createSpeakerFrontPanelMaterial();
 
   addBox(speaker, [4.7, 0.36, 2.55], [0, 0.18, 0.08], sideMaterial, true);
   addBox(speaker, [3.75, 5.9, 1.55], [0, 3.02, 0], cabinetMaterial, true);
@@ -371,9 +443,9 @@ function addRoomSpeaker(room) {
   const floorGlow = new THREE.Mesh(
     new THREE.CircleGeometry(3.45, 36),
     new THREE.MeshBasicMaterial({
-      color: 0x1ed760,
+      color: 0xe0c47a,
       transparent: true,
-      opacity: 0.14,
+      opacity: 0.11,
       depthWrite: false
     })
   );
@@ -381,7 +453,7 @@ function addRoomSpeaker(room) {
   floorGlow.position.set(0, 0.02, 0.18);
   speaker.add(floorGlow);
 
-  const speakerLight = new THREE.PointLight(0x1ed760, 1.55, 12.5, 2.1);
+  const speakerLight = new THREE.PointLight(0x9dd8c8, 0.8, 10.5, 2.1);
   speakerLight.position.set(0, 3.4, 1.05);
   speaker.add(speakerLight);
 
