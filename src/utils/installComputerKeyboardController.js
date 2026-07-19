@@ -145,10 +145,18 @@ function scrollElementBy(element, left, top) {
   });
 }
 
+function shouldLetAgendaCalendarHandleArrow(scope, event) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return false;
+  if (shouldPreserveNativeArrowKey(event.target)) return false;
+  return Boolean(scope?.matches?.('.agenda-calendar-planner') || scope?.querySelector?.('.agenda-calendar-planner'));
+}
+
 function handleArrow(root, event) {
   if (!event.key.startsWith('Arrow') || shouldPreserveNativeArrowKey(event.target)) return false;
 
   const scope = getActiveComputerScope(root);
+  if (shouldLetAgendaCalendarHandleArrow(scope, event)) return false;
+
   const scrollDelta = getArrowScrollDelta(event.key);
   if (scrollDelta) {
     const scrollTarget = findKeyboardScrollTarget(scope, scrollDelta[0], scrollDelta[1]);

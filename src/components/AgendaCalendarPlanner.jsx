@@ -16,7 +16,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { studyAgendaItems } from '../data/studyAgenda.js';
 
-const SUBJECTS = [
+const DEFAULT_SUBJECTS = [
   { id: 'general', label: 'General', color: '#ead58f', soft: 'rgba(234, 213, 143, 0.18)', aliases: [] },
   { id: 'matematica', label: 'Matematica', color: '#a9c7ff', soft: 'rgba(169, 199, 255, 0.18)', aliases: ['matematica', 'analisis', 'algebra', 'integral', 'limite'] },
   { id: 'fisica', label: 'Fisica', color: '#88d8c5', soft: 'rgba(136, 216, 197, 0.18)', aliases: ['fisica', 'movimiento', 'energia', 'mecanica'] },
@@ -24,6 +24,8 @@ const SUBJECTS = [
   { id: 'programacion', label: 'Programacion', color: '#f8bc7d', soft: 'rgba(248, 188, 125, 0.18)', aliases: ['programacion', 'codigo', 'web', 'codex'] },
   { id: 'idiomas', label: 'Idiomas', color: '#c6b4ff', soft: 'rgba(198, 180, 255, 0.18)', aliases: ['ingles', 'idioma', 'lectura'] }
 ];
+
+const AGENDA_SUBJECTS_STORAGE_KEY = 'estudiemos-room-agenda-subjects-v1';
 
 const PRIORITIES = [
   { id: 'Alta', label: 'Alta' },
@@ -110,6 +112,42 @@ function normalizeForSearch(value) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
+function sanitizeSubject(subject, index = 0) {
+  const fallback = DEFAULT_SUBJECTS[index % DEFAULT_SUBJECTS.length] ?? DEFAULT_SUBJECTS[0];
+  const label = String(subject?.label ?? fallback.label).replace(/\s+/g, ' ').trim().slice(0, 28) || fallback.label;
+  const id = String(subject?.id ?? normalizeForSearch(label) ?? fallback.id).replace(/\s+/g, '-').trim() || fallback.id;
+  return {
+    ...fallback,
+    id,
+    label,
+    color: subject?.color ?? fallback.color,
+    soft: subject?.soft ?? fallback.soft,
+    aliases: Array.isArray(subject?.aliases) ? subject.aliases.map(normalizeForSearch).filter(Boolean) : fallback.aliases
+  };
+}
+
+function loadStoredSubjects() {
+  if (typeof window === 'undefined') return DEFAULT_SUBJECTS;
+
+  try {
+    const storedSubjects = JSON.parse(window.localStorage.getItem(AGENDA_SUBJECTS_STORAGE_KEY) ?? 'null');
+    if (!Array.isArray(storedSubjects) || storedSubjects.length === 0) return DEFAULT_SUBJECTS;
+    return storedSubjects.map(sanitizeSubject);
+  } catch {
+    return DEFAULT_SUBJECTS;
+  }
+}
+
+function saveStoredSubjects(subjects) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(AGENDA_SUBJECTS_STORAGE_KEY, JSON.stringify(subjects.map(sanitizeSubject)));
+  } catch {
+    // Local storage can be unavailable in strict/private contexts; the agenda still works for the session.
+  }
+}
+
 function getItemTitle(item) {
   return String(item?.title ?? '').trim();
 }
@@ -118,13 +156,14 @@ function getItemDate(item) {
   return isValidDateValue(item?.date) ? String(item.date) : '';
 }
 
-function getSubjectMeta(item) {
+function getSubjectMeta(item, subjects = DEFAULT_SUBJECTS) {
   const storedSubject = normalizeForSearch(item?.subject);
   const searchableText = normalizeForSearch(`${item?.subject ?? ''} ${item?.title ?? ''} ${item?.detail ?? ''}`);
   return (
-    SUBJECTS.find((subject) => normalizeForSearch(subject.label) === storedSubject || subject.id === storedSubject) ??
-    SUBJECTS.find((subject) => subject.aliases.some((alias) => searchableText.includes(alias))) ??
-    SUBJECTS[0]
+    subjects.find((subject) => normalizeForSearch(subject.label) === storedSubject || subject.id === storedSubject) ??
+    subjects.find((subject) => subject.aliases.some((alias) => searchableText.includes(alias))) ??
+    subjects[0] ??
+    DEFAULT_SUBJECTS[0]
   );
 }
 
@@ -184,8 +223,8 @@ function sortAgendaItems(items) {
   });
 }
 
-function getAgendaStyle(item) {
-  const subject = getSubjectMeta(item);
+function getAgendaStyle(item, subjects = DEFAULT_SUBJECTS) {
+  const subject = getSubjectMeta(item, subjects);
   return { '--agenda-subject-color': subject.color, '--agenda-subject-soft': subject.soft };
 }
 
@@ -212,9 +251,9 @@ function isTextEntryElement(element) {
   return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || Boolean(element?.isContentEditable);
 }
 
-function createSubjectStats(items) {
-  return SUBJECTS.map((subject) => {
-    const subjectItems = items.filter((item) => getSubjectMeta(item).id === subject.id && !item.completed);
+function createSubjectStats(items, subjects = DEFAULT_SUBJECTS) {
+  return subjects.map((subject) => {
+    const subjectItems = items.filter((item) => getSubjectMeta(item, subjects).id === subject.id && !item.completed);
     return {
       ...subject,
       count: subjectItems.length,
@@ -239,16 +278,16 @@ function itemMatchesStatus(item, statusFilter) {
   return !item.completed;
 }
 
-function TaskCard({ item, selected, compact = false, onClick }) {
+function TaskCard({ item, subjects, selected, compact = false, onClick }) {
   const title = getItemTitle(item);
   return (
     <button
       type="button"
       className={`agenda-task-card${compact ? ' is-compact' : ''}${selected ? ' is-selected' : ''}${item.completed ? ' is-completed' : ''}`}
-      style={getAgendaStyle(item)}
+      style={getAgendaStyle(item, subjects)}
       onClick={onClick}
     >
-      <span className="agenda-task-subject">{getSubjectMeta(item).label}</span>
+      <span className="agenda-task-subject">{getSubjectMeta(item, subjects).label}</span>
       <strong>{title || 'Tarea sin titulo'}</strong>
       <small>
         {getPriority(item)} - {formatDuration(getDuration(item))} - {getStatusLabel(item)}
@@ -257,18 +296,18 @@ function TaskCard({ item, selected, compact = false, onClick }) {
   );
 }
 
-function TaskRow({ item, selected, onClick }) {
+function TaskRow({ item, subjects, selected, onClick }) {
   return (
     <button
       type="button"
       className={`agenda-task-row-pro${selected ? ' is-selected' : ''}${item.completed ? ' is-completed' : ''}`}
-      style={getAgendaStyle(item)}
+      style={getAgendaStyle(item, subjects)}
       onClick={onClick}
     >
       <span className="agenda-task-row-dot" aria-hidden="true" />
       <span>
         <strong>{getItemTitle(item) || 'Tarea sin titulo'}</strong>
-        <small>{getSubjectMeta(item).label} - {formatDuration(getDuration(item))}</small>
+        <small>{getSubjectMeta(item, subjects).label} - {formatDuration(getDuration(item))}</small>
       </span>
       <em>{formatShortDate(getItemDate(item))}</em>
     </button>
@@ -307,10 +346,12 @@ export function AgendaCalendarPlanner({
   const [composerOpen, setComposerOpen] = useState(safeItems.length === 0);
   const [activeSessionId, setActiveSessionId] = useState('');
   const [draftError, setDraftError] = useState('');
+  const [subjects, setSubjects] = useState(loadStoredSubjects);
+  const [editingSubjects, setEditingSubjects] = useState(false);
   const [draft, setDraft] = useState({
     title: '',
     detail: '',
-    subject: SUBJECTS[0].label,
+    subject: subjects[0]?.label ?? DEFAULT_SUBJECTS[0].label,
     date: todayValue,
     durationMinutes: '45',
     priority: 'Media'
@@ -320,10 +361,10 @@ export function AgendaCalendarPlanner({
   const filteredItems = useMemo(
     () =>
       sortedItems.filter((item) => {
-        const subjectMatches = subjectFilter === 'all' || getSubjectMeta(item).id === subjectFilter;
+        const subjectMatches = subjectFilter === 'all' || getSubjectMeta(item, subjects).id === subjectFilter;
         return subjectMatches && itemMatchesStatus(item, statusFilter);
       }),
-    [sortedItems, subjectFilter, statusFilter]
+    [sortedItems, subjectFilter, statusFilter, subjects]
   );
   const tasksByDate = useMemo(() => groupItemsByDate(filteredItems), [filteredItems]);
   const calendarDays = useMemo(() => buildMonthDays(calendarCursor), [calendarCursor]);
@@ -332,8 +373,12 @@ export function AgendaCalendarPlanner({
   const weekItems = filteredItems.filter((item) => isThisWeek(getItemDate(item), selectedDate) && !item.completed);
   const todayItems = filteredItems.filter((item) => getItemDate(item) === todayValue && !item.completed);
   const completedCount = sortedItems.filter((item) => item.completed).length;
-  const subjectStats = useMemo(() => createSubjectStats(sortedItems), [sortedItems]);
+  const subjectStats = useMemo(() => createSubjectStats(sortedItems, subjects), [sortedItems, subjects]);
   const selectedItem = filteredItems.find((item) => item.id === selectedItemId) ?? filteredItems[0] ?? sortedItems[0] ?? null;
+
+  useEffect(() => {
+    saveStoredSubjects(subjects);
+  }, [subjects]);
 
   useEffect(() => {
     if (!active) return;
@@ -366,8 +411,7 @@ export function AgendaCalendarPlanner({
 
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         event.preventDefault();
-        const nextDate = addDays(selectedDate, event.key === 'ArrowRight' ? 1 : -1);
-        selectDate(nextDate);
+        shiftMonth(event.key === 'ArrowRight' ? 1 : -1);
         return;
       }
 
@@ -400,7 +444,39 @@ export function AgendaCalendarPlanner({
   }
 
   function shiftMonth(offset) {
-    setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1, 12));
+    setCalendarCursor((current) => {
+      const nextCursor = new Date(current.getFullYear(), current.getMonth() + offset, 1, 12);
+      setSelectedDate(getDateValue(nextCursor));
+      return nextCursor;
+    });
+    setViewMode('calendar');
+  }
+
+  function updateSubjectLabel(subjectId, value) {
+    setSubjects((currentSubjects) =>
+      currentSubjects.map((subject) => {
+        if (subject.id !== subjectId) return subject;
+        const nextLabel = value.replace(/\s+/g, ' ').slice(0, 28);
+        const previousLabel = normalizeForSearch(subject.label);
+        const aliases = previousLabel ? Array.from(new Set([...(subject.aliases ?? []), previousLabel])) : subject.aliases;
+        return { ...subject, label: nextLabel, aliases };
+      })
+    );
+  }
+
+  function addSubject() {
+    const fallback = DEFAULT_SUBJECTS[subjects.length % DEFAULT_SUBJECTS.length] ?? DEFAULT_SUBJECTS[0];
+    setSubjects((currentSubjects) => [
+      ...currentSubjects,
+      {
+        id: `materia-${Date.now()}`,
+        label: 'Nueva materia',
+        color: fallback.color,
+        soft: fallback.soft,
+        aliases: []
+      }
+    ]);
+    setEditingSubjects(true);
   }
 
   function openComposer(dateValue = selectedDate) {
@@ -500,26 +576,54 @@ export function AgendaCalendarPlanner({
         </nav>
 
         <section className="agenda-calendar-filter-group" aria-label="Materias">
-          <span>Materias</span>
-          <button type="button" className={subjectFilter === 'all' ? 'is-active' : ''} onClick={() => setSubjectFilter('all')}>
-            <i className="agenda-subject-dot" />
-            <strong>Todas</strong>
-            <small>{sortedItems.filter((item) => !item.completed).length}</small>
-          </button>
-          {subjectStats.map((subject) => (
-            <button
-              key={subject.id}
-              type="button"
-              className={subjectFilter === subject.id ? 'is-active' : ''}
-              style={{ '--agenda-subject-color': subject.color, '--agenda-subject-soft': subject.soft }}
-              onClick={() => setSubjectFilter(subject.id)}
-            >
-              <i className="agenda-subject-dot" />
-              <strong>{subject.label}</strong>
-              <small>{subject.count}</small>
-              <em style={{ '--agenda-load': `${Math.min(100, subject.load / 4)}%` }} />
+          <div className="agenda-subjects-head">
+            <span>Materias</span>
+            <button type="button" className="agenda-subject-edit-toggle" onClick={() => setEditingSubjects((current) => !current)}>
+              {editingSubjects ? 'Listo' : 'Editar'}
             </button>
-          ))}
+          </div>
+          {editingSubjects ? (
+            <div className="agenda-subject-edit-list">
+              {subjects.map((subject) => (
+                <label key={subject.id} style={{ '--agenda-subject-color': subject.color, '--agenda-subject-soft': subject.soft }}>
+                  <i className="agenda-subject-dot" aria-hidden="true" />
+                  <input
+                    type="text"
+                    value={subject.label}
+                    maxLength={28}
+                    aria-label={`Editar materia ${subject.label}`}
+                    onChange={(event) => updateSubjectLabel(subject.id, event.target.value)}
+                  />
+                </label>
+              ))}
+              <button type="button" className="agenda-add-subject-button" onClick={addSubject}>
+                <Plus size={14} aria-hidden="true" />
+                <span>Nueva materia</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              <button type="button" className={subjectFilter === 'all' ? 'is-active' : ''} onClick={() => setSubjectFilter('all')}>
+                <i className="agenda-subject-dot" />
+                <strong>Todas</strong>
+                <small>{sortedItems.filter((item) => !item.completed).length}</small>
+              </button>
+              {subjectStats.map((subject) => (
+                <button
+                  key={subject.id}
+                  type="button"
+                  className={subjectFilter === subject.id ? 'is-active' : ''}
+                  style={{ '--agenda-subject-color': subject.color, '--agenda-subject-soft': subject.soft }}
+                  onClick={() => setSubjectFilter(subject.id)}
+                >
+                  <i className="agenda-subject-dot" />
+                  <strong>{subject.label}</strong>
+                  <small>{subject.count}</small>
+                  <em style={{ '--agenda-load': `${Math.min(100, subject.load / 4)}%` }} />
+                </button>
+              ))}
+            </>
+          )}
         </section>
 
         <section className="agenda-calendar-filter-group" aria-label="Estados y filtros">
@@ -596,7 +700,7 @@ export function AgendaCalendarPlanner({
                       </button>
                       <div className="agenda-day-task-stack">
                         {dayItems.slice(0, 3).map((item) => (
-                          <TaskCard key={item.id} item={item} compact selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
+                          <TaskCard key={item.id} item={item} subjects={subjects} compact selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
                         ))}
                         {dayItems.length > 3 && <span className="agenda-more-tasks">+{dayItems.length - 3} mas</span>}
                       </div>
@@ -617,7 +721,7 @@ export function AgendaCalendarPlanner({
               <div className="agenda-focus-list">
                 {todayItems.length === 0 && <EmptyPanel title="Sin tareas para hoy">Agrega una tarea o deja el dia despejado.</EmptyPanel>}
                 {todayItems.map((item) => (
-                  <TaskCard key={item.id} item={item} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
+                  <TaskCard key={item.id} item={item} subjects={subjects} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
                 ))}
               </div>
             </section>
@@ -626,8 +730,8 @@ export function AgendaCalendarPlanner({
           {viewMode === 'tasks' && (
             <section className="agenda-all-tasks" aria-label="Tareas por materia">
               {filteredItems.length === 0 && <EmptyPanel title="Sin tareas visibles">Cambia el filtro o crea una tarea nueva.</EmptyPanel>}
-              {SUBJECTS.map((subject) => {
-                const subjectItems = filteredItems.filter((item) => getSubjectMeta(item).id === subject.id);
+              {subjects.map((subject) => {
+                const subjectItems = filteredItems.filter((item) => getSubjectMeta(item, subjects).id === subject.id);
                 if (subjectItems.length === 0) return null;
                 return (
                   <article key={subject.id} className="agenda-subject-column" style={{ '--agenda-subject-color': subject.color, '--agenda-subject-soft': subject.soft }}>
@@ -637,7 +741,7 @@ export function AgendaCalendarPlanner({
                       <small>{subjectItems.length}</small>
                     </header>
                     {subjectItems.map((item) => (
-                      <TaskRow key={item.id} item={item} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
+                      <TaskRow key={item.id} item={item} subjects={subjects} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
                     ))}
                   </article>
                 );
@@ -669,7 +773,7 @@ export function AgendaCalendarPlanner({
             <label>
               <span>Materia</span>
               <select value={draft.subject} onChange={(event) => updateDraft('subject', event.target.value)}>
-                {SUBJECTS.map((subject) => (
+                {subjects.map((subject) => (
                   <option key={subject.id} value={subject.label}>
                     {subject.label}
                   </option>
@@ -724,15 +828,24 @@ export function AgendaCalendarPlanner({
           </form>
         )}
 
+        <TaskDetail
+          item={selectedItem}
+          subjects={subjects}
+          activeSessionId={activeSessionId}
+          onStartSession={setActiveSessionId}
+          onUpdateItem={updateItem}
+          onRemoveItem={removeItem}
+        />
+
         <section className="agenda-side-section">
           <header>
             <strong>Tareas sin fecha</strong>
             <span>{unscheduledItems.length}</span>
           </header>
-          <div className="agenda-side-list">
-            {unscheduledItems.length === 0 && <p>No hay tareas sin planificar.</p>}
-            {unscheduledItems.slice(0, 5).map((item) => (
-              <TaskRow key={item.id} item={item} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
+            <div className="agenda-side-list">
+              {unscheduledItems.length === 0 && <p>No hay tareas sin planificar.</p>}
+              {unscheduledItems.slice(0, 5).map((item) => (
+              <TaskRow key={item.id} item={item} subjects={subjects} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
             ))}
           </div>
         </section>
@@ -742,37 +855,36 @@ export function AgendaCalendarPlanner({
             <strong>Esta semana</strong>
             <span>{weekItems.length}</span>
           </header>
-          <div className="agenda-side-list">
-            {weekItems.length === 0 && <p>Sin pendientes para esta semana.</p>}
-            {weekItems.slice(0, 5).map((item) => (
-              <TaskRow key={item.id} item={item} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
+            <div className="agenda-side-list">
+              {weekItems.length === 0 && <p>Sin pendientes para esta semana.</p>}
+              {weekItems.slice(0, 5).map((item) => (
+              <TaskRow key={item.id} item={item} subjects={subjects} selected={selectedItem?.id === item.id} onClick={() => selectItem(item)} />
             ))}
           </div>
         </section>
-
-        <TaskDetail
-          item={selectedItem}
-          activeSessionId={activeSessionId}
-          onStartSession={setActiveSessionId}
-          onUpdateItem={updateItem}
-          onRemoveItem={removeItem}
-        />
       </aside>
     </div>
   );
 }
 
-function TaskDetail({ item, activeSessionId, onStartSession, onUpdateItem, onRemoveItem }) {
+function TaskDetail({ item, subjects, activeSessionId, onStartSession, onUpdateItem, onRemoveItem }) {
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    setEditing(false);
+  }, [item?.id]);
+
   if (!item) {
     return <EmptyPanel title="Selecciona una tarea">El detalle aparece aca cuando elijas una tarjeta.</EmptyPanel>;
   }
 
   return (
-    <section className="agenda-task-detail" style={getAgendaStyle(item)} aria-label="Detalle de tarea">
+    <section className={`agenda-task-detail${editing ? ' is-editing' : ''}`} style={getAgendaStyle(item, subjects)} aria-label="Detalle de tarea">
       <header>
         <span>{getStatusLabel(item)}</span>
         <h3>{getItemTitle(item) || 'Tarea sin titulo'}</h3>
-        <p>{getSubjectMeta(item).label} - {formatDuration(getDuration(item))} - {getPriority(item)}</p>
+        <p>{getSubjectMeta(item, subjects).label} - {formatDuration(getDuration(item))} - {getPriority(item)}</p>
+        {item.detail && <p className="agenda-detail-note">{item.detail}</p>}
       </header>
 
       <div className="agenda-detail-actions-pro">
@@ -786,57 +898,65 @@ function TaskDetail({ item, activeSessionId, onStartSession, onUpdateItem, onRem
         </button>
       </div>
 
-      <div className="agenda-detail-editor-pro">
-        <label>
-          <span>Titulo</span>
-          <input type="text" value={item.title ?? ''} maxLength={64} onChange={(event) => onUpdateItem(item.id, { title: event.target.value })} />
-        </label>
-        <label>
-          <span>Materia</span>
-          <select value={getSubjectMeta(item).label} onChange={(event) => onUpdateItem(item.id, { subject: event.target.value })}>
-            {SUBJECTS.map((subject) => (
-              <option key={subject.id} value={subject.label}>
-                {subject.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="agenda-composer-grid">
+      <button type="button" className="agenda-detail-edit-toggle" onClick={() => setEditing((current) => !current)}>
+        {editing ? 'Cerrar edicion' : 'Editar tarea'}
+      </button>
+
+      {editing && (
+        <div className="agenda-detail-editor-pro">
           <label>
-            <span>Fecha</span>
-            <input type="date" value={getItemDate(item)} onChange={(event) => onUpdateItem(item.id, { date: event.target.value })} />
+            <span>Titulo</span>
+            <input type="text" value={item.title ?? ''} maxLength={64} onChange={(event) => onUpdateItem(item.id, { title: event.target.value })} />
           </label>
           <label>
-            <span>Duracion</span>
-            <select value={String(getDuration(item))} onChange={(event) => onUpdateItem(item.id, { durationMinutes: Number(event.target.value) })}>
-              {DURATIONS.map((duration) => (
-                <option key={duration.value} value={duration.value}>
-                  {duration.label}
+            <span>Materia</span>
+            <select value={getSubjectMeta(item, subjects).label} onChange={(event) => onUpdateItem(item.id, { subject: event.target.value })}>
+              {subjects.map((subject) => (
+                <option key={subject.id} value={subject.label}>
+                  {subject.label}
                 </option>
               ))}
             </select>
           </label>
+          <div className="agenda-composer-grid">
+            <label>
+              <span>Fecha</span>
+              <input type="date" value={getItemDate(item)} onChange={(event) => onUpdateItem(item.id, { date: event.target.value })} />
+            </label>
+            <label>
+              <span>Duracion</span>
+              <select value={String(getDuration(item))} onChange={(event) => onUpdateItem(item.id, { durationMinutes: Number(event.target.value) })}>
+                {DURATIONS.map((duration) => (
+                  <option key={duration.value} value={duration.value}>
+                    {duration.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Prioridad</span>
+            <select value={getPriority(item)} onChange={(event) => onUpdateItem(item.id, { priority: event.target.value })}>
+              {PRIORITIES.map((priority) => (
+                <option key={priority.id} value={priority.id}>
+                  {priority.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Notas</span>
+            <textarea value={item.detail ?? ''} maxLength={140} onChange={(event) => onUpdateItem(item.id, { detail: event.target.value })} />
+          </label>
+          <div className="agenda-detail-secondary-actions">
+            <button type="button" onClick={() => onUpdateItem(item.id, { date: '' })}>Sin fecha</button>
+            <button type="button" className="agenda-delete-task-button" onClick={() => onRemoveItem(item.id)}>
+              <Trash2 size={16} aria-hidden="true" />
+              <span>Eliminar</span>
+            </button>
+          </div>
         </div>
-        <label>
-          <span>Prioridad</span>
-          <select value={getPriority(item)} onChange={(event) => onUpdateItem(item.id, { priority: event.target.value })}>
-            {PRIORITIES.map((priority) => (
-              <option key={priority.id} value={priority.id}>
-                {priority.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Notas</span>
-          <textarea value={item.detail ?? ''} maxLength={140} onChange={(event) => onUpdateItem(item.id, { detail: event.target.value })} />
-        </label>
-      </div>
-
-      <button type="button" className="agenda-delete-task-button" onClick={() => onRemoveItem(item.id)}>
-        <Trash2 size={16} aria-hidden="true" />
-        <span>Eliminar tarea</span>
-      </button>
+      )}
     </section>
   );
 }

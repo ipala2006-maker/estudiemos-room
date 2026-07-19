@@ -14,5 +14,5 @@ import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installWallAgendaKeyboardPolish.js';
 import '../utils/installComputerAgendaCleanup.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-18 21:18 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-2118-agenda-calendar-task-planner';
+export const BUILD_LABEL = 'Pages build 2026-07-18 21:48 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-18-2148-agenda-panel-corrections';

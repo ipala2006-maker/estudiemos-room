@@ -14,7 +14,7 @@
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(178px, 0.58fr) minmax(0, 1.72fr) minmax(282px, 0.92fr);
+  grid-template-columns: minmax(176px, 0.56fr) minmax(0, 1.82fr) minmax(292px, 0.9fr);
   gap: 14px;
   padding: 14px;
   overflow: hidden;
@@ -151,6 +151,10 @@
 .agenda-task-row-pro,
 .agenda-composer-actions button,
 .agenda-detail-actions-pro button,
+.agenda-detail-edit-toggle,
+.agenda-detail-secondary-actions button,
+.agenda-subject-edit-toggle,
+.agenda-add-subject-button,
 .agenda-delete-task-button {
   min-width: 0;
   border: 1px solid rgba(247, 241, 229, 0.09);
@@ -198,6 +202,82 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   position: relative;
   overflow: hidden;
+}
+
+.agenda-subjects-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.agenda-subjects-head > span {
+  color: rgba(247, 241, 229, 0.6);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.agenda-subject-edit-toggle {
+  min-height: 26px;
+  display: inline-flex;
+  grid-template-columns: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: rgba(247, 241, 229, 0.76);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  font-weight: 860;
+}
+
+.agenda-subject-edit-list {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.agenda-subject-edit-list label {
+  min-width: 0;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--agenda-subject-color, #ead58f) 22%, transparent);
+  border-radius: 13px;
+  background: var(--agenda-subject-soft, rgba(255, 255, 255, 0.045));
+}
+
+.agenda-subject-edit-list input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  color: #fff8e7;
+  background: transparent;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 860;
+  outline: none;
+}
+
+.agenda-add-subject-button {
+  min-height: 34px;
+  display: inline-flex;
+  grid-template-columns: none;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 13px;
+  color: rgba(247, 241, 229, 0.82);
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 0.8rem;
+  font-weight: 860;
 }
 
 .agenda-calendar-filter-group button em {
@@ -308,13 +388,15 @@
 .agenda-calendar-scroll {
   min-height: 0;
   padding: 14px;
+  overflow-x: hidden;
 }
 
 .agenda-month-board {
-  min-width: 820px;
+  width: 100%;
+  min-width: 0;
   min-height: 100%;
   display: grid;
-  grid-template-rows: 32px minmax(610px, 1fr);
+  grid-template-rows: 26px minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -335,8 +417,8 @@
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-auto-rows: minmax(96px, 1fr);
-  gap: 8px;
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  gap: 7px;
 }
 
 .agenda-month-day {
@@ -344,10 +426,10 @@
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 7px;
-  padding: 8px;
+  gap: 5px;
+  padding: 7px;
   border: 1px solid rgba(247, 241, 229, 0.08);
-  border-radius: 16px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.035);
 }
 
@@ -366,13 +448,13 @@
 
 .agenda-day-number {
   min-width: 0;
-  min-height: 30px;
+  min-height: 25px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border: 0;
   border-radius: 11px;
-  padding: 0 8px;
+  padding: 0 7px;
   color: #fff8e7;
   background: rgba(255, 255, 255, 0.035);
   font: inherit;
@@ -380,14 +462,14 @@
 }
 
 .agenda-day-number small {
-  min-width: 22px;
-  height: 22px;
+  min-width: 19px;
+  height: 19px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   color: #141916;
   background: #ead58f;
-  font-size: 0.7rem;
+  font-size: 0.64rem;
 }
 
 .agenda-day-task-stack {
@@ -414,9 +496,9 @@
 
 .agenda-task-card.is-compact {
   min-height: 0;
-  gap: 2px;
-  padding: 7px 8px;
-  border-radius: 11px;
+  gap: 1px;
+  padding: 5px 6px;
+  border-radius: 10px;
 }
 
 .agenda-task-card:hover,
@@ -474,9 +556,13 @@
 
 .agenda-task-card.is-compact strong {
   overflow: hidden;
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.agenda-task-card.is-compact .agenda-task-subject {
+  display: none;
 }
 
 .agenda-task-card.is-compact small {
@@ -570,12 +656,12 @@
 .agenda-calendar-right {
   display: grid;
   align-content: start;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .agenda-new-task-button {
-  min-height: 44px;
+  min-height: 42px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -592,10 +678,10 @@
 .agenda-empty-panel {
   min-width: 0;
   display: grid;
-  gap: 10px;
+  gap: 9px;
   padding: 12px;
   border: 1px solid rgba(247, 241, 229, 0.1);
-  border-radius: 17px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.044);
 }
 
@@ -670,6 +756,8 @@
 
 .agenda-composer-actions button,
 .agenda-detail-actions-pro button,
+.agenda-detail-edit-toggle,
+.agenda-detail-secondary-actions button,
 .agenda-delete-task-button {
   min-height: 38px;
   display: inline-flex;
@@ -689,6 +777,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.agenda-side-section {
+  padding: 11px;
+  background: rgba(255, 255, 255, 0.034);
 }
 
 .agenda-side-list {
@@ -724,8 +817,25 @@
   font-size: clamp(1.02rem, 1.4vw, 1.35rem);
 }
 
+.agenda-detail-note {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(8, 12, 15, 0.36);
+}
+
+.agenda-detail-edit-toggle {
+  color: rgba(247, 241, 229, 0.84);
+  background: rgba(255, 255, 255, 0.045);
+}
+
 .agenda-detail-editor-pro {
   display: grid;
+  gap: 8px;
+}
+
+.agenda-detail-secondary-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -796,7 +906,7 @@
   }
 
   .agenda-month-board {
-    min-width: 760px;
+    min-width: 0;
   }
 }
 
@@ -807,11 +917,11 @@
   }
 
   .agenda-month-board {
-    grid-template-rows: 28px minmax(520px, 1fr);
+    grid-template-rows: 24px minmax(0, 1fr);
   }
 
   .agenda-month-grid {
-    grid-auto-rows: minmax(82px, 1fr);
+    gap: 6px;
   }
 
   .agenda-task-card {

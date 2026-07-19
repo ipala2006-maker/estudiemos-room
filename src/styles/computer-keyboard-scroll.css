@@ -44,6 +44,30 @@
   background: rgba(224, 196, 122, 0.46) !important;
 }
 
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner.agenda-app-shell {
+  overflow: hidden !important;
+  scrollbar-width: none !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner.agenda-app-shell::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner :is(
+  .agenda-calendar-sidebar,
+  .agenda-calendar-right,
+  .agenda-calendar-scroll
+) {
+  overflow: auto !important;
+  scrollbar-width: thin !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner .agenda-calendar-scroll {
+  overflow-x: hidden !important;
+}
+
 /* Clean-copy pass: keep the entry and HUD readable with less visible text. */
 .start-content-minimal {
   gap: 18px !important;
