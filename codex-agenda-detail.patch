@@ -1,0 +1,129 @@
+diff --git a/src/components/AgendaCalendarPlanner.jsx b/src/components/AgendaCalendarPlanner.jsx
+index 3ac9239..84a265f 100644
+--- a/src/components/AgendaCalendarPlanner.jsx
++++ b/src/components/AgendaCalendarPlanner.jsx
+@@ -6,11 +6,12 @@ import {
+   Clock3,
+   FileText,
+   FolderOpen,
+-  Home,
+-  Plus,
+-  Square,
+-  Trash2,
+-  X
++  Home,
++  PencilLine,
++  Plus,
++  Square,
++  Trash2,
++  X
+ } from 'lucide-react';
+ import { useEffect, useMemo, useRef, useState } from 'react';
+ import { studyAgendaItems } from '../data/studyAgenda.js';
+@@ -954,26 +955,35 @@ function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
+     return <EmptyPanel title="Selecciona una tarea">El detalle aparece aca cuando elijas una tarjeta.</EmptyPanel>;
+   }
+ 
++  function removeSelectedItem() {
++    setEditing(false);
++    onRemoveItem(item.id);
++  }
++
+   return (
+     <section className={`agenda-task-detail${editing ? ' is-editing' : ''}`} style={getAgendaStyle(item, subjects)} aria-label="Detalle de tarea">
+       <header>
+         <span>{getSimpleStatusLabel(item)}</span>
+         <h3>{getItemTitle(item) || 'Tarea sin titulo'}</h3>
+         <p>{getSubjectMeta(item, subjects).label}{getItemDate(item) ? ` - ${formatShortDate(getItemDate(item))}` : ' - Sin fecha'}</p>
+-        {item.detail && <p className="agenda-detail-note">{item.detail}</p>}
++        {!editing && item.detail && <p className="agenda-detail-note">{item.detail}</p>}
+       </header>
+ 
+       <div className="agenda-detail-actions-pro">
+         <button type="button" className="is-primary" onClick={() => onUpdateItem(item.id, { completed: !item.completed })}>
+-          {item.completed ? <Square size={16} aria-hidden="true" /> : <CheckCircle2 size={16} aria-hidden="true" />}
++          {item.completed ? <Square size={16} aria-hidden="true" /> : <CheckCircle2 size={16} aria-hidden="true" />}
+           <span>{item.completed ? 'Marcar pendiente' : 'Marcar completada'}</span>
+         </button>
++        <button type="button" className={`agenda-detail-edit-toggle${editing ? ' is-active' : ''}`} onClick={() => setEditing((current) => !current)}>
++          {editing ? <CheckCircle2 size={16} aria-hidden="true" /> : <PencilLine size={16} aria-hidden="true" />}
++          <span>{editing ? 'Listo' : 'Editar'}</span>
++        </button>
++        <button type="button" className="agenda-delete-task-button" onClick={removeSelectedItem}>
++          <Trash2 size={16} aria-hidden="true" />
++          <span>Eliminar</span>
++        </button>
+       </div>
+ 
+-      <button type="button" className="agenda-detail-edit-toggle" onClick={() => setEditing((current) => !current)}>
+-        {editing ? 'Cerrar edicion' : 'Editar tarea'}
+-      </button>
+-
+       {editing && (
+         <div className="agenda-detail-editor-pro">
+           <label>
+@@ -998,12 +1008,6 @@ function TaskDetail({ item, subjects, onUpdateItem, onRemoveItem }) {
+             <span>Descripcion</span>
+             <textarea value={item.detail ?? ''} maxLength={140} onChange={(event) => onUpdateItem(item.id, { detail: event.target.value })} />
+           </label>
+-          <div className="agenda-detail-secondary-actions">
+-            <button type="button" className="agenda-delete-task-button" onClick={() => onRemoveItem(item.id)}>
+-              <Trash2 size={16} aria-hidden="true" />
+-              <span>Eliminar</span>
+-            </button>
+-          </div>
+         </div>
+       )}
+     </section>
+diff --git a/src/styles/agenda-calendar-planner.css b/src/styles/agenda-calendar-planner.css
+index edb08d6..286223e 100644
+--- a/src/styles/agenda-calendar-planner.css
++++ b/src/styles/agenda-calendar-planner.css
+@@ -910,13 +910,18 @@
+   font-weight: 820;
+ }
+ 
+-.agenda-composer-actions,
+-.agenda-detail-actions-pro {
++.agenda-composer-actions {
+   display: grid;
+   grid-template-columns: 1fr;
+   gap: 7px;
+ }
+ 
++.agenda-detail-actions-pro {
++  display: grid;
++  grid-template-columns: repeat(2, minmax(0, 1fr));
++  gap: 6px;
++}
++
+ .agenda-composer-actions button,
+ .agenda-detail-actions-pro button,
+ .agenda-detail-edit-toggle,
+@@ -941,6 +946,10 @@
+   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+ }
+ 
++.agenda-detail-actions-pro .is-primary {
++  grid-column: 1 / -1;
++}
++
+ .agenda-calendar-right :is(button, input, select, textarea) {
+   letter-spacing: 0;
+ }
+@@ -1055,9 +1064,15 @@
+   background: rgba(255, 255, 255, 0.045);
+ }
+ 
++.agenda-detail-edit-toggle.is-active {
++  color: #121817;
++  background: linear-gradient(135deg, #ead58f, #9dd8c8);
++}
++
+ .agenda-detail-editor-pro {
+   display: grid;
+   gap: 7px;
++  padding-top: 2px;
+ }
+ 
+ .agenda-detail-secondary-actions {
