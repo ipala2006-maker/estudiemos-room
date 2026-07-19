@@ -13,8 +13,9 @@ function createAgendaItemId(item, index) {
   return `agenda-${String(item?.date ?? getAgendaDateValue())}-${String(item?.time ?? '00:00')}-${titleSlug || 'bloque'}-${index}`;
 }
 
-function normalizeAgendaDate(value) {
+function normalizeAgendaDate(value, { allowEmpty = false } = {}) {
   const dateValue = String(value ?? '');
+  if (allowEmpty && dateValue.trim() === '') return '';
   return /^\d{4}-\d{2}-\d{2}$/.test(dateValue) ? dateValue : getAgendaDateValue();
 }
 
@@ -25,7 +26,7 @@ export function normalizeAgendaItems(items) {
     .filter((item) => item && typeof item === 'object')
     .map((item, index) => ({
       id: String(item?.id ?? '').trim() || createAgendaItemId(item, index),
-      date: normalizeAgendaDate(item?.date),
+      date: normalizeAgendaDate(item?.date, { allowEmpty: true }),
       time: /^\d{2}:\d{2}$/.test(String(item?.time ?? '').slice(0, 5)) ? String(item?.time ?? '').slice(0, 5) : '',
       title: String(item?.title ?? '').trim().slice(0, 48),
       detail: String(item?.detail ?? '').trim().slice(0, 96),
