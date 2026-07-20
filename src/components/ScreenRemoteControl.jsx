@@ -261,6 +261,48 @@ export function ScreenRemoteControl({
   return (
     <section className="screen-remote-overlay" aria-label="Control remoto de pantalla">
       <div className="screen-remote-backdrop" onClick={onClose} />
+      <aside className="screen-remote-guide-panel" aria-label="Guia rapida del control de pantalla">
+        <span>Guia rapida</span>
+        <strong>Pantalla</strong>
+        <div className="screen-remote-guide-list">
+          <div className="screen-remote-guide-row">
+            <kbd>OK</kbd>
+            <em>Play / pausa</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>VOL</kbd>
+            <em>Volumen</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>&lt;</kbd>
+            <em>Retroceder 15s</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>&gt;</kbd>
+            <em>Avanzar 15s</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>CLR</kbd>
+            <em>Limpiar</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>ADS</kbd>
+            <em>Saltar anuncio</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>FMT</kbd>
+            <em>Formato</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>RPT</kbd>
+            <em>Reiniciar</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>ZOOM</kbd>
+            <em>Ajustar tamano</em>
+          </div>
+        </div>
+      </aside>
       <aside
         ref={remoteRef}
         className="screen-remote-phone"

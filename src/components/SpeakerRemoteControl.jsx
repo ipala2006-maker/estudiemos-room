@@ -129,6 +129,40 @@ export function SpeakerRemoteControl({
   return (
     <section className="screen-remote-overlay speaker-remote-overlay" aria-label="Control remoto de parlante">
       <div className="screen-remote-backdrop" onClick={onClose} />
+      <aside className="screen-remote-guide-panel speaker-remote-guide-panel" aria-label="Guia rapida del control de parlante">
+        <span>Guia rapida</span>
+        <strong>Parlante</strong>
+        <div className="screen-remote-guide-list">
+          <div className="screen-remote-guide-row">
+            <kbd>OK</kbd>
+            <em>Play / pausa</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>VOL</kbd>
+            <em>Volumen desde Spotify</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>&lt;</kbd>
+            <em>Pausar</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>&gt;</kbd>
+            <em>Reproducir</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>RPT</kbd>
+            <em>Recargar</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>WEB</kbd>
+            <em>Abrir Spotify</em>
+          </div>
+          <div className="screen-remote-guide-row">
+            <kbd>CLR</kbd>
+            <em>Limpiar musica</em>
+          </div>
+        </div>
+      </aside>
       <aside
         ref={remoteRef}
         className="screen-remote-phone speaker-remote-phone"

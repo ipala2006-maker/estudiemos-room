@@ -1,98 +1,104 @@
-/* Subtle contextual labels for the physical screen and speaker remotes. */
-.screen-remote-overlay :is(
-  .screen-remote-key,
-  .screen-remote-color-key,
-  .screen-remote-targets button
-) {
-  position: relative;
-}
-
-.screen-remote-overlay :is(
-  .screen-remote-key,
-  .screen-remote-color-key,
-  .screen-remote-targets button
-):is(:hover, :focus-visible)::after,
-.screen-remote-overlay .screen-remote-link:is(:hover, :focus-within)::after {
+/* Fixed quick guide for the physical screen and speaker remotes. */
+.screen-remote-guide-panel {
   position: fixed;
-  left: clamp(18px, 5vw, 74px);
+  left: clamp(18px, 5vw, 72px);
   top: 50%;
-  z-index: 3;
-  width: min(220px, calc(100vw - 320px));
-  min-height: 38px;
+  z-index: 1;
+  width: min(230px, calc(100vw - 350px));
+  max-width: 230px;
   display: grid;
-  align-content: center;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 13px;
   border: 1px solid rgba(241, 236, 217, 0.12);
-  border-radius: 14px;
-  color: rgba(255, 250, 232, 0.92);
+  border-radius: 18px;
+  color: rgba(255, 250, 232, 0.9);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
     rgba(7, 11, 10, 0.52);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 16px 34px rgba(0, 0, 0, 0.22);
-  font-size: 0.76rem;
-  font-weight: 850;
-  line-height: 1.24;
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 18px 46px rgba(0, 0, 0, 0.26);
   text-align: left;
-  white-space: normal;
   transform: translateY(-50%);
   pointer-events: none;
-  backdrop-filter: blur(9px);
-  animation: remote-help-in 140ms ease-out both;
+  backdrop-filter: blur(12px);
+  animation: remote-guide-in 160ms cubic-bezier(0.2, 0.82, 0.22, 1) both;
 }
 
-.screen-remote-overlay :is(
-  .screen-remote-key,
-  .screen-remote-color-key
-):is(:hover, :focus-visible)::after {
-  content: attr(aria-label);
+.screen-remote-guide-panel span {
+  color: rgba(238, 229, 196, 0.58);
+  font-size: 0.58rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
-.screen-remote-overlay .screen-remote-targets button:nth-child(1):is(:hover, :focus-visible)::after {
-  content: "Controlar pantalla izquierda";
+.screen-remote-guide-panel strong {
+  color: #fff8dd;
+  font-size: 0.96rem;
+  font-weight: 950;
+  line-height: 1;
 }
 
-.screen-remote-overlay .screen-remote-targets button:nth-child(2):is(:hover, :focus-visible)::after {
-  content: "Controlar pantalla derecha";
+.screen-remote-guide-list {
+  display: grid;
+  gap: 5px;
 }
 
-.screen-remote-overlay .speaker-remote-targets button:nth-child(1):is(:hover, :focus-visible)::after {
-  content: "Controlar parlante de sala";
+.screen-remote-guide-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
 }
 
-.screen-remote-overlay .screen-remote-link:is(:hover, :focus-within)::after {
-  content: "Pegar link y enviar al dispositivo";
+.screen-remote-guide-row kbd {
+  min-width: 0;
+  display: inline-grid;
+  place-items: center;
+  padding: 4px 6px;
+  border: 1px solid rgba(255, 246, 220, 0.13);
+  border-radius: 9px;
+  color: rgba(255, 250, 232, 0.94);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  font-family: inherit;
+  font-size: 0.58rem;
+  font-weight: 950;
+  line-height: 1;
 }
 
-.speaker-remote-overlay :is(
-  .screen-remote-key,
-  .screen-remote-color-key,
-  .screen-remote-targets button
-):is(:hover, :focus-visible)::after,
-.speaker-remote-overlay .screen-remote-link:is(:hover, :focus-within)::after {
-  border-color: rgba(30, 215, 96, 0.14);
+.screen-remote-guide-row em {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 250, 232, 0.74);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.speaker-remote-guide-panel {
+  border-color: rgba(30, 215, 96, 0.15);
   background:
     linear-gradient(180deg, rgba(30, 215, 96, 0.08), rgba(255, 255, 255, 0.02)),
     rgba(7, 11, 10, 0.54);
 }
 
-.speaker-remote-actions .screen-remote-key:nth-child(1):is(:hover, :focus-visible)::after {
-  content: "Recargar parlante";
+.speaker-remote-guide-panel .screen-remote-guide-row kbd {
+  border-color: rgba(30, 215, 96, 0.16);
+  color: rgba(229, 255, 235, 0.94);
 }
 
-.speaker-remote-actions .screen-remote-key:nth-child(2):is(:hover, :focus-visible)::after {
-  content: "Abrir en Spotify";
-}
-
-.speaker-remote-actions .screen-remote-key:nth-child(3):is(:hover, :focus-visible)::after {
-  content: "Limpiar musica";
-}
-
-@keyframes remote-help-in {
+@keyframes remote-guide-in {
   from {
     opacity: 0;
-    transform: translate(-6px, -50%);
+    transform: translate(-8px, -50%);
   }
   to {
     opacity: 1;
@@ -100,37 +106,73 @@
   }
 }
 
-@media (max-width: 640px) {
-  .screen-remote-overlay :is(
-    .screen-remote-key,
-    .screen-remote-color-key,
-    .screen-remote-targets button
-  ):is(:hover, :focus-visible)::after,
-  .screen-remote-overlay .screen-remote-link:is(:hover, :focus-within)::after {
-    left: 14px;
-    right: 14px;
-    top: 14px;
+@media (max-width: 760px) {
+  .screen-remote-guide-panel {
+    left: 12px;
+    right: 12px;
+    top: 12px;
     width: auto;
-    min-height: 32px;
-    padding: 8px 10px;
-    font-size: 0.68rem;
+    max-width: none;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 7px 10px;
+    padding: 9px 10px;
+    border-radius: 14px;
     transform: none;
-    animation: remote-fade-in 130ms ease-out both;
+    animation: remote-guide-mobile-in 140ms ease-out both;
+  }
+
+  .screen-remote-guide-panel span {
+    font-size: 0.5rem;
+  }
+
+  .screen-remote-guide-panel strong {
+    font-size: 0.78rem;
+  }
+
+  .screen-remote-guide-list {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .screen-remote-guide-row {
+    width: auto;
+    grid-template-columns: auto auto;
+    gap: 4px;
+  }
+
+  .screen-remote-guide-row kbd {
+    padding: 3px 5px;
+    border-radius: 7px;
+    font-size: 0.5rem;
+  }
+
+  .screen-remote-guide-row em {
+    max-width: 94px;
+    font-size: 0.56rem;
   }
 
   .screen-remote-phone {
-    max-height: calc(100vh - 92px);
+    max-height: calc(100vh - 96px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .screen-remote-overlay :is(
-    .screen-remote-key,
-    .screen-remote-color-key,
-    .screen-remote-targets button
-  )::after,
-  .screen-remote-overlay .screen-remote-link::after {
+  .screen-remote-guide-panel {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+@keyframes remote-guide-mobile-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
