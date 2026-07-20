@@ -1,8 +1,9 @@
 /* AI-generated background pass for the immersive entry screen. */
 .start-screen.start-screen-immersive {
   background:
-    linear-gradient(180deg, rgba(5, 8, 8, 0.02), rgba(5, 8, 8, 0.2) 66%, rgba(5, 8, 8, 0.62)),
-    linear-gradient(90deg, rgba(4, 7, 8, 0.18), rgba(4, 7, 8, 0.04) 46%, rgba(4, 7, 8, 0.18)),
+    radial-gradient(ellipse at 50% 48%, rgba(3, 8, 8, 0.54) 0 30%, rgba(3, 8, 8, 0.24) 56%, rgba(3, 8, 8, 0.08) 100%),
+    linear-gradient(180deg, rgba(5, 8, 8, 0.02), rgba(5, 8, 8, 0.1) 58%, rgba(5, 8, 8, 0.36)),
+    linear-gradient(90deg, rgba(4, 7, 8, 0.08), rgba(4, 7, 8, 0) 48%, rgba(4, 7, 8, 0.08)),
     url("../assets/start-room-ai-background.webp") center / cover no-repeat,
     #101817 !important;
 }
@@ -10,15 +11,15 @@
 .start-screen.start-screen-immersive::before {
   height: 100% !important;
   background:
-    radial-gradient(circle at 50% 36%, rgba(255, 248, 218, 0.12), transparent 48%),
-    linear-gradient(180deg, rgba(255, 248, 231, 0.04), transparent 42%, rgba(0, 0, 0, 0.18)) !important;
-  opacity: 1 !important;
+    radial-gradient(circle at 56% 33%, rgba(255, 248, 218, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(255, 248, 231, 0.04), transparent 38%, rgba(0, 0, 0, 0.08)) !important;
+  opacity: 0.76 !important;
 }
 
 .start-screen.start-screen-immersive::after {
   background:
-    radial-gradient(circle at 50% 44%, transparent 0 46%, rgba(0, 0, 0, 0.14) 82%),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 38%, rgba(0, 0, 0, 0.1)) !important;
+    radial-gradient(ellipse at 50% 47%, rgba(0, 0, 0, 0.32) 0 36%, transparent 68%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1), transparent 34%, rgba(0, 0, 0, 0.06)) !important;
   transform: none !important;
   transform-origin: center !important;
 }
