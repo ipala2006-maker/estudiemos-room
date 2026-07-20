@@ -6,6 +6,7 @@ import '../styles/wall-agenda-keyboard-polish.css';
 import '../styles/wall-agenda-pc-design.css';
 import '../styles/agenda-planner.css';
 import '../styles/agenda-calendar-planner.css';
+import '../styles/room-shop.css';
 import '../utils/installInteractionTargeting.js';
 import '../utils/installOpaqueHandOverlay.js';
 import '../utils/installRoomSpeakerWorld.js';
@@ -14,6 +15,7 @@ import '../utils/installSpotifyPlaybackEnhancer.js';
 import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installWallAgendaKeyboardPolish.js';
 import '../utils/installComputerAgendaCleanup.js';
+import '../utils/installRoomShopWorld.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-19 00:42 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-19-0042-agenda-layout-soft';
+export const BUILD_LABEL = 'Pages build 2026-07-20 02:42 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-20-0242-shop-corner';

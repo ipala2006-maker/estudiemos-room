@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { FirstPersonWorld } from './components/FirstPersonWorld.jsx';
 import { Hud } from './components/Hud.jsx';
 import { RoomSpeakerPlayer, dispatchRoomSpeakerCommand } from './components/RoomSpeakerPlayer.jsx';
+import { RoomShopOverlay } from './components/RoomShopOverlay.jsx';
 import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
 import { SpeakerRemoteControl } from './components/SpeakerRemoteControl.jsx';
 import { StartScreen } from './components/StartScreen.jsx';
@@ -18,9 +19,11 @@ import './styles/camera-controls.css';
 import './styles/computer-keyboard-controls.css';
 import './styles/computer-keyboard-scroll.css';
 import './styles/hud-xp-bar.css';
+import './styles/room-shop.css';
 import './styles/typography-system.css';
 import './utils/installComputerKeyboardController.js';
 import { installInteractionTargeting } from './utils/installInteractionTargeting.js';
+import './utils/installRoomShopWorld.js';
 import './utils/installRoomSpeakerWorld.js';
 
 installInteractionTargeting();
@@ -50,7 +53,7 @@ const SPOTIFY_STORAGE_KEY = 'estudiemos-room-spotify-content';
 const SPOTIFY_ROOM_CONTENT_EVENT = 'estudiemos:spotify-room-content';
 const SPEAKER_AIM_EVENT = 'estudiemos:room-speaker-aim';
 const INTERACTION_TARGET_EVENT = 'estudiemos:interaction-target';
-const INTERACTION_TARGETS = new Set(['computer', 'agenda', 'screen', 'speaker']);
+const INTERACTION_TARGETS = new Set(['computer', 'agenda', 'screen', 'speaker', 'shop']);
 
 function normalizeSpotifyContent(savedContent) {
   if (!savedContent || typeof savedContent !== 'object') return null;
@@ -91,6 +94,7 @@ function App() {
   const [computerOpen, setComputerOpen] = useState(false);
   const [screenRemoteOpen, setScreenRemoteOpen] = useState(false);
   const [speakerRemoteOpen, setSpeakerRemoteOpen] = useState(false);
+  const [roomShopOpen, setRoomShopOpen] = useState(false);
   const [wallAgendaOpen, setWallAgendaOpen] = useState(false);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
@@ -98,6 +102,7 @@ function App() {
   const [isAimingAgendaBoard, setIsAimingAgendaBoard] = useState(false);
   const [isAimingScreen, setIsAimingScreen] = useState(false);
   const [isAimingSpeaker, setIsAimingSpeaker] = useState(false);
+  const [isAimingShop, setIsAimingShop] = useState(false);
   const [aimedInteractionTarget, setAimedInteractionTarget] = useState(undefined);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [screenLayout, setScreenLayout] = useState('side-by-side');
@@ -124,6 +129,7 @@ function App() {
   const canTargetAgenda = hasInteractionTargetSignal ? aimedInteractionTarget === 'agenda' || isAimingAgendaBoard : isAimingAgendaBoard;
   const canTargetScreen = hasInteractionTargetSignal ? aimedInteractionTarget === 'screen' : isAimingScreen;
   const canTargetSpeaker = hasInteractionTargetSignal ? aimedInteractionTarget === 'speaker' : isAimingSpeaker;
+  const canTargetShop = hasInteractionTargetSignal ? aimedInteractionTarget === 'shop' : isAimingShop;
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
   const screenCommandCounterRef = useRef(0);
@@ -239,7 +245,12 @@ function App() {
         return;
       }
 
-      if (!hasStarted || computerOpen || screenRemoteOpen || speakerRemoteOpen || wallAgendaOpen) return;
+      if (roomShopOpen && key === 'escape') {
+        setRoomShopOpen(false);
+        return;
+      }
+
+      if (!hasStarted || computerOpen || screenRemoteOpen || speakerRemoteOpen || wallAgendaOpen || roomShopOpen) return;
 
       if (canTargetScreen && key === 'q') {
         document.exitPointerLock?.();
@@ -256,6 +267,11 @@ function App() {
       if (canTargetAgenda && key === 'e') {
         document.exitPointerLock?.();
         setWallAgendaOpen(true);
+        return;
+      }
+
+      if (canTargetShop && key === 'e') {
+        openRoomShop();
         return;
       }
 
@@ -278,8 +294,10 @@ function App() {
     canTargetComputer,
     canTargetScreen,
     canTargetSpeaker,
+    canTargetShop,
     hasStarted,
     isNearDoor,
+    roomShopOpen,
     screenRemoteOpen,
     speakerRemoteOpen,
     wallAgendaOpen
@@ -289,10 +307,12 @@ function App() {
     setComputerOpen(false);
     setScreenRemoteOpen(false);
     setSpeakerRemoteOpen(false);
+    setRoomShopOpen(false);
     setWallAgendaOpen(false);
     setIsAimingAgendaBoard(false);
     setIsAimingScreen(false);
     setIsAimingSpeaker(false);
+    setIsAimingShop(false);
     setAimedInteractionTarget(null);
     setHasStarted(false);
     setIsNearComputer(false);
@@ -480,24 +500,39 @@ function App() {
     }));
   }
 
-  const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen;
+  function openRoomShop() {
+    document.exitPointerLock?.();
+    setRoomShopOpen(true);
+  }
+
+  function handleWorldPointerDown(event) {
+    if (!canShowWorldPrompts || !canTargetShop || event.button > 0) return;
+    if (event.target?.closest?.('button, a, input, textarea, select, [role="dialog"], .room-shop-overlay')) return;
+
+    event.preventDefault();
+    openRoomShop();
+  }
+
+  const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen;
   const activeInteractionPrompt = canShowWorldPrompts
     ? canTargetComputer
       ? { key: 'computer', control: 'E', title: 'Abrir computadora', label: 'E - abrir computadora' }
       : canTargetAgenda
         ? { key: 'agenda', control: 'E', title: 'Editar agenda de pared', label: 'E - editar agenda' }
-        : canTargetScreen
-          ? { key: 'screen', control: 'Q', title: 'Control de pantalla', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
-          : canTargetSpeaker
-            ? { key: 'speaker', control: 'Q', title: 'Control de parlante', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
-            : isNearDoor
-              ? {
-                  key: 'door',
-                  control: 'E',
-                  title: isDoorOpen ? 'Salir al barrio' : 'Entrar a Casa 1',
-                  label: `E - ${isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}`
-                }
-              : null
+        : canTargetShop
+          ? { key: 'shop', control: 'E', title: 'Abrir tienda Salchi', label: 'E - tienda Salchi' }
+          : canTargetScreen
+            ? { key: 'screen', control: 'Q', title: 'Control de pantalla', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
+            : canTargetSpeaker
+              ? { key: 'speaker', control: 'Q', title: 'Control de parlante', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
+              : isNearDoor
+                ? {
+                    key: 'door',
+                    control: 'E',
+                    title: isDoorOpen ? 'Salir al barrio' : 'Entrar a Casa 1',
+                    label: `E - ${isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}`
+                  }
+                : null
     : null;
   const interactionPrompts = activeInteractionPrompt ? [activeInteractionPrompt] : [];
 
@@ -509,7 +544,8 @@ function App() {
     <main
       className={`game-shell${computerOpen ? ' is-computer-open' : ''}${screenRemoteOpen ? ' is-screen-remote-open' : ''}${
         speakerRemoteOpen ? ' is-speaker-remote-open' : ''
-      }`}
+      }${roomShopOpen ? ' is-room-shop-open' : ''}${canTargetShop ? ' is-shop-targeted' : ''}`}
+      onPointerDown={handleWorldPointerDown}
     >
       <FirstPersonWorld
         onDoorOpenChange={setIsDoorOpen}
@@ -518,9 +554,10 @@ function App() {
         onAgendaBoardAimChange={setIsAimingAgendaBoard}
         onScreenAimChange={setIsAimingScreen}
         onSpeakerAimChange={setIsAimingSpeaker}
+        onShopAimChange={setIsAimingShop}
         toggleDoorRef={toggleDoorRef}
         resetRef={resetWorldRef}
-        controlsEnabled={!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen}
+        controlsEnabled={!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen}
         screenContentEnabled={!computerOpen}
         screenZones={screenZones}
         screenLayout={screenLayout}
@@ -560,7 +597,7 @@ function App() {
         onPlayerStateChange={(nextState) => setSpeakerState((current) => ({ ...current, ...nextState }))}
       />
 
-      {!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !isPointerLocked && (
+      {!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen && !isPointerLocked && (
         <div className="camera-lock-prompt">
           <strong>La camara sigue el mouse</strong>
           <span>Click activa giro continuo. Esc libera el mouse.</span>
@@ -614,6 +651,8 @@ function App() {
           onClose={() => setSpeakerRemoteOpen(false)}
         />
       )}
+
+      {roomShopOpen && <RoomShopOverlay focusEconomy={focusEconomy} onClose={() => setRoomShopOpen(false)} />}
     </main>
   );
 }

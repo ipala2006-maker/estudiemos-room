@@ -45,6 +45,12 @@ const ROOM_SPEAKER_TARGET = {
   distance: 8.75
 };
 
+const SHOP_TARGET = {
+  center: new THREE.Vector3(116.15, 1.55, -17.5),
+  radius: 2.75,
+  distance: 10.5
+};
+
 const INTERIOR_BOUNDS = {
   minX: 62,
   maxX: 118,
@@ -60,7 +66,7 @@ let lastWorldCamera = null;
 export function installInteractionTargeting() {
   if (typeof window === 'undefined' || window[PATCH_FLAG]) return;
   window[PATCH_FLAG] = true;
-  document.documentElement.dataset.estudiemosInteractionTargeting = '2341-agenda-centered';
+  document.documentElement.dataset.estudiemosInteractionTargeting = '2410-shop-corner-target';
 
   patchWebGlRender();
   patchCss3dRender();
@@ -168,6 +174,7 @@ function getActiveTarget(camera) {
     getSphereHit('computer', position, directionScratch, COMPUTER_TARGET),
     getAgendaHit(position, directionScratch),
     getSphereHit('speaker', position, directionScratch, ROOM_SPEAKER_TARGET),
+    getSphereHit('shop', position, directionScratch, SHOP_TARGET),
     getScreenHit(position, directionScratch)
   ].filter(Boolean);
 
