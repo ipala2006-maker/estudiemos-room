@@ -1,5 +1,6 @@
 import '../styles/spotify-playback-enhancer.css';
 import '../styles/speaker-remote.css';
+import '../styles/remote-control-help.css';
 import '../styles/wall-agenda-soft-ui.css';
 import '../styles/wall-agenda-keyboard-polish.css';
 import '../styles/wall-agenda-pc-design.css';
