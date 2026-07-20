@@ -8,6 +8,7 @@ export function Hud({ isDoorOpen, interactionHint, focusEconomy, onBackHome, onR
   const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy?.nextRewardProgress ?? 0) * 100)));
   const progressSegments = Array.from({ length: 10 }, (_, index) => index);
   const filledSegments = Math.min(10, Math.max(0, Math.ceil(nextRewardPercent / 10)));
+  const activeSegment = nextRewardPercent > 0 && nextRewardPercent < 100 ? Math.max(0, filledSegments - 1) : -1;
   const sceneTitle = isDoorOpen ? 'Casa 1' : 'Lobby 3D';
   const contextLabel = interactionHint?.title ?? '';
   const contextKey = interactionHint?.control ?? '';
@@ -29,29 +30,38 @@ export function Hud({ isDoorOpen, interactionHint, focusEconomy, onBackHome, onR
           className="hud-focus-card hud-focus-xp-card"
           aria-label={`Salchicha rango ${equippedSkin.rank}, ${focusEconomy.progress.coins} monedas, progreso ${nextRewardPercent}%`}
         >
+          <div className="hud-focus-supercharged" aria-hidden="true">
+            <span>XP</span>
+            <strong>SUPERCHARGED!</strong>
+          </div>
           <div className="hud-focus-avatar-shell">
             <DachshundMascot skinId={equippedSkin.skin.id} rank={equippedSkin.rank} size="hud" showBadges={false} />
           </div>
           <div className="hud-focus-xp-body">
-            <div className="hud-focus-xp-top">
-              <span className="hud-focus-mode">Modo foco</span>
+            <div className="hud-focus-level-row">
+              <span className="hud-focus-level-prefix">LVL</span>
+              <strong>{equippedSkin.rank}</strong>
               <span className="hud-focus-kicker" aria-label={`${focusEconomy.progress.coins} monedas`}>
                 <Coins size={15} aria-hidden="true" />
-                {focusEconomy.progress.coins}
+                +{focusEconomy.progress.coins.toLocaleString('es-AR')}
+                <small>XP</small>
               </span>
-            </div>
-            <div className="hud-focus-level-row">
-              <strong>Rango {equippedSkin.rank}</strong>
-              <span>{nextRewardPercent}%</span>
             </div>
             <div
               className="hud-focus-progress hud-focus-segment-track"
               aria-label={`Progreso a proxima recompensa ${nextRewardPercent}%`}
               style={{ '--focus-progress': `${nextRewardPercent}%` }}
             >
-              {progressSegments.map((segment) => (
-                <span key={segment} className={segment < filledSegments ? 'is-filled' : ''} />
-              ))}
+              {progressSegments.map((segment) => {
+                const classes = [
+                  'hud-focus-xp-segment',
+                  segment < filledSegments ? 'is-filled' : '',
+                  segment === activeSegment ? 'is-active' : '',
+                  segment >= 8 ? 'is-bonus' : ''
+                ].filter(Boolean).join(' ');
+
+                return <span key={segment} className={classes} />;
+              })}
             </div>
           </div>
         </section>
