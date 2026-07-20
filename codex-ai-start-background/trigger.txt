@@ -1,1 +1,0 @@
-trigger AI start background apply
