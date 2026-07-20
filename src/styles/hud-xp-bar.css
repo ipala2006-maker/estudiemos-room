@@ -1,14 +1,30 @@
-/* Reward HUD: compact game-style progress strip for the dachshund, coins and focus progress. */
+/* Reward HUD: Fortnite-like XP strip for the dachshund, coins and focus progress. */
 .hud.hud-compact.hud-clean {
-  width: min(318px, calc(100vw - 24px)) !important;
+  top: 14px;
+  left: 14px;
+  width: min(610px, calc(100vw - 28px)) !important;
   gap: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  filter:
+    drop-shadow(0 18px 24px rgba(0, 0, 0, 0.36))
+    drop-shadow(0 0 18px rgba(94, 59, 219, 0.12));
 }
 
 .hud.hud-compact.hud-clean::before {
-  inset: -14px -22px -20px -14px;
+  content: "";
+  position: absolute;
+  inset: -18px -22px -22px -14px;
+  z-index: -1;
+  border-radius: 0 0 34px 0;
   background:
-    radial-gradient(ellipse at 8% 0%, rgba(222, 190, 112, 0.16), transparent 42%),
-    radial-gradient(ellipse at 0 0, rgba(5, 9, 8, 0.54), rgba(5, 9, 8, 0.2) 48%, transparent 76%);
+    radial-gradient(ellipse at 8% 0%, rgba(93, 72, 255, 0.22), transparent 40%),
+    radial-gradient(ellipse at 0 0, rgba(6, 8, 22, 0.54), rgba(6, 8, 22, 0.18) 48%, transparent 76%);
+  pointer-events: none;
 }
 
 .hud.hud-compact.hud-clean .hud-build-version {
@@ -16,204 +32,392 @@
 }
 
 .hud.hud-compact.hud-clean .hud-heading {
+  width: fit-content;
+  max-width: 100%;
   min-height: 28px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px !important;
+  padding-left: 2px;
+}
+
+.hud.hud-compact.hud-clean .hud-heading strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 246, 220, 0.96);
+  font-size: 0.96rem;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.44);
+  white-space: nowrap;
+}
+
+.hud.hud-compact.hud-clean .hud-context-key {
+  width: 29px;
+  height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 246, 220, 0.24);
+  border-radius: 10px;
+  color: rgba(255, 246, 220, 0.94) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+    rgba(13, 20, 18, 0.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 8px 18px rgba(0, 0, 0, 0.18);
+  font-size: 0.76rem !important;
+  font-weight: 900;
 }
 
 .hud.hud-compact.hud-clean .hud-focus-card.hud-focus-xp-card {
-  min-height: 76px !important;
+  position: relative;
+  min-height: 84px !important;
   display: grid;
-  grid-template-columns: 62px minmax(0, 1fr) !important;
-  gap: 12px !important;
-  padding: 10px 12px 10px 10px;
-  border: 1px solid rgba(255, 244, 215, 0.17);
-  border-radius: 16px;
+  grid-template-columns: 68px minmax(0, 1fr) !important;
+  align-items: center;
+  gap: 15px !important;
+  margin-top: 18px;
+  padding: 12px 20px 13px 13px;
+  overflow: visible;
+  border: 1px solid rgba(115, 98, 255, 0.34);
+  border-radius: 9px;
   background:
-    linear-gradient(90deg, rgba(21, 12, 46, 0.92), rgba(32, 17, 70, 0.82) 44%, rgba(12, 15, 24, 0.8)),
-    rgba(10, 12, 18, 0.76);
+    linear-gradient(180deg, rgba(60, 38, 118, 0.94), rgba(28, 16, 73, 0.96)),
+    linear-gradient(90deg, rgba(31, 18, 77, 0.98), rgba(19, 12, 53, 0.96));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-    0 16px 30px rgba(0, 0, 0, 0.34),
-    0 0 24px rgba(104, 71, 223, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -2px 0 rgba(3, 3, 20, 0.34),
+    0 15px 28px rgba(0, 0, 0, 0.35),
+    0 0 25px rgba(86, 59, 255, 0.18);
   backdrop-filter: blur(8px);
+}
+
+.hud.hud-compact.hud-clean .hud-focus-card.hud-focus-xp-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(130, 90, 255, 0.2), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 46%);
+  pointer-events: none;
+}
+
+.hud-focus-supercharged {
+  position: absolute;
+  left: 14px;
+  top: -30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #fff9ff;
+  text-transform: uppercase;
+  text-shadow:
+    0 2px 0 rgba(52, 29, 118, 0.72),
+    0 0 14px rgba(161, 113, 255, 0.9),
+    0 0 22px rgba(79, 114, 255, 0.52);
+  pointer-events: none;
+}
+
+.hud-focus-supercharged span {
+  min-width: 28px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(204, 184, 255, 0.48);
+  border-radius: 5px;
+  background:
+    linear-gradient(135deg, #583dff, #7a4dff 48%, #b45cff);
+  color: #eaf0ff !important;
+  font-size: 0.66rem !important;
+  font-weight: 950;
+  letter-spacing: 0;
+  transform: skewX(-10deg);
+  box-shadow: 0 0 18px rgba(126, 88, 255, 0.66);
+}
+
+.hud-focus-supercharged strong {
+  color: #fff5ff;
+  font-size: 0.94rem !important;
+  font-weight: 950;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 .hud-focus-avatar-shell {
   position: relative;
-  width: 62px;
-  height: 62px;
+  z-index: 1;
+  width: 68px;
+  height: 68px;
   display: grid;
   place-items: center;
-  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid rgba(176, 119, 255, 0.76);
+  border-radius: 999px;
   background:
-    radial-gradient(circle at 50% 38%, rgba(255, 242, 189, 0.92), rgba(224, 196, 122, 0.32) 44%, transparent 64%),
-    rgba(255, 255, 255, 0.04);
+    radial-gradient(circle at 52% 42%, rgba(255, 231, 178, 0.98), rgba(221, 173, 83, 0.58) 42%, rgba(117, 48, 196, 0.52) 68%, rgba(41, 18, 82, 0.88)),
+    linear-gradient(135deg, #7f4dff, #29124f);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 0 0 3px rgba(31, 15, 74, 0.94),
+    0 0 18px rgba(145, 89, 255, 0.48);
 }
 
 .hud.hud-clean .hud-focus-avatar-shell .dachshund-mascot-hud {
-  width: 56px !important;
-  flex-basis: 56px !important;
+  width: 60px !important;
+  flex-basis: 60px !important;
 }
 
 .hud.hud-clean .hud-focus-avatar-shell .dachshund-render-card {
-  border-radius: 16px !important;
-  border-color: rgba(255, 244, 215, 0.42);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    0 10px 18px rgba(0, 0, 0, 0.3),
-    0 0 18px rgba(222, 190, 112, 0.2);
+  width: 60px !important;
+  height: 60px !important;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-.hud-focus-rank-chip {
-  position: absolute;
-  right: -4px;
-  bottom: -3px;
-  min-width: 28px;
-  height: 22px;
-  display: inline-grid;
-  place-items: center;
-  padding: 0 6px;
-  border: 1px solid rgba(255, 246, 220, 0.72);
-  border-radius: 999px;
-  background: linear-gradient(135deg, #fff1a6, #e3bf45);
-  color: #21182a !important;
-  font-size: 0.66rem !important;
-  font-weight: 950;
-  line-height: 1;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
+.hud.hud-clean .hud-focus-avatar-shell .dachshund-render-image {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 .hud-focus-xp-body {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   align-self: center;
 }
 
-.hud-focus-xp-top,
 .hud-focus-level-row {
+  min-width: 0;
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
+  gap: 9px;
+  line-height: 1;
 }
 
-.hud-focus-mode {
-  color: rgba(185, 183, 255, 0.92) !important;
-  font-size: 0.62rem !important;
+.hud-focus-level-prefix {
+  color: #8a82ff !important;
+  font-size: 1.08rem !important;
   font-weight: 950;
-  line-height: 1;
+  font-style: italic;
   text-transform: uppercase;
-}
-
-.hud.hud-compact .hud-focus-card.hud-focus-xp-card .hud-focus-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #93ecff !important;
-  font-size: 0.78rem !important;
-  font-weight: 950;
-  line-height: 1;
-  text-shadow: 0 0 12px rgba(80, 208, 255, 0.28);
-}
-
-.hud-focus-level-row {
-  margin-top: 5px;
+  text-shadow:
+    0 1px 0 rgba(5, 4, 24, 0.8),
+    0 0 12px rgba(91, 82, 255, 0.45);
 }
 
 .hud-focus-level-row strong {
-  min-width: 0;
-  overflow: hidden;
-  color: #fff4d6;
-  font-size: 1.05rem !important;
+  color: #fff8dd;
+  font-size: 2.1rem !important;
   font-weight: 950;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.34);
+  line-height: 0.84;
+  text-shadow:
+    0 3px 0 rgba(6, 4, 23, 0.76),
+    0 0 13px rgba(255, 246, 220, 0.2);
 }
 
-.hud-focus-level-row span {
-  color: rgba(147, 236, 255, 0.94) !important;
-  font-size: 0.78rem !important;
+.hud.hud-compact .hud-focus-card.hud-focus-xp-card .hud-focus-kicker {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #5bbdff !important;
+  font-size: 1rem !important;
   font-weight: 950;
+  font-style: italic;
   line-height: 1;
+  text-shadow:
+    0 2px 0 rgba(7, 8, 35, 0.64),
+    0 0 14px rgba(65, 183, 255, 0.4);
   white-space: nowrap;
+}
+
+.hud.hud-compact .hud-focus-card.hud-focus-xp-card .hud-focus-kicker svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.8;
+}
+
+.hud.hud-compact .hud-focus-card.hud-focus-xp-card .hud-focus-kicker small {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #553cff, #7b58ff);
+  color: #dbe8ff !important;
+  font-size: 0.62rem !important;
+  font-weight: 950;
+  font-style: normal;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 .hud.hud-clean .hud-focus-progress.hud-focus-segment-track {
-  height: 12px !important;
-  margin-top: 9px;
+  height: 16px !important;
+  margin-top: 11px;
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
-  gap: 4px;
+  gap: 5px;
   overflow: visible;
   border-radius: 0;
   background: transparent;
 }
 
-.hud.hud-clean .hud-focus-progress.hud-focus-segment-track span {
+.hud.hud-clean .hud-focus-progress.hud-focus-segment-track .hud-focus-xp-segment {
   position: relative;
   min-width: 0;
   height: 100%;
   border-radius: 2px;
-  background: rgba(82, 51, 148, 0.72);
+  background:
+    linear-gradient(180deg, rgba(116, 84, 197, 0.9), rgba(72, 41, 148, 0.94));
+  clip-path: polygon(7% 0, 100% 0, 93% 100%, 0 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0 2px 7px rgba(0, 0, 0, 0.22);
 }
 
-.hud.hud-clean .hud-focus-progress.hud-focus-segment-track span.is-filled {
-  background: linear-gradient(90deg, #ff9f1a, #ffd33d);
+.hud.hud-clean .hud-focus-progress.hud-focus-segment-track .hud-focus-xp-segment.is-filled {
+  background:
+    linear-gradient(90deg, #ff8e12, #ffbd1e 48%, #ffe04a);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 0 13px rgba(255, 198, 46, 0.38);
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 0 rgba(128, 56, 0, 0.28),
+    0 0 13px rgba(255, 187, 25, 0.38);
 }
 
-.hud.hud-clean .hud-focus-progress.hud-focus-segment-track span.is-filled:nth-child(n + 8) {
-  background: linear-gradient(90deg, #ffd33d, #8c5cff);
+.hud.hud-clean .hud-focus-progress.hud-focus-segment-track .hud-focus-xp-segment.is-active {
+  background:
+    linear-gradient(90deg, #fff7db, #ffffff 48%, #d9f0ff);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 0 15px rgba(255, 255, 255, 0.62),
+    0 0 20px rgba(75, 174, 255, 0.36);
+}
+
+.hud.hud-clean .hud-focus-progress.hud-focus-segment-track .hud-focus-xp-segment.is-bonus:not(.is-filled):not(.is-active) {
+  background:
+    linear-gradient(180deg, rgba(109, 64, 216, 0.95), rgba(68, 30, 149, 0.98));
 }
 
 .hud.hud-compact.hud-clean .hud-actions {
-  gap: 7px !important;
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .hud.hud-compact.hud-clean .hud-actions button {
-  width: 44px;
-  min-width: 44px;
-  height: 30px;
-  min-height: 30px !important;
-  border-radius: 11px;
+  width: 45px;
+  min-width: 45px;
+  height: 31px;
+  min-height: 31px !important;
+  padding: 0;
+  border: 1px solid rgba(255, 244, 215, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 246, 220, 0.88);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035)),
+    rgba(10, 16, 15, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 10px 20px rgba(0, 0, 0, 0.17);
+  backdrop-filter: blur(6px);
+  transition:
+    transform 150ms cubic-bezier(0.2, 0.82, 0.22, 1),
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
-@media (max-width: 640px) {
+.hud.hud-compact.hud-clean .hud-actions button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 244, 215, 0.3);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05)),
+    rgba(10, 16, 15, 0.52);
+}
+
+.hud.hud-compact.hud-clean .hud-actions button svg {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 700px) {
   .hud.hud-compact.hud-clean {
-    width: min(284px, calc(100vw - 20px)) !important;
+    top: 10px;
+    left: 10px;
+    width: min(342px, calc(100vw - 20px)) !important;
   }
 
   .hud.hud-compact.hud-clean .hud-focus-card.hud-focus-xp-card {
-    grid-template-columns: 52px minmax(0, 1fr) !important;
-    min-height: 68px !important;
-    gap: 10px !important;
-    padding: 8px 10px 8px 8px;
+    grid-template-columns: 54px minmax(0, 1fr) !important;
+    min-height: 70px !important;
+    gap: 11px !important;
+    margin-top: 16px;
+    padding: 10px 12px 11px 10px;
+  }
+
+  .hud-focus-supercharged {
+    top: -25px;
+    gap: 5px;
+  }
+
+  .hud-focus-supercharged span {
+    min-width: 24px;
+    height: 18px;
+    font-size: 0.58rem !important;
+  }
+
+  .hud-focus-supercharged strong {
+    font-size: 0.78rem !important;
   }
 
   .hud-focus-avatar-shell {
-    width: 52px;
-    height: 52px;
-    border-radius: 15px;
+    width: 54px;
+    height: 54px;
   }
 
-  .hud.hud-clean .hud-focus-avatar-shell .dachshund-mascot-hud {
+  .hud.hud-clean .hud-focus-avatar-shell .dachshund-mascot-hud,
+  .hud.hud-clean .hud-focus-avatar-shell .dachshund-render-card {
     width: 48px !important;
+    height: 48px !important;
     flex-basis: 48px !important;
   }
 
+  .hud-focus-level-prefix {
+    font-size: 0.86rem !important;
+  }
+
   .hud-focus-level-row strong {
-    font-size: 0.95rem !important;
+    font-size: 1.52rem !important;
+  }
+
+  .hud.hud-compact .hud-focus-card.hud-focus-xp-card .hud-focus-kicker {
+    font-size: 0.78rem !important;
+    gap: 3px;
+  }
+
+  .hud.hud-compact .hud-focus-card.hud-focus-xp-card .hud-focus-kicker small {
+    min-width: 20px;
+    height: 15px;
+    font-size: 0.52rem !important;
   }
 
   .hud.hud-clean .hud-focus-progress.hud-focus-segment-track {
-    height: 10px !important;
+    height: 13px !important;
     gap: 3px;
+    margin-top: 8px;
   }
 }
