@@ -1,0 +1,136 @@
+/* Subtle contextual labels for the physical screen and speaker remotes. */
+.screen-remote-overlay :is(
+  .screen-remote-key,
+  .screen-remote-color-key,
+  .screen-remote-targets button
+) {
+  position: relative;
+}
+
+.screen-remote-overlay :is(
+  .screen-remote-key,
+  .screen-remote-color-key,
+  .screen-remote-targets button
+):is(:hover, :focus-visible)::after,
+.screen-remote-overlay .screen-remote-link:is(:hover, :focus-within)::after {
+  position: fixed;
+  left: clamp(18px, 5vw, 74px);
+  top: 50%;
+  z-index: 3;
+  width: min(220px, calc(100vw - 320px));
+  min-height: 38px;
+  display: grid;
+  align-content: center;
+  padding: 10px 12px;
+  border: 1px solid rgba(241, 236, 217, 0.12);
+  border-radius: 14px;
+  color: rgba(255, 250, 232, 0.92);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+    rgba(7, 11, 10, 0.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 16px 34px rgba(0, 0, 0, 0.22);
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1.24;
+  text-align: left;
+  white-space: normal;
+  transform: translateY(-50%);
+  pointer-events: none;
+  backdrop-filter: blur(9px);
+  animation: remote-help-in 140ms ease-out both;
+}
+
+.screen-remote-overlay :is(
+  .screen-remote-key,
+  .screen-remote-color-key
+):is(:hover, :focus-visible)::after {
+  content: attr(aria-label);
+}
+
+.screen-remote-overlay .screen-remote-targets button:nth-child(1):is(:hover, :focus-visible)::after {
+  content: "Controlar pantalla izquierda";
+}
+
+.screen-remote-overlay .screen-remote-targets button:nth-child(2):is(:hover, :focus-visible)::after {
+  content: "Controlar pantalla derecha";
+}
+
+.screen-remote-overlay .speaker-remote-targets button:nth-child(1):is(:hover, :focus-visible)::after {
+  content: "Controlar parlante de sala";
+}
+
+.screen-remote-overlay .screen-remote-link:is(:hover, :focus-within)::after {
+  content: "Pegar link y enviar al dispositivo";
+}
+
+.speaker-remote-overlay :is(
+  .screen-remote-key,
+  .screen-remote-color-key,
+  .screen-remote-targets button
+):is(:hover, :focus-visible)::after,
+.speaker-remote-overlay .screen-remote-link:is(:hover, :focus-within)::after {
+  border-color: rgba(30, 215, 96, 0.14);
+  background:
+    linear-gradient(180deg, rgba(30, 215, 96, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(7, 11, 10, 0.54);
+}
+
+.speaker-remote-actions .screen-remote-key:nth-child(1):is(:hover, :focus-visible)::after {
+  content: "Recargar parlante";
+}
+
+.speaker-remote-actions .screen-remote-key:nth-child(2):is(:hover, :focus-visible)::after {
+  content: "Abrir en Spotify";
+}
+
+.speaker-remote-actions .screen-remote-key:nth-child(3):is(:hover, :focus-visible)::after {
+  content: "Limpiar musica";
+}
+
+@keyframes remote-help-in {
+  from {
+    opacity: 0;
+    transform: translate(-6px, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+
+@media (max-width: 640px) {
+  .screen-remote-overlay :is(
+    .screen-remote-key,
+    .screen-remote-color-key,
+    .screen-remote-targets button
+  ):is(:hover, :focus-visible)::after,
+  .screen-remote-overlay .screen-remote-link:is(:hover, :focus-within)::after {
+    left: 14px;
+    right: 14px;
+    top: 14px;
+    width: auto;
+    min-height: 32px;
+    padding: 8px 10px;
+    font-size: 0.68rem;
+    transform: none;
+    animation: remote-fade-in 130ms ease-out both;
+  }
+
+  .screen-remote-phone {
+    max-height: calc(100vh - 92px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-remote-overlay :is(
+    .screen-remote-key,
+    .screen-remote-color-key,
+    .screen-remote-targets button
+  )::after,
+  .screen-remote-overlay .screen-remote-link::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
