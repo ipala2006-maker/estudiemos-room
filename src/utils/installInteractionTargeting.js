@@ -5,6 +5,11 @@ const TARGET_EVENT = 'estudiemos:interaction-target';
 const PATCH_FLAG = '__estudiemosInteractionTargetingInstalled';
 const AGENDA_PATCH_FLAG = '__estudiemosAgendaMoved';
 const NEIGHBORHOOD_PATCH_FLAG = '__estudiemosVisibleNeighborhoodFix1349CleanSigns';
+const CANVAS_FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
+
+function canvasFont(weight, size) {
+  return `${weight} ${size}px ${CANVAS_FONT_STACK}`;
+}
 
 const GIANT_SCREEN_WORLD = {
   center: new THREE.Vector3(90, 8.25, -34.25),
@@ -474,7 +479,7 @@ function createSignTexture({ title, subtitle, accent }) {
   ctx.fillRect(92, canvas.height - 92, 330, 14);
 
   ctx.fillStyle = '#fff8df';
-  ctx.font = `900 ${title.length > 6 ? 132 : 178}px system-ui, sans-serif`;
+  ctx.font = canvasFont(900, title.length > 6 ? 132 : 178);
   ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(0,0,0,0.45)';
   ctx.shadowBlur = 18;
@@ -482,7 +487,7 @@ function createSignTexture({ title, subtitle, accent }) {
 
   ctx.shadowBlur = 0;
   ctx.fillStyle = 'rgba(245,238,218,0.88)';
-  ctx.font = '800 72px system-ui, sans-serif';
+  ctx.font = canvasFont(800, 72);
   ctx.fillText(subtitle, 98, 346);
 
   ctx.fillStyle = accent;

@@ -26,6 +26,11 @@ const SPEAKER_OBJECT_NAME = 'spotify-room-speaker-visible-prop';
 const SPEAKER_ANCHOR_NAME = 'spotify-room-speaker-scene-anchor';
 const SPEAKER_OCCLUDER_NAME = 'spotify-room-speaker-css-occluder';
 const SPEAKER_OCCLUDER_STYLE_ID = 'estudiemos-room-speaker-occluder-style';
+const ROOM_FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
+
+function roomFont(weight, size) {
+  return `${weight} ${size}px ${ROOM_FONT_STACK}`;
+}
 
 const aimDirection = new THREE.Vector3();
 const flatAimDirection = new THREE.Vector3();
@@ -90,7 +95,7 @@ function ensureSpeakerOccluderStyles() {
       color: #111817;
       background: linear-gradient(135deg, #ead58f, #9dd8c8);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36), 0 8px 16px rgba(0, 0, 0, 0.22);
-      font: 900 22px/1 Arial, sans-serif;
+      font: 900 22px/1 "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
     }
 
     .room-speaker-css-label strong {
@@ -98,7 +103,7 @@ function ensureSpeakerOccluderStyles() {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font: 900 25px/1 Arial, sans-serif;
+      font: 900 25px/1 "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
       letter-spacing: 0;
     }
 
@@ -282,17 +287,17 @@ function createSpeakerLabel() {
   context.arc(84, 90, 48, 0, Math.PI * 2);
   context.fill();
   context.fillStyle = '#111817';
-  context.font = '900 44px Arial, sans-serif';
+  context.font = roomFont(900, 44);
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillText('Q', 84, 90);
 
   context.textAlign = 'left';
   context.fillStyle = '#fff4d7';
-  context.font = '900 48px Arial, sans-serif';
+  context.font = roomFont(900, 48);
   context.fillText('AUDIO', 158, 76);
   context.fillStyle = 'rgba(157,216,200,0.86)';
-  context.font = '800 28px Arial, sans-serif';
+  context.font = roomFont(800, 28);
   context.fillText('Sala de estudio', 160, 120);
 
   const texture = new THREE.CanvasTexture(canvas);

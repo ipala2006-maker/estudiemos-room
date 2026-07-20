@@ -18,6 +18,7 @@ import './styles/camera-controls.css';
 import './styles/computer-keyboard-controls.css';
 import './styles/computer-keyboard-scroll.css';
 import './styles/hud-xp-bar.css';
+import './styles/typography-system.css';
 import './utils/installComputerKeyboardController.js';
 import { installInteractionTargeting } from './utils/installInteractionTargeting.js';
 import './utils/installRoomSpeakerWorld.js';

@@ -14,6 +14,12 @@ import playerVehicleBackUrl from '../assets/player-vehicle-back.png';
 import playerVehicleFrontUrl from '../assets/player-vehicle-front.png';
 import playerVehicleSideUrl from '../assets/player-vehicle-side.png';
 
+const CANVAS_FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
+
+function canvasFont(weight, size) {
+  return `${weight} ${size}px ${CANVAS_FONT_STACK}`;
+}
+
 const activeMap = Casa1;
 const startPosition = activeMap.startPosition;
 const houseDoorPosition = activeMap.entrancePosition;
@@ -3923,10 +3929,10 @@ function createDeskMonitorTexture(agendaItems) {
   ctx.fillStyle = 'rgba(255, 211, 132, 0.12)';
   ctx.fillRect(0, 0, canvas.width, 74);
   ctx.fillStyle = '#f5ead1';
-  ctx.font = '900 42px system-ui, sans-serif';
+  ctx.font = canvasFont(900, 42);
   ctx.fillText('Estudiemos OS', 44, 52);
   ctx.fillStyle = 'rgba(245,234,209,0.66)';
-  ctx.font = '700 22px system-ui, sans-serif';
+  ctx.font = canvasFont(700, 22);
   ctx.fillText('Agenda sincronizada', 500, 50);
 
   const monitorItems = agendaItems.filter((item) => !item.completed).slice(0, 3);
@@ -3934,13 +3940,13 @@ function createDeskMonitorTexture(agendaItems) {
     ctx.fillStyle = 'rgba(255, 211, 132, 0.22)';
     ctx.fillRect(44, 104, 680, 74);
     ctx.fillStyle = '#ffd384';
-    ctx.font = '900 28px system-ui, sans-serif';
+    ctx.font = canvasFont(900, 28);
     ctx.fillText(agendaItems.length > 0 ? 'OK' : '--:--', 68, 150);
     ctx.fillStyle = '#f5ead1';
-    ctx.font = '900 28px system-ui, sans-serif';
+    ctx.font = canvasFont(900, 28);
     ctx.fillText(agendaItems.length > 0 ? 'Todo completado' : 'Agenda vacia', 166, 148);
     ctx.fillStyle = 'rgba(245,234,209,0.62)';
-    ctx.font = '700 18px system-ui, sans-serif';
+    ctx.font = canvasFont(700, 18);
     ctx.fillText(agendaItems.length > 0 ? 'No quedan bloques pendientes' : 'Agrega bloques desde la computadora', 166, 174);
   }
 
@@ -3949,13 +3955,13 @@ function createDeskMonitorTexture(agendaItems) {
     ctx.fillStyle = index === 0 ? 'rgba(255, 211, 132, 0.22)' : 'rgba(255,255,255,0.08)';
     ctx.fillRect(44, y - 44, 680, 62);
     ctx.fillStyle = '#ffd384';
-    ctx.font = '900 24px system-ui, sans-serif';
+    ctx.font = canvasFont(900, 24);
     ctx.fillText(item.time || '--:--', 68, y - 4);
     ctx.fillStyle = '#f5ead1';
-    ctx.font = '900 25px system-ui, sans-serif';
+    ctx.font = canvasFont(900, 25);
     ctx.fillText(item.title || 'Bloque sin titulo', 166, y - 5);
     ctx.fillStyle = 'rgba(245,234,209,0.62)';
-    ctx.font = '700 17px system-ui, sans-serif';
+    ctx.font = canvasFont(700, 17);
     ctx.fillText(item.detail || 'Sin detalle cargado', 166, y + 22);
   });
 
@@ -4004,12 +4010,12 @@ function createCanvasSign({ width = 512, height = 256, background, accent, title
   ctx.strokeRect(width * 0.04, height * 0.08, width * 0.9, height * 0.8);
 
   ctx.fillStyle = '#fff6dc';
-  ctx.font = `900 ${Math.round(height * (title.length > 11 ? 0.16 : 0.2))}px system-ui, sans-serif`;
+  ctx.font = canvasFont(900, Math.round(height * (title.length > 11 ? 0.16 : 0.2)));
   ctx.shadowColor = 'rgba(0,0,0,0.34)';
   ctx.shadowBlur = 10;
   ctx.fillText(title, width * 0.11, height * 0.47);
   ctx.shadowBlur = 0;
-  ctx.font = `700 ${Math.round(height * 0.105)}px system-ui, sans-serif`;
+  ctx.font = canvasFont(700, Math.round(height * 0.105));
   ctx.fillStyle = 'rgba(247,241,228,0.76)';
   ctx.fillText(subtitle, width * 0.11, height * 0.66);
 
@@ -4058,7 +4064,7 @@ function createCanvasStudyBoard({ title, lines, background, accent }) {
   ctx.fillStyle = accent;
   ctx.fillRect(38, 82, 142, 8);
   ctx.fillStyle = '#fff4d7';
-  ctx.font = '900 50px system-ui, sans-serif';
+  ctx.font = canvasFont(900, 50);
   ctx.fillText(title, 46, 70);
 
   lines.forEach((line, index) => {
@@ -4070,7 +4076,7 @@ function createCanvasStudyBoard({ title, lines, background, accent }) {
     ctx.fillStyle = index % 2 === 0 ? '#ead58f' : '#9dd8c8';
     ctx.fillRect(62, y - 10, 26, 4);
     ctx.fillStyle = '#f7f1e5';
-    ctx.font = '800 24px system-ui, sans-serif';
+    ctx.font = canvasFont(800, 24);
     ctx.fillText(line, 104, y + 3);
   });
 
@@ -4290,18 +4296,18 @@ function drawGiantScreenZone(ctx, { zone, x, y, width, height, label, slotLabel,
   ctx.fillRect(innerX, innerY, 10, isPrimary ? 74 : 48);
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = `900 ${isPrimary ? 38 : 22}px system-ui, sans-serif`;
+  ctx.font = canvasFont(900, isPrimary ? 38 : 22);
   ctx.fillText(label, innerX + 24, innerY + (isPrimary ? 48 : 32), textMaxWidth - 32);
 
   ctx.fillStyle = hasContent ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)';
-  ctx.font = `900 ${titleSize}px system-ui, sans-serif`;
+  ctx.font = canvasFont(900, titleSize);
   ctx.fillText(hasContent ? contentLabel : 'SIN VIDEO', innerX + 3, innerY + (isPrimary ? 165 : 105), textMaxWidth);
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = `900 ${titleSize}px system-ui, sans-serif`;
+  ctx.font = canvasFont(900, titleSize);
   ctx.fillText(hasContent ? contentLabel : 'SIN VIDEO', innerX, innerY + (isPrimary ? 158 : 100), textMaxWidth);
 
-  ctx.font = `750 ${bodySize}px system-ui, sans-serif`;
+  ctx.font = canvasFont(750, bodySize);
   ctx.fillStyle = 'rgba(255,255,255,0.86)';
   if (hasContent) {
     ctx.fillText(zone.title ? `Recurso: ${zone.title}` : `Video ID: ${zone.videoId}`, innerX, innerY + (isPrimary ? 205 : 136), textMaxWidth);

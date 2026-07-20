@@ -7,7 +7,10 @@ export function StartScreen({ onEnter }) {
     <main className="start-screen start-screen-immersive">
       <span className="build-version-pill" data-build-marker={BUILD_MARKER}>{BUILD_LABEL}</span>
       <section className="start-content start-content-immersive" aria-labelledby="start-title">
-        <h1 id="start-title">ESTUDIEMOS ROOM</h1>
+        <h1 id="start-title" aria-label="ESTUDIEMOS ROOM">
+          <span>ESTUDIEMOS</span>
+          <span>ROOM</span>
+        </h1>
         <p className="start-lead">Tu sala digital para estudiar con calma.</p>
         <button type="button" className="primary-action start-enter-button" onClick={onEnter} aria-label="Empezar a estudiar en Casa 1">
           <Play size={18} aria-hidden="true" fill="currentColor" />
