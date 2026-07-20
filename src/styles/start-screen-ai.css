@@ -1,0 +1,30 @@
+/* AI-generated background pass for the immersive entry screen. */
+.start-screen.start-screen-immersive {
+  background:
+    linear-gradient(180deg, rgba(5, 8, 8, 0.02), rgba(5, 8, 8, 0.2) 66%, rgba(5, 8, 8, 0.62)),
+    linear-gradient(90deg, rgba(4, 7, 8, 0.18), rgba(4, 7, 8, 0.04) 46%, rgba(4, 7, 8, 0.18)),
+    url("../assets/start-room-ai-background.webp") center / cover no-repeat,
+    #101817 !important;
+}
+
+.start-screen.start-screen-immersive::before {
+  height: 100% !important;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255, 248, 218, 0.12), transparent 48%),
+    linear-gradient(180deg, rgba(255, 248, 231, 0.04), transparent 42%, rgba(0, 0, 0, 0.18)) !important;
+  opacity: 1 !important;
+}
+
+.start-screen.start-screen-immersive::after {
+  background:
+    radial-gradient(circle at 50% 44%, transparent 0 46%, rgba(0, 0, 0, 0.14) 82%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 38%, rgba(0, 0, 0, 0.1)) !important;
+  transform: none !important;
+  transform-origin: center !important;
+}
+
+@media (max-width: 760px) {
+  .start-screen.start-screen-immersive {
+    background-position: 58% center !important;
+  }
+}
