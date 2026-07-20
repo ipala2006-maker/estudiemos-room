@@ -525,6 +525,7 @@ function App() {
         screenLayout={screenLayout}
         agendaItems={agendaItems}
         focusProgress={focusEconomy.progress}
+        initialInside
       />
 
       <Hud

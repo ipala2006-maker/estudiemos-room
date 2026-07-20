@@ -117,7 +117,8 @@ export function FirstPersonWorld({
   screenZones = DEFAULT_SCREEN_ZONES,
   screenLayout = DEFAULT_SCREEN_LAYOUT,
   agendaItems = studyAgendaItems,
-  focusProgress
+  focusProgress,
+  initialInside = false
 }) {
   const mountRef = useRef(null);
   const nearDoorRef = useRef(false);
@@ -166,7 +167,8 @@ export function FirstPersonWorld({
     scene.background = new THREE.Color(0xb5c0af);
     scene.fog = new THREE.Fog(0xb5c0af, 70, 210);
 
-    const playerPosition = startPosition.clone();
+    const shouldStartInside = Boolean(initialInside);
+    const playerPosition = (shouldStartInside ? activeMap.interiorSpawnPosition : startPosition).clone();
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 230);
     camera.position.copy(playerPosition);
     camera.rotation.order = 'YXZ';
@@ -227,8 +229,9 @@ export function FirstPersonWorld({
     scene.add(softFill);
 
     const { giantScreen, colliders, exteriorGroup } = buildWorldScene(scene);
-    giantScreen.room.visible = false;
-    exteriorGroup.visible = true;
+    doorOpenRef.current = shouldStartInside;
+    giantScreen.room.visible = shouldStartInside;
+    exteriorGroup.visible = !shouldStartInside;
     const companionMascot = createCompanionDachshund(getEquippedSkinState(focusProgressRef.current));
     scene.add(companionMascot.group);
     const firstPersonArm = createFirstPersonArmViewModel();
@@ -315,6 +318,13 @@ export function FirstPersonWorld({
     }
 
     resetRef.current = resetCamera;
+    if (shouldStartInside) {
+      faceCameraToward(INTERIOR_LOOK_TARGET);
+      onDoorOpenChange(true);
+    } else {
+      onDoorOpenChange(false);
+    }
+
     toggleDoorRef.current = () => {
       doorOpenRef.current = !doorOpenRef.current;
       giantScreen.room.visible = doorOpenRef.current;
@@ -590,7 +600,7 @@ export function FirstPersonWorld({
       mount.removeChild(cssRenderer.domElement);
       mount.removeChild(renderer.domElement);
     };
-  }, [onAgendaBoardAimChange, onDoorOpenChange, onNearComputerChange, onNearDoorChange, onScreenAimChange, resetRef, toggleDoorRef]);
+  }, [initialInside, onAgendaBoardAimChange, onDoorOpenChange, onNearComputerChange, onNearDoorChange, onScreenAimChange, resetRef, toggleDoorRef]);
 
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
 }
