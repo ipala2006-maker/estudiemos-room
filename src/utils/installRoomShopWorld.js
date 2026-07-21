@@ -1,316 +1,269 @@
 import * as THREE from 'three';
 import dachshundMascotRenderUrl from '../assets/dachshund-mascot-render.jpg';
 
-const ROOM_GROUP_POSITION = { x: 90, z: -6 };
+const ROOM_ORIGIN = { x: 90, z: -6 };
 const SHOP_LOCAL = new THREE.Vector3(25.85, 0, -11.5);
 const SHOP_WORLD_CENTER = new THREE.Vector3(116.15, 1.55, -17.5);
 const SHOP_OBJECT_NAME = 'casa1-salchi-shop-corner';
 const SHOP_ANCHOR_NAME = 'casa1-salchi-shop-anchor';
-const SHOP_INTERACTION_DISTANCE = 10.5;
-const SHOP_INTERACTION_RADIUS = 2.75;
-const INTERIOR_BOUNDS = {
-  minX: 62,
-  maxX: 118,
-  minZ: -36,
-  maxZ: 23
-};
-const CANVAS_FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
+const INTERIOR_BOUNDS = { minX: 62, maxX: 118, minZ: -36, maxZ: 23 };
+const SHOP_DISTANCE = 10.5;
+const SHOP_RADIUS = 2.75;
+const FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
 
-const textureLoader = new THREE.TextureLoader();
-const aimDirection = new THREE.Vector3();
-let lastShopScene = null;
-let lastShopCamera = null;
+const loader = new THREE.TextureLoader();
+const rayDirection = new THREE.Vector3();
+let lastScene = null;
+let lastCamera = null;
 
-function shopFont(weight, size) {
-  return `${weight} ${size}px ${CANVAS_FONT_STACK}`;
-}
-
-function makeStandardMaterial(color, roughness = 0.62, metalness = 0.03) {
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness });
-}
-
-function makeGlowMaterial(color, intensity = 0.48, opacity = 1) {
-  const material = new THREE.MeshStandardMaterial({
+function makeMaterial(color, options = {}) {
+  return new THREE.MeshStandardMaterial({
     color,
-    emissive: color,
-    emissiveIntensity: intensity,
-    roughness: 0.24,
-    metalness: 0.02,
-    transparent: opacity < 1,
-    opacity
+    roughness: options.roughness ?? 0.62,
+    metalness: options.metalness ?? 0.03,
+    emissive: options.emissive ?? 0x000000,
+    emissiveIntensity: options.emissiveIntensity ?? 0,
+    transparent: Boolean(options.opacity && options.opacity < 1),
+    opacity: options.opacity ?? 1,
+    side: options.side
   });
-  return material;
 }
 
-function addBox(group, size, position, material, receivesShadow = true) {
+function addBox(parent, name, size, position, material) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+  mesh.name = name;
   mesh.position.set(...position);
-  mesh.castShadow = true;
-  mesh.receiveShadow = receivesShadow;
-  group.add(mesh);
-  return mesh;
-}
-
-function addCylinder(group, radiusTop, radiusBottom, height, position, material, rotation = [0, 0, 0], segments = 24) {
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segments), material);
-  mesh.position.set(...position);
-  mesh.rotation.set(...rotation);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
-  group.add(mesh);
+  parent.add(mesh);
   return mesh;
 }
 
-function createCanvasPlane(canvas, opacity = 1) {
+function makeLabel({ title, subtitle = '', width = 720, height = 220, titleSize = 54, opacity = 0.92 }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+
+  const gradient = context.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, '#22362f');
+  gradient.addColorStop(0.68, '#101817');
+  gradient.addColorStop(1, '#070b0c');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = 'rgba(255,248,221,0.08)';
+  context.roundRect(28, 28, width - 56, height - 56, 26);
+  context.fill();
+  context.fillStyle = '#e0c47a';
+  context.fillRect(32, 32, width - 64, 10);
+  context.fillRect(62, height - 56, 190, 8);
+
+  context.fillStyle = '#fff8dd';
+  context.font = `900 ${titleSize}px ${FONT_STACK}`;
+  context.textBaseline = 'middle';
+  context.shadowColor = 'rgba(0,0,0,0.36)';
+  context.shadowBlur = 12;
+  context.fillText(title, 56, height * 0.45);
+
+  if (subtitle) {
+    context.shadowBlur = 0;
+    context.fillStyle = 'rgba(245,238,218,0.72)';
+    context.font = `750 26px ${FONT_STACK}`;
+    context.fillText(subtitle, 58, height * 0.68);
+  }
+
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
-  texture.needsUpdate = true;
 
   const material = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
     map: texture,
-    roughness: 0.55,
+    color: 0xffffff,
+    roughness: 0.48,
     metalness: 0.02,
     side: THREE.DoubleSide,
     transparent: opacity < 1,
     opacity
   });
 
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, canvas.height / canvas.width), material);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, height / width), material);
   mesh.castShadow = true;
   return mesh;
 }
 
-function createShopSignPlane() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 360;
-  const context = canvas.getContext('2d');
-  if (!context) return null;
-
-  const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, '#21342f');
-  gradient.addColorStop(0.56, '#111817');
-  gradient.addColorStop(1, '#070b0c');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  context.fillStyle = 'rgba(224,196,122,0.15)';
-  context.fillRect(42, 42, canvas.width - 84, canvas.height - 84);
-  context.fillStyle = '#e0c47a';
-  context.fillRect(42, 42, canvas.width - 84, 12);
-  context.fillRect(78, canvas.height - 78, 268, 10);
-
-  context.fillStyle = '#fff8dd';
-  context.font = shopFont(950, 82);
-  context.textBaseline = 'middle';
-  context.shadowColor = 'rgba(0,0,0,0.38)';
-  context.shadowBlur = 16;
-  context.fillText('TIENDA SALCHI', 76, 156);
-
-  context.shadowBlur = 0;
-  context.fillStyle = 'rgba(245,238,218,0.74)';
-  context.font = shopFont(800, 34);
-  context.fillText('skins  rangos  recompensas', 82, 232);
-
-  context.fillStyle = '#9edfc8';
-  context.beginPath();
-  context.arc(874, 146, 54, 0, Math.PI * 2);
-  context.fill();
-  context.fillStyle = '#17201e';
-  context.font = shopFont(950, 52);
-  context.fillText('S', 856, 148);
-
-  return createCanvasPlane(canvas, 0.86);
+function addRotatedLabel(parent, name, config, position, scale) {
+  const label = makeLabel(config);
+  if (!label) return null;
+  label.name = name;
+  label.position.set(...position);
+  label.rotation.y = -Math.PI / 2;
+  label.scale.set(...scale);
+  parent.add(label);
+  return label;
 }
 
-function createShopLabelPlane(title, subtitle) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 192;
-  const context = canvas.getContext('2d');
-  if (!context) return null;
-
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = 'rgba(10,15,15,0.86)';
-  context.beginPath();
-  context.roundRect(10, 10, canvas.width - 20, canvas.height - 20, 32);
-  context.fill();
-
-  context.strokeStyle = 'rgba(224,196,122,0.34)';
-  context.lineWidth = 4;
-  context.stroke();
-
-  context.fillStyle = '#fff8dd';
-  context.font = shopFont(950, 44);
-  context.fillText(title, 42, 78);
-  context.fillStyle = 'rgba(245,238,218,0.72)';
-  context.font = shopFont(780, 27);
-  context.fillText(subtitle, 42, 126);
-
-  return createCanvasPlane(canvas, 0.94);
-}
-
-function createVendorPortrait() {
-  const texture = textureLoader.load(dachshundMascotRenderUrl, (loadedTexture) => {
-    loadedTexture.colorSpace = THREE.SRGBColorSpace;
-    loadedTexture.anisotropy = 4;
-    loaedTexture.needsUpdate = true;
-  });
+function makeDogVendor() {
+  const texture = loader.load(dachshundMascotRenderUrl);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
 
-  const material = new THREE.MeshStandardMaterial({
-    map: texture,
-    color: 0xffffff,
-    roughness: 0.42,
-    metalness: 0.02,
-    side: THREE.DoubleSide
-  });
-
-  const portrait = new THREE.Mesh(new THREE.PlaneGeometry(1.36, 1.36), material);
-  portrait.castShadow = true;
-  portrait.name = 'casa1-salchi-shop-vendor-portrait';
-  return portrait;
+  const body = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.36, 1.36),
+    new THREE.MeshStandardMaterial({
+      map: texture,
+      color: 0xffffff,
+      roughness: 0.42,
+      metalness: 0.02,
+      side: THREE.DoubleSide
+    })
+  );
+  body.name = 'casa1-salchi-shop-vendor';
+  body.castShadow = true;
+  body.position.set(-0.12, 2.05, -0.18);
+  body.rotation.y = -Math.PI / 2;
+  body.scale.setScalar(1.06);
+  return body;
 }
 
-function addShopEdges(group) {
+function addDecor(parent, materials) {
+  [-0.58, 0, 0.58].forEach((z, index) => {
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.055, 28), materials.gold);
+    coin.name = 'salchi-shop-coin';
+    coin.position.set(-0.72, 1.34 + index * 0.03, z);
+    coin.rotation.z = Math.PI / 2;
+    coin.castShadow = true;
+    parent.add(coin);
+  });
+
+  [
+    { z: -1.52, material: materials.teal },
+    { z: 1.52, material: materials.mint }
+  ].forEach(({ z, material }) => {
+    addBox(parent, 'salchi-shop-skin-card', [0.18, 0.74, 0.56], [-0.72, 1.58, z], material);
+    const badge = new THREE.Mesh(new THREE.CircleGeometry(0.18, 24), materials.paper);
+    badge.name = 'salchi-shop-card-badge';
+    badge.position.set(-0.826, 1.64, z);
+    badge.rotation.y = -Math.PI / 2;
+    badge.castShadow = true;
+    parent.add(badge);
+  });
+}
+
+function addSoftEdges(group) {
   group.traverse((child) => {
     if (!child?.isMesh || !child.geometry) return;
-    const edges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(child.geometry, 25),
-      new THREE.LineBasicMaterial({
-        color: 0x030505,
-        transparent: true,
-        opacity: 0.07,
-        depthWrite: false
-      })
+    child.add(
+      new THREE.LineSegments(
+        new THREE.EdgesGeometry(child.geometry, 25),
+        new THREE.LineBasicMaterial({
+          color: 0x030505,
+          transparent: true,
+          opacity: 0.07,
+          depthWrite: false
+        })
+      )
     );
-    child.add(edges);
   });
 }
 
-function addRoomShop(anchor) {
-  if (!anchor || anchor.userData.estudiemosRoomShopInjected) return;
-  anchor.userData.estudiemosRoomShopInjected = true;
+function createShopCorner(anchor) {
+  if (!anchor || anchor.userData.estudiemosShopInjected) return;
+  anchor.userData.estudiemosShopInjected = true;
 
   const shop = new THREE.Group();
   shop.name = SHOP_OBJECT_NAME;
   shop.position.copy(SHOP_LOCAL);
   shop.userData.interactionTarget = 'shop';
+  shop.userData.idleSeed = Math.random() * Math.PI * 2;
 
-  const glowPanelMaterial = makeGlowMaterial(0x9edfc8, 0.16, 0.28);
-  const woodMaterial = makeStandardMaterial(0x594233, 0.68, 0.02);
-  const darkMaterial = makeStandardMaterial(0x121918, 0.58, 0.06);
-  const goldMaterial = makeGlowMaterial(0xe0c47a, 0.24);
-  const mintMaterial = makeGlowMaterial(0x9edfc8, 0.36);
-  const paperMaterial = makeStandardMaterial(0xf4ead2, 0.74, 0.01);
+  const materials = {
+    wallGlow: makeMaterial(0x9edfc8, { emissive: 0x9edfc8, emissiveIntensity: 0.16, opacity: 0.28 }),
+    wood: makeMaterial(0x594233, { roughness: 0.68, metalness: 0.02 }),
+    dark: makeMaterial(0x121918, { roughness: 0.58, metalness: 0.06 }),
+    gold: makeMaterial(0xe0c47a, { emissive: 0xe0c47a, emissiveIntensity: 0.24, roughness: 0.32 }),
+    teal: makeMaterial(0x2a6f64, { roughness: 0.44, metalness: 0.02 }),
+    mint: makeMaterial(0x8ed7d2, { roughness: 0.44, metalness: 0.02 }),
+    paper: makeMaterial(0xf4ead2, { roughness: 0.74, metalness: 0.01 })
+  };
 
-  const alcove = addBox(shop, [0.12, 4.45, 5.15], [1.73, 3.1, 0], glowPanelMaterial, true);
-  alcove.name = 'salchi-shop-soft-wall-panel';
+  addBox(shop, 'salchi-shop-wall-panel', [0.12, 4.45, 5.15], [1.73, 3.1, 0], materials.wallGlow);
+  const sign = addRotatedLabel(
+    shop,
+    'salchi-shop-wall-sign',
+    { title: 'TIENDA SALCHI', subtitle: 'skins  rangos  recompensas', opacity: 0.86 },
+    [1.65, 4.55, 0],
+    [4.35, 1.42, 1]
+  );
 
-  const sign = createShopSignPlane();
-  if (sign) {
-    sign.name = 'salchi-shop-wall-sign';
-    sign.position.set(1.65, 4.55, 0);
-    sign.rotation.y = -Math.PI / 2;
-    sign.scale.set(4.35, 1.42, 1);
-    shop.add(sign);
-  }
+  addBox(shop, 'salchi-shop-counter', [2.26, 0.92, 4.18], [0.38, 0.64, 0], materials.wood);
+  addBox(shop, 'salchi-shop-counter-top', [2.48, 0.16, 4.42], [0.31, 1.16, 0], materials.dark);
+  addBox(shop, 'salchi-shop-counter-front', [0.14, 1.2, 4.46], [-0.82, 0.72, 0], materials.dark);
 
-  addBox(shop, [2.26, 0.92, 4.18], [0.38, 0.64, 0], woodMaterial, true);
-  addBox(shop, [2.48, 0.16, 4.42], [0.31, 1.16, 0], darkMaterial, true);
-  addBox(shop, [0.14, 1.2, 4.46], [-0.82, 0.72, 0], darkMaterial, true);
+  const counterLabel = addRotatedLabel(
+    shop,
+    'salchi-shop-counter-label',
+    { title: 'TIENDA SALCHI', subtitle: 'Skins y rangos', width: 512, height: 192, titleSize: 44 },
+    [-0.9, 0.78, 0],
+    [1.42, 0.46, 1]
+  );
 
-  const frontPlate = createShopLabelPlane('TIENDA SALCHI', 'Skins y rangos');
-  if (frontPlate) {
-    frontPlate.name = 'salchi-shop-counter-label';
-    frontPlate.position.set(-0.9, 0.78, 0);
-    frontPlate.rotation.y = -Math.PI / 2;
-    frontPlate.scale.set(1.42, 0.46, 1);
-    shop.add(frontPlate);
-  }
+  const vendorBacking = addBox(shop, 'salchi-shop-vendor-backing', [0.12, 1.74, 1.72], [-0.04, 2.05, -0.18], materials.dark);
+  vendorBacking.rotation.y = -Math.PI / 2;
+  const vendor = makeDogVendor();
+  shop.add(vendor);
 
-  const portraitFrame = addBox(shop, [0.12, 1.74, 1.72], [-0.04, 2.05, -0.18], darkMaterial, true);
-  portraitFrame.rotation.y = -Math.PI / 2;
-  const portrait = createVendorPortrait();
-  portrait.position.set(-0.11, 2.05, -0.18);
-  portrait.rotation.y = -Math.PI / 2;
-  portrait.scale.setScalar(1.06);
-  shop.add(portrait);
+  addDecor(shop, materials);
 
-  [-0.58, 0, 0.58].forEach((z, index) => {
-    const coin = addCylinder(shop, 0.2, 0.2, 0.055, [-0.72, 1.35 + index * 0.03, z], goldMaterial, [0, 0, Math.PI / 2], 28);
-    coin.name = 'salchi-shop-focus-coin';
-  });
+  const prompt = addRotatedLabel(
+    shop,
+    'salchi-shop-floating-prompt',
+    { title: 'E', subtitle: 'Abrir tienda', width: 512, height: 192, titleSize: 82, opacity: 0.94 },
+    [-1.16, 2.6, 0],
+    [1.05, 0.5, 1]
+  );
+  if (prompt) prompt.visible = false;
 
-  [
-    { z: -1.52, color: 0x2a6f64 },
-    { z: 1.52, color: 0x8ed7d2 }
-  ].forEach(({ z, color }) => {
-    addBox(shop, [0.18, 0.74, 0.56], [-0.72, 1.58, z], makeStandardMaterial(color, 0.44, 0.02), true);
-    const badge = new THREE.Mesh(new THREE.CircleGeometry(0.18, 24), paperMaterial);
-    badge.position.set(-0.826, 1.64, z);
-    badge.rotation.y = -Math.PI / 2;
-    badge.castShadow = true;
-    shop.add(badge);
-  });
-
-  const prompt = createShopLabelPlane('E', 'Abrir tienda');
-  if (prompt) {
-    prompt.name = 'salchi-shop-floating-prompt';
-    prompt.position.set(-1.16, 2.6, 0);
-    prompt.rotation.y = -Math.PI / 2;
-    prompt.scale.set(1.05, 0.5, 1);
-    prompt.visible = false;
-    shop.add(prompt);
-  }
-
-  const shopLight = new THREE.PointLight(0xffe1a2, 0.75, 7.5, 2.1);
-  shopLight.position.set(-0.35, 2.75, 0.15);
-  shop.add(shopLight);
-
+  const light = new THREE.PointLight(0xffe1a2, 0.75, 7.5, 2.1);
+  light.name = 'salchi-shop-warm-light';
+  light.position.set(-0.35, 2.75, 0.15);
+  shop.add(light);
 
   const floorGlow = new THREE.Mesh(
     new THREE.CircleGeometry(2.75, 36),
-    new THREE.MeshBasicMaterial({
-      color: 0xe0c47a,
-      transparent: true,
-      opacity: 0.1,
-      depthWrite: false
-    })
+    new THREE.MeshBasicMaterial({ color: 0xe0c47a, transparent: true, opacity: 0.1, depthWrite: false })
   );
+  floorGlow.name = 'salchi-shop-floor-glow';
   floorGlow.rotation.x = -Math.PI / 2;
   floorGlow.position.set(0.2, 0.03, 0);
   shop.add(floorGlow);
 
-  shop.userData.shopPrompt = prompt;
-  shop.userData.shopGlowMaterials = [glowPanelMaterial, sign?.material, frontPlate?.material, prompt?.material].filter(Boolean);
-  shop.userData.shopPortrait = portrait;
-  shop.userData.shopIdleSeed = Math.random() * Math.PI * 2;
+  shop.userData.prompt = prompt;
+  shop.userData.vendor = vendor;
+  shop.userData.glowMaterials = [materials.wallGlow, sign?.material, counterLabel?.material, prompt?.material].filter(Boolean);
 
-  addShopEdges(shop);
+  addSoftEdges(shop);
   anchor.add(shop);
 }
 
-function addSceneShop(scene) {
+function addShopToScene(scene) {
   if (!scene || scene.userData.estudiemosSceneShopInjected) return;
   scene.userData.estudiemosSceneShopInjected = true;
 
   const anchor = new THREE.Group();
   anchor.name = SHOP_ANCHOR_NAME;
-  anchor.position.set(ROOM_GROUP_POSITION.x, 0, ROOM_GROUP_POSITION.z);
+  anchor.position.set(ROOM_ORIGIN.x, 0, ROOM_ORIGIN.z);
   anchor.visible = false;
   scene.add(anchor);
-  addRoomShop(anchor);
+  createShopCorner(anchor);
 }
 
-function isCameraInsideRoom(camera) {
+function isInsideRoom(camera) {
   const { x, z } = camera.position;
   return x >= INTERIOR_BOUNDS.minX && x <= INTERIOR_BOUNDS.maxX && z >= INTERIOR_BOUNDS.minZ && z <= INTERIOR_BOUNDS.maxZ;
 }
 
-function getRaySphereHitDistance(origin, direction, center, radius) {
+function raySphereHitDistance(origin, direction, center, radius) {
   const toCenterX = center.x - origin.x;
   const toCenterY = center.y - origin.y;
   const toCenterZ = center.z - origin.z;
@@ -326,61 +279,31 @@ function getRaySphereHitDistance(origin, direction, center, radius) {
 }
 
 function isAimingShop(camera) {
-  if (!camera?.isCamera || !isCameraInsideRoom(camera)) return false;
-  if (camera.position.distanceTo(SHOP_WORLD_CENTER) > SHOP_INTERACTION_DISTANCE) return false;
-
-  camera.getWorldDirection(aimDirection).normalize();
-  const distance = getRaySphereHitDistance(camera.position, aimDirection, SHOP_WORLD_CENTER, SHOP_INTERACTION_RADIUS);
-  return distance !== null && distance <= SHOP_INTERACTION_DISTANCE;
+  if (!camera?.isCamera || !isInsideRoom(camera)) return false;
+  if (camera.position.distanceTo(SHOP_WORLD_CENTER) > SHOP_DISTANCE) return false;
+  camera.getWorldDirection(rayDirection).normalize();
+  const distance = raySphereHitDistance(camera.position, rayDirection, SHOP_WORLD_CENTER, SHOP_RADIUS);
+  return distance !== null && distance <= SHOP_DISTANCE;
 }
 
-function updateShopVisualState(scene, camera) {
-  const anchor = scene?.getObjectByName?.(SHOP_ANCHOR_NAME);
-  const shop = scene?.getObjectByName?.(SHOP_OBJECT_NAME);
-  if (!anchor || !shop) return;
-
-  const shouldShow = Boolean(window.__estudiemosForceShopView || (camera?.isCamera && isCameraInsideRoom(camera)));
-  anchor.visible = shouldShow;
-
-  const active = shouldShow && isAimingShop(camera);
-  const prompt = shop.userData.shopPrompt;
-  if (prompt) {
-    prompt.visible = active;
-    prompt.position.y = 2.62 + Math.sin(performance.now() * 0.004 + shop.userData.shopIdleSeed) * 0.045;
-  }
-
-  const glowTarget = active ? 0.72 : 0.3;
-  shop.userData.shopGlowMaterials?.forEach((material) => {
-    if (!material.transparent) {
-      material.transparent = true;
-    }
-    material.opacity += (glowTarget - material.opacity) * 0.14;
-  });
-
-  if (shop.userData.shopPortrait) {
-    shop.userData.shopPortrait.rotation.z = Math.sin(performance.now() * 0.002 + shop.userData.shopIdleSeed) * 0.012;
-  }
-}
-
-function updateShopDebugHandle(scene, camera) {
-  if (typeof window === 'undefined') return;
-
+function updateDebug(scene, camera) {
   window.__estudiemosRoomShopDebug = {
-    hasShop: Boolean(scene?.getObjectByName?.(SHOP_OBJECT_NAME)),
     forceShopView(enabled = true) {
       window.__estudiemosForceShopView = Boolean(enabled);
     },
     getState() {
       const shop = scene?.getObjectByName?.(SHOP_OBJECT_NAME);
       const anchor = scene?.getObjectByName?.(SHOP_ANCHOR_NAME);
+      const position = shop?.getWorldPosition?.(new THREE.Vector3());
       return {
         hasShop: Boolean(shop),
         shopVisible: Boolean(shop && shop.visible && (!anchor || anchor.visible)),
-        shopWorldPosition: shop
+        installMode: window.__estudiemosRoomShopInstallMode,
+        shopWorldPosition: position
           ? {
-              x: Number(shop.getWorldPosition(new THREE.Vector3()).x.toFixed(2)),
-              y: Number(shop.getWorldPosition(new THREE.Vector3()).y.toFixed(2)),
-              z: Number(shop.getWorldPosition(new THREE.Vector3()).z.toFixed(2))
+              x: Number(position.x.toFixed(2)),
+              y: Number(position.y.toFixed(2)),
+              z: Number(position.z.toFixed(2))
             }
           : null,
         cameraPosition: camera?.position
@@ -395,43 +318,62 @@ function updateShopDebugHandle(scene, camera) {
   };
 }
 
-function refreshShopRuntime(scene = lastShopScene, camera = lastShopCamera) {
-  if (scene) addSceneShop(scene);
+function refreshShop(scene = lastScene, camera = lastCamera) {
+  if (scene) addShopToScene(scene);
+  if (!scene || !camera) return;
 
-  if (scene && camera) {
-    updateShopVisualState(scene, camera);
-    updateShopDebugHandle(scene, camera);
+  const anchor = scene.getObjectByName?.(SHOP_ANCHOR_NAME);
+  const shop = scene.getObjectByName?.(SHOP_OBJECT_NAME);
+  if (!anchor || !shop) return;
+
+  const shouldShow = Boolean(window.__estudiemosForceShopView || isInsideRoom(camera));
+  const active = shouldShow && isAimingShop(camera);
+  anchor.visible = shouldShow;
+
+  if (shop.userData.prompt) {
+    shop.userData.prompt.visible = active;
+    shop.userData.prompt.position.y = 2.62 + Math.sin(performance.now() * 0.004 + shop.userData.idleSeed) * 0.045;
   }
+
+  const targetOpacity = active ? 0.72 : 0.3;
+  shop.userData.glowMaterials?.forEach((material) => {
+    material.transparent = true;
+    material.opacity += (targetOpacity - material.opacity) * 0.14;
+  });
+
+  if (shop.userData.vendor) {
+    shop.userData.vendor.rotation.z = Math.sin(performance.now() * 0.002 + shop.userData.idleSeed) * 0.012;
+  }
+
+  updateDebug(scene, camera);
 }
 
-function installSceneAddHook() {
-  if (THREE.Object3D.prototype.__estudiemosShopAddHooked) return;
-  THREE.Object3D.prototype.__estudiemosShopAddHooked = true;
-
+function patchSceneAdd() {
+  if (THREE.Object3D.prototype.__estudiemosRoomShopAddHooked) return;
+  THREE.Object3D.prototype.__estudiemosRoomShopAddHooked = true;
   const originalAdd = THREE.Object3D.prototype.add;
+
   THREE.Object3D.prototype.add = function addWithRoomShop(...objects) {
     const result = originalAdd.apply(this, objects);
-
     if (this?.isScene) {
-      lastShopScene = this;
+      lastScene = this;
       objects.forEach((object) => {
-        if (object?.isCamera) lastShopCamera = object;
+        if (object?.isCamera) lastCamera = object;
       });
-      refreshShopRuntime(this, lastShopCamera);
+      refreshShop(this, lastCamera);
     }
-
     return result;
   };
 }
 
-function installCameraUpdateHook() {
-  if (THREE.Camera.prototype.__estudiemosShopCameraHooked) return;
-  THREE.Camera.prototype.__estudiemosShopCameraHooked = true;
-
+function patchCameraUpdate() {
+  if (THREE.Camera.prototype.__estudiemosRoomShopCameraHooked) return;
+  THREE.Camera.prototype.__estudiemosRoomShopCameraHooked = true;
   const originalUpdateMatrixWorld = THREE.Camera.prototype.updateMatrixWorld;
+
   THREE.Camera.prototype.updateMatrixWorld = function updateMatrixWorldWithRoomShop(...args) {
-    lastShopCamera = this;
-    refreshShopRuntime(lastShopScene, this);
+    lastCamera = this;
+    refreshShop(lastScene, this);
     return originalUpdateMatrixWorld.apply(this, args);
   };
 }
@@ -439,9 +381,9 @@ function installCameraUpdateHook() {
 function installRoomShopWorld() {
   if (typeof window === 'undefined' || window.__estudiemosRoomShopWorldInstalled) return;
   window.__estudiemosRoomShopWorldInstalled = true;
-  window.__estudiemosRoomShopInstallMode = 'anchor-object3d';
-  installSceneAddHook();
-  installCameraUpdateHook();
+  window.__estudiemosRoomShopInstallMode = 'anchor-object3d-v3';
+  patchSceneAdd();
+  patchCameraUpdate();
 }
 
 installRoomShopWorld();
