@@ -287,17 +287,22 @@ function isAimingShop(camera) {
 }
 
 function updateDebug(scene, camera) {
+  const shop = scene?.getObjectByName?.(SHOP_OBJECT_NAME);
+  const anchor = scene?.getObjectByName?.(SHOP_ANCHOR_NAME);
+  const isVisible = Boolean(shop && shop.visible && (!anchor || anchor.visible));
+
+  document.documentElement.dataset.estudiemosRoomShopWorld = window.__estudiemosRoomShopInstallMode;
+  document.documentElement.dataset.estudiemosRoomShopState = shop ? (isVisible ? 'visible' : 'loaded') : 'missing';
+
   window.__estudiemosRoomShopDebug = {
     forceShopView(enabled = true) {
       window.__estudiemosForceShopView = Boolean(enabled);
     },
     getState() {
-      const shop = scene?.getObjectByName?.(SHOP_OBJECT_NAME);
-      const anchor = scene?.getObjectByName?.(SHOP_ANCHOR_NAME);
       const position = shop?.getWorldPosition?.(new THREE.Vector3());
       return {
         hasShop: Boolean(shop),
-        shopVisible: Boolean(shop && shop.visible && (!anchor || anchor.visible)),
+        shopVisible: isVisible,
         installMode: window.__estudiemosRoomShopInstallMode,
         shopWorldPosition: position
           ? {
@@ -381,7 +386,9 @@ function patchCameraUpdate() {
 function installRoomShopWorld() {
   if (typeof window === 'undefined' || window.__estudiemosRoomShopWorldInstalled) return;
   window.__estudiemosRoomShopWorldInstalled = true;
-  window.__estudiemosRoomShopInstallMode = 'anchor-object3d-v3';
+  window.__estudiemosRoomShopInstallMode = 'anchor-object3d-v4';
+  document.documentElement.dataset.estudiemosRoomShopWorld = 'anchor-object3d-v4';
+  document.documentElement.dataset.estudiemosRoomShopState = 'installing';
   patchSceneAdd();
   patchCameraUpdate();
 }

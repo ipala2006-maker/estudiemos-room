@@ -17,5 +17,5 @@ import '../utils/installWallAgendaKeyboardPolish.js';
 import '../utils/installComputerAgendaCleanup.js';
 import '../utils/installRoomShopWorld.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-21 11:13 ART';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-21-1113-shop-corner-v3';
+export const BUILD_LABEL = 'Pages build 2026-07-21 11:26 ART';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-21-1126-shop-corner-v4';
