@@ -8,6 +8,7 @@ import '../styles/agenda-planner.css';
 import '../styles/agenda-calendar-planner.css';
 import '../styles/room-shop.css';
 import '../styles/room-shop-polish-fix.css';
+import '../styles/computer-profile-shop-patch.css';
 import '../utils/installInteractionTargeting.js';
 import '../utils/installOpaqueHandOverlay.js';
 import '../utils/installRoomSpeakerWorld.js';
@@ -18,6 +19,7 @@ import '../utils/installWallAgendaKeyboardPolish.js';
 import '../utils/installComputerAgendaCleanup.js';
 import '../utils/installRoomShopWorld.js';
 import '../utils/installRoomShopWorldPolishFix.js';
+import '../utils/installComputerShopAppPatch.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-22 shop overlap fix';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-22-shop-ui-overlap-fix-v5';
+export const BUILD_LABEL = 'Pages build 2026-07-22 computer profile shop app';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-22-computer-profile-shop-app-v1';
