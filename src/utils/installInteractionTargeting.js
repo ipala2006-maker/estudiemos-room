@@ -45,10 +45,15 @@ const ROOM_SPEAKER_TARGET = {
   distance: 8.75
 };
 
-const SHOP_TARGET = {
+const LEGACY_SHOP_TARGET = {
   center: new THREE.Vector3(116.15, 1.55, -17.5),
   radius: 2.75,
   distance: 10.5
+};
+const BUILDING_SHOP_TARGET = {
+  center: new THREE.Vector3(14.25, 1.55, -5.9),
+  radius: 3.1,
+  distance: 11.5
 };
 
 const INTERIOR_BOUNDS = {
@@ -56,6 +61,12 @@ const INTERIOR_BOUNDS = {
   maxX: 118,
   minZ: -36,
   maxZ: 23
+};
+const LOBBY_BOUNDS = {
+  minX: -17.2,
+  maxX: 17.2,
+  minZ: -19.2,
+  maxZ: 17.2
 };
 
 const directionScratch = new THREE.Vector3();
@@ -154,32 +165,45 @@ function refreshInteractionRuntime() {
 
 function publishInteractionTarget(camera) {
   const position = camera.position;
-  const isInterior =
-    position.x >= INTERIOR_BOUNDS.minX &&
-    position.x <= INTERIOR_BOUNDS.maxX &&
-    position.z >= INTERIOR_BOUNDS.minZ &&
-    position.z <= INTERIOR_BOUNDS.maxZ;
+  const isStudyFloor = isInsideBounds(position, INTERIOR_BOUNDS);
+  const isBuildingWorld = lastWorldScene?.userData?.worldMode !== 'legacy';
+  const isLobby = isBuildingWorld && isInsideBounds(position, LOBBY_BOUNDS);
+  const isInteractiveZone = isStudyFloor || isLobby;
 
-  const target = isInterior ? getActiveTarget(camera) : null;
+  const target = isInteractiveZone ? getActiveTarget(camera, isLobby) : null;
   if (target === lastTarget) return;
 
   lastTarget = target;
   window.dispatchEvent(new CustomEvent(TARGET_EVENT, { detail: { target } }));
 }
 
-function getActiveTarget(camera) {
+function getActiveTarget(camera, isLobby = false) {
   camera.getWorldDirection(directionScratch).normalize();
   const position = camera.position;
+  const shopTarget = isLobby
+    ? BUILDING_SHOP_TARGET
+    : lastWorldScene?.userData?.worldMode === 'legacy'
+      ? LEGACY_SHOP_TARGET
+      : null;
   const candidates = [
     getSphereHit('computer', position, directionScratch, COMPUTER_TARGET),
     getAgendaHit(position, directionScratch),
     getSphereHit('speaker', position, directionScratch, ROOM_SPEAKER_TARGET),
-    getSphereHit('shop', position, directionScratch, SHOP_TARGET),
+    getSphereHit('shop', position, directionScratch, shopTarget),
     getScreenHit(position, directionScratch)
   ].filter(Boolean);
 
   candidates.sort((a, b) => a.distance - b.distance);
   return candidates[0]?.id ?? null;
+}
+
+function isInsideBounds(position, bounds) {
+  return (
+    position.x >= bounds.minX &&
+    position.x <= bounds.maxX &&
+    position.z >= bounds.minZ &&
+    position.z <= bounds.maxZ
+  );
 }
 
 function getScreenHit(position, direction) {
@@ -227,6 +251,7 @@ function getAgendaZPlaneHit(position, direction, center, width, maxDistance) {
 }
 
 function getSphereHit(id, position, direction, target) {
+  if (!target) return null;
   if (position.distanceTo(target.center) > target.distance) return null;
 
   const distance = getRaySphereHitDistance(position, direction, target.center, target.radius);

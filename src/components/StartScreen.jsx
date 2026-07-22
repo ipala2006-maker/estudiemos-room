@@ -12,7 +12,7 @@ export function StartScreen({ onEnter }) {
           <span>ROOM</span>
         </h1>
         <p className="start-lead">Tu sala digital para estudiar con calma.</p>
-        <button type="button" className="primary-action start-enter-button" onClick={onEnter} aria-label="Empezar a estudiar en Casa 1">
+        <button type="button" className="primary-action start-enter-button" onClick={onEnter} aria-label="Entrar al edificio Estudiemos">
           <Play size={18} aria-hidden="true" fill="currentColor" />
           <span>EMPEZAR A ESTUDIAR</span>
           <ArrowRight size={20} aria-hidden="true" />

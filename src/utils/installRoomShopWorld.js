@@ -4,9 +4,11 @@ import dachshundMascotRenderUrl from '../assets/dachshund-mascot-render.jpg';
 const ROOM_ORIGIN = { x: 90, z: -6 };
 const SHOP_LOCAL = new THREE.Vector3(25.85, 0, -11.5);
 const SHOP_WORLD_CENTER = new THREE.Vector3(116.15, 1.55, -17.5);
+const BUILDING_SHOP_WORLD_CENTER = new THREE.Vector3(14.25, 1.55, -5.9);
 const SHOP_OBJECT_NAME = 'casa1-salchi-shop-corner';
 const SHOP_ANCHOR_NAME = 'casa1-salchi-shop-anchor';
 const INTERIOR_BOUNDS = { minX: 62, maxX: 118, minZ: -36, maxZ: 23 };
+const BUILDING_LOBBY_BOUNDS = { minX: -17.2, maxX: 17.2, minZ: -19.2, maxZ: 17.2 };
 const SHOP_DISTANCE = 10.5;
 const SHOP_RADIUS = 2.75;
 const FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
@@ -15,6 +17,10 @@ const loader = new THREE.TextureLoader();
 const rayDirection = new THREE.Vector3();
 let lastScene = null;
 let lastCamera = null;
+
+function isWorldScene(scene) {
+  return Boolean(scene?.isScene && scene.userData?.performancePass);
+}
 
 function makeMaterial(color, options = {}) {
   return new THREE.MeshStandardMaterial({
@@ -25,7 +31,7 @@ function makeMaterial(color, options = {}) {
     emissiveIntensity: options.emissiveIntensity ?? 0,
     transparent: Boolean(options.opacity && options.opacity < 1),
     opacity: options.opacity ?? 1,
-    side: options.side
+    ...(options.side !== undefined ? { side: options.side } : {})
   });
 }
 
@@ -265,8 +271,9 @@ function addShopToScene(scene) {
 }
 
 function isInsideRoom(camera) {
+  const bounds = lastScene?.userData?.worldMode === 'legacy' ? INTERIOR_BOUNDS : BUILDING_LOBBY_BOUNDS;
   const { x, z } = camera.position;
-  return x >= INTERIOR_BOUNDS.minX && x <= INTERIOR_BOUNDS.maxX && z >= INTERIOR_BOUNDS.minZ && z <= INTERIOR_BOUNDS.maxZ;
+  return x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ;
 }
 
 function raySphereHitDistance(origin, direction, center, radius) {
@@ -286,9 +293,10 @@ function raySphereHitDistance(origin, direction, center, radius) {
 
 function isAimingShop(camera) {
   if (!camera?.isCamera || !isInsideRoom(camera)) return false;
-  if (camera.position.distanceTo(SHOP_WORLD_CENTER) > SHOP_DISTANCE) return false;
+  const shopCenter = lastScene?.userData?.worldMode === 'legacy' ? SHOP_WORLD_CENTER : BUILDING_SHOP_WORLD_CENTER;
+  if (camera.position.distanceTo(shopCenter) > SHOP_DISTANCE) return false;
   camera.getWorldDirection(rayDirection).normalize();
-  const distance = raySphereHitDistance(camera.position, rayDirection, SHOP_WORLD_CENTER, SHOP_RADIUS);
+  const distance = raySphereHitDistance(camera.position, rayDirection, shopCenter, SHOP_RADIUS);
   return distance !== null && distance <= SHOP_DISTANCE;
 }
 
@@ -366,7 +374,7 @@ function patchSceneAdd() {
 
   THREE.Object3D.prototype.add = function addWithRoomShop(...objects) {
     const result = originalAdd.apply(this, objects);
-    if (this?.isScene) {
+    if (isWorldScene(this)) {
       lastScene = this;
       objects.forEach((object) => {
         if (object?.isCamera) lastCamera = object;

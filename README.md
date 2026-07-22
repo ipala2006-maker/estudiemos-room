@@ -1,17 +1,16 @@
 # Estudiemos Room
 
-Prototipo independiente de una experiencia virtual de estudio. La app permite moverse por un lobby simple, acercarse a una casita, entrar al interior, abrir una computadora y estudiar desde una pantalla overlay con layout 70/30.
+Entorno 3D inmersivo de estudio construido con React, Three.js y Vite.
 
-## Alcance V0
+## Mundo actual
 
-- Lobby inicial con terreno plano, casita visible y estetica low-poly liviana.
-- Movimiento con WASD o flechas.
-- Entrada a la casita al acercarse y presionar `E`, `Enter` o tocar el boton.
-- Interior con escritorio, computadora, biblioteca y salida al lobby.
-- Computadora interactiva con pantalla de estudio overlay.
-- Interfaz de estudio 70/30 con area principal, estimulo visual tranquilo, selector de materia y selector de video.
-- Datos mock separados en `src/data/mockStudyContent.js`.
-- Sin backend, login, multiplayer, chat, amigos, Spotify, Netflix, YouTube libre ni progresion.
+La experiencia principal usa un edificio compacto:
+
+- Planta baja: lobby, recepcion, Tienda Salchi, ascensor y escaleras.
+- Piso 1: sala de estudio con computadora, agenda, pantalla y parlante.
+- El cambio de piso conserva las interfaces, el audio y el estado persistente porque ambos pisos viven dentro de la misma sesion de React.
+
+El vecindario anterior no fue eliminado. Puede abrirse temporalmente agregando `?world=legacy` a la URL. Para pruebas directas del primer piso puede usarse `?floor=study`.
 
 ## Como correrlo
 
@@ -20,32 +19,33 @@ npm install
 npm run dev
 ```
 
-Luego abrir la URL local que muestra Vite, normalmente:
+Abrir la URL que muestra Vite, normalmente `http://localhost:5173/estudiemos-room/`.
 
-```text
-http://localhost:5173
-```
-
-Importante: no abras `index.html` directamente desde el explorador de archivos. Esta app usa Vite y necesita correr con `npm run dev`.
+No abras `index.html` directamente: el proyecto necesita el servidor de Vite.
 
 ## Controles
 
 - `WASD` o flechas: moverse.
-- `E` o `Enter`: interactuar al estar cerca de la casita o la computadora.
-- `R`: reiniciar posicion si te perdes.
-- `Esc`: cerrar la pantalla de estudio.
+- Mouse: mirar.
+- `E`: interactuar, usar escaleras y abrir el ascensor.
+- `Q`: abrir los controles de pantalla o parlante al apuntarlos.
+- `Enter`: confirmar una seleccion en el ascensor y las interfaces compatibles.
+- `Backspace` o `Esc`: volver o cerrar paneles.
+- `R`: volver al punto inicial del lobby.
 
-## Estructura
+## Agregar un piso
 
-```text
-estudiemos-room/
-  index.html
-  package.json
-  README.md
-  src/
-    main.jsx
-    data/
-      mockStudyContent.js
-    styles/
-      app.css
+1. Agregar el piso a `BUILDING_FLOORS` en `src/maps/BuildingWorld.js`.
+2. Definir sus puntos de llegada para ascensor y escaleras.
+3. Crear su grupo 3D y colliders en `FirstPersonWorld.jsx`.
+4. Activar el grupo desde `applyFloor` y conservar los controladores globales en `main.jsx`.
+
+No se deben duplicar los estados de agenda, audio, monedas, skins ni pantalla dentro de un piso.
+
+## Verificacion
+
+```bash
+npm run build
 ```
+
+No hay scripts de lint o test automatizado configurados actualmente.

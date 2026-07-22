@@ -9,7 +9,7 @@ export function Hud({ isDoorOpen, interactionHint, focusEconomy, onBackHome, onR
   const progressSegments = Array.from({ length: 10 }, (_, index) => index);
   const filledSegments = Math.min(10, Math.max(0, Math.ceil(nextRewardPercent / 10)));
   const activeSegment = nextRewardPercent > 0 && nextRewardPercent < 100 ? Math.max(0, filledSegments - 1) : -1;
-  const sceneTitle = isDoorOpen ? 'Casa 1' : 'Lobby 3D';
+  const sceneTitle = isDoorOpen ? 'Piso 1' : 'Lobby';
   const contextLabel = interactionHint?.title ?? '';
   const contextKey = interactionHint?.control ?? '';
 

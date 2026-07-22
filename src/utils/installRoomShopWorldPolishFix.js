@@ -1,20 +1,36 @@
 import * as THREE from 'three';
 import dachshundMascotRenderUrl from '../assets/dachshund-mascot-render.jpg';
 
-const ROOM_ORIGIN = { x: 90, z: -6 };
-const SHOP_LOCAL = new THREE.Vector3(25.85, 0, -11.5);
-const SHOP_WORLD_CENTER = new THREE.Vector3(116.15, 1.55, -17.5);
 const SHOP_OBJECT_NAME = 'casa1-salchi-shop-corner';
 const SHOP_ANCHOR_NAME = 'casa1-salchi-shop-anchor';
-const INTERIOR_BOUNDS = { minX: 62, maxX: 118, minZ: -36, maxZ: 23 };
 const SHOP_DISTANCE = 10.5;
 const SHOP_RADIUS = 2.8;
 const FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
+const SHOP_PLACEMENTS = {
+  building: {
+    id: 'building-lobby',
+    anchor: new THREE.Vector3(0, 0, 0),
+    local: new THREE.Vector3(15.35, 0, -5.9),
+    center: new THREE.Vector3(14.25, 1.55, -5.9),
+    bounds: { minX: -17.2, maxX: 17.2, minZ: -19.2, maxZ: 17.2 }
+  },
+  legacy: {
+    id: 'legacy-casa1',
+    anchor: new THREE.Vector3(90, 0, -6),
+    local: new THREE.Vector3(25.85, 0, -11.5),
+    center: new THREE.Vector3(116.15, 1.55, -17.5),
+    bounds: { minX: 62, maxX: 118, minZ: -36, maxZ: 23 }
+  }
+};
 
 const loader = new THREE.TextureLoader();
 const rayDirection = new THREE.Vector3();
 let lastScene = null;
 let lastCamera = null;
+
+function isWorldScene(scene) {
+  return Boolean(scene?.isScene && scene.userData?.performancePass);
+}
 
 function material(color, options = {}) {
   return new THREE.MeshStandardMaterial({
@@ -25,7 +41,7 @@ function material(color, options = {}) {
     emissiveIntensity: options.emissiveIntensity ?? 0,
     transparent: Boolean(options.opacity && options.opacity < 1),
     opacity: options.opacity ?? 1,
-    side: options.side
+    ...(options.side !== undefined ? { side: options.side } : {})
   });
 }
 
@@ -160,7 +176,7 @@ function addDecor(parent, materials) {
   });
 }
 
-function createCleanShop(anchor) {
+function createCleanShop(anchor, placement) {
   const oldShop = anchor.getObjectByName(SHOP_OBJECT_NAME);
   if (oldShop) {
     anchor.remove(oldShop);
@@ -169,10 +185,11 @@ function createCleanShop(anchor) {
 
   const shop = new THREE.Group();
   shop.name = SHOP_OBJECT_NAME;
-  shop.position.copy(SHOP_LOCAL);
+  shop.position.copy(placement.local);
   shop.userData.interactionTarget = 'shop';
   shop.userData.idleSeed = Math.random() * Math.PI * 2;
   shop.userData.estudiemosCleanShop = true;
+  shop.userData.estudiemosPlacement = placement.id;
 
   const materials = {
     wallPanel: material(0x101917, { roughness: 0.78, metalness: 0.02 }),
@@ -255,23 +272,41 @@ function createCleanShop(anchor) {
 
 function ensureShop(scene) {
   if (!scene) return;
+  const placement = getShopPlacement(scene);
   let anchor = scene.getObjectByName?.(SHOP_ANCHOR_NAME);
   if (!anchor) {
     anchor = new THREE.Group();
     anchor.name = SHOP_ANCHOR_NAME;
-    anchor.position.set(ROOM_ORIGIN.x, 0, ROOM_ORIGIN.z);
+    anchor.position.copy(placement.anchor);
     scene.add(anchor);
   }
+  anchor.position.copy(placement.anchor);
 
   const shop = anchor.getObjectByName(SHOP_OBJECT_NAME);
-  if (!shop?.userData?.estudiemosCleanShop) {
-    createCleanShop(anchor);
+  if (!shop?.userData?.estudiemosCleanShop || shop.userData.estudiemosPlacement !== placement.id) {
+    createCleanShop(anchor, placement);
   }
 }
 
-function isInsideRoom(camera) {
+export function ensureRoomShopInScene(scene) {
+  if (!isWorldScene(scene)) return null;
+  lastScene = scene;
+  ensureShop(scene);
+  const anchor = scene.getObjectByName?.(SHOP_ANCHOR_NAME) ?? null;
+  if (anchor && scene.userData?.worldMode !== 'legacy') anchor.visible = true;
+  document.documentElement.dataset.estudiemosBuildingShop = anchor ? 'attached' : 'missing';
+  return anchor;
+}
+
+function getShopPlacement(scene) {
+  return scene?.userData?.worldMode === 'legacy' ? SHOP_PLACEMENTS.legacy : SHOP_PLACEMENTS.building;
+}
+
+function isInsideRoom(camera, scene) {
+  const placement = getShopPlacement(scene);
+  const bounds = placement.bounds;
   const { x, z } = camera.position;
-  return x >= INTERIOR_BOUNDS.minX && x <= INTERIOR_BOUNDS.maxX && z >= INTERIOR_BOUNDS.minZ && z <= INTERIOR_BOUNDS.maxZ;
+  return x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ;
 }
 
 function raySphereHitDistance(origin, direction, center, radius) {
@@ -289,11 +324,12 @@ function raySphereHitDistance(origin, direction, center, radius) {
   return Math.max(0, projected - Math.sqrt(radiusSq - closestDistanceSq));
 }
 
-function isAimingShop(camera) {
-  if (!camera?.isCamera || !isInsideRoom(camera)) return false;
-  if (camera.position.distanceTo(SHOP_WORLD_CENTER) > SHOP_DISTANCE) return false;
+function isAimingShop(camera, scene) {
+  if (!camera?.isCamera || !isInsideRoom(camera, scene)) return false;
+  const shopCenter = getShopPlacement(scene).center;
+  if (camera.position.distanceTo(shopCenter) > SHOP_DISTANCE) return false;
   camera.getWorldDirection(rayDirection).normalize();
-  const distance = raySphereHitDistance(camera.position, rayDirection, SHOP_WORLD_CENTER, SHOP_RADIUS);
+  const distance = raySphereHitDistance(camera.position, rayDirection, shopCenter, SHOP_RADIUS);
   return distance !== null && distance <= SHOP_DISTANCE;
 }
 
@@ -304,8 +340,8 @@ function refreshShop(scene = lastScene, camera = lastCamera) {
   const shop = scene.getObjectByName?.(SHOP_OBJECT_NAME);
   if (!anchor || !shop) return;
 
-  const shouldShow = Boolean(window.__estudiemosForceShopView || isInsideRoom(camera));
-  const active = shouldShow && isAimingShop(camera);
+  const shouldShow = Boolean(window.__estudiemosForceShopView || isInsideRoom(camera, scene));
+  const active = shouldShow && isAimingShop(camera, scene);
   anchor.visible = shouldShow;
   shop.visible = shouldShow;
 
@@ -335,7 +371,7 @@ function patchSceneAdd() {
 
   THREE.Object3D.prototype.add = function addWithShopPolish(...objects) {
     const result = originalAdd.apply(this, objects);
-    if (this?.isScene) {
+    if (isWorldScene(this)) {
       lastScene = this;
       objects.forEach((object) => {
         if (object?.isCamera) lastCamera = object;

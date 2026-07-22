@@ -21,5 +21,5 @@ import '../utils/installRoomShopWorld.js';
 import '../utils/installRoomShopWorldPolishFix.js';
 import '../utils/installComputerShopAppPatch.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-22 computer shop icon alignment';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-22-computer-shop-icon-alignment-v6';
+export const BUILD_LABEL = 'Building migration preview 2026-07-22';
+export const BUILD_MARKER = 'building-world-migration-preview-2026-07-22-v1';

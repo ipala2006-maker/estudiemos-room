@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BuildingElevatorPanel } from './components/BuildingElevatorPanel.jsx';
 import { FirstPersonWorld } from './components/FirstPersonWorld.jsx';
 import { Hud } from './components/Hud.jsx';
 import { RoomSpeakerPlayer, dispatchRoomSpeakerCommand } from './components/RoomSpeakerPlayer.jsx';
@@ -12,6 +13,7 @@ import { WallAgendaEditor } from './components/WallAgendaEditor.jsx';
 import { useFocusEconomy } from './hooks/useFocusEconomy.js';
 import { loadStoredAgendaItems, normalizeAgendaItems, saveAgendaItems, serializeAgendaItems, subscribeToAgendaItems } from './utils/agendaSync.js';
 import './styles/app.css';
+import './styles/building-world.css';
 import './styles/computer-os.css';
 import './styles/fullscreen-layout.css';
 import './styles/computer-os-corrections.css';
@@ -96,6 +98,9 @@ function App() {
   const [speakerRemoteOpen, setSpeakerRemoteOpen] = useState(false);
   const [roomShopOpen, setRoomShopOpen] = useState(false);
   const [wallAgendaOpen, setWallAgendaOpen] = useState(false);
+  const [elevatorPanelOpen, setElevatorPanelOpen] = useState(false);
+  const [currentFloor, setCurrentFloor] = useState('lobby');
+  const [isNearElevator, setIsNearElevator] = useState(false);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
@@ -132,6 +137,7 @@ function App() {
   const canTargetShop = hasInteractionTargetSignal ? aimedInteractionTarget === 'shop' : isAimingShop;
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
+  const travelToFloorRef = useRef(() => {});
   const screenCommandCounterRef = useRef(0);
   const speakerCommandCounterRef = useRef(0);
   const agendaStorageSnapshotRef = useRef('');
@@ -260,7 +266,13 @@ function App() {
         return;
       }
 
-      if (!hasStarted || computerOpen || screenRemoteOpen || speakerRemoteOpen || wallAgendaOpen || roomShopOpen) return;
+      if (elevatorPanelOpen && (key === 'escape' || key === 'backspace')) {
+        event.preventDefault();
+        setElevatorPanelOpen(false);
+        return;
+      }
+
+      if (!hasStarted || computerOpen || screenRemoteOpen || speakerRemoteOpen || wallAgendaOpen || roomShopOpen || elevatorPanelOpen) return;
 
       if (canTargetScreen && key === 'q') {
         document.exitPointerLock?.();
@@ -291,6 +303,12 @@ function App() {
         return;
       }
 
+      if (isNearElevator && key === 'e') {
+        document.exitPointerLock?.();
+        setElevatorPanelOpen(true);
+        return;
+      }
+
       if (isNearDoor && key === 'e') {
         toggleDoorRef.current();
       }
@@ -306,6 +324,8 @@ function App() {
     canTargetSpeaker,
     canTargetShop,
     hasStarted,
+    elevatorPanelOpen,
+    isNearElevator,
     isNearDoor,
     roomShopOpen,
     screenRemoteOpen,
@@ -319,6 +339,9 @@ function App() {
     setSpeakerRemoteOpen(false);
     setRoomShopOpen(false);
     setWallAgendaOpen(false);
+    setElevatorPanelOpen(false);
+    setCurrentFloor('lobby');
+    setIsNearElevator(false);
     setIsAimingAgendaBoard(false);
     setIsAimingScreen(false);
     setIsAimingSpeaker(false);
@@ -515,6 +538,11 @@ function App() {
     setRoomShopOpen(true);
   }
 
+  function selectElevatorFloor(floorId) {
+    setElevatorPanelOpen(false);
+    travelToFloorRef.current(floorId, 'elevator');
+  }
+
   function handleWorldPointerDown(event) {
     if (!canShowWorldPrompts || !canTargetShop || event.button > 0) return;
     if (event.target?.closest?.('button, a, input, textarea, select, [role="dialog"], .room-shop-overlay')) return;
@@ -523,7 +551,7 @@ function App() {
     openRoomShop();
   }
 
-  const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen;
+  const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen && !elevatorPanelOpen;
   const activeInteractionPrompt = canShowWorldPrompts
     ? canTargetComputer
       ? { key: 'computer', control: 'E', title: 'Abrir computadora', label: 'E - abrir computadora' }
@@ -535,12 +563,14 @@ function App() {
             ? { key: 'screen', control: 'Q', title: 'Control de pantalla', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
             : canTargetSpeaker
               ? { key: 'speaker', control: 'Q', title: 'Control de parlante', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
+              : isNearElevator
+                ? { key: 'elevator', control: 'E', title: 'Usar ascensor', label: 'E - elegir piso' }
               : isNearDoor
                 ? {
-                    key: 'door',
+                    key: 'stairs',
                     control: 'E',
-                    title: isDoorOpen ? 'Salir al barrio' : 'Entrar a Casa 1',
-                    label: `E - ${isDoorOpen ? 'salir al barrio' : 'entrar a Casa 1'}`
+                    title: isDoorOpen ? 'Bajar al lobby' : 'Subir al primer piso',
+                    label: `E - ${isDoorOpen ? 'bajar al lobby' : 'subir al primer piso'}`
                   }
                 : null
     : null;
@@ -561,11 +591,14 @@ function App() {
         onDoorOpenChange={setIsDoorOpen}
         onNearComputerChange={setIsNearComputer}
         onNearDoorChange={setIsNearDoor}
+        onNearElevatorChange={setIsNearElevator}
+        onFloorChange={setCurrentFloor}
         onAgendaBoardAimChange={setIsAimingAgendaBoard}
         onScreenAimChange={setIsAimingScreen}
         onSpeakerAimChange={setIsAimingSpeaker}
         onShopAimChange={setIsAimingShop}
         toggleDoorRef={toggleDoorRef}
+        travelToFloorRef={travelToFloorRef}
         resetRef={resetWorldRef}
         controlsEnabled={!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen}
         screenContentEnabled={!computerOpen}
@@ -663,6 +696,14 @@ function App() {
       )}
 
       {roomShopOpen && <RoomShopOverlay focusEconomy={focusEconomy} onClose={() => setRoomShopOpen(false)} />}
+
+      {elevatorPanelOpen && (
+        <BuildingElevatorPanel
+          currentFloor={currentFloor}
+          onSelectFloor={selectElevatorFloor}
+          onClose={() => setElevatorPanelOpen(false)}
+        />
+      )}
     </main>
   );
 }
