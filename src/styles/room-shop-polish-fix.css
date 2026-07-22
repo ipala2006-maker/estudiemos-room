@@ -38,8 +38,8 @@
 }
 
 .room-shop-layout {
-  grid-template-columns: minmax(0, 1fr) minmax(230px, 270px) !important;
-  gap: 14px !important;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 220px) !important;
+  gap: 12px !important;
   padding: 0 22px 18px !important;
   min-height: 0 !important;
   overflow: hidden !important;
@@ -54,6 +54,7 @@
 .room-shop-card {
   display: grid !important;
   grid-template-columns: 80px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto auto !important;
   align-items: center !important;
   min-height: 120px !important;
   padding: 10px 12px !important;
@@ -126,9 +127,12 @@
   min-width: 0;
 }
 
+.room-shop-card-copy .room-shop-state {
+  display: none !important;
+}
+
 .room-shop-card > .room-shop-state {
-  grid-column: 2;
-  justify-self: start;
+  display: none !important;
 }
 
 .room-shop-state {
@@ -140,8 +144,9 @@
 
 .room-shop-rank-track {
   grid-column: 2 !important;
+  grid-row: 2 !important;
   width: 100% !important;
-  margin: 8px 0 4px !important;
+  margin: 4px 0 2px !important;
   gap: 6px !important;
   align-self: end !important;
 }
@@ -154,6 +159,7 @@
 
 .room-shop-card-actions {
   grid-column: 2 !important;
+  grid-row: 3 !important;
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 7px !important;
@@ -170,35 +176,37 @@
 }
 
 .room-shop-detail {
+  width: min(220px, 100%) !important;
+  justify-self: end !important;
   min-height: 0 !important;
-  padding: 10px !important;
-  gap: 7px !important;
+  padding: 8px !important;
+  gap: 6px !important;
   overflow: hidden !important;
 }
 
 .room-shop-vendor-card {
-  min-height: 132px !important;
-  max-height: 150px !important;
+  min-height: 104px !important;
+  max-height: 116px !important;
   padding: 8px !important;
   overflow: hidden !important;
 }
 
 .room-shop-vendor-card .dachshund-mascot-profile,
 .room-shop-vendor-card .dachshund-render-card {
-  width: min(100%, 136px) !important;
-  max-height: 136px !important;
+  width: min(100%, 108px) !important;
+  max-height: 108px !important;
   margin-inline: auto !important;
 }
 
 .room-shop-detail-copy h3 {
-  font-size: 1rem !important;
+  font-size: 0.92rem !important;
   line-height: 1.05 !important;
 }
 
 .room-shop-detail-copy p,
 .room-shop-detail-note,
 .room-shop-detail small {
-  font-size: 0.7rem !important;
+  font-size: 0.66rem !important;
   line-height: 1.3 !important;
 }
 
@@ -215,24 +223,26 @@
 }
 
 .room-shop-detail-stats div {
-  min-height: 28px !important;
-  padding: 0 8px !important;
+  min-height: 25px !important;
+  padding: 0 7px !important;
+  font-size: 0.68rem !important;
 }
 
 .room-shop-detail-ranks {
-  gap: 6px !important;
+  gap: 5px !important;
 }
 
 .room-shop-detail-ranks span {
-  width: 26px !important;
-  height: 26px !important;
-  font-size: 0.72rem !important;
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 0.66rem !important;
 }
 
 .room-shop-detail-button {
-  min-height: 34px !important;
+  min-height: 30px !important;
   border: 0 !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
+  font-size: 0.74rem !important;
 }
 
 .room-shop-detail small {
