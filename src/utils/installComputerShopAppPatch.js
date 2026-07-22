@@ -1,4 +1,5 @@
 const PATCH_FLAG = '__estudiemosComputerShopAppPatchV2';
+let activeComputerRoot = null;
 
 const textOf = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
 const labelMatches = (node, label) => textOf(node).includes(label.toLowerCase());
@@ -28,6 +29,15 @@ const getShopButton = () => {
   button.setAttribute('aria-label', 'Tienda');
   button.title = 'Abrir la misma tienda Salchi de Casa 1.';
   button.innerHTML = `${createIcon()}<strong>Tienda</strong><span>Tienda Salchi</span>`;
+  button.addEventListener('pointerdown', (event) => {
+    event.stopPropagation();
+  });
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const root = button.__salchiShopRoot ?? activeComputerRoot ?? document.querySelector('.estudiemos-os-live-desktop');
+    if (root) openShop(root);
+  });
   document.body.appendChild(button);
   return button;
 };
@@ -110,19 +120,17 @@ const positionShopButton = (root) => {
   const profileRect = profileButton?.getBoundingClientRect();
   const hasWindowOpen = Boolean(root.querySelector('.os-window'));
   const rootVisible = rootRect.width > 120 && rootRect.height > 120 && rootRect.bottom > 0 && rootRect.right > 0;
+  activeComputerRoot = root;
+  button.__salchiShopRoot = root;
 
   button.classList.toggle('is-visible', rootVisible && !hasWindowOpen);
   button.classList.toggle('is-active', root.classList.contains('salchi-shop-mode'));
   if (!rootVisible || hasWindowOpen) return;
 
-  const left = profileRect ? profileRect.left + profileRect.width + 14 : rootRect.left + 170;
-  const top = profileRect ? profileRect.top : rootRect.top + 190;
-  button.style.left = `${Math.max(rootRect.left + 16, Math.min(left, rootRect.right - 136))}px`;
-  button.style.top = `${Math.max(rootRect.top + 86, Math.min(top, rootRect.bottom - 128))}px`;
-  button.onclick = (event) => {
-    event.preventDefault();
-    openShop(root);
-  };
+  const left = profileRect ? profileRect.left : rootRect.left + 32;
+  const top = profileRect ? profileRect.bottom + 22 : rootRect.top + 330;
+  button.style.left = `${Math.max(rootRect.left + 16, Math.min(left, rootRect.right - 104))}px`;
+  button.style.top = `${Math.max(rootRect.top + 86, Math.min(top, rootRect.bottom - 104))}px`;
 };
 
 const patchRoot = (root) => {
