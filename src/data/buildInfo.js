@@ -21,5 +21,5 @@ import '../utils/installRoomShopWorld.js';
 import '../utils/installRoomShopWorldPolishFix.js';
 import '../utils/installComputerShopAppPatch.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-22 computer profile shop app';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-22-computer-profile-shop-app-v1';
+export const BUILD_LABEL = 'Pages build 2026-07-22 computer profile shop app fix';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-22-computer-profile-shop-app-v2';
