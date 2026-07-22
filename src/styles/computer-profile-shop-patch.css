@@ -29,22 +29,84 @@
   padding: clamp(14px, 2vw, 22px) !important;
 }
 
-.computer-overlay .estudiemos-os-live-desktop .os-desktop-icon.salchi-shop-shortcut .os-icon-tile,
-.computer-overlay .estudiemos-os-live-desktop .os-running-apps button.salchi-shop-taskbar-button {
-  background: linear-gradient(145deg, rgba(245, 235, 160, 0.96), rgba(171, 229, 198, 0.92)) !important;
-  color: #0d211c !important;
+.salchi-shop-floating-app {
+  position: fixed;
+  z-index: 100000;
+  display: none;
+  width: 118px;
+  min-height: 96px;
+  border: 0;
+  border-radius: 22px;
+  padding: 10px 9px;
+  color: #fff8dc;
+  background: linear-gradient(145deg, rgba(27, 42, 37, 0.94), rgba(16, 27, 24, 0.95));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(224, 247, 215, 0.16);
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transform: translateZ(0);
 }
 
-.computer-overlay .estudiemos-os-live-desktop .os-desktop-icon.salchi-shop-shortcut .os-icon-copy strong,
-.computer-overlay .estudiemos-os-live-desktop .os-running-apps button.salchi-shop-taskbar-button span {
-  color: #fff8dc !important;
+.salchi-shop-floating-app.is-visible {
+  display: grid;
+  place-items: center;
+  gap: 7px;
 }
 
-.computer-overlay .estudiemos-os-live-desktop .os-desktop-icon.salchi-shop-shortcut .os-icon-state {
-  color: rgba(255, 248, 220, 0.72) !important;
+.salchi-shop-floating-app:hover,
+.salchi-shop-floating-app:focus-visible {
+  background: linear-gradient(145deg, rgba(47, 68, 58, 0.98), rgba(22, 36, 32, 0.98));
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.42), 0 0 0 2px rgba(196, 250, 222, 0.34);
+  outline: none;
 }
 
-.computer-overlay .estudiemos-os-live-desktop.salchi-shop-mode .os-desktop-icon.salchi-shop-shortcut,
-.computer-overlay .estudiemos-os-live-desktop.salchi-shop-mode .os-running-apps button.salchi-shop-taskbar-button {
-  outline: 1px solid rgba(196, 250, 222, 0.7);
+.salchi-shop-floating-app .salchi-shop-floating-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  color: #0d211c;
+  background: linear-gradient(145deg, rgba(245, 235, 160, 0.98), rgba(171, 229, 198, 0.94));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48), 0 9px 20px rgba(0, 0, 0, 0.24);
+}
+
+.salchi-shop-floating-app strong {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  color: #fff8dc;
+  font-size: 0.9rem;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.salchi-shop-floating-app span:last-child {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  color: rgba(255, 248, 220, 0.64);
+  font-size: 0.68rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.salchi-shop-floating-app.is-active {
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.44), 0 0 0 2px rgba(196, 250, 222, 0.5);
+}
+
+@media (max-width: 720px) {
+  .salchi-shop-floating-app {
+    width: 96px;
+    min-height: 84px;
+    border-radius: 18px;
+  }
+
+  .salchi-shop-floating-app .salchi-shop-floating-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+  }
 }
