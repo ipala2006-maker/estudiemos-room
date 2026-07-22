@@ -93,6 +93,26 @@ const openCleanProfile = (root) => {
   });
 };
 
+const getDesktopRowStep = (desktop, profileRect) => {
+  if (!desktop || !profileRect) return 108;
+
+  const rects = Array.from(desktop.querySelectorAll('.os-desktop-icon'))
+    .map((item) => item.getBoundingClientRect())
+    .filter((rect) => rect.width > 0 && rect.height > 0)
+    .filter((rect) => Math.abs(rect.left - profileRect.left) < Math.max(12, profileRect.width * 0.35))
+    .sort((a, b) => a.top - b.top);
+
+  const steps = [];
+  for (let index = 1; index < rects.length; index += 1) {
+    const step = rects[index].top - rects[index - 1].top;
+    if (step > 48) steps.push(step);
+  }
+
+  if (!steps.length) return profileRect.height + 24;
+  steps.sort((a, b) => a - b);
+  return steps[Math.floor(steps.length / 2)];
+};
+
 const wireProfileButtons = (root) => {
   const buttons = Array.from(root.querySelectorAll('.os-desktop-icon, .os-running-apps button'))
     .filter((button) => labelMatches(button, 'perfil'));
@@ -119,10 +139,16 @@ const positionShopButton = (root) => {
   button.classList.toggle('is-active', root.classList.contains('salchi-shop-mode'));
   if (!rootVisible || hasWindowOpen) return;
 
+  const rowStep = getDesktopRowStep(desktop, profileRect);
+  const buttonWidth = Math.max(78, Math.round(profileRect?.width ?? button.offsetWidth ?? 88));
+  const buttonHeight = Math.max(76, Math.round(profileRect?.height ?? button.offsetHeight ?? 82));
   const left = profileRect ? profileRect.left : rootRect.left + 32;
-  const top = profileRect ? profileRect.bottom + 22 : rootRect.top + 330;
-  button.style.left = `${Math.max(rootRect.left + 16, Math.min(left, rootRect.right - 104))}px`;
-  button.style.top = `${Math.max(rootRect.top + 86, Math.min(top, rootRect.bottom - 104))}px`;
+  const top = profileRect ? profileRect.top + rowStep : rootRect.top + 330;
+
+  button.style.width = `${buttonWidth}px`;
+  button.style.minHeight = `${buttonHeight}px`;
+  button.style.left = `${Math.max(rootRect.left + 16, Math.min(left, rootRect.right - buttonWidth - 8))}px`;
+  button.style.top = `${Math.max(rootRect.top + 86, Math.min(top, rootRect.bottom - buttonHeight - 8))}px`;
 };
 
 const patchRoot = (root) => {
