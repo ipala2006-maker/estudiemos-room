@@ -3,19 +3,19 @@
 }
 
 .room-shop-panel {
-  width: min(1080px, calc(100vw - 24px)) !important;
+  width: min(1060px, calc(100vw - 24px)) !important;
   height: min(620px, calc(100dvh - 24px)) !important;
   overflow: hidden !important;
 }
 
 .room-shop-header {
   grid-template-columns: minmax(0, 1fr) auto auto !important;
-  padding: 18px 22px 10px !important;
+  padding: 16px 22px 8px !important;
   gap: 12px !important;
 }
 
 .room-shop-title h2 {
-  font-size: clamp(2.15rem, 4.1vw, 3.6rem) !important;
+  font-size: clamp(2.05rem, 3.7vw, 3.25rem) !important;
   line-height: 0.9 !important;
 }
 
@@ -27,7 +27,7 @@
 }
 
 .room-shop-tabs {
-  padding: 0 22px 10px !important;
+  padding: 0 22px 8px !important;
   gap: 8px !important;
 }
 
@@ -38,7 +38,7 @@
 }
 
 .room-shop-layout {
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px) !important;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 270px) !important;
   gap: 14px !important;
   padding: 0 22px 18px !important;
   min-height: 0 !important;
@@ -53,22 +53,22 @@
 
 .room-shop-card {
   display: grid !important;
-  grid-template-columns: 88px minmax(0, 1fr) !important;
+  grid-template-columns: 80px minmax(0, 1fr) !important;
   align-items: center !important;
-  min-height: 112px !important;
+  min-height: 120px !important;
   padding: 10px 12px !important;
-  gap: 10px 12px !important;
+  gap: 8px 12px !important;
   overflow: hidden !important;
 }
 
 .room-shop-card-preview {
   grid-row: 1 / span 2 !important;
-  width: 88px !important;
-  height: 88px !important;
-  min-width: 88px !important;
-  min-height: 88px !important;
-  max-width: 88px !important;
-  max-height: 88px !important;
+  width: 80px !important;
+  height: 80px !important;
+  min-width: 80px !important;
+  min-height: 80px !important;
+  max-width: 80px !important;
+  max-height: 80px !important;
   padding: 5px !important;
   overflow: hidden !important;
   border-radius: 14px !important;
@@ -119,7 +119,7 @@
 }
 
 .room-shop-card-meta {
-  display: flex;
+  display: none !important;
   align-items: center;
   gap: 8px;
   margin: 5px 0 3px;
@@ -141,8 +141,9 @@
 .room-shop-rank-track {
   grid-column: 2 !important;
   width: 100% !important;
-  margin: 2px 0 !important;
+  margin: 8px 0 4px !important;
   gap: 6px !important;
+  align-self: end !important;
 }
 
 .room-shop-rank-track span {
@@ -157,6 +158,7 @@
   flex-wrap: wrap !important;
   gap: 7px !important;
   min-width: 0 !important;
+  align-self: start !important;
 }
 
 .room-shop-card-actions button,
@@ -169,34 +171,43 @@
 
 .room-shop-detail {
   min-height: 0 !important;
-  padding: 12px !important;
-  gap: 8px !important;
+  padding: 10px !important;
+  gap: 7px !important;
   overflow: hidden !important;
 }
 
 .room-shop-vendor-card {
-  min-height: 170px !important;
-  padding: 10px !important;
+  min-height: 132px !important;
+  max-height: 150px !important;
+  padding: 8px !important;
   overflow: hidden !important;
 }
 
 .room-shop-vendor-card .dachshund-mascot-profile,
 .room-shop-vendor-card .dachshund-render-card {
-  width: min(100%, 190px) !important;
-  max-height: 190px !important;
+  width: min(100%, 136px) !important;
+  max-height: 136px !important;
   margin-inline: auto !important;
 }
 
 .room-shop-detail-copy h3 {
-  font-size: 1.12rem !important;
+  font-size: 1rem !important;
   line-height: 1.05 !important;
 }
 
 .room-shop-detail-copy p,
 .room-shop-detail-note,
 .room-shop-detail small {
-  font-size: 0.76rem !important;
+  font-size: 0.7rem !important;
   line-height: 1.3 !important;
+}
+
+.room-shop-detail-copy p,
+.room-shop-detail-note {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
 }
 
 .room-shop-detail-stats {
@@ -204,8 +215,8 @@
 }
 
 .room-shop-detail-stats div {
-  min-height: 32px !important;
-  padding: 0 9px !important;
+  min-height: 28px !important;
+  padding: 0 8px !important;
 }
 
 .room-shop-detail-ranks {
@@ -213,14 +224,19 @@
 }
 
 .room-shop-detail-ranks span {
-  width: 30px !important;
-  height: 30px !important;
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 0.72rem !important;
 }
 
 .room-shop-detail-button {
-  min-height: 38px !important;
+  min-height: 34px !important;
   border: 0 !important;
   border-radius: 12px !important;
+}
+
+.room-shop-detail small {
+  display: none !important;
 }
 
 @media (max-width: 900px) {
