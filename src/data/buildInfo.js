@@ -21,5 +21,5 @@ import '../utils/installRoomShopWorld.js';
 import '../utils/installRoomShopWorldPolishFix.js';
 import '../utils/installComputerShopAppPatch.js';
 
-export const BUILD_LABEL = 'Pages build 2026-07-22 computer shop icon fix';
-export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-22-computer-shop-icon-fix-v3';
+export const BUILD_LABEL = 'Pages build 2026-07-22 shared salchi shop';
+export const BUILD_MARKER = 'pages-visible-build-marker-2026-07-22-shared-salchi-shop-v4';
