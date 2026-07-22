@@ -123,46 +123,38 @@ function makeDogVendor() {
   body.position.set(-0.12, 2.05, -0.18);
   body.rotation.y = -Math.PI / 2;
   body.scale.setScalar(1.06);
+  body.renderOrder = 2;
   return body;
 }
 
 function addDecor(parent, materials) {
-  [-0.58, 0, 0.58].forEach((z, index) => {
+  [-0.48, 0, 0.48].forEach((z, index) => {
     const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.055, 28), materials.gold);
     coin.name = 'salchi-shop-coin';
-    coin.position.set(-0.72, 1.34 + index * 0.03, z);
+    coin.position.set(-0.78, 1.28 + index * 0.03, z);
     coin.rotation.z = Math.PI / 2;
     coin.castShadow = true;
     parent.add(coin);
   });
 
   [
-    { z: -1.52, material: materials.teal },
-    { z: 1.52, material: materials.mint }
-  ].forEach(({ z, material }) => {
-    addBox(parent, 'salchi-shop-skin-card', [0.18, 0.74, 0.56], [-0.72, 1.58, z], material);
+    { z: -1.42, title: 'SKIN', material: materials.teal },
+    { z: 1.42, title: 'RANGO', material: materials.mint }
+  ].forEach(({ z, title, material }) => {
+    addBox(parent, 'salchi-shop-skin-card', [0.14, 0.62, 0.5], [-0.76, 1.48, z], material);
     const badge = new THREE.Mesh(new THREE.CircleGeometry(0.18, 24), materials.paper);
     badge.name = 'salchi-shop-card-badge';
-    badge.position.set(-0.826, 1.64, z);
+    badge.position.set(-0.84, 1.52, z);
     badge.rotation.y = -Math.PI / 2;
     badge.castShadow = true;
     parent.add(badge);
-  });
-}
 
-function addSoftEdges(group) {
-  group.traverse((child) => {
-    if (!child?.isMesh || !child.geometry) return;
-    child.add(
-      new THREE.LineSegments(
-        new THREE.EdgesGeometry(child.geometry, 25),
-        new THREE.LineBasicMaterial({
-          color: 0x030505,
-          transparent: true,
-          opacity: 0.07,
-          depthWrite: false
-        })
-      )
+    addRotatedLabel(
+      parent,
+      `salchi-shop-mini-label-${title.toLowerCase()}`,
+      { title, width: 360, height: 160, titleSize: 54, opacity: 0.9 },
+      [-0.86, 1.86, z],
+      [0.54, 0.24, 1]
     );
   });
 }
@@ -178,38 +170,52 @@ function createShopCorner(anchor) {
   shop.userData.idleSeed = Math.random() * Math.PI * 2;
 
   const materials = {
-    wallGlow: makeMaterial(0x9edfc8, { emissive: 0x9edfc8, emissiveIntensity: 0.16, opacity: 0.28 }),
-    wood: makeMaterial(0x594233, { roughness: 0.68, metalness: 0.02 }),
-    dark: makeMaterial(0x121918, { roughness: 0.58, metalness: 0.06 }),
-    gold: makeMaterial(0xe0c47a, { emissive: 0xe0c47a, emissiveIntensity: 0.24, roughness: 0.32 }),
-    teal: makeMaterial(0x2a6f64, { roughness: 0.44, metalness: 0.02 }),
-    mint: makeMaterial(0x8ed7d2, { roughness: 0.44, metalness: 0.02 }),
+    wallPanel: makeMaterial(0x17201d, { roughness: 0.72, metalness: 0.02 }),
+    wallGlow: makeMaterial(0x9edfc8, { emissive: 0x9edfc8, emissiveIntensity: 0.08, opacity: 0.18 }),
+    wood: makeMaterial(0x4d392b, { roughness: 0.72, metalness: 0.02 }),
+    dark: makeMaterial(0x0e1514, { roughness: 0.62, metalness: 0.06 }),
+    trim: makeMaterial(0xc7a765, { emissive: 0xc7a765, emissiveIntensity: 0.12, roughness: 0.38, metalness: 0.08 }),
+    gold: makeMaterial(0xe0c47a, { emissive: 0xe0c47a, emissiveIntensity: 0.18, roughness: 0.34 }),
+    teal: makeMaterial(0x285b51, { roughness: 0.52, metalness: 0.03 }),
+    mint: makeMaterial(0x7abeb5, { roughness: 0.48, metalness: 0.03 }),
     paper: makeMaterial(0xf4ead2, { roughness: 0.74, metalness: 0.01 })
   };
 
-  addBox(shop, 'salchi-shop-wall-panel', [0.12, 4.45, 5.15], [1.73, 3.1, 0], materials.wallGlow);
+  addBox(shop, 'salchi-shop-wall-backplate', [0.12, 3.45, 4.45], [1.76, 2.85, 0], materials.wallPanel);
+  addBox(shop, 'salchi-shop-wall-soft-glow', [0.08, 2.9, 3.65], [1.68, 2.78, 0], materials.wallGlow);
+  addBox(shop, 'salchi-shop-top-rail', [0.18, 0.12, 4.6], [1.58, 4.62, 0], materials.trim);
+  addBox(shop, 'salchi-shop-bottom-rail', [0.18, 0.1, 4.1], [1.58, 1.16, 0], materials.trim);
+  addBox(shop, 'salchi-shop-left-rail', [0.18, 3.36, 0.08], [1.58, 2.88, -2.2], materials.trim);
+  addBox(shop, 'salchi-shop-right-rail', [0.18, 3.36, 0.08], [1.58, 2.88, 2.2], materials.trim);
+
   const sign = addRotatedLabel(
     shop,
     'salchi-shop-wall-sign',
-    { title: 'TIENDA SALCHI', subtitle: 'skins  rangos  recompensas', opacity: 0.86 },
-    [1.65, 4.55, 0],
-    [4.35, 1.42, 1]
+    { title: 'TIENDA SALCHI', subtitle: 'skins  rangos  recompensas', width: 700, height: 180, titleSize: 48, opacity: 0.92 },
+    [1.49, 4.28, 0],
+    [3.55, 0.92, 1]
   );
 
-  addBox(shop, 'salchi-shop-counter', [2.26, 0.92, 4.18], [0.38, 0.64, 0], materials.wood);
-  addBox(shop, 'salchi-shop-counter-top', [2.48, 0.16, 4.42], [0.31, 1.16, 0], materials.dark);
-  addBox(shop, 'salchi-shop-counter-front', [0.14, 1.2, 4.46], [-0.82, 0.72, 0], materials.dark);
+  addBox(shop, 'salchi-shop-counter-body', [1.88, 0.72, 3.55], [0.16, 0.58, 0], materials.wood);
+  addBox(shop, 'salchi-shop-counter-top', [2.08, 0.16, 3.8], [0.1, 1.08, 0], materials.dark);
+  addBox(shop, 'salchi-shop-counter-front', [0.14, 0.84, 3.72], [-0.82, 0.62, 0], materials.dark);
+  addBox(shop, 'salchi-shop-counter-front-trim', [0.08, 0.08, 3.76], [-0.91, 1.08, 0], materials.trim);
+  addBox(shop, 'salchi-shop-counter-plinth', [1.78, 0.1, 3.45], [0.16, 0.12, 0], materials.dark);
 
   const counterLabel = addRotatedLabel(
     shop,
     'salchi-shop-counter-label',
-    { title: 'TIENDA SALCHI', subtitle: 'Skins y rangos', width: 512, height: 192, titleSize: 44 },
-    [-0.9, 0.78, 0],
-    [1.42, 0.46, 1]
+    { title: 'SALCHI', subtitle: 'tienda', width: 512, height: 180, titleSize: 52, opacity: 0.86 },
+    [-0.92, 0.68, 0],
+    [0.98, 0.32, 1]
   );
 
-  const vendorBacking = addBox(shop, 'salchi-shop-vendor-backing', [0.12, 1.74, 1.72], [-0.04, 2.05, -0.18], materials.dark);
+  const vendorBacking = addBox(shop, 'salchi-shop-vendor-backing', [0.1, 1.86, 1.68], [-0.02, 2.08, -0.18], materials.dark);
   vendorBacking.rotation.y = -Math.PI / 2;
+  addBox(shop, 'salchi-shop-vendor-frame-top', [0.12, 0.08, 1.78], [-0.1, 2.99, -0.18], materials.trim).rotation.y = -Math.PI / 2;
+  addBox(shop, 'salchi-shop-vendor-frame-bottom', [0.12, 0.08, 1.78], [-0.1, 1.17, -0.18], materials.trim).rotation.y = -Math.PI / 2;
+  addBox(shop, 'salchi-shop-vendor-frame-left', [0.12, 1.78, 0.08], [-0.1, 2.08, -1.02], materials.trim).rotation.y = -Math.PI / 2;
+  addBox(shop, 'salchi-shop-vendor-frame-right', [0.12, 1.78, 0.08], [-0.1, 2.08, 0.66], materials.trim).rotation.y = -Math.PI / 2;
   const vendor = makeDogVendor();
   shop.add(vendor);
 
@@ -224,25 +230,25 @@ function createShopCorner(anchor) {
   );
   if (prompt) prompt.visible = false;
 
-  const light = new THREE.PointLight(0xffe1a2, 0.75, 7.5, 2.1);
+  const light = new THREE.PointLight(0xffe1a2, 0.62, 6.5, 2.1);
   light.name = 'salchi-shop-warm-light';
   light.position.set(-0.35, 2.75, 0.15);
   shop.add(light);
 
   const floorGlow = new THREE.Mesh(
-    new THREE.CircleGeometry(2.75, 36),
-    new THREE.MeshBasicMaterial({ color: 0xe0c47a, transparent: true, opacity: 0.1, depthWrite: false })
+    new THREE.CircleGeometry(1.9, 40),
+    new THREE.MeshBasicMaterial({ color: 0xe0c47a, transparent: true, opacity: 0.075, depthWrite: false })
   );
   floorGlow.name = 'salchi-shop-floor-glow';
   floorGlow.rotation.x = -Math.PI / 2;
-  floorGlow.position.set(0.2, 0.03, 0);
+  floorGlow.position.set(0.08, 0.025, 0);
+  floorGlow.scale.set(0.86, 1.42, 1);
   shop.add(floorGlow);
 
   shop.userData.prompt = prompt;
   shop.userData.vendor = vendor;
   shop.userData.glowMaterials = [materials.wallGlow, sign?.material, counterLabel?.material, prompt?.material].filter(Boolean);
 
-  addSoftEdges(shop);
   anchor.add(shop);
 }
 
@@ -386,8 +392,8 @@ function patchCameraUpdate() {
 function installRoomShopWorld() {
   if (typeof window === 'undefined' || window.__estudiemosRoomShopWorldInstalled) return;
   window.__estudiemosRoomShopWorldInstalled = true;
-  window.__estudiemosRoomShopInstallMode = 'anchor-object3d-v4';
-  document.documentElement.dataset.estudiemosRoomShopWorld = 'anchor-object3d-v4';
+  window.__estudiemosRoomShopInstallMode = 'anchor-object3d-v5-polished';
+  document.documentElement.dataset.estudiemosRoomShopWorld = 'anchor-object3d-v5-polished';
   document.documentElement.dataset.estudiemosRoomShopState = 'installing';
   patchSceneAdd();
   patchCameraUpdate();

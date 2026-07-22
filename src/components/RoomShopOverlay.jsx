@@ -1,5 +1,5 @@
 import { CheckCircle2, Coins, Lock, PawPrint, ShieldCheck, Sparkles, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DachshundMascot } from './DachshundMascot.jsx';
 import {
   DACHSHUND_SKINS,
@@ -23,8 +23,23 @@ const SHOP_FILTERS = [
   ['locked', 'Bloqueados']
 ];
 
+function isTextEntryElement(element) {
+  const tagName = element?.tagName?.toLowerCase();
+  if (tagName === 'textarea' || tagName === 'select') return true;
+  if (tagName !== 'input') return Boolean(element?.isContentEditable);
+  const type = String(element.type ?? 'text').toLowerCase();
+  return !['button', 'checkbox', 'radio', 'submit', 'reset'].includes(type);
+}
+
+function getEscapedId(value) {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
+  return String(value).replace(/"/g, '');
+}
+
 export function RoomShopOverlay({ focusEconomy, onClose }) {
   const progress = focusEconomy.progress;
+  const panelRef = useRef(null);
+  const listRef = useRef(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedSkinId, setSelectedSkinId] = useState(progress.equippedSkin);
   const equippedSkin = getEquippedSkinState(progress);
@@ -62,28 +77,105 @@ export function RoomShopOverlay({ focusEconomy, onClose }) {
     [progress]
   );
 
-  const visibleCards = skinCards.filter((item) => {
-    if (activeFilter === 'unlocked') return item.purchased;
-    if (activeFilter === 'locked') return !item.purchased;
-    return activeFilter !== 'ranks';
-  });
+  const visibleCards = useMemo(
+    () =>
+      skinCards.filter((item) => {
+        if (activeFilter === 'unlocked') return item.purchased;
+        if (activeFilter === 'locked') return !item.purchased;
+        return activeFilter !== 'ranks';
+      }),
+    [activeFilter, skinCards]
+  );
 
   const selectedCard = skinCards.find((item) => item.skin.id === selectedSkinId) ?? skinCards[0];
   const selectedRemaining = getRemainingCostToMax(progress, selectedCard.skin.id);
   const selectedRemainingEstimate = estimateValidMsForCoins(Math.max(0, selectedRemaining - progress.coins));
 
-  function handlePrimaryAction(item) {
+  const handlePrimaryAction = useCallback((item) => {
     if (!item.purchased) {
       focusEconomy.actions.buySkin(item.skin.id);
       return;
     }
 
     focusEconomy.actions.equipSkin(item.skin.id);
-  }
+  }, [focusEconomy.actions]);
+
+  const selectCard = useCallback((skinId) => {
+    setSelectedSkinId(skinId);
+    window.requestAnimationFrame(() => {
+      listRef.current
+        ?.querySelector(`[data-shop-card-id="${getEscapedId(skinId)}"]`)
+        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  }, []);
+
+  useEffect(() => {
+    panelRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    if (activeFilter === 'ranks') return;
+    if (!visibleCards.length) return;
+    if (!visibleCards.some((item) => item.skin.id === selectedSkinId)) {
+      selectCard(visibleCards[0].skin.id);
+    }
+  }, [activeFilter, selectedSkinId, selectCard, visibleCards]);
+
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (isTextEntryElement(event.target)) return;
+
+      if (event.key === 'Escape' || event.key === 'Backspace') {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+        return;
+      }
+
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        event.stopPropagation();
+        const direction = event.key === 'ArrowRight' ? 1 : -1;
+        const currentIndex = Math.max(0, SHOP_FILTERS.findIndex(([filterId]) => filterId === activeFilter));
+        const nextIndex = (currentIndex + direction + SHOP_FILTERS.length) % SHOP_FILTERS.length;
+        setActiveFilter(SHOP_FILTERS[nextIndex][0]);
+        return;
+      }
+
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        const navigationCards = activeFilter === 'ranks' ? skinCards : visibleCards;
+        if (!navigationCards.length) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        const direction = event.key === 'ArrowDown' ? 1 : -1;
+        const currentIndex = Math.max(0, navigationCards.findIndex((item) => item.skin.id === selectedSkinId));
+        const nextIndex = (currentIndex + direction + navigationCards.length) % navigationCards.length;
+        selectCard(navigationCards[nextIndex].skin.id);
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!selectedCard.isEquipped && (selectedCard.purchased || selectedCard.canBuy)) {
+          handlePrimaryAction(selectedCard);
+          return;
+        }
+        if (selectedCard.canUpgrade) {
+          focusEconomy.actions.upgradeSkin(selectedCard.skin.id);
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [activeFilter, focusEconomy.actions, handlePrimaryAction, onClose, selectCard, selectedCard, selectedSkinId, skinCards, visibleCards]);
 
   return (
     <div className="room-shop-overlay" role="dialog" aria-modal="true" aria-label="Tienda Salchi" onPointerDown={(event) => event.stopPropagation()}>
-      <section className="room-shop-panel">
+      <section className="room-shop-panel" ref={panelRef} tabIndex={-1}>
         <header className="room-shop-header">
           <div className="room-shop-title">
             <span>
@@ -100,6 +192,7 @@ export function RoomShopOverlay({ focusEconomy, onClose }) {
           <button type="button" className="room-shop-close" onClick={onClose} aria-label="Cerrar tienda">
             <X size={20} aria-hidden="true" />
           </button>
+          <p className="room-shop-keyboard-hint">↑↓ elegir · ←→ filtros · Enter confirmar · Backspace volver</p>
         </header>
 
         <nav className="room-shop-tabs" aria-label="Filtros de tienda">
@@ -108,6 +201,7 @@ export function RoomShopOverlay({ focusEconomy, onClose }) {
               key={filterId}
               type="button"
               className={activeFilter === filterId ? 'is-active' : ''}
+              aria-pressed={activeFilter === filterId}
               onClick={() => setActiveFilter(filterId)}
             >
               {label}
@@ -116,18 +210,22 @@ export function RoomShopOverlay({ focusEconomy, onClose }) {
         </nav>
 
         <div className="room-shop-layout">
-          <section className="room-shop-list" aria-label="Articulos disponibles">
+          <section className="room-shop-list" ref={listRef} role="listbox" aria-label="Articulos disponibles">
             {activeFilter === 'ranks' ? (
               <RankGuide selectedCard={selectedCard} />
             ) : (
               visibleCards.map((item) => (
                 <article
                   key={item.skin.id}
+                  data-shop-card-id={item.skin.id}
+                  role="option"
+                  aria-selected={selectedCard.skin.id === item.skin.id}
                   className={`room-shop-card${item.isEquipped ? ' is-equipped' : ''}${!item.purchased ? ' is-locked' : ''}${
                     selectedCard.skin.id === item.skin.id ? ' is-selected' : ''
                   }`}
+                  onClick={() => selectCard(item.skin.id)}
                 >
-                  <button type="button" className="room-shop-card-preview" onClick={() => setSelectedSkinId(item.skin.id)}>
+                  <button type="button" className="room-shop-card-preview" onFocus={() => selectCard(item.skin.id)} onClick={() => selectCard(item.skin.id)}>
                     <DachshundMascot skinId={item.skin.id} rank={item.visibleRank} size="shop" showBadges={false} />
                   </button>
                   <div className="room-shop-card-copy">
