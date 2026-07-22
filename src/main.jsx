@@ -195,6 +195,16 @@ function App() {
   }, []);
 
   useEffect(() => {
+    function openSharedRoomShop() {
+      document.exitPointerLock?.();
+      setRoomShopOpen(true);
+    }
+
+    window.addEventListener('estudiemos-room-open-shop', openSharedRoomShop);
+    return () => window.removeEventListener('estudiemos-room-open-shop', openSharedRoomShop);
+  }, []);
+
+  useEffect(() => {
     function onPointerLockChange() {
       setIsPointerLocked(Boolean(document.pointerLockElement));
     }
