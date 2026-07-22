@@ -1,0 +1,50 @@
+.computer-overlay .estudiemos-os-live-desktop:not(.salchi-shop-mode) .focus-profile-app {
+  overflow: hidden !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop:not(.salchi-shop-mode) .focus-profile-app > :not(.focus-hero-panel) {
+  display: none !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop.salchi-shop-mode .focus-profile-app {
+  overflow: auto !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop.salchi-shop-mode .focus-profile-app > :not(.focus-profile-tabs):not(.focus-shop-grid) {
+  display: none !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop.salchi-shop-mode .focus-profile-tabs {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop.salchi-shop-mode .focus-shop-grid {
+  display: grid !important;
+  margin: 0 !important;
+  padding: clamp(14px, 2vw, 22px) !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .os-desktop-icon.salchi-shop-shortcut .os-icon-tile,
+.computer-overlay .estudiemos-os-live-desktop .os-running-apps button.salchi-shop-taskbar-button {
+  background: linear-gradient(145deg, rgba(245, 235, 160, 0.96), rgba(171, 229, 198, 0.92)) !important;
+  color: #0d211c !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .os-desktop-icon.salchi-shop-shortcut .os-icon-copy strong,
+.computer-overlay .estudiemos-os-live-desktop .os-running-apps button.salchi-shop-taskbar-button span {
+  color: #fff8dc !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop .os-desktop-icon.salchi-shop-shortcut .os-icon-state {
+  color: rgba(255, 248, 220, 0.72) !important;
+}
+
+.computer-overlay .estudiemos-os-live-desktop.salchi-shop-mode .os-desktop-icon.salchi-shop-shortcut,
+.computer-overlay .estudiemos-os-live-desktop.salchi-shop-mode .os-running-apps button.salchi-shop-taskbar-button {
+  outline: 1px solid rgba(196, 250, 222, 0.7);
+}
