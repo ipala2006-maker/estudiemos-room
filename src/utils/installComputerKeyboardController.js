@@ -195,6 +195,7 @@ function installComputerKeyboardController() {
     'keydown',
     (event) => {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (document.querySelector('.room-shop-overlay')) return;
 
       const root = getComputerRoot();
       if (!root) return;
