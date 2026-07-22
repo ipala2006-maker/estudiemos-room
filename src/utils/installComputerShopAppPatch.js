@@ -42,11 +42,6 @@ const getShopButton = () => {
   return button;
 };
 
-const clickShopTab = (root) => {
-  const shopTab = findButtonByLabel(root, '.focus-profile-tabs button', 'tienda');
-  if (shopTab) shopTab.click();
-};
-
 const clickOverviewTab = (root) => {
   const overviewTab = findButtonByLabel(root, '.focus-profile-tabs button', 'resumen');
   if (overviewTab) overviewTab.click();
@@ -77,18 +72,15 @@ const schedule = (callback) => {
   });
 };
 
-const openProfileWindow = (root) => {
-  const profileButton =
-    findButtonByLabel(root, '.os-desktop-icon', 'perfil') ??
-    findButtonByLabel(root, '.os-running-apps button', 'perfil');
-  if (profileButton) profileButton.click();
-};
-
 const openShop = (root) => {
-  openProfileWindow(root);
-  root.classList.add('salchi-shop-mode');
+  root.classList.remove('salchi-shop-mode');
+  window.dispatchEvent(new CustomEvent('estudiemos-room-open-shop', {
+    detail: {
+      source: 'computer',
+      surface: 'salchi-shop'
+    }
+  }));
   schedule(() => {
-    clickShopTab(root);
     updateWindowTitle(root);
   });
 };
