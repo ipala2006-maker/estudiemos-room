@@ -4,11 +4,11 @@ import dachshundMascotRenderUrl from '../assets/dachshund-mascot-render.jpg';
 const ROOM_ORIGIN = { x: 90, z: -6 };
 const SHOP_LOCAL = new THREE.Vector3(25.85, 0, -11.5);
 const SHOP_WORLD_CENTER = new THREE.Vector3(116.15, 1.55, -17.5);
-const BUILDING_SHOP_WORLD_CENTER = new THREE.Vector3(14.25, 1.55, -5.9);
+const BUILDING_SHOP_WORLD_CENTER = new THREE.Vector3(101.55, -8.45, 26.8);
 const SHOP_OBJECT_NAME = 'casa1-salchi-shop-corner';
 const SHOP_ANCHOR_NAME = 'casa1-salchi-shop-anchor';
 const INTERIOR_BOUNDS = { minX: 62, maxX: 118, minZ: -36, maxZ: 23 };
-const BUILDING_LOBBY_BOUNDS = { minX: -17.2, maxX: 17.2, minZ: -19.2, maxZ: 17.2 };
+const BUILDING_LOBBY_BOUNDS = { minX: 70.1, maxX: 104.5, minY: -10.8, maxY: -3.2, minZ: 13.5, maxZ: 49.9 };
 const SHOP_DISTANCE = 10.5;
 const SHOP_RADIUS = 2.75;
 const FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
@@ -272,8 +272,9 @@ function addShopToScene(scene) {
 
 function isInsideRoom(camera) {
   const bounds = lastScene?.userData?.worldMode === 'legacy' ? INTERIOR_BOUNDS : BUILDING_LOBBY_BOUNDS;
-  const { x, z } = camera.position;
-  return x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ;
+  const { x, y, z } = camera.position;
+  const insideHeight = bounds.minY === undefined || (y >= bounds.minY && y <= bounds.maxY);
+  return insideHeight && x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ;
 }
 
 function raySphereHitDistance(origin, direction, center, radius) {

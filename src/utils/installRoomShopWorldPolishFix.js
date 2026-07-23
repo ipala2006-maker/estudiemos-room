@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import dachshundMascotRenderUrl from '../assets/dachshund-mascot-render.jpg';
+import { BUILDING_LOBBY_OFFSET } from '../maps/BuildingWorld.js';
 
 const SHOP_OBJECT_NAME = 'casa1-salchi-shop-corner';
 const SHOP_ANCHOR_NAME = 'casa1-salchi-shop-anchor';
@@ -9,10 +10,10 @@ const FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
 const SHOP_PLACEMENTS = {
   building: {
     id: 'building-lobby',
-    anchor: new THREE.Vector3(0, 0, 0),
+    anchor: BUILDING_LOBBY_OFFSET.clone(),
     local: new THREE.Vector3(15.35, 0, -5.9),
-    center: new THREE.Vector3(14.25, 1.55, -5.9),
-    bounds: { minX: -17.2, maxX: 17.2, minZ: -19.2, maxZ: 17.2 }
+    center: new THREE.Vector3(101.55, -8.45, 26.8),
+    bounds: { minX: 70.1, maxX: 104.5, minY: -10.8, maxY: -3.2, minZ: 13.5, maxZ: 49.9 }
   },
   legacy: {
     id: 'legacy-casa1',
@@ -305,8 +306,9 @@ function getShopPlacement(scene) {
 function isInsideRoom(camera, scene) {
   const placement = getShopPlacement(scene);
   const bounds = placement.bounds;
-  const { x, z } = camera.position;
-  return x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ;
+  const { x, y, z } = camera.position;
+  const insideHeight = bounds.minY === undefined || (y >= bounds.minY && y <= bounds.maxY);
+  return insideHeight && x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ;
 }
 
 function raySphereHitDistance(origin, direction, center, radius) {

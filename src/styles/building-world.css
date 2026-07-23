@@ -158,38 +158,6 @@
   font: inherit;
 }
 
-.building-transition-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  opacity: 0;
-  color: #fff8df;
-  background: #08100f;
-  transition: opacity 260ms ease;
-}
-
-.building-transition-overlay.is-visible {
-  opacity: 1;
-}
-
-.building-transition-overlay div {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-}
-
-.building-transition-overlay strong {
-  font-size: clamp(1rem, 3vw, 1.45rem);
-}
-
-.building-transition-overlay span {
-  color: #9ec9b9;
-  font-size: 0.82rem;
-}
-
 @media (max-width: 560px) {
   .building-elevator-overlay {
     padding: 12px;

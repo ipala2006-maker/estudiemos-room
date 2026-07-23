@@ -51,7 +51,7 @@ const LEGACY_SHOP_TARGET = {
   distance: 10.5
 };
 const BUILDING_SHOP_TARGET = {
-  center: new THREE.Vector3(14.25, 1.55, -5.9),
+  center: new THREE.Vector3(101.55, -8.45, 26.8),
   radius: 3.1,
   distance: 11.5
 };
@@ -59,14 +59,18 @@ const BUILDING_SHOP_TARGET = {
 const INTERIOR_BOUNDS = {
   minX: 62,
   maxX: 118,
+  minY: -1,
+  maxY: 18,
   minZ: -36,
   maxZ: 23
 };
 const LOBBY_BOUNDS = {
-  minX: -17.2,
-  maxX: 17.2,
-  minZ: -19.2,
-  maxZ: 17.2
+  minX: 70.1,
+  maxX: 104.5,
+  minY: -10.8,
+  maxY: -3.2,
+  minZ: 13.5,
+  maxZ: 49.9
 };
 
 const directionScratch = new THREE.Vector3();
@@ -201,6 +205,7 @@ function isInsideBounds(position, bounds) {
   return (
     position.x >= bounds.minX &&
     position.x <= bounds.maxX &&
+    (bounds.minY === undefined || (position.y >= bounds.minY && position.y <= bounds.maxY)) &&
     position.z >= bounds.minZ &&
     position.z <= bounds.maxZ
   );

@@ -22,4 +22,4 @@ import '../utils/installRoomShopWorldPolishFix.js';
 import '../utils/installComputerShopAppPatch.js';
 
 export const BUILD_LABEL = 'Building migration preview 2026-07-22';
-export const BUILD_MARKER = 'building-world-migration-preview-2026-07-22-v1';
+export const BUILD_MARKER = 'physical-stairs-elevator-2026-07-22-v2';
