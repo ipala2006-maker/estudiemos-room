@@ -101,6 +101,7 @@ function App() {
   const [elevatorPanelOpen, setElevatorPanelOpen] = useState(false);
   const [currentFloor, setCurrentFloor] = useState('lobby');
   const [isNearElevator, setIsNearElevator] = useState(false);
+  const [elevatorAction, setElevatorAction] = useState(null);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
@@ -138,6 +139,7 @@ function App() {
   const resetWorldRef = useRef(() => {});
   const toggleDoorRef = useRef(() => {});
   const travelToFloorRef = useRef(() => {});
+  const elevatorActionRef = useRef(() => {});
   const screenCommandCounterRef = useRef(0);
   const speakerCommandCounterRef = useRef(0);
   const agendaStorageSnapshotRef = useRef('');
@@ -304,8 +306,13 @@ function App() {
       }
 
       if (isNearElevator && key === 'e') {
-        document.exitPointerLock?.();
-        setElevatorPanelOpen(true);
+        event.preventDefault();
+        if (elevatorAction === 'select') {
+          document.exitPointerLock?.();
+          setElevatorPanelOpen(true);
+        } else {
+          elevatorActionRef.current();
+        }
         return;
       }
 
@@ -325,6 +332,7 @@ function App() {
     canTargetShop,
     hasStarted,
     elevatorPanelOpen,
+    elevatorAction,
     isNearElevator,
     isNearDoor,
     roomShopOpen,
@@ -342,6 +350,7 @@ function App() {
     setElevatorPanelOpen(false);
     setCurrentFloor('lobby');
     setIsNearElevator(false);
+    setElevatorAction(null);
     setIsAimingAgendaBoard(false);
     setIsAimingScreen(false);
     setIsAimingSpeaker(false);
@@ -564,7 +573,13 @@ function App() {
             : canTargetSpeaker
               ? { key: 'speaker', control: 'Q', title: 'Control de parlante', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
               : isNearElevator
-                ? { key: 'elevator', control: 'E', title: 'Usar ascensor', label: 'E - elegir piso' }
+                ? elevatorAction === 'enter'
+                  ? { key: 'elevator-enter', control: 'E', title: 'Entrar al ascensor', label: 'E - entrar' }
+                  : elevatorAction === 'select'
+                    ? { key: 'elevator-select', control: 'E', title: 'Panel del ascensor', label: 'E - elegir piso' }
+                    : elevatorAction === 'exit'
+                      ? { key: 'elevator-exit', control: 'E', title: 'Salir del ascensor', label: 'E - salir' }
+                      : null
               : isNearDoor
                 ? {
                     key: 'stairs',
@@ -592,6 +607,7 @@ function App() {
         onNearComputerChange={setIsNearComputer}
         onNearDoorChange={setIsNearDoor}
         onNearElevatorChange={setIsNearElevator}
+        onElevatorActionChange={setElevatorAction}
         onFloorChange={setCurrentFloor}
         onAgendaBoardAimChange={setIsAimingAgendaBoard}
         onScreenAimChange={setIsAimingScreen}
@@ -599,8 +615,9 @@ function App() {
         onShopAimChange={setIsAimingShop}
         toggleDoorRef={toggleDoorRef}
         travelToFloorRef={travelToFloorRef}
+        elevatorActionRef={elevatorActionRef}
         resetRef={resetWorldRef}
-        controlsEnabled={!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen}
+        controlsEnabled={!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen && !elevatorPanelOpen}
         screenContentEnabled={!computerOpen}
         screenZones={screenZones}
         screenLayout={screenLayout}

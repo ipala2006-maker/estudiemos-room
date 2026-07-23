@@ -25,8 +25,8 @@ export const BuildingWorld = {
   ...Casa1,
   id: 'estudiemos-building',
   name: 'Edificio Estudiemos',
-  startPosition: new THREE.Vector3(87.3, -8.3, 46.2),
-  startLookAt: new THREE.Vector3(87.3, -7.8, 25.2),
+  startPosition: new THREE.Vector3(87.3, -8.3, 48.4),
+  startLookAt: new THREE.Vector3(87.3, -7.8, 40.1),
   lobbyBounds: {
     minX: 70.1,
     maxX: 104.5,
