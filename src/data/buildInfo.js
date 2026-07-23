@@ -21,5 +21,5 @@ import '../utils/installRoomShopWorld.js';
 import '../utils/installRoomShopWorldPolishFix.js';
 import '../utils/installComputerShopAppPatch.js';
 
-export const BUILD_LABEL = 'Real elevator flow 2026-07-22';
-export const BUILD_MARKER = 'real-elevator-flow-2026-07-22-v3';
+export const BUILD_LABEL = 'Architectural finish pass 2026-07-22';
+export const BUILD_MARKER = 'architectural-finish-2026-07-22-v4';
