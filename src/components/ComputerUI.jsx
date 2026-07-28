@@ -174,6 +174,7 @@ const EMPTY_ROUTE = {
 
 const COMPUTER_SETTINGS_STORAGE_KEY = 'estudiemos-room-computer-settings';
 const SPOTIFY_STORAGE_KEY = 'estudiemos-room-spotify-content';
+const SPOTIFY_ROOM_CONTENT_EVENT = 'estudiemos:spotify-room-content';
 const DEFAULT_COMPUTER_SETTINGS = {
   largeText: false,
   highContrast: false,
@@ -438,10 +439,20 @@ export function ComputerUI({
   useEffect(() => {
     if (spotifyContent) {
       window.localStorage.setItem(SPOTIFY_STORAGE_KEY, JSON.stringify(spotifyContent));
+      window.dispatchEvent(
+        new CustomEvent(SPOTIFY_ROOM_CONTENT_EVENT, {
+          detail: { content: spotifyContent }
+        })
+      );
       return;
     }
 
     window.localStorage.removeItem(SPOTIFY_STORAGE_KEY);
+    window.dispatchEvent(
+      new CustomEvent(SPOTIFY_ROOM_CONTENT_EVENT, {
+        detail: { action: 'clear' }
+      })
+    );
   }, [spotifyContent]);
 
   const carreras = ingenieriaRecursosData.carreras;
@@ -597,8 +608,10 @@ export function ComputerUI({
 
   function handleComputerShortcut(event) {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return false;
+    const agendaOwnsKeyboard = focusedWindow === 'agenda' && !isTextEntryElement(event.target);
 
     if (event.key === 'Backspace' && !shouldKeepBackspaceForTextEntry(event.target)) {
+      if (agendaOwnsKeyboard) return false;
       event.preventDefault();
       event.stopPropagation();
       goBackOneInstance();
@@ -607,6 +620,7 @@ export function ComputerUI({
 
     const arrowDelta = getArrowScrollDelta(event.key);
     if (arrowDelta && !isTextEntryElement(event.target)) {
+      if (agendaOwnsKeyboard) return false;
       const desktopRoot = computerRootRef.current ?? document.querySelector('.estudiemos-os-live-desktop');
       const activeScope = drawerOpen
         ? desktopRoot?.querySelector('.screen-control-drawer')

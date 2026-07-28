@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
 const TARGET_EVENT = 'estudiemos:interaction-target';
 const PATCH_FLAG = '__estudiemosInteractionTargetingInstalled';
@@ -33,16 +32,16 @@ const AGENDA_TARGET = {
   domWidth: 980,
   domHeight: 560,
   padding: 1.35,
-  distance: 30,
+  distance: 14,
   rotationY: Math.PI,
   physicalBoardScale: new THREE.Vector3(8.2, 5.35, 1),
   physicalFrameScale: 3.15
 };
 
 const ROOM_SPEAKER_TARGET = {
-  center: new THREE.Vector3(74, 2.8, -22.2),
-  radius: 2.25,
-  distance: 8.75
+  center: new THREE.Vector3(65.4, 3.35, -29.55),
+  radius: 2.1,
+  distance: 9.5
 };
 
 const LEGACY_SHOP_TARGET = {
@@ -82,78 +81,31 @@ export function installInteractionTargeting() {
   if (typeof window === 'undefined' || window[PATCH_FLAG]) return;
   window[PATCH_FLAG] = true;
   document.documentElement.dataset.estudiemosInteractionTargeting = '2410-shop-corner-target';
-
-  patchWebGlRender();
-  patchCss3dRender();
-  installSceneHooks();
 }
 
-function patchWebGlRender() {
-  const originalRender = THREE.WebGLRenderer.prototype.render;
-  THREE.WebGLRenderer.prototype.render = function renderWithInteractionTarget(scene, camera, ...args) {
-    if (isWorldScene(scene) && camera?.isCamera) {
-      lastWorldScene = scene;
-      lastWorldCamera = camera;
-      refreshInteractionRuntime();
-    }
-
-    return originalRender.call(this, scene, camera, ...args);
-  };
-}
-
-function patchCss3dRender() {
-  const originalRender = CSS3DRenderer.prototype.render;
-  CSS3DRenderer.prototype.render = function renderWithAgendaPatch(scene, camera, ...args) {
-    patchCssAgenda(scene);
-    return originalRender.call(this, scene, camera, ...args);
-  };
-}
-
-function installSceneHooks() {
-  if (!THREE.Object3D.prototype.__estudiemosInteractionAddHooked) {
-    THREE.Object3D.prototype.__estudiemosInteractionAddHooked = true;
-    const originalAdd = THREE.Object3D.prototype.add;
-
-    THREE.Object3D.prototype.add = function addWithInteractionTargeting(...objects) {
-      const result = originalAdd.apply(this, objects);
-
-      if (this?.isScene && isWorldScene(this)) {
-        lastWorldScene = this;
-        objects.forEach((object) => {
-          if (object?.isCamera) lastWorldCamera = object;
-        });
-      }
-
-      if (this?.isScene && objects.some(isAgendaCssObjectLike)) {
-        patchCssAgenda(this);
-      }
-
-      if (lastWorldScene) {
-        refreshInteractionRuntime();
-      }
-
-      return result;
-    };
+export function ensureInteractionTargetingInScene(scene, cssScene) {
+  if (!isWorldScene(scene)) return;
+  if (scene !== lastWorldScene) {
+    lastTarget = undefined;
+    lastWorldScene = scene;
   }
+  patchPhysicalAgenda(scene);
+  patchNeighborhood(scene);
+  if (cssScene?.isScene) patchCssAgenda(cssScene);
+}
 
-  if (!THREE.Camera.prototype.__estudiemosInteractionCameraHooked) {
-    THREE.Camera.prototype.__estudiemosInteractionCameraHooked = true;
-    const originalUpdateMatrixWorld = THREE.Camera.prototype.updateMatrixWorld;
-
-    THREE.Camera.prototype.updateMatrixWorld = function updateMatrixWorldWithInteractionTargeting(...args) {
-      lastWorldCamera = this;
-      refreshInteractionRuntime();
-      return originalUpdateMatrixWorld.apply(this, args);
-    };
+export function updateInteractionTargeting(scene, camera) {
+  if (!isWorldScene(scene) || !camera?.isCamera) return;
+  if (scene !== lastWorldScene) {
+    lastTarget = undefined;
+    lastWorldScene = scene;
   }
+  lastWorldCamera = camera;
+  refreshInteractionRuntime();
 }
 
 function isWorldScene(scene) {
   return Boolean(scene?.isScene && (scene.userData?.performancePass || scene.getObjectByName?.('estudiemos-room-exterior-neighborhood')));
-}
-
-function isAgendaCssObjectLike(object) {
-  return Boolean(object?.element?.classList?.contains('css-agenda-board') || object?.isCSS3DObject);
 }
 
 function refreshInteractionRuntime() {
@@ -175,6 +127,7 @@ function publishInteractionTarget(camera) {
   const isInteractiveZone = isStudyFloor || isLobby;
 
   const target = isInteractiveZone ? getActiveTarget(camera, isLobby) : null;
+  document.documentElement.dataset.estudiemosInteractionTarget = target ?? '';
   if (target === lastTarget) return;
 
   lastTarget = target;
@@ -281,6 +234,8 @@ function getRaySphereHitDistance(origin, direction, center, radius) {
 }
 
 function patchPhysicalAgenda(scene) {
+  if (scene.userData?.[AGENDA_PATCH_FLAG]) return;
+
   scene.traverse((object) => {
     if (!object?.position || object.userData?.[AGENDA_PATCH_FLAG]) return;
     if (!isOldAgendaPiece(object.position)) return;
@@ -311,6 +266,7 @@ function patchPhysicalAgenda(scene) {
 
     object.visible = false;
   });
+  scene.userData[AGENDA_PATCH_FLAG] = true;
 }
 
 function isOldAgendaPiece(position) {
@@ -323,6 +279,8 @@ function isOldAgendaPiece(position) {
 }
 
 function patchCssAgenda(scene) {
+  if (scene.userData?.[AGENDA_PATCH_FLAG]) return;
+
   scene.traverse((object) => {
     if (!object?.element?.classList?.contains('css-agenda-board') || object.userData?.[AGENDA_PATCH_FLAG]) return;
 
@@ -333,28 +291,40 @@ function patchCssAgenda(scene) {
     object.rotation.y = AGENDA_TARGET.rotationY;
     object.scale.setScalar(AGENDA_TARGET.width / AGENDA_TARGET.domWidth);
   });
+  scene.userData[AGENDA_PATCH_FLAG] = true;
 }
 
 function patchNeighborhood(scene) {
+  if (scene.userData?.worldMode !== 'legacy') return;
   document.documentElement.dataset.estudiemosNeighborhoodPatch = 'ran';
   const state = scene.userData[NEIGHBORHOOD_PATCH_FLAG] ?? {
+    cleaned: false,
     signsAdded: false,
     leftHouseMoved: false,
-    rightHouseMoved: false
+    rightHouseMoved: false,
+    complete: false
   };
   scene.userData[NEIGHBORHOOD_PATCH_FLAG] = state;
+  if (state.complete) return;
 
   const exterior = scene.getObjectByName?.('estudiemos-room-exterior-neighborhood');
-  removeStrayNeighborhoodSigns(scene, exterior);
   if (!exterior) return;
 
-  if (!state.signsAdded) {
+  if (!state.cleaned) {
+    removeStrayNeighborhoodSigns(scene, exterior);
     hideLegacyNeighborhoodSigns(exterior);
+    state.cleaned = true;
+  }
+
+  if (!state.signsAdded) {
     state.signsAdded = true;
     exterior.add(createNeighborhoodSignGroup());
   }
 
-  if (state.leftHouseMoved && state.rightHouseMoved) return;
+  if (state.leftHouseMoved && state.rightHouseMoved) {
+    state.complete = true;
+    return;
+  }
 
   scene.traverse((object) => {
     if (!object?.name || !object.position) return;
@@ -371,6 +341,8 @@ function patchNeighborhood(scene) {
       state.rightHouseMoved = true;
     }
   });
+
+  state.complete = state.leftHouseMoved && state.rightHouseMoved;
 }
 
 function removeStrayNeighborhoodSigns(scene, exterior) {

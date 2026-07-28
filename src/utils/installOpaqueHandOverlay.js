@@ -1,8 +1,6 @@
-import * as THREE from 'three';
 import playerHandViewModelUrl from '../assets/player-hand-viewmodel.png';
 
 const INSTALL_FLAG = '__estudiemosOpaqueHandOverlayInstalled';
-const HAND_PLANE_NAME = 'illustrated-first-person-hand-plane';
 const HAND_OVERLAY_CLASS = 'first-person-hand-viewmodel-overlay';
 const FIRST_PERSON_ARM_SWING_SECONDS = 0.26;
 
@@ -20,40 +18,19 @@ export function installOpaqueHandOverlay() {
   window[INSTALL_FLAG] = true;
   document.documentElement.dataset.estudiemosOpaqueHandOverlay = '0002';
 
-  patchFirstPersonHandMesh();
   window.addEventListener('keydown', handleKeyDown, true);
   window.addEventListener('keyup', handleKeyUp, true);
+  window.addEventListener('blur', clearMovementKeys);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   state.frameId = window.requestAnimationFrame(updateOverlay);
 }
 
-function patchFirstPersonHandMesh() {
-  if (THREE.Object3D.prototype.__estudiemosOpaqueHandOverlayAddHooked) return;
-
-  THREE.Object3D.prototype.__estudiemosOpaqueHandOverlayAddHooked = true;
-  const originalAdd = THREE.Object3D.prototype.add;
-
-  THREE.Object3D.prototype.add = function addWithOpaqueHandOverlay(...objects) {
-    const result = originalAdd.apply(this, objects);
-    objects.forEach(hideOriginalHandPlane);
-    return result;
-  };
+function clearMovementKeys() {
+  movementKeys.clear();
 }
 
-function hideOriginalHandPlane(object) {
-  if (!object) return;
-
-  if (object.name === HAND_PLANE_NAME) {
-    object.visible = false;
-    object.renderOrder = -100;
-    if (object.material) {
-      object.material.opacity = 0;
-      object.material.depthWrite = false;
-    }
-  }
-
-  object.traverse?.((child) => {
-    if (child !== object) hideOriginalHandPlane(child);
-  });
+function handleVisibilityChange() {
+  if (document.hidden) clearMovementKeys();
 }
 
 function handleKeyDown(event) {
@@ -81,10 +58,12 @@ function isMovementKey(code) {
 }
 
 function ensureOverlayElement() {
+  if (state.element?.isConnected && state.element.parentElement?.classList?.contains('three-world')) {
+    return state.element;
+  }
+
   const mount = document.querySelector('.three-world');
   if (!mount) return null;
-
-  if (state.element && state.element.parentElement === mount) return state.element;
 
   state.element?.remove();
   const element = document.createElement('img');
@@ -96,9 +75,9 @@ function ensureOverlayElement() {
   element.setAttribute('aria-hidden', 'true');
   Object.assign(element.style, {
     position: 'absolute',
-    right: 'clamp(-8px, 1.6vw, 28px)',
-    bottom: 'clamp(-40px, -2.6vh, -18px)',
-    width: 'clamp(300px, 40vw, 540px)',
+    right: '-28px',
+    bottom: 'clamp(-34px, -2.2vh, -18px)',
+    width: 'clamp(220px, 27vw, 360px)',
     height: 'auto',
     zIndex: '12',
     display: 'block',

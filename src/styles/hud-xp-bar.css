@@ -2,7 +2,7 @@
 .hud.hud-compact.hud-clean {
   top: 14px;
   left: 14px;
-  width: min(330px, calc(100vw - 28px)) !important;
+  width: min(276px, calc(100vw - 28px)) !important;
   gap: 4px;
   padding: 0;
   border: 0;
@@ -358,7 +358,7 @@
   .hud.hud-compact.hud-clean {
     top: 10px;
     left: 10px;
-    width: min(260px, calc(100vw - 20px)) !important;
+    width: min(238px, calc(100vw - 20px)) !important;
   }
 
   .hud.hud-compact.hud-clean .hud-focus-card.hud-focus-xp-card {

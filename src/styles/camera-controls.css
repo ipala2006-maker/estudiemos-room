@@ -269,3 +269,9 @@
     display: none;
   }
 }
+
+@media (max-width: 900px) {
+  .computer-landing-desktop .virtual-side-panel {
+    display: none;
+  }
+}

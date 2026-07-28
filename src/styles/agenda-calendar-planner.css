@@ -644,6 +644,10 @@
   padding: 3px 5px;
 }
 
+.agenda-task-card.is-compact .agenda-task-card-actions {
+  display: none;
+}
+
 .agenda-task-card-actions {
   position: absolute;
   inset: 3px 3px auto auto;
@@ -1499,7 +1503,7 @@
   }
 }
 
-@media (max-height: 690ppx) {
+@media (max-height: 690px) {
   .agenda-calendar-planner {
     gap: 8px;
     padding: 8px;
@@ -1524,5 +1528,196 @@
   .agenda-calendar-right {
     gap: 8px;
     padding: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .game-shell .agenda-wall-planner-frame {
+    width: calc(100vw - 12px);
+    height: calc(100dvh - 12px);
+    max-height: calc(100dvh - 12px);
+    border-radius: 17px;
+  }
+
+  .computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner.agenda-app-shell,
+  .wall-agenda-editor-overlay .agenda-calendar-planner.agenda-app-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: max-content;
+    align-content: start;
+    gap: 8px;
+    padding: 8px;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    scrollbar-width: none !important;
+  }
+
+  .computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner.agenda-app-shell::-webkit-scrollbar,
+  .wall-agenda-editor-overlay .agenda-calendar-planner.agenda-app-shell::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .agenda-calendar-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
+    overflow: visible !important;
+  }
+
+  .agenda-calendar-nav,
+  .agenda-calendar-filter-group {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .agenda-calendar-filter-group > span,
+  .agenda-subjects-head,
+  .agenda-subject-edit-list {
+    grid-column: 1 / -1;
+  }
+
+  .agenda-calendar-nav button,
+  .agenda-calendar-filter-group button {
+    min-height: 34px;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding-inline: 7px;
+  }
+
+  .agenda-calendar-nav button small,
+  .agenda-calendar-filter-group button small,
+  .agenda-calendar-filter-group button em {
+    display: none;
+  }
+
+  .agenda-calendar-nav button span,
+  .agenda-calendar-filter-group button strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .agenda-calendar-main {
+    min-height: 420px;
+    grid-template-rows: auto 328px;
+    overflow: hidden;
+  }
+
+  .agenda-calendar-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .agenda-calendar-header > div:first-child {
+    gap: 3px;
+  }
+
+  .agenda-calendar-header h2 {
+    font-size: 1.12rem;
+  }
+
+  .agenda-calendar-header p {
+    max-width: 190px;
+    font-size: 0.68rem;
+  }
+
+  .agenda-calendar-actions {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+  }
+
+  .agenda-calendar-actions button {
+    min-width: 32px;
+    min-height: 32px;
+    padding-inline: 8px;
+  }
+
+  .agenda-calendar-actions button:not(:nth-last-child(-n + 2)) span {
+    display: none;
+  }
+
+  .computer-overlay .estudiemos-os-live-desktop .agenda-calendar-planner .agenda-calendar-scroll,
+  .wall-agenda-editor-overlay .agenda-calendar-planner .agenda-calendar-scroll {
+    min-height: 0;
+    padding: 7px;
+    overflow: hidden !important;
+  }
+
+  .agenda-month-board {
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: 17px minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .agenda-month-weekdays,
+  .agenda-month-grid {
+    gap: 3px;
+  }
+
+  .agenda-month-day {
+    min-height: 0;
+    gap: 1px;
+    padding: 3px;
+    border-radius: 9px;
+  }
+
+  .agenda-day-number {
+    min-height: 18px;
+    padding-inline: 4px;
+    border-radius: 7px;
+    font-size: 0.68rem;
+  }
+
+  .agenda-day-number small {
+    min-width: 14px;
+    width: 14px;
+    height: 14px;
+    font-size: 0.52rem;
+  }
+
+  .agenda-day-task-stack {
+    gap: 1px;
+  }
+
+  .agenda-task-card.is-compact {
+    max-height: 16px;
+    border-radius: 6px;
+  }
+
+  .agenda-task-card.is-compact .agenda-task-card-main {
+    padding: 1px 3px;
+  }
+
+  .agenda-task-card.is-compact :is(.agenda-task-subject, small) {
+    display: none;
+  }
+
+  .agenda-task-card.is-compact strong {
+    font-size: 0.56rem;
+    line-height: 1;
+  }
+
+  .agenda-calendar-right {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    padding: 8px;
+    overflow: visible !important;
+  }
+
+  .agenda-task-composer,
+  .agenda-task-detail,
+  .agenda-day-detail-panel,
+  .agenda-right-summary {
+    padding: 10px;
+  }
+
+  .agenda-task-composer textarea,
+  .agenda-detail-editor-pro textarea {
+    min-height: 72px;
   }
 }

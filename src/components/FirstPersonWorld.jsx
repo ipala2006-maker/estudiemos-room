@@ -6,7 +6,16 @@ import { getEquippedSkinState, getSkinVisuals } from '../data/focusEconomy.js';
 import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
 import { BUILDING_FLOOR_HEIGHT, BUILDING_LOBBY_OFFSET, BuildingWorld } from '../maps/BuildingWorld.js';
 import { Casa1 } from '../maps/Casa1.js';
-import { ensureRoomShopInScene } from '../utils/installRoomShopWorldPolishFix.js';
+import {
+  ensureInteractionTargetingInScene,
+  updateInteractionTargeting
+} from '../utils/installInteractionTargeting.js';
+import { ensureRoomShopInScene, updateRoomShopInScene } from '../utils/installRoomShopWorldPolishFix.js';
+import {
+  ensureRoomSpeakerCssOccluder,
+  ensureRoomSpeakerInScene,
+  updateRoomSpeakerInScene
+} from '../utils/installRoomSpeakerWorld.js';
 import { buildYouTubeEmbedUrl } from '../utils/youtube.js';
 import playerAvatarBackUrl from '../assets/player-avatar-back.png';
 import playerAvatarFrontUrl from '../assets/player-avatar-front.png';
@@ -117,8 +126,13 @@ const BUILDING_STAIR_WORLD_MIN_Z = BUILDING_LOBBY_OFFSET.z + BUILDING_STAIR_MIN_
 const BUILDING_STAIR_WORLD_MAX_Z = BUILDING_LOBBY_OFFSET.z + BUILDING_STAIR_MAX_Z;
 const BUILDING_STAIR_WORLD_MIN_X = BUILDING_LOBBY_OFFSET.x + BUILDING_STAIR_MIN_X;
 const BUILDING_STAIR_WORLD_MAX_X = BUILDING_LOBBY_OFFSET.x + BUILDING_STAIR_MAX_X;
+const BUILDING_STAIR_SAFE_MIN_X = BUILDING_STAIR_WORLD_MIN_X + PLAYER_RADIUS;
+const BUILDING_STAIR_SAFE_MAX_X = BUILDING_STAIR_WORLD_MAX_X - PLAYER_RADIUS;
+const BUILDING_STAIR_APPROACH_PADDING = 2.4;
 const BUILDING_ELEVATOR_X = BUILDING_LOBBY_OFFSET.x + 10.6;
 const BUILDING_ELEVATOR_Z = BUILDING_LOBBY_OFFSET.z - 9.7;
+const ELEVATOR_INTERACTION_DISTANCE = 4.2;
+const ELEVATOR_INTERACTION_DOT = 0.48;
 const ELEVATOR_DOOR_SECONDS = 0.72;
 const ELEVATOR_ENTRY_SECONDS = 0.68;
 const ELEVATOR_LIFT_SECONDS = 2.45;
@@ -135,6 +149,7 @@ export function FirstPersonWorld({
   onNearDoorChange,
   onNearElevatorChange = () => {},
   onElevatorActionChange = () => {},
+  onElevatorSessionChange = () => {},
   onFloorChange = () => {},
   onAgendaBoardAimChange = () => {},
   onScreenAimChange,
@@ -197,7 +212,9 @@ export function FirstPersonWorld({
     const isLegacyWorld = worldMode === LEGACY_WORLD_MODE;
     const requestedInitialFloor = getRequestedInitialFloor();
     const modeStartPosition = isLegacyWorld ? Casa1.startPosition.clone() : getRequestedBuildingStartPosition(requestedInitialFloor);
-    const modeStartLookTarget = isLegacyWorld ? Casa1.entrancePosition.clone() : getRequestedBuildingStartLookTarget();
+    const modeStartLookTarget = isLegacyWorld
+      ? Casa1.entrancePosition.clone()
+      : getRequestedBuildingStartLookTarget(requestedInitialFloor);
     const exteriorBounds = isLegacyWorld ? Casa1.neighborhoodBounds : activeMap.lobbyBounds;
     const scene = new THREE.Scene();
     scene.userData.performancePass = PERFORMANCE_PASS_MARKER;
@@ -242,6 +259,7 @@ export function FirstPersonWorld({
     const cssAgendaBoard = createCssAgendaBoardObject();
     cssAgendaBoard.visible = false;
     cssScene.add(cssAgendaBoard);
+    ensureRoomSpeakerCssOccluder(cssScene);
 
     const ambient = new THREE.HemisphereLight(0xfff0d2, 0x263a36, 0.9);
     scene.add(ambient);
@@ -268,13 +286,16 @@ export function FirstPersonWorld({
 
     const { giantScreen, colliders, exteriorGroup, elevatorCabin } = buildWorldScene(scene, worldMode);
     const elevatorDoors = createBuildingElevatorDoorController(scene);
+    ensureInteractionTargetingInScene(scene, cssScene);
     ensureRoomShopInScene(scene);
+    ensureRoomSpeakerInScene(scene);
     doorOpenRef.current = shouldStartInside;
     giantScreen.room.visible = isLegacyWorld ? shouldStartInside : true;
     exteriorGroup.visible = isLegacyWorld ? !shouldStartInside : true;
     const companionMascot = createCompanionDachshund(getEquippedSkinState(focusProgressRef.current));
     scene.add(companionMascot.group);
     const firstPersonArm = createFirstPersonArmViewModel();
+    firstPersonArm.handPlane.visible = false;
     camera.add(firstPersonArm.group);
 
     const keys = {
@@ -289,6 +310,7 @@ export function FirstPersonWorld({
     const cameraModeForward = new THREE.Vector3();
     const cameraDesiredPosition = new THREE.Vector3();
     const cameraLookTarget = new THREE.Vector3();
+    const elevatorDirection = new THREE.Vector3();
     const movementVelocity = new THREE.Vector3();
     const targetVelocity = new THREE.Vector3();
     const movementStep = new THREE.Vector3();
@@ -334,7 +356,7 @@ export function FirstPersonWorld({
       elevatorSequence = null;
       elevatorPhase = 'idle';
       floorTransitionActive = false;
-      currentFloor = isLegacyWorld ? 'legacy' : 'lobby';
+      currentFloor = isLegacyWorld ? 'legacy' : shouldStartInside ? 'study' : 'lobby';
       playerPosition.copy(modeStartPosition);
       camera.position.copy(playerPosition);
       movementVelocity.set(0, 0, 0);
@@ -345,14 +367,15 @@ export function FirstPersonWorld({
       targetYaw = yaw;
       targetPitch = pitch;
       camera.rotation.set(pitch, yaw, 0);
-      doorOpenRef.current = false;
+      doorOpenRef.current = shouldStartInside;
       nearDoorRef.current = false;
       nearElevatorRef.current = false;
       nearComputerRef.current = false;
       screenAimRef.current = false;
-      onDoorOpenChange(false);
+      onDoorOpenChange(shouldStartInside);
       onNearDoorChange(false);
       onNearElevatorChange(false);
+      onElevatorSessionChange(false);
       publishElevatorAction(null);
       onNearComputerChange(false);
       onFloorChange(currentFloor);
@@ -360,11 +383,13 @@ export function FirstPersonWorld({
       onScreenAimChange(false);
       giantScreen.room.visible = !isLegacyWorld;
       exteriorGroup.visible = true;
-      if (elevatorCabin) elevatorCabin.position.y = BUILDING_LOBBY_OFFSET.y;
+      if (elevatorCabin) elevatorCabin.position.y = shouldStartInside ? 0 : BUILDING_LOBBY_OFFSET.y;
       setAllBuildingElevatorDoors(elevatorDoors, 0);
       delete mount.dataset.buildingTransit;
       mount.dataset.elevatorPhase = elevatorPhase;
-      if (!isLegacyWorld) faceCameraToward(modeStartLookTarget);
+      if (!isLegacyWorld) {
+        faceCameraToward(shouldStartInside && !hasRequestedBuildingSpawn() ? INTERIOR_LOOK_TARGET : modeStartLookTarget);
+      }
     }
 
     function faceCameraToward(target) {
@@ -383,7 +408,7 @@ export function FirstPersonWorld({
 
     resetRef.current = resetCamera;
     if (shouldStartInside) {
-      faceCameraToward(INTERIOR_LOOK_TARGET);
+      faceCameraToward(!isLegacyWorld && hasRequestedBuildingSpawn() ? modeStartLookTarget : INTERIOR_LOOK_TARGET);
       onDoorOpenChange(true);
     } else {
       onDoorOpenChange(false);
@@ -497,6 +522,7 @@ export function FirstPersonWorld({
       const sourceFloorY = currentFloor === 'study' ? 0 : BUILDING_LOBBY_OFFSET.y;
       floorTransitionActive = true;
       elevatorPhase = 'entering';
+      onElevatorSessionChange(true);
       clearMovementInput();
       movementVelocity.set(0, 0, 0);
       verticalVelocity = 0;
@@ -614,6 +640,7 @@ export function FirstPersonWorld({
           elevatorSequence = null;
           elevatorPhase = 'idle';
           floorTransitionActive = false;
+          onElevatorSessionChange(false);
           delete mount.dataset.buildingTransit;
           mount.dataset.elevatorPhase = elevatorPhase;
         }
@@ -639,7 +666,7 @@ export function FirstPersonWorld({
       if (updateMovementKey(event.code, true)) {
         event.preventDefault();
       }
-      if (event.code === 'Space' && isGrounded) {
+      if (event.code === 'Space' && isGrounded && (isLegacyWorld || !isPositionOnBuildingStairs(playerPosition))) {
         verticalVelocity = 6.2;
         isGrounded = false;
         event.preventDefault();
@@ -718,6 +745,16 @@ export function FirstPersonWorld({
       lastFreeMouseY = null;
     }
 
+    function resetInputState() {
+      resetFreeMouseLook();
+      clearMovementInput();
+      movementVelocity.set(0, 0, 0);
+    }
+
+    function onVisibilityChange() {
+      if (document.hidden) resetInputState();
+    }
+
     function onResize() {
       camera.aspect = mount.clientWidth / mount.clientHeight;
       camera.updateProjectionMatrix();
@@ -732,7 +769,8 @@ export function FirstPersonWorld({
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('pointerlockchange', onPointerLockChange);
     document.addEventListener('pointerlockerror', onPointerLockError);
-    window.addEventListener('blur', resetFreeMouseLook);
+    window.addEventListener('blur', resetInputState);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     mount.addEventListener('mouseleave', resetFreeMouseLook);
     mount.addEventListener('click', requestCameraLock);
 
@@ -792,6 +830,9 @@ export function FirstPersonWorld({
           activeColliders,
           PLAYER_RADIUS
         );
+        if (onPhysicalStairs) {
+          playerPosition.x = clamp(playerPosition.x, BUILDING_STAIR_SAFE_MIN_X, BUILDING_STAIR_SAFE_MAX_X);
+        }
         if (collisionResult.blockedX) movementVelocity.x = 0;
         if (collisionResult.blockedZ) movementVelocity.z = 0;
       }
@@ -799,7 +840,11 @@ export function FirstPersonWorld({
       const baseGroundHeight = !isLegacyWorld ? getBuildingGroundHeight(playerPosition, currentFloor) : 0;
       const floorEyeHeight = eyeHeight + baseGroundHeight;
       if (!elevatorControlsPlayer) {
-        if (canControlWorld || !isGrounded) {
+        const onPhysicalStairs = !isLegacyWorld && isPositionOnBuildingStairs(playerPosition);
+        if (onPhysicalStairs && isGrounded) {
+          verticalVelocity = 0;
+          playerPosition.y = floorEyeHeight;
+        } else if (canControlWorld || !isGrounded) {
           verticalVelocity -= 16.5 * delta;
           playerPosition.y += verticalVelocity * delta;
           if (playerPosition.y <= floorEyeHeight || (isGrounded && playerPosition.y < floorEyeHeight)) {
@@ -855,6 +900,9 @@ export function FirstPersonWorld({
       );
       giantScreen.room.visible = isLegacyWorld ? doorOpenRef.current : true;
       exteriorGroup.visible = isLegacyWorld ? !doorOpenRef.current : true;
+      updateRoomShopInScene(scene, camera, frameTime);
+      updateRoomSpeakerInScene(scene, camera);
+      updateInteractionTargeting(scene, camera);
       const showPhysicalScreenContent = doorOpenRef.current && screenContentEnabledRef.current;
       cssGiantScreen.visible = showPhysicalScreenContent;
       cssComputerMonitorOccluder.visible = showPhysicalScreenContent;
@@ -872,11 +920,19 @@ export function FirstPersonWorld({
       }
 
       const elevatorDoorPosition = currentFloor === 'study' ? activeMap.studyElevatorPosition : activeMap.lobbyElevatorPosition;
+      elevatorDirection.copy(elevatorDoorPosition).sub(playerPosition);
+      elevatorDirection.y = 0;
+      const elevatorDistance = elevatorDirection.length();
+      const isFacingElevator =
+        elevatorDistance > 0.001 &&
+        elevatorDirection.normalize().dot(playerForwardHorizontal) >= ELEVATOR_INTERACTION_DOT;
       const nearElevator =
         !isLegacyWorld &&
         (elevatorPhase === 'inside' ||
           elevatorPhase === 'ready-exit' ||
-          (elevatorPhase === 'idle' && playerPosition.distanceTo(elevatorDoorPosition) < 4.2));
+          (elevatorPhase === 'idle' &&
+            elevatorDistance < ELEVATOR_INTERACTION_DISTANCE &&
+            isFacingElevator));
       if (nearElevator !== nearElevatorRef.current) {
         nearElevatorRef.current = nearElevator;
         onNearElevatorChange(nearElevator);
@@ -932,13 +988,15 @@ export function FirstPersonWorld({
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('pointerlockchange', onPointerLockChange);
       document.removeEventListener('pointerlockerror', onPointerLockError);
-      window.removeEventListener('blur', resetFreeMouseLook);
+      window.removeEventListener('blur', resetInputState);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       mount.removeEventListener('mouseleave', resetFreeMouseLook);
       mount.removeEventListener('click', requestCameraLock);
       renderer.dispose();
       onAgendaBoardAimChange(false);
       onNearElevatorChange(false);
       onElevatorActionChange(null);
+      onElevatorSessionChange(false);
       onScreenAimChange(false);
       if (travelToFloorRef) travelToFloorRef.current = () => {};
       if (elevatorActionRef) elevatorActionRef.current = () => {};
@@ -954,6 +1012,7 @@ export function FirstPersonWorld({
     onNearComputerChange,
     onNearDoorChange,
     onNearElevatorChange,
+    onElevatorSessionChange,
     onScreenAimChange,
     resetRef,
     toggleDoorRef,
@@ -975,6 +1034,11 @@ function getRequestedInitialFloor() {
   return new URLSearchParams(window.location.search).get('floor') === 'study' ? 'study' : 'lobby';
 }
 
+function hasRequestedBuildingSpawn() {
+  if (typeof window === 'undefined') return false;
+  return ['elevator', 'stairs', 'shop'].includes(new URLSearchParams(window.location.search).get('spawn'));
+}
+
 function getRequestedBuildingStartPosition(requestedFloor = 'lobby') {
   if (typeof window === 'undefined') return activeMap.startPosition.clone();
   const spawn = new URLSearchParams(window.location.search).get('spawn');
@@ -989,30 +1053,36 @@ function getRequestedBuildingStartPosition(requestedFloor = 'lobby') {
   return activeMap.startPosition.clone();
 }
 
-function getRequestedBuildingStartLookTarget() {
+function getRequestedBuildingStartLookTarget(requestedFloor = 'lobby') {
   if (typeof window === 'undefined') return activeMap.startLookAt.clone();
   const spawn = new URLSearchParams(window.location.search).get('spawn');
   if (spawn === 'stairs') return new THREE.Vector3(76.2, 0.9, 22.2);
-  if (spawn === 'elevator') return new THREE.Vector3(BUILDING_ELEVATOR_X, -7.2, BUILDING_ELEVATOR_Z);
+  if (spawn === 'elevator') {
+    return (
+      requestedFloor === 'study'
+        ? activeMap.studyElevatorPosition
+        : activeMap.lobbyElevatorPosition
+    ).clone();
+  }
   if (spawn === 'shop') return new THREE.Vector3(101.55, -8.2, 26.8);
   return activeMap.startLookAt.clone();
 }
 
 function isPositionOnBuildingStairs(position) {
   return (
-    position.x >= BUILDING_STAIR_WORLD_MIN_X - 0.6 &&
-    position.x <= BUILDING_STAIR_WORLD_MAX_X + 0.6 &&
-    position.z >= BUILDING_STAIR_WORLD_MIN_Z - 2.2 &&
-    position.z <= BUILDING_STAIR_WORLD_MAX_Z + 1.4
+    position.x >= BUILDING_STAIR_SAFE_MIN_X &&
+    position.x <= BUILDING_STAIR_SAFE_MAX_X &&
+    position.z >= BUILDING_STAIR_WORLD_MIN_Z - BUILDING_STAIR_APPROACH_PADDING &&
+    position.z <= BUILDING_STAIR_WORLD_MAX_Z + BUILDING_STAIR_APPROACH_PADDING
   );
 }
 
 function getBuildingGroundHeight(position, currentFloor) {
   if (
-    position.x < BUILDING_STAIR_WORLD_MIN_X - 0.6 ||
-    position.x > BUILDING_STAIR_WORLD_MAX_X + 0.6 ||
-    position.z < BUILDING_STAIR_WORLD_MIN_Z - 2.2 ||
-    position.z > BUILDING_STAIR_WORLD_MAX_Z + 1.4
+    position.x < BUILDING_STAIR_SAFE_MIN_X ||
+    position.x > BUILDING_STAIR_SAFE_MAX_X ||
+    position.z < BUILDING_STAIR_WORLD_MIN_Z - BUILDING_STAIR_APPROACH_PADDING ||
+    position.z > BUILDING_STAIR_WORLD_MAX_Z + BUILDING_STAIR_APPROACH_PADDING
   ) {
     return currentFloor === 'study' ? 0 : BUILDING_LOBBY_OFFSET.y;
   }
@@ -3009,12 +3079,12 @@ function addBuildingLobby(group, textures) {
   addBuildingLobbyDetails(group, materials);
   addBuildingLobbyArchitecturalFinish(group, materials);
 
-  const lobbyAmbient = new THREE.AmbientLight(0xe7eee7, 0.72);
+  const lobbyAmbient = new THREE.AmbientLight(0xe7eee7, 0.9);
   group.add(lobbyAmbient);
-  const welcomeLight = new THREE.PointLight(0xffe1aa, 1.15, 24, 2.05);
+  const welcomeLight = new THREE.PointLight(0xffe1aa, 1.28, 24, 2.05);
   welcomeLight.position.set(0, 7.1, 2.5);
   group.add(welcomeLight);
-  const circulationLight = new THREE.PointLight(0xa9daca, 0.88, 20, 2.05);
+  const circulationLight = new THREE.PointLight(0xa9daca, 0.98, 20, 2.05);
   circulationLight.position.set(-9, 6.2, -7);
   group.add(circulationLight);
 }
@@ -3099,8 +3169,26 @@ function addBuildingElevator(group, materials) {
   addBuildingBox(group, 'building-lobby-elevator-left-frame', [0.44, 8.2, 0.58], [6.72, 4.1, elevatorZ], materials.metal, 0x9ab9aa, 0.12);
   addBuildingBox(group, 'building-lobby-elevator-right-frame', [0.44, 8.2, 0.58], [14.48, 4.1, elevatorZ], materials.metal, 0x9ab9aa, 0.12);
   addBuildingBox(group, 'building-lobby-elevator-top-frame', [8.2, 0.44, 0.58], [10.6, 8, elevatorZ], materials.metal, 0x9ab9aa, 0.12);
-  addBuildingBox(group, 'building-lobby-elevator-left-door', [3.15, 6.5, 0.16], [8.95, 3.45, elevatorZ + 0.34], materials.wallDark, 0x53675e, 0.1);
-  addBuildingBox(group, 'building-lobby-elevator-right-door', [3.15, 6.5, 0.16], [12.25, 3.45, elevatorZ + 0.34], materials.wallDark, 0x53675e, 0.1);
+  const leftDoor = addBuildingBox(
+    group,
+    'building-lobby-elevator-left-door',
+    [3.15, 6.5, 0.16],
+    [8.95, 3.45, elevatorZ + 0.34],
+    materials.wallDark,
+    0x53675e,
+    0.1
+  );
+  const rightDoor = addBuildingBox(
+    group,
+    'building-lobby-elevator-right-door',
+    [3.15, 6.5, 0.16],
+    [12.25, 3.45, elevatorZ + 0.34],
+    materials.wallDark,
+    0x53675e,
+    0.1
+  );
+  addElevatorDoorFinish(leftDoor, 'building-lobby-elevator-left-door', 2.72, 5.94, materials.metal, materials.gold);
+  addElevatorDoorFinish(rightDoor, 'building-lobby-elevator-right-door', 2.72, 5.94, materials.metal, materials.mint);
   addBuildingBox(group, 'building-lobby-elevator-seam', [0.08, 6.5, 0.22], [10.6, 3.45, elevatorZ + 0.46], materials.gold, 0xf0d38c, 0.12);
   addBuildingBox(group, 'building-lobby-elevator-call', [0.72, 1.12, 0.24], [14.5, 2.2, elevatorZ + 0.54], materials.mint, 0x9ab9aa, 0.12);
   addBuildingBox(group, 'building-lobby-elevator-threshold', [7.5, 0.16, 0.68], [10.6, 0.08, elevatorZ + 0.62], materials.metal, 0xd8bd77, 0.12);
@@ -3145,10 +3233,21 @@ function addBuildingLobbyDetails(group, materials) {
 }
 
 function addStudyFloorCirculation(room, textures) {
-  const dark = makeMaterial(0x15201e, 0.7, 0.05, textures.brushedMetal);
-  const metal = makeMaterial(0x34423d, 0.48, 0.14, textures.brushedMetal);
+  const dark = makeMaterial(0x24312e, 0.7, 0.05, textures.brushedMetal);
+  const metal = makeMaterial(0x43534d, 0.48, 0.14, textures.brushedMetal);
   const gold = makeMaterial(0xd8bd77, 0.5, 0.06);
   const mint = makeMaterial(0x9fcfbe, 0.56, 0.03);
+
+  addBuildingBox(room, 'building-study-stairwell-left-wall', [0.34, 18.4, 17.8], [-17.52, -1.1, 37.6], dark, 0x78978c, 0.08);
+  addBuildingBox(room, 'building-study-stairwell-right-wall', [0.34, 18.4, 17.8], [-10.08, -1.1, 37.6], dark, 0x78978c, 0.08);
+  addBuildingBox(room, 'building-study-stairwell-ceiling', [7.78, 0.34, 17.8], [-13.8, 8.12, 37.6], metal, 0x78978c, 0.08);
+  addBuildingBox(room, 'building-study-stairwell-left-base', [0.16, 0.34, 17.5], [-17.3, 0.2, 37.6], gold);
+  addBuildingBox(room, 'building-study-stairwell-right-base', [0.16, 0.34, 17.5], [-10.3, 0.2, 37.6], gold);
+  addBuildingBox(room, 'building-study-stairwell-light-near', [4.2, 0.06, 0.18], [-13.8, 7.91, 32.2], mint);
+  addBuildingBox(room, 'building-study-stairwell-light-far', [4.2, 0.06, 0.18], [-13.8, 7.91, 41.8], gold);
+  const circulationLight = new THREE.PointLight(0xc5eadb, 0.78, 19, 2.1);
+  circulationLight.position.set(-2.8, 5.4, 24.2);
+  room.add(circulationLight);
 
   addBuildingBox(room, 'building-study-stairs-left-frame', [0.42, 7.2, 0.42], [-17.34, 4, 28.25], dark, 0x9ab9aa, 0.12);
   addBuildingBox(room, 'building-study-stairs-right-frame', [0.42, 7.2, 0.42], [-10.26, 4, 28.25], dark, 0x9ab9aa, 0.12);
@@ -3157,7 +3256,7 @@ function addStudyFloorCirculation(room, textures) {
   addBuildingLabel(room, {
     name: 'building-study-stairs-label',
     title: 'ESCALERAS',
-    subtitle: 'E  bajar al lobby',
+    subtitle: 'Baja caminando al lobby',
     position: [-13.8, 7.02, 27.76],
     size: [5.7, 1.2],
     accent: '#d8bd77'
@@ -3167,8 +3266,26 @@ function addStudyFloorCirculation(room, textures) {
   addBuildingBox(room, 'building-study-elevator-left-frame', [0.42, 7.2, 0.42], [elevatorX - 3.54, 4, 28.25], dark, 0x9ab9aa, 0.12);
   addBuildingBox(room, 'building-study-elevator-right-frame', [0.42, 7.2, 0.42], [elevatorX + 3.54, 4, 28.25], dark, 0x9ab9aa, 0.12);
   addBuildingBox(room, 'building-study-elevator-top-frame', [7.5, 0.42, 0.42], [elevatorX, 7.4, 28.25], dark, 0x9ab9aa, 0.12);
-  addBuildingBox(room, 'building-study-elevator-left-door', [2.75, 5.8, 0.16], [elevatorX - 1.46, 3.1, 27.98], metal, 0x53675e, 0.1);
-  addBuildingBox(room, 'building-study-elevator-right-door', [2.75, 5.8, 0.16], [elevatorX + 1.46, 3.1, 27.98], metal, 0x53675e, 0.1);
+  const leftDoor = addBuildingBox(
+    room,
+    'building-study-elevator-left-door',
+    [2.75, 5.8, 0.16],
+    [elevatorX - 1.46, 3.1, 27.98],
+    dark,
+    0x53675e,
+    0.1
+  );
+  const rightDoor = addBuildingBox(
+    room,
+    'building-study-elevator-right-door',
+    [2.75, 5.8, 0.16],
+    [elevatorX + 1.46, 3.1, 27.98],
+    dark,
+    0x53675e,
+    0.1
+  );
+  addElevatorDoorFinish(leftDoor, 'building-study-elevator-left-door', 2.36, 5.28, metal, gold);
+  addElevatorDoorFinish(rightDoor, 'building-study-elevator-right-door', 2.36, 5.28, metal, mint);
   addBuildingBox(room, 'building-study-elevator-seam', [0.08, 5.8, 0.2], [elevatorX, 3.1, 27.82], mint, 0x9ab9aa, 0.12);
   addBuildingBox(room, 'building-study-elevator-threshold', [7.5, 0.14, 0.7], [elevatorX, 0.08, 27.58], metal, 0xd8bd77, 0.12);
   addBuildingLabel(room, {
@@ -3184,6 +3301,14 @@ function addStudyFloorCirculation(room, textures) {
   addBuildingBox(room, 'building-study-wayfinding-right', [0.06, 0.035, 4.8], [elevatorX - 2.35, 0.045, 24.5], mint, 0x9ab9aa, 0.08);
 }
 
+function addElevatorDoorFinish(door, name, width, height, panelMaterial, accentMaterial) {
+  if (!door) return;
+
+  addBuildingBox(door, `${name}-inset`, [width, height, 0.035], [0, 0, 0.105], panelMaterial, 0x9ab9aa, 0.12);
+  addBuildingBox(door, `${name}-upper-band`, [width - 0.24, 0.055, 0.045], [0, 1.62, 0.14], accentMaterial);
+  addBuildingBox(door, `${name}-lower-band`, [width - 0.24, 0.055, 0.045], [0, -1.62, 0.14], accentMaterial);
+}
+
 function addBuildingElevatorCabin(scene, textures) {
   const cabin = new THREE.Group();
   cabin.name = 'building-elevator-moving-cabin';
@@ -3191,19 +3316,35 @@ function addBuildingElevatorCabin(scene, textures) {
 
   const metal = makeMaterial(0x25332f, 0.38, 0.22, textures.brushedMetal);
   const wall = makeMaterial(0x41534c, 0.58, 0.08, textures.brushedMetal);
+  const wallInset = makeEmissiveMaterial(0x31463f, 0.18);
+  const gold = makeMaterial(0xd8bd77, 0.48, 0.06);
   const mint = makeMaterial(0x9fcfbe, 0.5, 0.04);
   addBuildingBox(cabin, 'building-elevator-cabin-floor', [5.5, 0.2, 4.2], [0, 0, 0], metal);
   addBuildingBox(cabin, 'building-elevator-cabin-left-wall', [0.18, 6.25, 4.2], [-2.66, 3.05, 0], wall);
   addBuildingBox(cabin, 'building-elevator-cabin-right-wall', [0.18, 6.25, 4.2], [2.66, 3.05, 0], wall);
+  addBuildingBox(cabin, 'building-elevator-cabin-rear-wall', [5.5, 6.25, 0.18], [0, 3.05, -2.02], wall);
+  addBuildingBox(cabin, 'building-elevator-cabin-rear-inset', [4.82, 4.7, 0.04], [0, 3.02, -1.91], wallInset, 0x78978c, 0.12);
+  addBuildingBox(cabin, 'building-elevator-cabin-rear-upper-band', [4.35, 0.08, 0.05], [0, 4.82, -1.86], mint);
+  addBuildingBox(cabin, 'building-elevator-cabin-rear-lower-band', [4.35, 0.08, 0.05], [0, 1.28, -1.86], gold);
+  addBuildingBox(cabin, 'building-elevator-cabin-handrail', [4.15, 0.12, 0.14], [0, 1.38, -1.7], metal, 0xd8bd77, 0.14);
+  addBuildingLabel(cabin, {
+    name: 'building-elevator-cabin-identity',
+    title: 'ESTUDIEMOS',
+    subtitle: 'Ascensor  |  Viaje en curso',
+    position: [0, 2.3, -1.82],
+    size: [1.7, 0.5],
+    accent: '#9fcfbe'
+  });
   addBuildingBox(cabin, 'building-elevator-cabin-ceiling', [5.5, 0.2, 4.2], [0, 6.2, 0], metal);
-  addBuildingBox(cabin, 'building-elevator-cabin-light', [3.5, 0.05, 0.45], [0, 6.06, 0], mint);
+  addBuildingBox(cabin, 'building-elevator-cabin-light-left', [2.05, 0.05, 0.45], [-1.25, 6.06, 0], mint);
+  addBuildingBox(cabin, 'building-elevator-cabin-light-right', [2.05, 0.05, 0.45], [1.25, 6.06, 0], gold);
   addBuildingBox(cabin, 'building-elevator-cabin-front-header', [5.5, 0.42, 0.18], [0, 5.76, 2.02], metal);
   addBuildingBox(cabin, 'building-elevator-cabin-rear-header', [5.5, 0.42, 0.18], [0, 5.76, -2.02], metal);
   addBuildingBox(cabin, 'building-elevator-cabin-controls', [0.08, 1.72, 0.9], [2.52, 3.1, 0.7], metal);
   addBuildingBox(cabin, 'building-elevator-cabin-pb-button', [0.05, 0.42, 0.42], [2.46, 3.42, 0.48], mint);
   addBuildingBox(cabin, 'building-elevator-cabin-p1-button', [0.05, 0.42, 0.42], [2.46, 2.82, 0.48], wall);
 
-  const cabinLight = new THREE.PointLight(0xc8f1df, 0.7, 8, 2);
+  const cabinLight = new THREE.PointLight(0xc8f1df, 1.05, 8, 2);
   cabinLight.position.set(0, 5.7, 0);
   cabin.add(cabinLight);
   scene.add(cabin);

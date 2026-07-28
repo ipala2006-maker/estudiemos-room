@@ -5,8 +5,10 @@ import {
   Music2,
   PawPrint,
   Settings,
+  ShoppingBag,
   Sparkles,
-  Wifi
+  Wifi,
+  X
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { getEquippedSkinState } from '../data/focusEconomy.js';
@@ -70,6 +72,14 @@ const DESKTOP_APPS = [
     state: 'Sistema',
     icon: Settings,
     action: 'settings'
+  },
+  {
+    id: 'tienda',
+    title: 'Tienda',
+    subtitle: 'Tienda Salchi',
+    state: 'Listo',
+    icon: ShoppingBag,
+    action: 'shop'
   }
 ];
 
@@ -85,16 +95,12 @@ export function VirtualComputerShell(props) {
   useEffect(() => {
     function onBackspaceFallback(event) {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (appOpen) return;
 
       if (event.key === 'Backspace') {
         if (isTextEntryElement(event.target)) return;
 
         event.preventDefault();
-        if (appOpen) {
-          setAppOpen(false);
-          return;
-        }
-
         onClose?.();
         return;
       }
@@ -147,6 +153,15 @@ export function VirtualComputerShell(props) {
   }
 
   function openComputer(appId) {
+    if (appId === 'shop') {
+      window.dispatchEvent(
+        new CustomEvent('estudiemos-room-open-shop', {
+          detail: { source: 'computer', surface: 'salchi-shop' }
+        })
+      );
+      return;
+    }
+
     setInitialApp(appId);
     setAppOpen(true);
   }
@@ -161,6 +176,9 @@ export function VirtualComputerShell(props) {
     >
       <div className="computer-window computer-window-wide mediahub-window game-computer-window estudiemos-os-live-desktop computer-landing-desktop">
         <div className="computer-boot-glow" aria-hidden="true" />
+        <button type="button" className="virtual-desktop-close" onClick={onClose} aria-label="Cerrar computadora" title="Cerrar">
+          <X size={19} aria-hidden="true" />
+        </button>
 
         <main className="virtual-desktop-shell" aria-label="Escritorio de Estudiemos OS">
           <header className="virtual-desktop-topbar">
@@ -195,6 +213,7 @@ export function VirtualComputerShell(props) {
                     key={app.id}
                     type="button"
                     className={canOpen ? 'virtual-app-tile is-ready' : 'virtual-app-tile'}
+                    data-app-id={app.id}
                     onClick={canOpen ? () => openComputer(app.action) : undefined}
                     aria-disabled={!canOpen}
                   >

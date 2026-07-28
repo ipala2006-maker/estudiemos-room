@@ -192,7 +192,9 @@ export function RoomShopOverlay({ focusEconomy, onClose }) {
           <button type="button" className="room-shop-close" onClick={onClose} aria-label="Cerrar tienda">
             <X size={20} aria-hidden="true" />
           </button>
-          <p className="room-shop-keyboard-hint">↑↓ elegir · ←→ filtros · Enter confirmar · Backspace volver</p>
+          <p className="room-shop-keyboard-hint">
+            Arriba/abajo: elegir | Izquierda/derecha: filtros | Enter: confirmar | Retroceso: volver
+          </p>
         </header>
 
         <nav className="room-shop-tabs" aria-label="Filtros de tienda">

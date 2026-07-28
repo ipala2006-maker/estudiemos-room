@@ -41,11 +41,11 @@ export const BuildingWorld = {
   },
   lobbyStairsPosition: new THREE.Vector3(76.2, -8.3, 39.2),
   lobbyStairsArrival: new THREE.Vector3(76.2, -8.3, 41.2),
-  lobbyElevatorPosition: new THREE.Vector3(97.9, -8.3, 27.3),
+  lobbyElevatorPosition: new THREE.Vector3(97.9, -8.3, 23.34),
   lobbyElevatorArrival: new THREE.Vector3(97.9, -8.3, 26.2),
   studyStairsPosition: new THREE.Vector3(76.2, 1.7, 19.4),
   studyStairsArrival: new THREE.Vector3(76.2, 1.7, 20.3),
-  studyElevatorPosition: new THREE.Vector3(97.9, 1.7, 19.4),
+  studyElevatorPosition: new THREE.Vector3(97.9, 1.7, 21.98),
   studyElevatorArrival: new THREE.Vector3(97.9, 1.7, 20.3),
   floors: BUILDING_FLOORS,
   legacy: Casa1

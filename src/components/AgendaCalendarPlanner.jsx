@@ -485,37 +485,53 @@ export function AgendaCalendarPlanner({
 
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         event.preventDefault();
+        event.stopPropagation();
         shiftMonth(event.key === 'ArrowRight' ? 1 : -1);
         return;
       }
 
       if (event.key === 'Escape') {
         event.preventDefault();
-        clearPanelSelection();
+        event.stopPropagation();
+        if (composerOpen || selectedItemId || panelMode !== 'summary') {
+          clearPanelSelection();
+        } else if (onBackToDesktop) {
+          onBackToDesktop();
+        } else {
+          onClose?.();
+        }
         return;
       }
 
       if (event.key.toLowerCase() === 'n') {
         event.preventDefault();
+        event.stopPropagation();
         openComposer(panelMode === 'day' ? selectedDate : '');
         return;
       }
 
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         event.preventDefault();
+        event.stopPropagation();
         centerRef.current?.scrollBy({ top: event.key === 'ArrowDown' ? 260 : -260, behavior: 'smooth' });
         return;
       }
 
       if (event.key === 'Backspace') {
         event.preventDefault();
-        onBackToDesktop?.();
+        event.stopPropagation();
+        if (composerOpen || selectedItemId || panelMode !== 'summary') {
+          clearPanelSelection();
+          return;
+        }
+        if (onBackToDesktop) onBackToDesktop();
+        else onClose?.();
       }
     }
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [active, composerOpen, onBackToDesktop, panelMode, selectedDate, selectedItemId]);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [active, composerOpen, onBackToDesktop, onClose, panelMode, selectedDate, selectedItemId]);
 
   function commitItems(nextItemsOrUpdater) {
     const nextItems = typeof nextItemsOrUpdater === 'function' ? nextItemsOrUpdater(safeItems) : nextItemsOrUpdater;

@@ -10,31 +10,35 @@ export function BuildingElevatorPanel({ currentFloor, onSelectFloor, onClose }) 
     function onKeyDown(event) {
       if (event.key === 'Escape' || event.key === 'Backspace') {
         event.preventDefault();
+        event.stopPropagation();
         onClose();
         return;
       }
 
       if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
         event.preventDefault();
+        event.stopPropagation();
         setSelectedIndex((current) => (current - 1 + availableFloors.length) % availableFloors.length);
         return;
       }
 
       if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
         event.preventDefault();
+        event.stopPropagation();
         setSelectedIndex((current) => (current + 1) % availableFloors.length);
         return;
       }
 
       if (event.key === 'Enter') {
         event.preventDefault();
+        event.stopPropagation();
         const selectedFloor = availableFloors[selectedIndex];
         if (selectedFloor) onSelectFloor(selectedFloor.id);
       }
     }
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [availableFloors, onClose, onSelectFloor, selectedIndex]);
 
   return (

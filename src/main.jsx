@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BuildingElevatorPanel } from './components/BuildingElevatorPanel.jsx';
 import { FirstPersonWorld } from './components/FirstPersonWorld.jsx';
 import { Hud } from './components/Hud.jsx';
-import { RoomSpeakerPlayer, dispatchRoomSpeakerCommand } from './components/RoomSpeakerPlayer.jsx';
+import { RoomSpeakerPlayer } from './components/RoomSpeakerPlayer.jsx';
 import { RoomShopOverlay } from './components/RoomShopOverlay.jsx';
 import { ScreenRemoteControl } from './components/ScreenRemoteControl.jsx';
 import { SpeakerRemoteControl } from './components/SpeakerRemoteControl.jsx';
@@ -23,10 +23,7 @@ import './styles/computer-keyboard-scroll.css';
 import './styles/hud-xp-bar.css';
 import './styles/room-shop.css';
 import './styles/typography-system.css';
-import './utils/installComputerKeyboardController.js';
 import { installInteractionTargeting } from './utils/installInteractionTargeting.js';
-import './utils/installRoomShopWorld.js';
-import './utils/installRoomSpeakerWorld.js';
 
 installInteractionTargeting();
 
@@ -102,6 +99,7 @@ function App() {
   const [currentFloor, setCurrentFloor] = useState('lobby');
   const [isNearElevator, setIsNearElevator] = useState(false);
   const [elevatorAction, setElevatorAction] = useState(null);
+  const [isElevatorSessionActive, setIsElevatorSessionActive] = useState(false);
   const [isNearDoor, setIsNearDoor] = useState(false);
   const [isDoorOpen, setIsDoorOpen] = useState(false);
   const [isNearComputer, setIsNearComputer] = useState(false);
@@ -132,7 +130,7 @@ function App() {
   });
   const hasInteractionTargetSignal = aimedInteractionTarget !== undefined;
   const canTargetComputer = hasInteractionTargetSignal ? aimedInteractionTarget === 'computer' : isNearComputer;
-  const canTargetAgenda = hasInteractionTargetSignal ? aimedInteractionTarget === 'agenda' || isAimingAgendaBoard : isAimingAgendaBoard;
+  const canTargetAgenda = hasInteractionTargetSignal ? aimedInteractionTarget === 'agenda' : isAimingAgendaBoard;
   const canTargetScreen = hasInteractionTargetSignal ? aimedInteractionTarget === 'screen' : isAimingScreen;
   const canTargetSpeaker = hasInteractionTargetSignal ? aimedInteractionTarget === 'speaker' : isAimingSpeaker;
   const canTargetShop = hasInteractionTargetSignal ? aimedInteractionTarget === 'shop' : isAimingShop;
@@ -143,7 +141,6 @@ function App() {
   const screenCommandCounterRef = useRef(0);
   const speakerCommandCounterRef = useRef(0);
   const agendaStorageSnapshotRef = useRef('');
-  const spotifyStorageSnapshotRef = useRef('');
 
   function setAgendaItems(nextAgendaItems) {
     setAgendaItemsState((currentItems) => {
@@ -174,7 +171,6 @@ function App() {
 
   useEffect(() => {
     const serializedContent = roomSpotifyContent ? JSON.stringify(roomSpotifyContent) : '';
-    spotifyStorageSnapshotRef.current = serializedContent;
 
     if (roomSpotifyContent) {
       window.localStorage.setItem(SPOTIFY_STORAGE_KEY, serializedContent);
@@ -186,19 +182,18 @@ function App() {
 
   useEffect(() => {
     function syncSpotifyFromStorage() {
-      const rawContent = window.localStorage.getItem(SPOTIFY_STORAGE_KEY) ?? '';
-      if (rawContent === spotifyStorageSnapshotRef.current) return;
-
-      spotifyStorageSnapshotRef.current = rawContent;
       setRoomSpotifyContent(loadStoredSpotifyContent());
     }
 
-    syncSpotifyFromStorage();
-    const timer = window.setInterval(syncSpotifyFromStorage, 850);
+    function onStorage(event) {
+      if (event.key === SPOTIFY_STORAGE_KEY) syncSpotifyFromStorage();
+    }
+
     window.addEventListener('focus', syncSpotifyFromStorage);
+    window.addEventListener('storage', onStorage);
     return () => {
-      window.clearInterval(timer);
       window.removeEventListener('focus', syncSpotifyFromStorage);
+      window.removeEventListener('storage', onStorage);
     };
   }, []);
 
@@ -231,12 +226,17 @@ function App() {
   }, []);
 
   useEffect(() => {
-    function onInteractionTargetChange(event) {
-      const nextTarget = String(event.detail?.target ?? '');
+    function setInteractionTarget(nextTarget) {
       setAimedInteractionTarget(INTERACTION_TARGETS.has(nextTarget) ? nextTarget : null);
     }
 
+    function onInteractionTargetChange(event) {
+      const nextTarget = String(event.detail?.target ?? '');
+      setInteractionTarget(nextTarget);
+    }
+
     window.addEventListener(INTERACTION_TARGET_EVENT, onInteractionTargetChange);
+    setInteractionTarget(document.documentElement.dataset.estudiemosInteractionTarget ?? '');
     return () => window.removeEventListener(INTERACTION_TARGET_EVENT, onInteractionTargetChange);
   }, []);
 
@@ -351,6 +351,7 @@ function App() {
     setCurrentFloor('lobby');
     setIsNearElevator(false);
     setElevatorAction(null);
+    setIsElevatorSessionActive(false);
     setIsAimingAgendaBoard(false);
     setIsAimingScreen(false);
     setIsAimingSpeaker(false);
@@ -406,7 +407,6 @@ function App() {
       payload
     };
 
-    dispatchRoomSpeakerCommand(command);
     setSpeakerCommand(command);
   }
 
@@ -608,6 +608,7 @@ function App() {
         onNearDoorChange={setIsNearDoor}
         onNearElevatorChange={setIsNearElevator}
         onElevatorActionChange={setElevatorAction}
+        onElevatorSessionChange={setIsElevatorSessionActive}
         onFloorChange={setCurrentFloor}
         onAgendaBoardAimChange={setIsAimingAgendaBoard}
         onScreenAimChange={setIsAimingScreen}
@@ -628,7 +629,6 @@ function App() {
 
       <Hud
         isDoorOpen={isDoorOpen}
-        interactionHint={activeInteractionPrompt}
         focusEconomy={focusEconomy}
         onBackHome={backToStart}
         onReset={() => resetWorldRef.current()}
@@ -657,7 +657,15 @@ function App() {
         onPlayerStateChange={(nextState) => setSpeakerState((current) => ({ ...current, ...nextState }))}
       />
 
-      {!computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen && !isPointerLocked && (
+      {!computerOpen &&
+        !screenRemoteOpen &&
+        !speakerRemoteOpen &&
+        !wallAgendaOpen &&
+        !roomShopOpen &&
+        !elevatorPanelOpen &&
+        !isElevatorSessionActive &&
+        !activeInteractionPrompt &&
+        !isPointerLocked && (
         <div className="camera-lock-prompt">
           <strong>La camara sigue el mouse</strong>
           <span>Click activa giro continuo. Esc libera el mouse.</span>

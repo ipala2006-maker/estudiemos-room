@@ -3,26 +3,19 @@ import { DachshundMascot } from './DachshundMascot.jsx';
 import { BUILD_LABEL, BUILD_MARKER } from '../data/buildInfo.js';
 import { getEquippedSkinState } from '../data/focusEconomy.js';
 
-export function Hud({ isDoorOpen, interactionHint, focusEconomy, onBackHome, onReset }) {
+export function Hud({ isDoorOpen, focusEconomy, onBackHome, onReset }) {
   const equippedSkin = getEquippedSkinState(focusEconomy?.progress);
   const nextRewardPercent = Math.min(100, Math.max(0, Math.round((focusEconomy?.nextRewardProgress ?? 0) * 100)));
   const progressSegments = Array.from({ length: 10 }, (_, index) => index);
   const filledSegments = Math.min(10, Math.max(0, Math.ceil(nextRewardPercent / 10)));
   const activeSegment = nextRewardPercent > 0 && nextRewardPercent < 100 ? Math.max(0, filledSegments - 1) : -1;
   const sceneTitle = isDoorOpen ? 'Piso 1' : 'Lobby';
-  const contextLabel = interactionHint?.title ?? '';
-  const contextKey = interactionHint?.control ?? '';
 
   return (
     <aside className="hud hud-compact hud-clean">
       <span className="hud-build-version" data-build-marker={BUILD_MARKER}>{BUILD_LABEL}</span>
       <div className="hud-heading">
         <strong>{sceneTitle}</strong>
-        {contextKey && (
-          <span className="hud-context-key" aria-label={`${contextKey}: ${contextLabel}`} title={contextLabel}>
-            {contextKey}
-          </span>
-        )}
       </div>
 
       {focusEconomy && (

@@ -134,47 +134,20 @@ function makeDogVendor() {
   texture.anisotropy = 4;
 
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.34, 1.34),
-    new THREE.MeshStandardMaterial({
+    new THREE.PlaneGeometry(1.72, 1.72),
+    new THREE.MeshBasicMaterial({
       map: texture,
       color: 0xffffff,
-      roughness: 0.42,
-      metalness: 0.02,
       side: THREE.DoubleSide,
-      transparent: true
+      toneMapped: false
     })
   );
   mesh.name = 'casa1-salchi-shop-vendor';
-  mesh.position.set(-0.1, 2.03, -0.18);
+  mesh.position.set(-0.28, 2.13, 0);
   mesh.rotation.y = -Math.PI / 2;
-  mesh.scale.setScalar(1.04);
   mesh.castShadow = true;
   mesh.renderOrder = 2;
   return mesh;
-}
-
-function addDecor(parent, materials) {
-  [-0.38, 0, 0.38].forEach((z, index) => {
-    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.055, 28), materials.gold);
-    coin.name = 'salchi-shop-coin';
-    coin.position.set(-0.62, 1.05 + index * 0.03, z);
-    coin.rotation.z = Math.PI / 2;
-    coin.castShadow = true;
-    parent.add(coin);
-  });
-
-  [
-    { z: -1.26, mat: materials.teal },
-    { z: 1.26, mat: materials.mint }
-  ].forEach(({ z, mat }) => {
-    addBox(parent, 'salchi-shop-display-pillar', [0.12, 0.72, 0.44], [-0.7, 1.42, z], mat);
-    const badge = new THREE.Mesh(new THREE.CircleGeometry(0.16, 24), materials.paper);
-    badge.name = 'salchi-shop-display-badge';
-    badge.position.set(-0.78, 1.49, z);
-    badge.rotation.y = -Math.PI / 2;
-    badge.castShadow = true;
-    parent.add(badge);
-  });
 }
 
 function createCleanShop(anchor, placement) {
@@ -195,68 +168,47 @@ function createCleanShop(anchor, placement) {
   const materials = {
     wallPanel: material(0x101917, { roughness: 0.78, metalness: 0.02 }),
     wallGlow: material(0x9edfc8, { emissive: 0x9edfc8, emissiveIntensity: 0.06, opacity: 0.12 }),
-    wood: material(0x33271f, { roughness: 0.78, metalness: 0.02 }),
+    wood: material(0x4b382b, { roughness: 0.74, metalness: 0.02 }),
     dark: material(0x090f0f, { roughness: 0.66, metalness: 0.08 }),
     trim: material(0xd8bd77, { emissive: 0xd8bd77, emissiveIntensity: 0.12, roughness: 0.42, metalness: 0.08 }),
-    gold: material(0xe0c47a, { emissive: 0xe0c47a, emissiveIntensity: 0.18, roughness: 0.34 }),
     teal: material(0x285b51, { roughness: 0.52, metalness: 0.03 }),
-    mint: material(0x7abeb5, { roughness: 0.48, metalness: 0.03 }),
-    paper: material(0xf4ead2, { roughness: 0.74, metalness: 0.01 })
+    mint: material(0x7abeb5, { roughness: 0.48, metalness: 0.03 })
   };
 
-  addBox(shop, 'salchi-shop-wall-backplate', [0.1, 3.7, 4.25], [1.76, 2.82, 0], materials.wallPanel);
-  addBox(shop, 'salchi-shop-wall-soft-glow', [0.06, 3.12, 3.58], [1.68, 2.78, 0], materials.wallGlow);
-  addBox(shop, 'salchi-shop-top-rail', [0.14, 0.08, 4.28], [1.58, 4.64, 0], materials.trim);
-  addBox(shop, 'salchi-shop-bottom-rail', [0.14, 0.08, 3.82], [1.58, 1.02, 0], materials.trim);
-  addBox(shop, 'salchi-shop-left-rail', [0.14, 3.52, 0.06], [1.58, 2.83, -2.08], materials.trim);
-  addBox(shop, 'salchi-shop-right-rail', [0.14, 3.52, 0.06], [1.58, 2.83, 2.08], materials.trim);
+  addBox(shop, 'salchi-shop-wall-backplate', [0.1, 3.55, 4.12], [1.76, 2.78, 0], materials.wallPanel);
+  addBox(shop, 'salchi-shop-wall-soft-glow', [0.06, 2.94, 3.52], [1.68, 2.74, 0], materials.wallGlow);
+  addBox(shop, 'salchi-shop-top-rail', [0.14, 0.07, 4.16], [1.58, 4.55, 0], materials.trim);
+  addBox(shop, 'salchi-shop-bottom-rail', [0.14, 0.07, 3.72], [1.58, 1.04, 0], materials.trim);
+  addBox(shop, 'salchi-shop-left-rail', [0.14, 3.4, 0.06], [1.58, 2.8, -2.02], materials.trim);
+  addBox(shop, 'salchi-shop-right-rail', [0.14, 3.4, 0.06], [1.58, 2.8, 2.02], materials.trim);
 
   const sign = addWallLabel(
     shop,
     'salchi-shop-wall-sign',
     { title: 'TIENDA SALCHI', subtitle: 'skins  rangos  recompensas', width: 760, height: 190, titleSize: 54 },
-    [1.49, 4.26, 0],
-    [3.38, 0.84, 1]
+    [1.49, 4.18, 0],
+    [3.28, 3.2, 1]
   );
 
-  addBox(shop, 'salchi-shop-counter-body', [1.42, 0.54, 3.16], [0.1, 0.48, 0], materials.wood);
-  addBox(shop, 'salchi-shop-counter-top', [1.64, 0.12, 3.36], [0.04, 0.84, 0], materials.dark);
-  addBox(shop, 'salchi-shop-counter-front', [0.1, 0.62, 3.28], [-0.66, 0.48, 0], materials.dark);
-  addBox(shop, 'salchi-shop-counter-front-trim', [0.06, 0.06, 3.28], [-0.72, 0.84, 0], materials.trim);
-  addBox(shop, 'salchi-shop-counter-plinth', [1.34, 0.08, 3.02], [0.1, 0.08, 0], materials.dark);
+  addBox(shop, 'salchi-shop-counter-body', [1.24, 0.58, 3.34], [0.08, 0.48, 0], materials.teal);
+  addBox(shop, 'salchi-shop-counter-top', [1.48, 0.12, 3.52], [0, 0.83, 0], materials.wood);
+  addBox(shop, 'salchi-shop-counter-front', [0.1, 0.56, 3.24], [-0.58, 0.49, 0], materials.wallPanel);
+  addBox(shop, 'salchi-shop-counter-front-trim', [0.06, 0.055, 2.7], [-0.64, 0.75, 0], materials.trim);
+  addBox(shop, 'salchi-shop-counter-plinth', [1.18, 0.08, 3.08], [0.08, 0.08, 0], materials.dark);
 
-  const counterLabel = addWallLabel(
-    shop,
-    'salchi-shop-counter-label',
-    { title: 'SALCHI', subtitle: 'equipar', width: 512, height: 180, titleSize: 48, opacity: 0.9 },
-    [-0.74, 0.55, 0],
-    [0.86, 0.3, 1]
-  );
-
-  const vendorBacking = addBox(shop, 'salchi-shop-vendor-backing', [0.08, 1.72, 1.62], [0.02, 2.06, -0.12], materials.dark);
-  vendorBacking.rotation.y = -Math.PI / 2;
+  addBox(shop, 'salchi-shop-display-shelf-left', [0.22, 0.07, 0.72], [1.47, 2.18, -1.35], materials.trim);
+  addBox(shop, 'salchi-shop-display-shelf-right', [0.22, 0.07, 0.72], [1.47, 2.18, 1.35], materials.mint);
   const vendor = makeDogVendor();
   shop.add(vendor);
 
-  addDecor(shop, materials);
-
-  const prompt = addWallLabel(
-    shop,
-    'salchi-shop-floating-prompt',
-    { title: 'E', subtitle: 'Abrir tienda', width: 512, height: 192, titleSize: 82 },
-    [-1.16, 2.6, 0],
-    [1.05, 0.5, 1]
-  );
-  if (prompt) prompt.visible = false;
-
-  const light = new THREE.PointLight(0xffe1a2, 0.62, 6.5, 2.1);
+  const light = new THREE.PointLight(0xffe1a2, 0.18, 6.5, 2.1);
   light.name = 'salchi-shop-warm-light';
   light.position.set(-0.35, 2.75, 0.15);
   shop.add(light);
 
   const floorGlow = new THREE.Mesh(
     new THREE.CircleGeometry(1.9, 40),
-    new THREE.MeshBasicMaterial({ color: 0xe0c47a, transparent: true, opacity: 0.075, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0xe0c47a, transparent: true, opacity: 0.045, depthWrite: false })
   );
   floorGlow.name = 'salchi-shop-floor-glow';
   floorGlow.rotation.x = -Math.PI / 2;
@@ -264,9 +216,9 @@ function createCleanShop(anchor, placement) {
   floorGlow.scale.set(0.86, 1.42, 1);
   shop.add(floorGlow);
 
-  shop.userData.prompt = prompt;
+  shop.userData.prompt = null;
   shop.userData.vendor = vendor;
-  shop.userData.glowMaterials = [materials.wallGlow, sign?.material, counterLabel?.material, prompt?.material].filter(Boolean);
+  shop.userData.glowMaterials = [materials.wallGlow, sign?.material].filter(Boolean);
   anchor.add(shop);
   return shop;
 }
@@ -274,26 +226,34 @@ function createCleanShop(anchor, placement) {
 function ensureShop(scene) {
   if (!scene) return;
   const placement = getShopPlacement(scene);
-  let anchor = scene.getObjectByName?.(SHOP_ANCHOR_NAME);
+  let anchor = scene.userData.estudiemosRoomShopAnchor;
+  if (!anchor?.parent) {
+    anchor = scene.getObjectByName?.(SHOP_ANCHOR_NAME);
+  }
   if (!anchor) {
     anchor = new THREE.Group();
     anchor.name = SHOP_ANCHOR_NAME;
     anchor.position.copy(placement.anchor);
     scene.add(anchor);
   }
+  scene.userData.estudiemosRoomShopAnchor = anchor;
   anchor.position.copy(placement.anchor);
 
-  const shop = anchor.getObjectByName(SHOP_OBJECT_NAME);
-  if (!shop?.userData?.estudiemosCleanShop || shop.userData.estudiemosPlacement !== placement.id) {
-    createCleanShop(anchor, placement);
+  let shop = scene.userData.estudiemosRoomShopObject;
+  if (!shop?.parent) {
+    shop = anchor.getObjectByName(SHOP_OBJECT_NAME);
   }
+  if (!shop?.userData?.estudiemosCleanShop || shop.userData.estudiemosPlacement !== placement.id) {
+    shop = createCleanShop(anchor, placement);
+  }
+  scene.userData.estudiemosRoomShopObject = shop;
 }
 
 export function ensureRoomShopInScene(scene) {
   if (!isWorldScene(scene)) return null;
   lastScene = scene;
   ensureShop(scene);
-  const anchor = scene.getObjectByName?.(SHOP_ANCHOR_NAME) ?? null;
+  const anchor = scene.userData.estudiemosRoomShopAnchor ?? null;
   if (anchor && scene.userData?.worldMode !== 'legacy') anchor.visible = true;
   document.documentElement.dataset.estudiemosBuildingShop = anchor ? 'attached' : 'missing';
   return anchor;
@@ -335,11 +295,15 @@ function isAimingShop(camera, scene) {
   return distance !== null && distance <= SHOP_DISTANCE;
 }
 
-function refreshShop(scene = lastScene, camera = lastCamera) {
+function refreshShop(scene = lastScene, camera = lastCamera, frameTime = performance.now()) {
   if (!scene || !camera) return;
-  ensureShop(scene);
-  const anchor = scene.getObjectByName?.(SHOP_ANCHOR_NAME);
-  const shop = scene.getObjectByName?.(SHOP_OBJECT_NAME);
+  let anchor = scene.userData.estudiemosRoomShopAnchor;
+  let shop = scene.userData.estudiemosRoomShopObject;
+  if (!anchor?.parent || !shop?.parent) {
+    ensureShop(scene);
+    anchor = scene.userData.estudiemosRoomShopAnchor;
+    shop = scene.userData.estudiemosRoomShopObject;
+  }
   if (!anchor || !shop) return;
 
   const shouldShow = Boolean(window.__estudiemosForceShopView || isInsideRoom(camera, scene));
@@ -349,7 +313,7 @@ function refreshShop(scene = lastScene, camera = lastCamera) {
 
   if (shop.userData.prompt) {
     shop.userData.prompt.visible = active;
-    shop.userData.prompt.position.y = 2.62 + Math.sin(performance.now() * 0.004 + shop.userData.idleSeed) * 0.045;
+    shop.userData.prompt.position.y = 2.62 + Math.sin(frameTime * 0.004 + shop.userData.idleSeed) * 0.045;
   }
 
   const targetOpacity = active ? 0.72 : 0.3;
@@ -359,49 +323,24 @@ function refreshShop(scene = lastScene, camera = lastCamera) {
   });
 
   if (shop.userData.vendor) {
-    shop.userData.vendor.rotation.z = Math.sin(performance.now() * 0.002 + shop.userData.idleSeed) * 0.012;
+    shop.userData.vendor.rotation.z = Math.sin(frameTime * 0.002 + shop.userData.idleSeed) * 0.012;
   }
 
   document.documentElement.dataset.estudiemosRoomShopWorld = 'anchor-object3d-v7-polish-fix';
   document.documentElement.dataset.estudiemosRoomShopState = shouldShow ? 'visible' : 'loaded';
 }
 
-function patchSceneAdd() {
-  if (THREE.Object3D.prototype.__estudiemosRoomShopPolishAddHooked) return;
-  THREE.Object3D.prototype.__estudiemosRoomShopPolishAddHooked = true;
-  const originalAdd = THREE.Object3D.prototype.add;
-
-  THREE.Object3D.prototype.add = function addWithShopPolish(...objects) {
-    const result = originalAdd.apply(this, objects);
-    if (isWorldScene(this)) {
-      lastScene = this;
-      objects.forEach((object) => {
-        if (object?.isCamera) lastCamera = object;
-      });
-      refreshShop(this, lastCamera);
-    }
-    return result;
-  };
-}
-
-function patchCameraUpdate() {
-  if (THREE.Camera.prototype.__estudiemosRoomShopPolishCameraHooked) return;
-  THREE.Camera.prototype.__estudiemosRoomShopPolishCameraHooked = true;
-  const originalUpdateMatrixWorld = THREE.Camera.prototype.updateMatrixWorld;
-
-  THREE.Camera.prototype.updateMatrixWorld = function updateMatrixWorldWithShopPolish(...args) {
-    lastCamera = this;
-    refreshShop(lastScene, this);
-    return originalUpdateMatrixWorld.apply(this, args);
-  };
+export function updateRoomShopInScene(scene, camera, frameTime = performance.now()) {
+  if (!isWorldScene(scene) || !camera?.isCamera) return;
+  lastScene = scene;
+  lastCamera = camera;
+  refreshShop(scene, camera, frameTime);
 }
 
 function installRoomShopWorldPolishFix() {
   if (typeof window === 'undefined' || window.__estudiemosRoomShopWorldPolishInstalled) return;
   window.__estudiemosRoomShopWorldPolishInstalled = true;
   window.__estudiemosRoomShopInstallMode = 'anchor-object3d-v7-polish-fix';
-  patchSceneAdd();
-  patchCameraUpdate();
   document.documentElement.dataset.estudiemosRoomShopWorld = 'anchor-object3d-v7-polish-fix';
 }
 

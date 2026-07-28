@@ -113,7 +113,7 @@ function getDirectionalCandidate(items, currentItem, key) {
       return {
         ...item,
         primaryDistance,
-        score: primaryDistance * 8 + secondaryDistance
+        score: primaryDistance + secondaryDistance * 2.5
       };
     })
     .filter((item) => item.primaryDistance > 4)

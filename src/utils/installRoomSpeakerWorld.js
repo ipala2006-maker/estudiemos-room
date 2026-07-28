@@ -38,10 +38,6 @@ const toSpeaker = new THREE.Vector3();
 let lastSpeakerScene = null;
 let lastSpeakerCamera = null;
 
-function isCss3DObjectLike(object) {
-  return Boolean(object?.isCSS3DObject || object?.element instanceof HTMLElement);
-}
-
 function ensureSpeakerOccluderStyles() {
   if (typeof document === 'undefined' || document.getElementById(SPEAKER_OCCLUDER_STYLE_ID)) return;
 
@@ -476,6 +472,8 @@ function addSceneRoomSpeaker(scene) {
   anchor.visible = false;
   scene.add(anchor);
   addRoomSpeaker(anchor);
+  scene.userData.estudiemosRoomSpeakerAnchor = anchor;
+  scene.userData.estudiemosRoomSpeakerObject = anchor.getObjectByName(SPEAKER_OBJECT_NAME) ?? null;
 }
 
 function findCasaRoom(scene) {
@@ -504,7 +502,8 @@ function applySpeakerVerificationView(scene, camera) {
 }
 
 function updateSpeakerDebugHandle(scene, camera) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || scene?.userData?.estudiemosSpeakerDebugReady) return;
+  if (scene) scene.userData.estudiemosSpeakerDebugReady = true;
 
   window.__estudiemosRoomSpeakerDebug = {
     hasSpeaker: Boolean(scene?.getObjectByName?.(SPEAKER_OBJECT_NAME)),
@@ -537,14 +536,14 @@ function updateSpeakerDebugHandle(scene, camera) {
 }
 
 function updateSpeakerSceneVisibility(scene, camera) {
-  const anchor = scene?.getObjectByName?.(SPEAKER_ANCHOR_NAME);
+  const anchor = scene?.userData?.estudiemosRoomSpeakerAnchor ?? scene?.getObjectByName?.(SPEAKER_ANCHOR_NAME);
   if (!anchor) return;
 
   anchor.visible = Boolean(window.__estudiemosForceSpeakerView || (camera?.isCamera && isCameraInsideRoom(camera)));
 }
 
-function refreshSpeakerRuntime(scene = lastSpeakerScene, camera = lastSpeakerCamera) {
-  if (scene) {
+function refreshSpeakerRuntime(scene = lastSpeakerScene, camera = lastSpeakerCamera, { ensure = false } = {}) {
+  if (scene && ensure) {
     addSceneRoomSpeaker(scene);
   }
 
@@ -554,45 +553,6 @@ function refreshSpeakerRuntime(scene = lastSpeakerScene, camera = lastSpeakerCam
     updateSpeakerDebugHandle(scene, camera);
     updateSpeakerAim(camera);
   }
-}
-
-function installSceneAddHook() {
-  if (THREE.Object3D.prototype.__estudiemosSpeakerAddHooked) return;
-  THREE.Object3D.prototype.__estudiemosSpeakerAddHooked = true;
-
-  const originalAdd = THREE.Object3D.prototype.add;
-  THREE.Object3D.prototype.add = function addWithRoomSpeaker(...objects) {
-    const result = originalAdd.apply(this, objects);
-
-    if (this?.isScene) {
-      if (objects.some(isCss3DObjectLike)) {
-        addCssSpeakerOccluder(this);
-        return result;
-      }
-
-      lastSpeakerScene = this;
-      objects.forEach((object) => {
-        if (object?.isCamera) {
-          lastSpeakerCamera = object;
-        }
-      });
-      refreshSpeakerRuntime(this, lastSpeakerCamera);
-    }
-
-    return result;
-  };
-}
-
-function installCameraUpdateHook() {
-  if (THREE.Camera.prototype.__estudiemosSpeakerCameraHooked) return;
-  THREE.Camera.prototype.__estudiemosSpeakerCameraHooked = true;
-
-  const originalUpdateMatrixWorld = THREE.Camera.prototype.updateMatrixWorld;
-  THREE.Camera.prototype.updateMatrixWorld = function updateMatrixWorldWithRoomSpeaker(...args) {
-    lastSpeakerCamera = this;
-    refreshSpeakerRuntime(lastSpeakerScene, this);
-    return originalUpdateMatrixWorld.apply(this, args);
-  };
 }
 
 function dispatchSpeakerAim(isAiming) {
@@ -631,13 +591,31 @@ function updateSpeakerAim(camera) {
   dispatchSpeakerAim(aimDot > SPEAKER_AIM_DOT || distance < 5.2);
 }
 
+export function ensureRoomSpeakerInScene(scene) {
+  if (!scene?.isScene) return null;
+  lastSpeakerScene = scene;
+  addSceneRoomSpeaker(scene);
+  return scene.userData.estudiemosRoomSpeakerAnchor ?? null;
+}
+
+export function ensureRoomSpeakerCssOccluder(scene) {
+  if (!scene?.isScene) return null;
+  addCssSpeakerOccluder(scene);
+  return scene.getObjectByName?.(SPEAKER_OCCLUDER_NAME) ?? null;
+}
+
+export function updateRoomSpeakerInScene(scene, camera) {
+  if (!scene?.isScene || !camera?.isCamera) return;
+  lastSpeakerScene = scene;
+  lastSpeakerCamera = camera;
+  refreshSpeakerRuntime(scene, camera);
+}
+
 function installRoomSpeakerWorld() {
   if (typeof window === 'undefined' || window.__estudiemosRoomSpeakerWorldInstalled) return;
   window.__estudiemosRoomSpeakerWorldInstalled = true;
   window.__estudiemosRoomSpeakerAimState = false;
-  window.__estudiemosRoomSpeakerInstallMode = 'object3d-camera';
-  installSceneAddHook();
-  installCameraUpdateHook();
+  window.__estudiemosRoomSpeakerInstallMode = 'explicit-scene-runtime';
 }
 
 installRoomSpeakerWorld();

@@ -175,23 +175,24 @@
 
 .room-shop-detail {
   min-width: 0 !important;
-  padding: 12px !important;
+  gap: 6px !important;
+  padding: 10px !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   border-radius: 16px !important;
 }
 
 .room-shop-vendor-card {
-  min-height: 160px !important;
-  padding: 10px !important;
+  min-height: 132px !important;
+  padding: 8px !important;
   overflow: hidden !important;
   border-radius: 16px !important;
 }
 
 .room-shop-vendor-card .dachshund-mascot-profile,
 .room-shop-vendor-card .dachshund-render-card {
-  width: min(160px, 100%) !important;
-  height: min(160px, 100%) !important;
+  width: min(132px, 100%) !important;
+  height: min(132px, 100%) !important;
 }
 
 .room-shop-detail-copy h3 {
@@ -209,18 +210,18 @@
 .room-shop-detail-copy p,
 .room-shop-detail-note {
   display: -webkit-box !important;
-  -webkit-line-clamp: 3 !important;
+  -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
 }
 
 .room-shop-detail-stats {
-  gap: 8px !important;
+  gap: 5px !important;
 }
 
 .room-shop-detail-stats div {
-  min-height: 34px !important;
-  padding: 7px 9px !important;
+  min-height: 30px !important;
+  padding: 5px 8px !important;
 }
 
 .room-shop-detail-ranks {
@@ -229,17 +230,21 @@
 }
 
 .room-shop-detail-ranks span {
-  width: 25px !important;
-  height: 25px !important;
+  width: 22px !important;
+  height: 22px !important;
   font-size: 0.72rem !important;
 }
 
 .room-shop-detail-button {
-  min-height: 36px !important;
+  min-height: 32px !important;
 }
 
 .room-shop-detail small {
   word-break: normal !important;
+}
+
+.room-shop-detail > small {
+  display: none !important;
 }
 
 @media (max-width: 860px) {
@@ -255,6 +260,18 @@
 @media (max-width: 640px) {
   .room-shop-panel {
     height: calc(100dvh - 18px) !important;
+  }
+
+  .room-shop-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .room-shop-tabs button {
+    min-width: 0 !important;
+    padding: 0 7px !important;
+    font-size: 0.72rem !important;
   }
 
   .room-shop-card {
