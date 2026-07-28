@@ -276,6 +276,17 @@ function App() {
 
       if (!hasStarted || computerOpen || screenRemoteOpen || speakerRemoteOpen || wallAgendaOpen || roomShopOpen || elevatorPanelOpen) return;
 
+      if (isNearElevator && key === 'e' && (elevatorAction === 'select' || elevatorAction === 'call')) {
+        event.preventDefault();
+        if (elevatorAction === 'select') {
+          document.exitPointerLock?.();
+          setElevatorPanelOpen(true);
+        } else {
+          elevatorActionRef.current();
+        }
+        return;
+      }
+
       if (canTargetScreen && key === 'q') {
         document.exitPointerLock?.();
         setScreenRemoteOpen(true);
@@ -302,17 +313,6 @@ function App() {
       if (canTargetComputer && key === 'e') {
         document.exitPointerLock?.();
         setComputerOpen(true);
-        return;
-      }
-
-      if (isNearElevator && key === 'e') {
-        event.preventDefault();
-        if (elevatorAction === 'select') {
-          document.exitPointerLock?.();
-          setElevatorPanelOpen(true);
-        } else {
-          elevatorActionRef.current();
-        }
         return;
       }
 
@@ -562,24 +562,20 @@ function App() {
 
   const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen && !elevatorPanelOpen;
   const activeInteractionPrompt = canShowWorldPrompts
-    ? canTargetComputer
-      ? { key: 'computer', control: 'E', title: 'Abrir computadora', label: 'E - abrir computadora' }
-      : canTargetAgenda
-        ? { key: 'agenda', control: 'E', title: 'Editar agenda de pared', label: 'E - editar agenda' }
-        : canTargetShop
-          ? { key: 'shop', control: 'E', title: 'Abrir tienda Salchi', label: 'E - tienda Salchi' }
-          : canTargetScreen
-            ? { key: 'screen', control: 'Q', title: 'Control de pantalla', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
-            : canTargetSpeaker
-              ? { key: 'speaker', control: 'Q', title: 'Control de parlante', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
-              : isNearElevator
-                ? elevatorAction === 'enter'
-                  ? { key: 'elevator-enter', control: 'E', title: 'Entrar al ascensor', label: 'E - entrar' }
-                  : elevatorAction === 'select'
-                    ? { key: 'elevator-select', control: 'E', title: 'Panel del ascensor', label: 'E - elegir piso' }
-                    : elevatorAction === 'exit'
-                      ? { key: 'elevator-exit', control: 'E', title: 'Salir del ascensor', label: 'E - salir' }
-                      : null
+    ? isNearElevator && elevatorAction === 'select'
+      ? { key: 'elevator-select', control: 'E', title: 'Panel interior', label: 'E - elegir piso' }
+      : isNearElevator && elevatorAction === 'call'
+        ? { key: 'elevator-call', control: 'E', title: 'Llamar ascensor', label: 'E - llamar ascensor' }
+        : canTargetComputer
+          ? { key: 'computer', control: 'E', title: 'Abrir computadora', label: 'E - abrir computadora' }
+          : canTargetAgenda
+            ? { key: 'agenda', control: 'E', title: 'Editar agenda de pared', label: 'E - editar agenda' }
+            : canTargetShop
+              ? { key: 'shop', control: 'E', title: 'Abrir tienda Salchi', label: 'E - tienda Salchi' }
+              : canTargetScreen
+                ? { key: 'screen', control: 'Q', title: 'Control de pantalla', className: 'screen-remote-prompt', label: 'Q - control de pantalla' }
+                : canTargetSpeaker
+                  ? { key: 'speaker', control: 'Q', title: 'Control de parlante', className: 'screen-remote-prompt', label: 'Q - control de parlante' }
               : isNearDoor
                 ? {
                     key: 'stairs',

@@ -120,8 +120,8 @@ const BUILDING_WORLD_MODE = 'building';
 const BUILDING_STAIR_RISE = BUILDING_FLOOR_HEIGHT;
 const BUILDING_STAIR_MIN_Z = -8.2;
 const BUILDING_STAIR_MAX_Z = 7.2;
-const BUILDING_STAIR_MIN_X = -13.8;
-const BUILDING_STAIR_MAX_X = -8.4;
+const BUILDING_STAIR_MIN_X = -14.4;
+const BUILDING_STAIR_MAX_X = -7.8;
 const BUILDING_STAIR_WORLD_MIN_Z = BUILDING_LOBBY_OFFSET.z + BUILDING_STAIR_MIN_Z;
 const BUILDING_STAIR_WORLD_MAX_Z = BUILDING_LOBBY_OFFSET.z + BUILDING_STAIR_MAX_Z;
 const BUILDING_STAIR_WORLD_MIN_X = BUILDING_LOBBY_OFFSET.x + BUILDING_STAIR_MIN_X;
@@ -133,10 +133,23 @@ const BUILDING_ELEVATOR_X = BUILDING_LOBBY_OFFSET.x + 10.6;
 const BUILDING_ELEVATOR_Z = BUILDING_LOBBY_OFFSET.z - 9.7;
 const ELEVATOR_INTERACTION_DISTANCE = 4.2;
 const ELEVATOR_INTERACTION_DOT = 0.48;
-const ELEVATOR_DOOR_SECONDS = 0.72;
-const ELEVATOR_ENTRY_SECONDS = 0.68;
-const ELEVATOR_LIFT_SECONDS = 2.45;
-const ELEVATOR_EXIT_SECONDS = 0.68;
+const ELEVATOR_PANEL_INTERACTION_DISTANCE = 4.4;
+const ELEVATOR_PANEL_INTERACTION_DOT = 0.42;
+const ELEVATOR_DOOR_SECONDS = 0.82;
+const ELEVATOR_LIFT_SECONDS = 2.85;
+const ELEVATOR_CABIN_WIDTH = 7;
+const ELEVATOR_CABIN_DEPTH = 5.2;
+const ELEVATOR_CABIN_HALF_WIDTH = ELEVATOR_CABIN_WIDTH / 2;
+const ELEVATOR_CABIN_HALF_DEPTH = ELEVATOR_CABIN_DEPTH / 2;
+const ELEVATOR_CABIN_SAFE_MIN_X = BUILDING_ELEVATOR_X - ELEVATOR_CABIN_HALF_WIDTH + PLAYER_RADIUS + 0.18;
+const ELEVATOR_CABIN_SAFE_MAX_X = BUILDING_ELEVATOR_X + ELEVATOR_CABIN_HALF_WIDTH - PLAYER_RADIUS - 0.18;
+const ELEVATOR_CABIN_SAFE_MIN_Z = BUILDING_ELEVATOR_Z - ELEVATOR_CABIN_HALF_DEPTH + PLAYER_RADIUS + 0.18;
+const ELEVATOR_CABIN_SAFE_MAX_Z = BUILDING_ELEVATOR_Z + ELEVATOR_CABIN_HALF_DEPTH - PLAYER_RADIUS - 0.18;
+const ELEVATOR_PANEL_WORLD = new THREE.Vector3(
+  BUILDING_ELEVATOR_X + ELEVATOR_CABIN_HALF_WIDTH - 0.34,
+  0,
+  BUILDING_ELEVATOR_Z + 0.45
+);
 const DEFAULT_SCREEN_LAYOUT = 'side-by-side';
 const DEFAULT_SCREEN_ZONES = {
   upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, displayScale: 100, updatedAt: 0 },
@@ -286,6 +299,7 @@ export function FirstPersonWorld({
 
     const { giantScreen, colliders, exteriorGroup, elevatorCabin } = buildWorldScene(scene, worldMode);
     const elevatorDoors = createBuildingElevatorDoorController(scene);
+    const elevatorCabinColliders = createBuildingElevatorCabinColliders();
     ensureInteractionTargetingInScene(scene, cssScene);
     ensureRoomShopInScene(scene);
     ensureRoomSpeakerInScene(scene);
@@ -311,6 +325,7 @@ export function FirstPersonWorld({
     const cameraDesiredPosition = new THREE.Vector3();
     const cameraLookTarget = new THREE.Vector3();
     const elevatorDirection = new THREE.Vector3();
+    const elevatorPanelDirection = new THREE.Vector3();
     const movementVelocity = new THREE.Vector3();
     const targetVelocity = new THREE.Vector3();
     const movementStep = new THREE.Vector3();
@@ -333,9 +348,11 @@ export function FirstPersonWorld({
     let isGrounded = true;
     const eyeHeight = Casa1.startPosition.y;
     let currentFloor = shouldStartInside ? 'study' : isLegacyWorld ? 'legacy' : 'lobby';
-    let floorTransitionActive = false;
     let elevatorPhase = 'idle';
     let elevatorSequence = null;
+    let elevatorFloor = currentFloor;
+    let elevatorPassengerInside = false;
+    let elevatorHasBoarded = false;
     let publishedElevatorAction = null;
     applyCameraModeVisuals();
 
@@ -355,8 +372,10 @@ export function FirstPersonWorld({
     function resetCamera() {
       elevatorSequence = null;
       elevatorPhase = 'idle';
-      floorTransitionActive = false;
       currentFloor = isLegacyWorld ? 'legacy' : shouldStartInside ? 'study' : 'lobby';
+      elevatorFloor = currentFloor;
+      elevatorPassengerInside = false;
+      elevatorHasBoarded = false;
       playerPosition.copy(modeStartPosition);
       camera.position.copy(playerPosition);
       movementVelocity.set(0, 0, 0);
@@ -387,6 +406,8 @@ export function FirstPersonWorld({
       setAllBuildingElevatorDoors(elevatorDoors, 0);
       delete mount.dataset.buildingTransit;
       mount.dataset.elevatorPhase = elevatorPhase;
+      mount.dataset.elevatorFloor = elevatorFloor;
+      mount.dataset.elevatorPassenger = 'outside';
       if (!isLegacyWorld) {
         faceCameraToward(shouldStartInside && !hasRequestedBuildingSpawn() ? INTERIOR_LOOK_TARGET : modeStartLookTarget);
       }
@@ -418,9 +439,28 @@ export function FirstPersonWorld({
     if (elevatorCabin) elevatorCabin.position.y = currentFloor === 'study' ? 0 : BUILDING_LOBBY_OFFSET.y;
     setAllBuildingElevatorDoors(elevatorDoors, 0);
     mount.dataset.elevatorPhase = elevatorPhase;
+    mount.dataset.elevatorFloor = elevatorFloor;
+    mount.dataset.elevatorPassenger = 'outside';
 
     function setActiveFloor(targetFloor) {
       const nextIsStudyFloor = targetFloor === 'study';
+      if (
+        targetFloor !== currentFloor &&
+        !elevatorPassengerInside &&
+        elevatorPhase !== 'idle' &&
+        elevatorPhase !== 'traveling'
+      ) {
+        setAllBuildingElevatorDoors(elevatorDoors, 0);
+        const cabinNearStudy = Math.abs(elevatorCabin.position.y) <= Math.abs(elevatorCabin.position.y - BUILDING_LOBBY_OFFSET.y);
+        elevatorFloor = cabinNearStudy ? 'study' : 'lobby';
+        elevatorCabin.position.y = cabinNearStudy ? 0 : BUILDING_LOBBY_OFFSET.y;
+        elevatorPhase = 'idle';
+        elevatorSequence = null;
+        elevatorHasBoarded = false;
+        onElevatorSessionChange(false);
+        publishElevatorAction(null);
+        delete mount.dataset.buildingTransit;
+      }
       currentFloor = nextIsStudyFloor ? 'study' : isLegacyWorld ? 'legacy' : 'lobby';
       doorOpenRef.current = nextIsStudyFloor;
       giantScreen.room.visible = isLegacyWorld ? nextIsStudyFloor : true;
@@ -482,7 +522,8 @@ export function FirstPersonWorld({
       if (
         travelMode !== 'elevator' ||
         !elevatorCabin ||
-        elevatorPhase !== 'inside' ||
+        elevatorPhase !== 'boarding' ||
+        !elevatorPassengerInside ||
         targetFloor === currentFloor
       ) {
         return;
@@ -495,10 +536,7 @@ export function FirstPersonWorld({
 
       const sourceFloorY = currentFloor === 'study' ? 0 : BUILDING_LOBBY_OFFSET.y;
       const targetFloorY = targetFloor === 'study' ? 0 : BUILDING_LOBBY_OFFSET.y;
-      const cabinStartPosition = new THREE.Vector3(BUILDING_ELEVATOR_X, sourceFloorY + eyeHeight, BUILDING_ELEVATOR_Z);
-      const cabinEndPosition = new THREE.Vector3(BUILDING_ELEVATOR_X, targetFloorY + eyeHeight, BUILDING_ELEVATOR_Z);
       elevatorCabin.position.y = sourceFloorY;
-      playerPosition.copy(cabinStartPosition);
       elevatorPhase = 'traveling';
       publishElevatorAction(null);
       mount.dataset.buildingTransit = targetFloor === 'study' ? 'ascending' : 'descending';
@@ -507,8 +545,6 @@ export function FirstPersonWorld({
         kind: 'travel',
         sourceFloor: currentFloor,
         targetFloor,
-        cabinStartPosition,
-        cabinEndPosition,
         sourceFloorY,
         targetFloorY,
         startedAt: null,
@@ -516,49 +552,68 @@ export function FirstPersonWorld({
       };
     }
 
-    function beginElevatorEntry() {
+    function beginElevatorDoorOpening(floor) {
       if (isLegacyWorld || !elevatorCabin || elevatorPhase !== 'idle') return;
 
-      const sourceFloorY = currentFloor === 'study' ? 0 : BUILDING_LOBBY_OFFSET.y;
-      floorTransitionActive = true;
-      elevatorPhase = 'entering';
-      onElevatorSessionChange(true);
-      clearMovementInput();
-      movementVelocity.set(0, 0, 0);
-      verticalVelocity = 0;
-      isGrounded = true;
-      elevatorCabin.position.y = sourceFloorY;
+      const floorY = floor === 'study' ? 0 : BUILDING_LOBBY_OFFSET.y;
+      elevatorFloor = floor;
+      elevatorCabin.position.y = floorY;
+      elevatorPassengerInside = false;
+      elevatorHasBoarded = false;
+      onElevatorSessionChange(false);
+      setAllBuildingElevatorDoors(elevatorDoors, 0);
+      elevatorPhase = 'opening';
       publishElevatorAction(null);
-      mount.dataset.buildingTransit = 'entering';
+      mount.dataset.buildingTransit = 'opening';
       mount.dataset.elevatorPhase = elevatorPhase;
       elevatorSequence = {
-        kind: 'entry',
-        floor: currentFloor,
-        sourcePosition: playerPosition.clone(),
-        cabinPosition: new THREE.Vector3(BUILDING_ELEVATOR_X, sourceFloorY + eyeHeight, BUILDING_ELEVATOR_Z),
+        kind: 'open',
+        floor,
         startedAt: null
       };
     }
 
-    function beginElevatorExit() {
-      if (isLegacyWorld || elevatorPhase !== 'ready-exit') return;
+    function beginElevatorCall() {
+      if (isLegacyWorld || !elevatorCabin || elevatorPhase !== 'idle') return;
+      if (elevatorFloor === currentFloor) {
+        beginElevatorDoorOpening(currentFloor);
+        return;
+      }
 
-      elevatorPhase = 'exiting';
+      const targetFloorY = currentFloor === 'study' ? 0 : BUILDING_LOBBY_OFFSET.y;
+      elevatorPhase = 'calling';
       publishElevatorAction(null);
-      mount.dataset.buildingTransit = 'exiting';
+      setAllBuildingElevatorDoors(elevatorDoors, 0);
+      mount.dataset.buildingTransit = 'calling';
       mount.dataset.elevatorPhase = elevatorPhase;
       elevatorSequence = {
-        kind: 'exit',
-        floor: currentFloor,
-        cabinPosition: playerPosition.clone(),
-        exitPosition: (currentFloor === 'study' ? activeMap.studyElevatorArrival : activeMap.lobbyElevatorArrival).clone(),
+        kind: 'call',
+        sourceFloor: elevatorFloor,
+        targetFloor: currentFloor,
+        sourceFloorY: elevatorCabin.position.y,
+        targetFloorY,
+        startedAt: null,
+        floorApplied: false
+      };
+    }
+
+    function beginElevatorClosing() {
+      if (isLegacyWorld || elevatorPhase !== 'boarding' || elevatorPassengerInside) return;
+
+      elevatorPhase = 'closing';
+      elevatorHasBoarded = false;
+      publishElevatorAction(null);
+      mount.dataset.buildingTransit = 'closing';
+      mount.dataset.elevatorPhase = elevatorPhase;
+      elevatorSequence = {
+        kind: 'close',
+        floor: elevatorFloor,
         startedAt: null
       };
     }
 
     function runElevatorAction() {
-      if (elevatorPhase === 'idle') beginElevatorEntry();
-      else if (elevatorPhase === 'ready-exit') beginElevatorExit();
+      if (elevatorPhase === 'idle') beginElevatorCall();
     }
 
     function updateElevatorSequence(frameTime) {
@@ -566,28 +621,48 @@ export function FirstPersonWorld({
       if (elevatorSequence.startedAt === null) elevatorSequence.startedAt = frameTime;
 
       const elapsed = Math.max(0, (frameTime - elevatorSequence.startedAt) / 1000);
-      const ease = (value) => value * value * (3 - 2 * value);
+      const ease = (value) => value * value * value * (value * (value * 6 - 15) + 10);
 
-      if (elevatorSequence.kind === 'entry') {
-        const entryStart = ELEVATOR_DOOR_SECONDS;
-        const entryEnd = entryStart + ELEVATOR_ENTRY_SECONDS;
-
-        if (elapsed < entryStart) {
-          const progress = ease(clamp(elapsed / ELEVATOR_DOOR_SECONDS, 0, 1));
-          setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.floor, progress);
-          playerPosition.copy(elevatorSequence.sourcePosition);
-        } else if (elapsed < entryEnd) {
-          setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.floor, 1);
-          const progress = ease(clamp((elapsed - entryStart) / ELEVATOR_ENTRY_SECONDS, 0, 1));
-          playerPosition.lerpVectors(elevatorSequence.sourcePosition, elevatorSequence.cabinPosition, progress);
-        } else {
-          playerPosition.copy(elevatorSequence.cabinPosition);
+      if (elevatorSequence.kind === 'open') {
+        const progress = ease(clamp(elapsed / ELEVATOR_DOOR_SECONDS, 0, 1));
+        setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.floor, progress);
+        if (elapsed >= ELEVATOR_DOOR_SECONDS) {
           setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.floor, 1);
           elevatorSequence = null;
-          elevatorPhase = 'inside';
-          publishElevatorAction('select');
-          mount.dataset.buildingTransit = 'inside';
+          elevatorPhase = 'boarding';
+          elevatorFloor = currentFloor;
+          elevatorHasBoarded = false;
+          mount.dataset.buildingTransit = 'boarding';
           mount.dataset.elevatorPhase = elevatorPhase;
+        }
+      } else if (elevatorSequence.kind === 'call') {
+        const liftEnd = ELEVATOR_LIFT_SECONDS;
+        const arrivalEnd = liftEnd + ELEVATOR_DOOR_SECONDS;
+
+        if (elapsed < liftEnd) {
+          const progress = ease(clamp(elapsed / ELEVATOR_LIFT_SECONDS, 0, 1));
+          elevatorCabin.position.y = THREE.MathUtils.lerp(
+            elevatorSequence.sourceFloorY,
+            elevatorSequence.targetFloorY,
+            progress
+          );
+        } else {
+          if (!elevatorSequence.floorApplied) {
+            elevatorSequence.floorApplied = true;
+            elevatorCabin.position.y = elevatorSequence.targetFloorY;
+            elevatorFloor = elevatorSequence.targetFloor;
+          }
+          const progress = ease(clamp((elapsed - liftEnd) / ELEVATOR_DOOR_SECONDS, 0, 1));
+          setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.targetFloor, progress);
+
+          if (elapsed >= arrivalEnd) {
+            setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.targetFloor, 1);
+            elevatorSequence = null;
+            elevatorPhase = 'boarding';
+            elevatorHasBoarded = false;
+            mount.dataset.buildingTransit = 'boarding';
+            mount.dataset.elevatorPhase = elevatorPhase;
+          }
         }
       } else if (elevatorSequence.kind === 'travel') {
         const liftStart = ELEVATOR_DOOR_SECONDS;
@@ -597,17 +672,16 @@ export function FirstPersonWorld({
         if (elapsed < liftStart) {
           const progress = ease(clamp(elapsed / ELEVATOR_DOOR_SECONDS, 0, 1));
           setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.sourceFloor, 1 - progress);
-          playerPosition.copy(elevatorSequence.cabinStartPosition);
+          elevatorCabin.position.y = elevatorSequence.sourceFloorY;
         } else if (elapsed < liftEnd) {
           setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.sourceFloor, 0);
           const progress = ease(clamp((elapsed - liftStart) / ELEVATOR_LIFT_SECONDS, 0, 1));
           elevatorCabin.position.y = THREE.MathUtils.lerp(elevatorSequence.sourceFloorY, elevatorSequence.targetFloorY, progress);
-          playerPosition.lerpVectors(elevatorSequence.cabinStartPosition, elevatorSequence.cabinEndPosition, progress);
         } else {
           if (!elevatorSequence.floorApplied) {
             elevatorSequence.floorApplied = true;
             elevatorCabin.position.y = elevatorSequence.targetFloorY;
-            playerPosition.copy(elevatorSequence.cabinEndPosition);
+            elevatorFloor = elevatorSequence.targetFloor;
             setActiveFloor(elevatorSequence.targetFloor);
           }
           const progress = ease(clamp((elapsed - liftEnd) / ELEVATOR_DOOR_SECONDS, 0, 1));
@@ -616,39 +690,30 @@ export function FirstPersonWorld({
           if (elapsed >= arrivalEnd) {
             setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.targetFloor, 1);
             elevatorSequence = null;
-            elevatorPhase = 'ready-exit';
-            publishElevatorAction('exit');
-            mount.dataset.buildingTransit = 'arrived';
+            elevatorPhase = 'boarding';
+            elevatorHasBoarded = true;
+            mount.dataset.buildingTransit = 'boarding';
             mount.dataset.elevatorPhase = elevatorPhase;
           }
         }
-      } else if (elevatorSequence.kind === 'exit') {
-        const closeStart = ELEVATOR_EXIT_SECONDS;
-        const closeEnd = closeStart + ELEVATOR_DOOR_SECONDS;
-
-        if (elapsed < closeStart) {
-          setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.floor, 1);
-          const progress = ease(clamp(elapsed / ELEVATOR_EXIT_SECONDS, 0, 1));
-          playerPosition.lerpVectors(elevatorSequence.cabinPosition, elevatorSequence.exitPosition, progress);
-        } else if (elapsed < closeEnd) {
-          playerPosition.copy(elevatorSequence.exitPosition);
-          const progress = ease(clamp((elapsed - closeStart) / ELEVATOR_DOOR_SECONDS, 0, 1));
-          setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.floor, 1 - progress);
-        } else {
-          playerPosition.copy(elevatorSequence.exitPosition);
+      } else if (elevatorSequence.kind === 'close') {
+        const progress = ease(clamp(elapsed / ELEVATOR_DOOR_SECONDS, 0, 1));
+        setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.floor, 1 - progress);
+        if (elapsed >= ELEVATOR_DOOR_SECONDS) {
           setBuildingElevatorDoorProgress(elevatorDoors, elevatorSequence.floor, 0);
           elevatorSequence = null;
           elevatorPhase = 'idle';
-          floorTransitionActive = false;
-          onElevatorSessionChange(false);
           delete mount.dataset.buildingTransit;
           mount.dataset.elevatorPhase = elevatorPhase;
         }
       }
 
-      verticalVelocity = 0;
-      isGrounded = true;
-      camera.position.copy(playerPosition);
+      if (elevatorPassengerInside || elevatorPhase === 'traveling') {
+        playerPosition.y = elevatorCabin.position.y + eyeHeight;
+        verticalVelocity = 0;
+        isGrounded = true;
+        camera.position.copy(playerPosition);
+      }
     }
 
     toggleDoorRef.current = () => {
@@ -658,7 +723,7 @@ export function FirstPersonWorld({
     if (elevatorActionRef) elevatorActionRef.current = runElevatorAction;
 
     function onKeyDown(event) {
-      if (!controlsEnabledRef.current || floorTransitionActive) {
+      if (!controlsEnabledRef.current) {
         clearMovementInput();
         return;
       }
@@ -784,8 +849,8 @@ export function FirstPersonWorld({
       const delta = Math.min(timer.getDelta(), 0.04);
       const frameTime = typeof timestamp === 'number' ? timestamp : 0;
       updateElevatorSequence(frameTime);
-      const elevatorControlsPlayer = !isLegacyWorld && elevatorPhase !== 'idle';
-      const canControlWorld = controlsEnabledRef.current && !floorTransitionActive;
+      const elevatorControlsPlayer = !isLegacyWorld && (elevatorPassengerInside || elevatorPhase === 'traveling');
+      const canControlWorld = controlsEnabledRef.current;
       if (!canControlWorld) {
         clearMovementInput();
         movementVelocity.set(0, 0, 0);
@@ -821,8 +886,23 @@ export function FirstPersonWorld({
         movementStep.copy(movementVelocity).multiplyScalar(delta);
         const isInterior = doorOpenRef.current;
         const onPhysicalStairs = !isLegacyWorld && isPositionOnBuildingStairs(playerPosition);
-        const bounds = onPhysicalStairs ? activeMap.neighborhoodBounds : isInterior ? activeMap.interiorBounds : exteriorBounds;
-        const activeColliders = onPhysicalStairs ? [] : isInterior ? colliders.interior : colliders.exterior;
+        const bounds =
+          onPhysicalStairs || elevatorControlsPlayer
+            ? activeMap.neighborhoodBounds
+            : isInterior
+              ? activeMap.interiorBounds
+              : exteriorBounds;
+        const baseColliders = onPhysicalStairs ? [] : isInterior ? colliders.interior : colliders.exterior;
+        const elevatorDoorsOpenForBoarding =
+          !isLegacyWorld && elevatorPhase === 'boarding' && elevatorFloor === currentFloor;
+        const roomColliders = elevatorDoorsOpenForBoarding
+          ? baseColliders.filter((collider) => collider.tag !== 'elevator-door')
+          : baseColliders;
+        const cabinMovementColliders = !isLegacyWorld
+          ? getBuildingElevatorMovementColliders(elevatorCabinColliders, elevatorPhase, currentFloor)
+          : [];
+        const activeColliders =
+          cabinMovementColliders.length > 0 ? [...roomColliders, ...cabinMovementColliders] : roomColliders;
         const collisionResult = movePlayerWithCollisions(
           playerPosition,
           movementStep,
@@ -862,7 +942,12 @@ export function FirstPersonWorld({
         isGrounded = true;
       }
 
-      if (!isLegacyWorld && elevatorPhase === 'idle' && isPositionOnBuildingStairs(playerPosition)) {
+      if (
+        !isLegacyWorld &&
+        !elevatorPassengerInside &&
+        elevatorPhase !== 'traveling' &&
+        isPositionOnBuildingStairs(playerPosition)
+      ) {
         if (baseGroundHeight >= -0.08 && currentFloor !== 'study') {
           setActiveFloor('study');
         } else if (baseGroundHeight <= BUILDING_LOBBY_OFFSET.y + 0.08 && currentFloor !== 'lobby') {
@@ -892,7 +977,11 @@ export function FirstPersonWorld({
         yaw,
         pitch,
         cameraMode,
-        doorOpenRef.current ? activeMap.interiorBounds : exteriorBounds,
+        elevatorControlsPlayer
+          ? activeMap.neighborhoodBounds
+          : doorOpenRef.current
+            ? activeMap.interiorBounds
+            : exteriorBounds,
         delta,
         cameraModeForward,
         cameraDesiredPosition,
@@ -919,17 +1008,45 @@ export function FirstPersonWorld({
         onNearDoorChange(nearDoor);
       }
 
-      const elevatorDoorPosition = currentFloor === 'study' ? activeMap.studyElevatorPosition : activeMap.lobbyElevatorPosition;
+      const passengerWasInside = elevatorPassengerInside;
+      const passengerIsInside =
+        !isLegacyWorld &&
+        (elevatorPhase === 'boarding' || elevatorPhase === 'traveling') &&
+        isPositionInsideBuildingElevator(playerPosition);
+      if (passengerIsInside !== elevatorPassengerInside) {
+        elevatorPassengerInside = passengerIsInside;
+        onElevatorSessionChange(elevatorPassengerInside);
+        if (elevatorPassengerInside) {
+          elevatorHasBoarded = true;
+        } else if (passengerWasInside && elevatorPhase === 'boarding' && elevatorHasBoarded) {
+          beginElevatorClosing();
+        }
+      }
+
+      const elevatorDoorPosition =
+        currentFloor === 'study' ? activeMap.studyElevatorPosition : activeMap.lobbyElevatorPosition;
       elevatorDirection.copy(elevatorDoorPosition).sub(playerPosition);
       elevatorDirection.y = 0;
       const elevatorDistance = elevatorDirection.length();
       const isFacingElevator =
         elevatorDistance > 0.001 &&
         elevatorDirection.normalize().dot(playerForwardHorizontal) >= ELEVATOR_INTERACTION_DOT;
+      elevatorPanelDirection
+        .set(ELEVATOR_PANEL_WORLD.x, playerPosition.y, ELEVATOR_PANEL_WORLD.z)
+        .sub(playerPosition);
+      elevatorPanelDirection.y = 0;
+      const elevatorPanelDistance = elevatorPanelDirection.length();
+      const isFacingElevatorPanel =
+        elevatorPanelDistance > 0.001 &&
+        elevatorPanelDirection.normalize().dot(playerForwardHorizontal) >= ELEVATOR_PANEL_INTERACTION_DOT;
+      const canUseElevatorPanel =
+        elevatorPhase === 'boarding' &&
+        elevatorPassengerInside &&
+        elevatorPanelDistance < ELEVATOR_PANEL_INTERACTION_DISTANCE &&
+        isFacingElevatorPanel;
       const nearElevator =
         !isLegacyWorld &&
-        (elevatorPhase === 'inside' ||
-          elevatorPhase === 'ready-exit' ||
+        (canUseElevatorPanel ||
           (elevatorPhase === 'idle' &&
             elevatorDistance < ELEVATOR_INTERACTION_DISTANCE &&
             isFacingElevator));
@@ -938,9 +1055,8 @@ export function FirstPersonWorld({
         onNearElevatorChange(nearElevator);
       }
       if (!isLegacyWorld) {
-        if (elevatorPhase === 'inside') publishElevatorAction('select');
-        else if (elevatorPhase === 'ready-exit') publishElevatorAction('exit');
-        else if (nearElevator && elevatorPhase === 'idle') publishElevatorAction('enter');
+        if (canUseElevatorPanel) publishElevatorAction('select');
+        else if (nearElevator && elevatorPhase === 'idle') publishElevatorAction('call');
         else publishElevatorAction(null);
       }
 
@@ -966,6 +1082,8 @@ export function FirstPersonWorld({
 
       mount.dataset.currentFloor = currentFloor;
       mount.dataset.elevatorPhase = elevatorPhase;
+      mount.dataset.elevatorFloor = elevatorFloor;
+      mount.dataset.elevatorPassenger = elevatorPassengerInside ? 'inside' : 'outside';
       mount.dataset.playerPosition = [playerPosition.x, playerPosition.y, playerPosition.z]
         .map((value) => value.toFixed(2))
         .join(',');
@@ -1066,6 +1184,15 @@ function getRequestedBuildingStartLookTarget(requestedFloor = 'lobby') {
   }
   if (spawn === 'shop') return new THREE.Vector3(101.55, -8.2, 26.8);
   return activeMap.startLookAt.clone();
+}
+
+function isPositionInsideBuildingElevator(position) {
+  return (
+    position.x >= ELEVATOR_CABIN_SAFE_MIN_X &&
+    position.x <= ELEVATOR_CABIN_SAFE_MAX_X &&
+    position.z >= ELEVATOR_CABIN_SAFE_MIN_Z &&
+    position.z <= ELEVATOR_CABIN_SAFE_MAX_Z
+  );
 }
 
 function isPositionOnBuildingStairs(position) {
@@ -2845,9 +2972,9 @@ function addStaticSkyDome(scene) {
 }
 
 function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
-  const interiorCollider = (x, z, width, depth) => createCollider(90 + x, -6 + z, width, depth);
-  const lobbyCollider = (x, z, width, depth) =>
-    createCollider(BUILDING_LOBBY_OFFSET.x + x, BUILDING_LOBBY_OFFSET.z + z, width, depth);
+  const interiorCollider = (x, z, width, depth, tag = '') => createCollider(90 + x, -6 + z, width, depth, tag);
+  const lobbyCollider = (x, z, width, depth, tag = '') =>
+    createCollider(BUILDING_LOBBY_OFFSET.x + x, BUILDING_LOBBY_OFFSET.z + z, width, depth, tag);
   const legacyExteriorColliders = [
     createCollider(0, -20.8, 15.2, 8.7),
     createCollider(-18, -19, 12.5, 8.5),
@@ -2875,22 +3002,68 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
             lobbyCollider(-5.4, -11.8, 1.25, 1.25),
             lobbyCollider(4.9, -11.8, 1.25, 1.25),
             lobbyCollider(4.9, 8.2, 2.8, 1.9),
-            lobbyCollider(10.6, -9.35, 6.7, 0.55)
+            lobbyCollider(10.6, -9.35, 6.7, 0.55, 'elevator-door')
           ],
     interior: [
       interiorCollider(0, -28.3, 39, 3.6),
       interiorCollider(-11.4, -8.6, 4.8, 2.6),
-      interiorCollider(7.9, 27.98, 5.9, 0.55)
+      interiorCollider(7.9, 27.98, 5.9, 0.55, 'elevator-door')
     ]
   };
 }
 
-function createCollider(centerX, centerZ, width, depth) {
+function createBuildingElevatorCabinColliders() {
+  const wallThickness = 0.3;
+  const sideDepth = ELEVATOR_CABIN_DEPTH;
+  const endWidth = ELEVATOR_CABIN_WIDTH;
+  return {
+    sides: [
+      createCollider(
+        BUILDING_ELEVATOR_X - ELEVATOR_CABIN_HALF_WIDTH + wallThickness / 2,
+        BUILDING_ELEVATOR_Z,
+        wallThickness,
+        sideDepth
+      ),
+      createCollider(
+        BUILDING_ELEVATOR_X + ELEVATOR_CABIN_HALF_WIDTH - wallThickness / 2,
+        BUILDING_ELEVATOR_Z,
+        wallThickness,
+        sideDepth
+      )
+    ],
+    negativeEnd: createCollider(
+      BUILDING_ELEVATOR_X,
+      BUILDING_ELEVATOR_Z - ELEVATOR_CABIN_HALF_DEPTH + wallThickness / 2,
+      endWidth,
+      wallThickness
+    ),
+    positiveEnd: createCollider(
+      BUILDING_ELEVATOR_X,
+      BUILDING_ELEVATOR_Z + ELEVATOR_CABIN_HALF_DEPTH - wallThickness / 2,
+      endWidth,
+      wallThickness
+    )
+  };
+}
+
+function getBuildingElevatorMovementColliders(cabinColliders, phase, currentFloor) {
+  if (phase === 'traveling') {
+    return [...cabinColliders.sides, cabinColliders.negativeEnd, cabinColliders.positiveEnd];
+  }
+  if (phase !== 'boarding') return [];
+  return [
+    ...cabinColliders.sides,
+    currentFloor === 'study' ? cabinColliders.positiveEnd : cabinColliders.negativeEnd
+  ];
+}
+
+function createCollider(centerX, centerZ, width, depth, tag = '') {
   return {
     minX: centerX - width / 2,
     maxX: centerX + width / 2,
     minZ: centerZ - depth / 2,
-    maxZ: centerZ + depth / 2
+    maxZ: centerZ + depth / 2,
+    tag
   };
 }
 
@@ -3044,8 +3217,8 @@ function addBuildingLobby(group, textures) {
   [
     { size: [36, 0.36, 24.8], position: [0, 9.36, 7.6] },
     { size: [36, 0.36, 8.2], position: [0, 9.36, -15.9] },
-    { size: [3.8, 0.36, 7], position: [-16.1, 9.36, -8.3] },
-    { size: [15.7, 0.36, 7], position: [-0.15, 9.36, -8.3] },
+    { size: [3.4, 0.36, 7], position: [-16.3, 9.36, -8.3] },
+    { size: [15.4, 0.36, 7], position: [0, 9.36, -8.3] },
     { size: [4.5, 0.36, 7], position: [15.75, 9.36, -8.3] }
   ].forEach((part) => addBuildingBox(group, 'building-lobby-ceiling', part.size, part.position, materials.ceiling));
 
@@ -3094,6 +3267,10 @@ function addBuildingStairs(group, materials) {
   const run = BUILDING_STAIR_MAX_Z - BUILDING_STAIR_MIN_Z;
   const stepDepth = run / stepCount;
   const stepRise = BUILDING_STAIR_RISE / stepCount;
+  const stairCenterX = (BUILDING_STAIR_MIN_X + BUILDING_STAIR_MAX_X) / 2;
+  const stairWidth = BUILDING_STAIR_MAX_X - BUILDING_STAIR_MIN_X;
+  const stringerInset = 0.16;
+  const railInset = 0.12;
 
   for (let index = 0; index < stepCount; index += 1) {
     const height = stepRise * (index + 1);
@@ -3101,8 +3278,8 @@ function addBuildingStairs(group, materials) {
     addBuildingBox(
       group,
       'building-lobby-stair-step',
-      [5.2, height, stepDepth + 0.04],
-      [-11.1, height / 2, z],
+      [stairWidth - 0.18, height, stepDepth + 0.04],
+      [stairCenterX, height / 2, z],
       index % 2 === 0 ? materials.stairTread : materials.stairRiser,
       0x78978c,
       0.1
@@ -3110,18 +3287,29 @@ function addBuildingStairs(group, materials) {
     addBuildingBox(
       group,
       'building-lobby-stair-nosing',
-      [5.02, 0.028, 0.045],
-      [-11.1, height + 0.025, BUILDING_STAIR_MAX_Z - stepDepth * index + 0.02],
+      [stairWidth - 0.34, 0.028, 0.045],
+      [stairCenterX, height + 0.025, BUILDING_STAIR_MAX_Z - stepDepth * index + 0.02],
       materials.stairNose,
       0xf0d38c,
       0.1
     );
   }
 
-  addBuildingBox(group, 'building-lobby-stair-landing', [5.8, 0.32, 3.4], [-11.1, BUILDING_STAIR_RISE, -9.7], materials.stairTread, 0x9ab9aa, 0.12);
+  addBuildingBox(
+    group,
+    'building-lobby-stair-landing',
+    [stairWidth + 0.4, 0.32, 3.4],
+    [stairCenterX, BUILDING_STAIR_RISE, -9.7],
+    materials.stairTread,
+    0x9ab9aa,
+    0.12
+  );
   const stringerLength = Math.hypot(run, BUILDING_STAIR_RISE);
   const stringerAngle = -Math.atan2(BUILDING_STAIR_RISE, run);
-  [-13.64, -8.56].forEach((x) => {
+  [
+    BUILDING_STAIR_MIN_X + stringerInset,
+    BUILDING_STAIR_MAX_X - stringerInset
+  ].forEach((x) => {
     const stringer = addBuildingBox(
       group,
       'building-lobby-stair-stringer',
@@ -3133,13 +3321,16 @@ function addBuildingStairs(group, materials) {
     );
     stringer.rotation.x = stringerAngle;
   });
-  addBuildingBox(group, 'building-lobby-stair-left-reveal', [0.42, 7.6, 0.45], [-14.2, BUILDING_STAIR_RISE + 3.8, -11.48], materials.wallDark);
-  addBuildingBox(group, 'building-lobby-stair-right-reveal', [0.42, 7.6, 0.45], [-8, BUILDING_STAIR_RISE + 3.8, -11.48], materials.wallDark);
-  addBuildingBox(group, 'building-lobby-stair-header', [6.6, 0.42, 0.45], [-11.1, BUILDING_STAIR_RISE + 7.4, -11.48], materials.wallDark);
+  addBuildingBox(group, 'building-lobby-stair-left-reveal', [0.42, 7.6, 0.45], [BUILDING_STAIR_MIN_X - 0.2, BUILDING_STAIR_RISE + 3.8, -11.48], materials.wallDark);
+  addBuildingBox(group, 'building-lobby-stair-right-reveal', [0.42, 7.6, 0.45], [BUILDING_STAIR_MAX_X + 0.2, BUILDING_STAIR_RISE + 3.8, -11.48], materials.wallDark);
+  addBuildingBox(group, 'building-lobby-stair-header', [stairWidth + 0.8, 0.42, 0.45], [stairCenterX, BUILDING_STAIR_RISE + 7.4, -11.48], materials.wallDark);
 
   const railLength = Math.hypot(run, BUILDING_STAIR_RISE);
   const railAngle = -Math.atan2(BUILDING_STAIR_RISE, run);
-  [-13.7, -8.5].forEach((x) => {
+  [
+    BUILDING_STAIR_MIN_X + railInset,
+    BUILDING_STAIR_MAX_X - railInset
+  ].forEach((x) => {
     const rail = addBuildingBox(
       group,
       'building-lobby-stair-rail',
@@ -3158,7 +3349,7 @@ function addBuildingStairs(group, materials) {
     name: 'building-lobby-stairs-sign',
     title: 'PISO 1',
     subtitle: 'Sala de estudio',
-    position: [-11.1, BUILDING_STAIR_RISE + 6.65, -11.18],
+    position: [stairCenterX, BUILDING_STAIR_RISE + 6.65, -11.18],
     size: [4.6, 1.25],
     accent: '#d8bd77'
   });
@@ -3195,7 +3386,7 @@ function addBuildingElevator(group, materials) {
   addBuildingLabel(group, {
     name: 'building-lobby-elevator-sign',
     title: 'ASCENSOR',
-    subtitle: 'E  entrar',
+    subtitle: 'E  llamar  |  entra caminando',
     position: [10.6, 7.95, elevatorZ + 0.36],
     size: [5.8, 1.25],
     accent: '#9fd1be'
@@ -3291,7 +3482,7 @@ function addStudyFloorCirculation(room, textures) {
   addBuildingLabel(room, {
     name: 'building-study-elevator-label',
     title: 'ASCENSOR',
-    subtitle: 'E  entrar',
+    subtitle: 'E  llamar  |  entra caminando',
     position: [elevatorX, 7.02, 27.76],
     size: [5.7, 1.2],
     accent: '#9fcfbe'
@@ -3319,32 +3510,61 @@ function addBuildingElevatorCabin(scene, textures) {
   const wallInset = makeEmissiveMaterial(0x31463f, 0.18);
   const gold = makeMaterial(0xd8bd77, 0.48, 0.06);
   const mint = makeMaterial(0x9fcfbe, 0.5, 0.04);
-  addBuildingBox(cabin, 'building-elevator-cabin-floor', [5.5, 0.2, 4.2], [0, 0, 0], metal);
-  addBuildingBox(cabin, 'building-elevator-cabin-left-wall', [0.18, 6.25, 4.2], [-2.66, 3.05, 0], wall);
-  addBuildingBox(cabin, 'building-elevator-cabin-right-wall', [0.18, 6.25, 4.2], [2.66, 3.05, 0], wall);
-  addBuildingBox(cabin, 'building-elevator-cabin-rear-wall', [5.5, 6.25, 0.18], [0, 3.05, -2.02], wall);
-  addBuildingBox(cabin, 'building-elevator-cabin-rear-inset', [4.82, 4.7, 0.04], [0, 3.02, -1.91], wallInset, 0x78978c, 0.12);
-  addBuildingBox(cabin, 'building-elevator-cabin-rear-upper-band', [4.35, 0.08, 0.05], [0, 4.82, -1.86], mint);
-  addBuildingBox(cabin, 'building-elevator-cabin-rear-lower-band', [4.35, 0.08, 0.05], [0, 1.28, -1.86], gold);
-  addBuildingBox(cabin, 'building-elevator-cabin-handrail', [4.15, 0.12, 0.14], [0, 1.38, -1.7], metal, 0xd8bd77, 0.14);
-  addBuildingLabel(cabin, {
-    name: 'building-elevator-cabin-identity',
-    title: 'ESTUDIEMOS',
-    subtitle: 'Ascensor  |  Viaje en curso',
-    position: [0, 2.3, -1.82],
-    size: [1.7, 0.5],
-    accent: '#9fcfbe'
-  });
-  addBuildingBox(cabin, 'building-elevator-cabin-ceiling', [5.5, 0.2, 4.2], [0, 6.2, 0], metal);
-  addBuildingBox(cabin, 'building-elevator-cabin-light-left', [2.05, 0.05, 0.45], [-1.25, 6.06, 0], mint);
-  addBuildingBox(cabin, 'building-elevator-cabin-light-right', [2.05, 0.05, 0.45], [1.25, 6.06, 0], gold);
-  addBuildingBox(cabin, 'building-elevator-cabin-front-header', [5.5, 0.42, 0.18], [0, 5.76, 2.02], metal);
-  addBuildingBox(cabin, 'building-elevator-cabin-rear-header', [5.5, 0.42, 0.18], [0, 5.76, -2.02], metal);
-  addBuildingBox(cabin, 'building-elevator-cabin-controls', [0.08, 1.72, 0.9], [2.52, 3.1, 0.7], metal);
-  addBuildingBox(cabin, 'building-elevator-cabin-pb-button', [0.05, 0.42, 0.42], [2.46, 3.42, 0.48], mint);
-  addBuildingBox(cabin, 'building-elevator-cabin-p1-button', [0.05, 0.42, 0.42], [2.46, 2.82, 0.48], wall);
+  const sideWallX = ELEVATOR_CABIN_HALF_WIDTH - 0.09;
+  const endHeaderZ = ELEVATOR_CABIN_HALF_DEPTH - 0.09;
+  const panelX = ELEVATOR_CABIN_HALF_WIDTH - 0.16;
+  addBuildingBox(
+    cabin,
+    'building-elevator-cabin-floor',
+    [ELEVATOR_CABIN_WIDTH, 0.2, ELEVATOR_CABIN_DEPTH],
+    [0, 0, 0],
+    metal
+  );
+  addBuildingBox(
+    cabin,
+    'building-elevator-cabin-left-wall',
+    [0.18, 6.25, ELEVATOR_CABIN_DEPTH],
+    [-sideWallX, 3.05, 0],
+    wall
+  );
+  addBuildingBox(
+    cabin,
+    'building-elevator-cabin-right-wall',
+    [0.18, 6.25, ELEVATOR_CABIN_DEPTH],
+    [sideWallX, 3.05, 0],
+    wall
+  );
+  addBuildingBox(cabin, 'building-elevator-cabin-left-inset', [0.04, 4.7, 3.9], [-sideWallX + 0.1, 3.02, 0], wallInset);
+  addBuildingBox(cabin, 'building-elevator-cabin-left-handrail', [0.14, 0.12, 3.8], [-sideWallX + 0.16, 1.38, 0], metal);
+  addBuildingBox(cabin, 'building-elevator-cabin-right-handrail', [0.14, 0.12, 3.8], [sideWallX - 0.16, 1.38, -0.65], metal);
+  addBuildingBox(
+    cabin,
+    'building-elevator-cabin-ceiling',
+    [ELEVATOR_CABIN_WIDTH, 0.2, ELEVATOR_CABIN_DEPTH],
+    [0, 6.2, 0],
+    metal
+  );
+  addBuildingBox(cabin, 'building-elevator-cabin-light-left', [2.5, 0.05, 0.45], [-1.55, 6.06, 0], mint);
+  addBuildingBox(cabin, 'building-elevator-cabin-light-right', [2.5, 0.05, 0.45], [1.55, 6.06, 0], gold);
+  addBuildingBox(
+    cabin,
+    'building-elevator-cabin-positive-header',
+    [ELEVATOR_CABIN_WIDTH, 0.42, 0.18],
+    [0, 5.76, endHeaderZ],
+    metal
+  );
+  addBuildingBox(
+    cabin,
+    'building-elevator-cabin-negative-header',
+    [ELEVATOR_CABIN_WIDTH, 0.42, 0.18],
+    [0, 5.76, -endHeaderZ],
+    metal
+  );
+  addBuildingBox(cabin, 'building-elevator-cabin-controls', [0.08, 1.92, 1.08], [panelX, 3.05, 0.45], metal);
+  addBuildingBox(cabin, 'building-elevator-cabin-pb-button', [0.05, 0.46, 0.46], [panelX - 0.06, 3.42, 0.26], mint);
+  addBuildingBox(cabin, 'building-elevator-cabin-p1-button', [0.05, 0.46, 0.46], [panelX - 0.06, 2.76, 0.26], wall);
 
-  const cabinLight = new THREE.PointLight(0xc8f1df, 1.05, 8, 2);
+  const cabinLight = new THREE.PointLight(0xc8f1df, 1.05, 10, 2);
   cabinLight.position.set(0, 5.7, 0);
   cabin.add(cabinLight);
   scene.add(cabin);
