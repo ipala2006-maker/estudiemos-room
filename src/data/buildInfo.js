@@ -14,5 +14,5 @@ import '../utils/installSpotifyPlaybackEnhancer.js';
 import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installComputerAgendaCleanup.js';
 
-export const BUILD_LABEL = 'Ascensor natural y escaleras 2026-07-27';
-export const BUILD_MARKER = 'natural-elevator-stairs-2026-07-27-v1';
+export const BUILD_LABEL = 'Ascensor fisico y escaleras estables 2026-07-29';
+export const BUILD_MARKER = 'physical-elevator-stable-stairs-2026-07-29-v2';

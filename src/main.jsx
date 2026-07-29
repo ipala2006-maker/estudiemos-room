@@ -566,6 +566,8 @@ function App() {
       ? { key: 'elevator-select', control: 'E', title: 'Panel interior', label: 'E - elegir piso' }
       : isNearElevator && elevatorAction === 'call'
         ? { key: 'elevator-call', control: 'E', title: 'Llamar ascensor', label: 'E - llamar ascensor' }
+        : isNearElevator && elevatorAction === 'board'
+          ? { key: 'elevator-board', control: 'W', title: 'Ascensor abierto', label: 'Entrá caminando al ascensor' }
         : canTargetComputer
           ? { key: 'computer', control: 'E', title: 'Abrir computadora', label: 'E - abrir computadora' }
           : canTargetAgenda
