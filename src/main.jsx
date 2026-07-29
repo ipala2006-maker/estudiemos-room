@@ -731,4 +731,7 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+const rootElement = document.getElementById('root');
+const appRoot = rootElement.__estudiemosReactRoot ?? createRoot(rootElement);
+rootElement.__estudiemosReactRoot = appRoot;
+appRoot.render(<App />);

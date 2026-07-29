@@ -4,7 +4,7 @@ import dachshundMascotRenderUrl from '../assets/dachshund-mascot-render.jpg';
 const ROOM_ORIGIN = { x: 90, z: -6 };
 const SHOP_LOCAL = new THREE.Vector3(25.85, 0, -11.5);
 const SHOP_WORLD_CENTER = new THREE.Vector3(116.15, 1.55, -17.5);
-const BUILDING_SHOP_WORLD_CENTER = new THREE.Vector3(101.55, -8.45, 26.8);
+const BUILDING_SHOP_WORLD_CENTER = new THREE.Vector3(101.55, -8.45, 34.6);
 const SHOP_OBJECT_NAME = 'casa1-salchi-shop-corner';
 const SHOP_ANCHOR_NAME = 'casa1-salchi-shop-anchor';
 const INTERIOR_BOUNDS = { minX: 62, maxX: 118, minZ: -36, maxZ: 23 };

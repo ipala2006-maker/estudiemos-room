@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import dachshundMascotRenderUrl from '../assets/dachshund-mascot-render.jpg';
 import { BUILDING_LOBBY_OFFSET } from '../maps/BuildingWorld.js';
+import {
+  addArchitectureModel,
+  BUILDING_ARCHITECTURE
+} from '../world/buildingArchitecture.js';
 
 const SHOP_OBJECT_NAME = 'casa1-salchi-shop-corner';
 const SHOP_ANCHOR_NAME = 'casa1-salchi-shop-anchor';
@@ -11,8 +15,8 @@ const SHOP_PLACEMENTS = {
   building: {
     id: 'building-lobby',
     anchor: BUILDING_LOBBY_OFFSET.clone(),
-    local: new THREE.Vector3(15.35, 0, -5.9),
-    center: new THREE.Vector3(101.55, -8.45, 26.8),
+    local: new THREE.Vector3(15.35, 0, 1.9),
+    center: new THREE.Vector3(101.55, -8.45, 34.6),
     bounds: { minX: 70.1, maxX: 104.5, minY: -10.8, maxY: -3.2, minZ: 13.5, maxZ: 49.9 }
   },
   legacy: {
@@ -190,14 +194,12 @@ function createCleanShop(anchor, placement) {
     [3.28, 3.2, 1]
   );
 
-  addBox(shop, 'salchi-shop-counter-body', [1.24, 0.58, 3.34], [0.08, 0.48, 0], materials.teal);
-  addBox(shop, 'salchi-shop-counter-top', [1.48, 0.12, 3.52], [0, 0.83, 0], materials.wood);
-  addBox(shop, 'salchi-shop-counter-front', [0.1, 0.56, 3.24], [-0.58, 0.49, 0], materials.wallPanel);
-  addBox(shop, 'salchi-shop-counter-front-trim', [0.06, 0.055, 2.7], [-0.64, 0.75, 0], materials.trim);
-  addBox(shop, 'salchi-shop-counter-plinth', [1.18, 0.08, 3.08], [0.08, 0.08, 0], materials.dark);
-
-  addBox(shop, 'salchi-shop-display-shelf-left', [0.22, 0.07, 0.72], [1.47, 2.18, -1.35], materials.trim);
-  addBox(shop, 'salchi-shop-display-shelf-right', [0.22, 0.07, 0.72], [1.47, 2.18, 1.35], materials.mint);
+  addArchitectureModel(shop, {
+    asset: BUILDING_ARCHITECTURE.shopCounter,
+    name: 'salchi-shop-counter',
+    position: [0.08, 0, 0],
+    rotation: [0, -Math.PI / 2, 0]
+  });
   const vendor = makeDogVendor();
   shop.add(vendor);
 
