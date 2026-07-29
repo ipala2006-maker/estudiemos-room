@@ -2,7 +2,6 @@ import * as THREE from 'three';
 
 const TARGET_EVENT = 'estudiemos:interaction-target';
 const PATCH_FLAG = '__estudiemosInteractionTargetingInstalled';
-const AGENDA_PATCH_FLAG = '__estudiemosAgendaMoved';
 const NEIGHBORHOOD_PATCH_FLAG = '__estudiemosVisibleNeighborhoodFix1349CleanSigns';
 const CANVAS_FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
 
@@ -25,17 +24,12 @@ const COMPUTER_TARGET = {
 };
 
 const AGENDA_TARGET = {
-  oldLocalCenter: new THREE.Vector3(-27.6, 5.6, -12.8),
-  center: new THREE.Vector3(90, 5.7, 22.62),
-  localCenter: new THREE.Vector3(0, 5.7, 28.62),
-  width: 12.4,
-  domWidth: 980,
-  domHeight: 560,
-  padding: 1.35,
-  distance: 14,
-  rotationY: Math.PI,
-  physicalBoardScale: new THREE.Vector3(8.2, 5.35, 1),
-  physicalFrameScale: 3.15
+  center: new THREE.Vector3(117.55, 4.3, -6),
+  width: 8.4,
+  domWidth: 520,
+  domHeight: 330,
+  padding: 0.65,
+  distance: 18
 };
 
 const ROOM_SPEAKER_TARGET = {
@@ -83,15 +77,13 @@ export function installInteractionTargeting() {
   document.documentElement.dataset.estudiemosInteractionTargeting = '2410-shop-corner-target';
 }
 
-export function ensureInteractionTargetingInScene(scene, cssScene) {
+export function ensureInteractionTargetingInScene(scene) {
   if (!isWorldScene(scene)) return;
   if (scene !== lastWorldScene) {
     lastTarget = undefined;
     lastWorldScene = scene;
   }
-  patchPhysicalAgenda(scene);
   patchNeighborhood(scene);
-  if (cssScene?.isScene) patchCssAgenda(cssScene);
 }
 
 export function updateInteractionTargeting(scene, camera) {
@@ -110,7 +102,6 @@ function isWorldScene(scene) {
 
 function refreshInteractionRuntime() {
   if (lastWorldScene) {
-    patchPhysicalAgenda(lastWorldScene);
     patchNeighborhood(lastWorldScene);
   }
 
@@ -185,23 +176,23 @@ function getScreenHit(position, direction) {
 }
 
 function getAgendaHit(position, direction) {
-  return getAgendaZPlaneHit(position, direction, AGENDA_TARGET.center, AGENDA_TARGET.width, AGENDA_TARGET.distance);
+  return getAgendaXPlaneHit(position, direction, AGENDA_TARGET.center, AGENDA_TARGET.width, AGENDA_TARGET.distance);
 }
 
-function getAgendaZPlaneHit(position, direction, center, width, maxDistance) {
-  if (Math.abs(direction.z) < 0.001) return null;
+function getAgendaXPlaneHit(position, direction, center, width, maxDistance) {
+  if (Math.abs(direction.x) < 0.001) return null;
 
-  const distance = (center.z - position.z) / direction.z;
+  const distance = (center.x - position.x) / direction.x;
   if (distance < 0.8 || distance > maxDistance) return null;
 
-  const hitX = position.x + direction.x * distance;
+  const hitZ = position.z + direction.z * distance;
   const hitY = position.y + direction.y * distance;
   const halfWidth = width / 2 + AGENDA_TARGET.padding;
   const halfHeight = (width * (AGENDA_TARGET.domHeight / AGENDA_TARGET.domWidth)) / 2 + AGENDA_TARGET.padding;
 
   const isInside =
-    hitX >= center.x - halfWidth &&
-    hitX <= center.x + halfWidth &&
+    hitZ >= center.z - halfWidth &&
+    hitZ <= center.z + halfWidth &&
     hitY >= center.y - halfHeight &&
     hitY <= center.y + halfHeight;
 
@@ -231,67 +222,6 @@ function getRaySphereHitDistance(origin, direction, center, radius) {
   if (closestDistanceSq > radiusSq) return null;
 
   return Math.max(0, projected - Math.sqrt(radiusSq - closestDistanceSq));
-}
-
-function patchPhysicalAgenda(scene) {
-  if (scene.userData?.[AGENDA_PATCH_FLAG]) return;
-
-  scene.traverse((object) => {
-    if (!object?.position || object.userData?.[AGENDA_PATCH_FLAG]) return;
-    if (!isOldAgendaPiece(object.position)) return;
-
-    object.userData[AGENDA_PATCH_FLAG] = true;
-    const localCenter = AGENDA_TARGET.localCenter;
-
-    if (Math.abs(object.position.y - 6.95) < 0.16) {
-      object.position.set(localCenter.x, localCenter.y + 2.78, localCenter.z - 0.06);
-      object.rotation.y = Math.PI / 2;
-      object.scale.z *= AGENDA_TARGET.physicalFrameScale;
-      return;
-    }
-
-    if (Math.abs(object.position.y - 4.25) < 0.16) {
-      object.position.set(localCenter.x, localCenter.y - 2.78, localCenter.z - 0.06);
-      object.rotation.y = Math.PI / 2;
-      object.scale.z *= AGENDA_TARGET.physicalFrameScale;
-      return;
-    }
-
-    if (object.scale.x > 2.5 && object.scale.y > 2) {
-      object.position.copy(localCenter);
-      object.rotation.y = AGENDA_TARGET.rotationY;
-      object.scale.copy(AGENDA_TARGET.physicalBoardScale);
-      return;
-    }
-
-    object.visible = false;
-  });
-  scene.userData[AGENDA_PATCH_FLAG] = true;
-}
-
-function isOldAgendaPiece(position) {
-  return (
-    Math.abs(position.x - AGENDA_TARGET.oldLocalCenter.x) < 0.28 &&
-    Math.abs(position.z - AGENDA_TARGET.oldLocalCenter.z) < 0.36 &&
-    position.y > 4.0 &&
-    position.y < 7.2
-  );
-}
-
-function patchCssAgenda(scene) {
-  if (scene.userData?.[AGENDA_PATCH_FLAG]) return;
-
-  scene.traverse((object) => {
-    if (!object?.element?.classList?.contains('css-agenda-board') || object.userData?.[AGENDA_PATCH_FLAG]) return;
-
-    object.userData[AGENDA_PATCH_FLAG] = true;
-    object.element.style.width = `${AGENDA_TARGET.domWidth}px`;
-    object.element.style.height = `${AGENDA_TARGET.domHeight}px`;
-    object.position.copy(AGENDA_TARGET.center);
-    object.rotation.y = AGENDA_TARGET.rotationY;
-    object.scale.setScalar(AGENDA_TARGET.width / AGENDA_TARGET.domWidth);
-  });
-  scene.userData[AGENDA_PATCH_FLAG] = true;
 }
 
 function patchNeighborhood(scene) {

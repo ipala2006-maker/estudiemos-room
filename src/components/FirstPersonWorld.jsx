@@ -116,8 +116,8 @@ const COMPUTER_MONITOR_OCCLUDER_DOM_SIZE = {
   height: 270
 };
 const AGENDA_BOARD_WORLD = {
-  center: new THREE.Vector3(62.32, 5.6, -18.8),
-  width: 4.2
+  center: new THREE.Vector3(117.55, 4.3, -6),
+  width: 8.4
 };
 const AGENDA_BOARD_DOM_SIZE = {
   width: 520,
@@ -2698,7 +2698,7 @@ function createCssAgendaBoardObject() {
 
   const object = new CSS3DObject(root);
   object.position.copy(AGENDA_BOARD_WORLD.center);
-  object.rotation.y = Math.PI / 2;
+  object.rotation.y = -Math.PI / 2;
   object.scale.setScalar(AGENDA_BOARD_WORLD.width / AGENDA_BOARD_DOM_SIZE.width);
   object.userData.agendaList = list;
   object.userData.agendaStateKey = '';
@@ -3173,11 +3173,9 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
       worldMode === LEGACY_WORLD_MODE
         ? legacyExteriorColliders
         : [
-            lobbyCollider(-3.6, 9.6, 5.5, 2.6),
             lobbyCollider(-5.4, -11.8, 1.25, 1.25),
             lobbyCollider(3.4, -11.8, 1.25, 1.25),
             lobbyCollider(4.9, 8.2, 2.8, 1.9),
-            lobbyCollider(-4.8, 7.35, 4.5, 0.38, 'reception-wall'),
             lobbyCollider(-15.8, -16.8, 1.35, 1.35, 'planter'),
             lobbyCollider(15.8, 16.2, 1.35, 1.35, 'planter'),
             ...createBuildingElevatorShaftColliders('lobby'),
@@ -3428,31 +3426,10 @@ function addBuildingLobby(group) {
     scale: [6.2 / 4, 0.2, 17.2 / 4],
     castShadow: false
   });
-  addRepeatedWall(group, {
-    name: 'building-lobby-reception-backdrop',
-    center: [-4.8, 2.02, 7.35],
-    length: 4.8,
-    height: 1.75,
-    maxModuleLength: 4.8
-  });
-  addArchitectureModel(group, {
-    asset: BUILDING_ARCHITECTURE.receptionDesk,
-    name: 'building-lobby-reception-desk',
-    position: [-4.8, 0, 9.6]
-  });
-
-  addBuildingLabel(group, {
-    name: 'building-lobby-reception-label',
-    title: 'RECEPCION',
-    subtitle: 'Ayuda y accesos',
-    position: [-4.8, 2.82, 7.68],
-    size: [3.75, 0.92],
-    accent: '#d8bd77'
-  });
   addBuildingLabel(group, {
     name: 'building-lobby-main-sign',
     title: 'ESTUDIEMOS',
-    subtitle: 'Lobby  |  Recepcion y accesos',
+    subtitle: 'Lobby  |  Escaleras y ascensor',
     position: [0, 6.75, -19.42],
     size: [7.8, 1.55],
     accent: '#9fd1be'
@@ -3689,15 +3666,6 @@ function addStudyFloorCirculation(room) {
     name: 'building-study-stair-top-portal',
     position: [-13.8, 0, 28.25],
     rotation: [0, Math.PI, 0]
-  });
-  addBuildingLabel(room, {
-    name: 'building-study-stairs-label',
-    title: 'ESCALERAS',
-    subtitle: 'Baja caminando al lobby',
-    position: [-13.8, 7.02, 27.76],
-    size: [5.7, 1.2],
-    accent: '#d8bd77',
-    rotationY: Math.PI
   });
 
   const elevatorX = STUDY_ELEVATOR_LOCAL_X;
@@ -5419,18 +5387,19 @@ function addAgendaBoard(room, lines, textures) {
     background: '#111a1a',
     accent: '#e0c47a'
   });
-  board.position.set(-27.6, 5.6, -12.8);
-  board.rotation.y = Math.PI / 2;
-  board.scale.set(3.35, 2.35, 1);
+  board.position.set(27.55, 4.3, 0);
+  board.rotation.y = -Math.PI / 2;
+  board.scale.set(8.4, 7.2, 1);
   room.add(board);
 
   const frameMaterial = makeMaterial(0x0b1112, 0.68, 0.08, textures.brushedMetal);
   [
-    { position: [-27.52, 5.6, -12.8], size: [0.18, 2.62, 3.88] },
-    { position: [-27.5, 6.95, -12.8], size: [0.2, 0.18, 3.96] },
-    { position: [-27.5, 4.25, -12.8], size: [0.2, 0.18, 3.96] }
+    { name: 'back', position: [27.66, 4.3, 0], size: [0.18, 5.72, 8.86] },
+    { name: 'top', position: [27.54, 7.2, 0], size: [0.24, 0.2, 8.96] },
+    { name: 'bottom', position: [27.54, 1.4, 0], size: [0.24, 0.2, 8.96] }
   ].forEach((part) => {
     const frame = new THREE.Mesh(new THREE.BoxGeometry(...part.size), frameMaterial);
+    frame.name = `building-study-agenda-frame-${part.name}`;
     frame.position.set(...part.position);
     frame.castShadow = true;
     room.add(frame);
