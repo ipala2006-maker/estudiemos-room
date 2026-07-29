@@ -165,8 +165,10 @@ const BUILDING_LOBBY_ELEVATOR_DOOR_Z = BUILDING_ELEVATOR_Z + ELEVATOR_CABIN_HALF
 const BUILDING_STUDY_ELEVATOR_DOOR_Z = BUILDING_ELEVATOR_Z - ELEVATOR_CABIN_HALF_DEPTH;
 const BUILDING_LOBBY_ELEVATOR_LOCAL_X = BUILDING_ELEVATOR_X - BUILDING_LOBBY_OFFSET.x;
 const STUDY_ELEVATOR_LOCAL_X = BUILDING_ELEVATOR_X - STUDY_ROOM_ORIGIN_X;
-const STUDY_STAIR_OPENING_MIN_X = BUILDING_STAIR_OPENING_MIN_X;
-const STUDY_STAIR_OPENING_MAX_X = BUILDING_STAIR_OPENING_MAX_X;
+const STUDY_STAIR_OPENING_MIN_X =
+  BUILDING_LOBBY_OFFSET.x + BUILDING_STAIR_OPENING_MIN_X - STUDY_ROOM_ORIGIN_X;
+const STUDY_STAIR_OPENING_MAX_X =
+  BUILDING_LOBBY_OFFSET.x + BUILDING_STAIR_OPENING_MAX_X - STUDY_ROOM_ORIGIN_X;
 const STUDY_ELEVATOR_OPENING_MIN_X = STUDY_ELEVATOR_LOCAL_X - ELEVATOR_SHAFT_SHELL_HALF_WIDTH;
 const STUDY_ELEVATOR_OPENING_MAX_X = STUDY_ELEVATOR_LOCAL_X + ELEVATOR_SHAFT_SHELL_HALF_WIDTH;
 const STUDY_FRONT_SOLID_SEGMENTS = Object.freeze([
@@ -3125,15 +3127,6 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
   const stairRunCenterZ = (BUILDING_STAIR_WORLD_MIN_Z + BUILDING_STAIR_WORLD_MAX_Z) / 2;
   const stairRunDepth = BUILDING_STAIR_WORLD_MAX_Z - BUILDING_STAIR_WORLD_MIN_Z + 0.4;
   const stairWallThickness = 0.28;
-  const buildingLoggiaColliders = STUDY_FRONT_SOLID_SEGMENTS.map((segment) =>
-    interiorCollider(
-      (segment.minX + segment.maxX) / 2,
-      28.72,
-      segment.maxX - segment.minX,
-      0.2,
-      'loggia-rail'
-    )
-  );
   const buildingStairColliders = [
     createCollider(
       BUILDING_STAIR_WORLD_MIN_X - stairWallThickness / 2,
@@ -3205,7 +3198,6 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
         0.55,
         'elevator-door'
       ),
-      ...(worldMode === BUILDING_WORLD_MODE ? buildingLoggiaColliders : []),
       ...buildingStairColliders
     ],
     stairs: buildingStairColliders
@@ -3551,6 +3543,11 @@ function addBuildingElevator(group) {
     name: 'building-lobby-elevator-portal',
     position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X, 0, elevatorDoorZ]
   });
+  addElevatorCallStation(group, {
+    name: 'building-lobby-elevator-call-station',
+    position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X + 4.25, 2.18, elevatorDoorZ + 0.44],
+    direction: 'up'
+  });
   addArchitectureModel(group, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-lobby-elevator-left-door',
@@ -3618,8 +3615,6 @@ function addBuildingLobbyDetails(group) {
 }
 
 function addStudyFloorCirculation(room) {
-  addStudyFloorLoggia(room);
-
   [
     { name: 'left', center: [-17.52, -10.3, 37.6] },
     { name: 'right', center: [-10.08, -10.3, 37.6] }
@@ -3682,6 +3677,12 @@ function addStudyFloorCirculation(room) {
     position: [elevatorX, 0, elevatorDoorZ],
     rotation: [0, Math.PI, 0]
   });
+  addElevatorCallStation(room, {
+    name: 'building-study-elevator-call-station',
+    position: [elevatorX - 4.25, 2.18, elevatorDoorZ - 0.44],
+    rotationY: Math.PI,
+    direction: 'down'
+  });
   addArchitectureModel(room, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-study-elevator-left-door',
@@ -3710,26 +3711,6 @@ function addStudyFloorCirculation(room) {
   });
 }
 
-function addStudyFloorLoggia(room) {
-  STUDY_FRONT_SOLID_SEGMENTS.forEach((segment, index) => {
-    const width = segment.maxX - segment.minX;
-    const x = (segment.minX + segment.maxX) / 2;
-    addArchitectureModel(room, {
-      asset: BUILDING_ARCHITECTURE.floorPanel,
-      name: `building-study-loggia-floor-${index + 1}`,
-      position: [x, 0, 27.7],
-      scale: [width / 4, 0.75, 2.1 / 4],
-      castShadow: false
-    });
-    addArchitectureModel(room, {
-      asset: BUILDING_ARCHITECTURE.railing,
-      name: `building-study-loggia-front-rail-${index + 1}`,
-      position: [x, 0, 28.72],
-      scale: [width / 4, 1, 1]
-    });
-  });
-}
-
 function addBuildingElevatorCabin(scene) {
   const cabin = new THREE.Group();
   cabin.name = 'building-elevator-moving-cabin';
@@ -3739,6 +3720,7 @@ function addBuildingElevatorCabin(scene) {
     asset: BUILDING_ARCHITECTURE.elevatorCabinShell,
     name: 'building-elevator-cabin-shell'
   });
+  addElevatorCabinInteriorDetails(cabin);
 
   const panelX = ELEVATOR_CABIN_HALF_WIDTH - 0.16;
   addElevatorCabinDoorPair(
@@ -3769,6 +3751,64 @@ function addBuildingElevatorCabin(scene) {
   return cabin;
 }
 
+function addElevatorCabinInteriorDetails(cabin) {
+  const wallUpper = makeMaterial(0xe9e6dc, 0.7, 0.02);
+  const wallLower = makeMaterial(0xaabbb2, 0.78, 0.02);
+  const darkTrim = makeMaterial(0x18201f, 0.48, 0.38);
+  const brassTrim = makeMaterial(0xb99b58, 0.32, 0.68);
+  const floorMat = makeMaterial(0x273330, 0.84, 0.03);
+  const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xe7fff7 });
+
+  const addDetail = (name, size, position, material) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+    mesh.name = name;
+    mesh.position.set(...position);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    cabin.add(mesh);
+    return mesh;
+  };
+
+  [-1, 1].forEach((side) => {
+    const x = side * (ELEVATOR_CABIN_HALF_WIDTH - 0.13);
+    addDetail(`building-elevator-cabin-lower-panel-${side}`, [0.08, 1.7, 4.55], [x, 1.04, 0], wallLower);
+    addDetail(`building-elevator-cabin-upper-panel-${side}`, [0.08, 3.55, 4.55], [x, 3.78, 0], wallUpper);
+    addDetail(`building-elevator-cabin-side-band-${side}`, [0.12, 0.1, 4.62], [x - side * 0.03, 1.94, 0], brassTrim);
+    [-1.48, 1.48].forEach((z, index) => {
+      addDetail(
+        `building-elevator-cabin-side-reveal-${side}-${index + 1}`,
+        [0.105, 4.86, 0.06],
+        [x - side * 0.035, 3.52, z],
+        darkTrim
+      );
+    });
+  });
+
+  addDetail('building-elevator-cabin-inner-ceiling', [6.66, 0.14, 4.9], [0, 6.02, 0], wallUpper);
+  [-1.65, 0, 1.65].forEach((x, index) => {
+    addDetail(
+      `building-elevator-cabin-ceiling-light-${index + 1}`,
+      [1.18, 0.035, 0.24],
+      [x, 5.93, 0],
+      lightMaterial
+    );
+  });
+  addDetail('building-elevator-cabin-floor-mat', [5.72, 0.035, 3.86], [0, 0.045, 0], floorMat);
+  [
+    [0, 0.065, -1.98, 5.72, 0.035, 0.05],
+    [0, 0.065, 1.98, 5.72, 0.035, 0.05],
+    [-2.91, 0.065, 0, 0.05, 0.035, 3.9],
+    [2.91, 0.065, 0, 0.05, 0.035, 3.9]
+  ].forEach(([x, y, z, width, height, depth], index) => {
+    addDetail(
+      `building-elevator-cabin-floor-inlay-${index + 1}`,
+      [width, height, depth],
+      [x, y, z],
+      brassTrim
+    );
+  });
+}
+
 function addElevatorCabinDoorPair(parent, side, z, faceDirection) {
   const doorWidth = 3.15;
   const closedOffset = 1.65;
@@ -3790,11 +3830,12 @@ function addElevatorCabinDoorPair(parent, side, z, faceDirection) {
 }
 
 function createElevatorCabinControlPanel() {
+  const panel = new THREE.Group();
   const canvas = document.createElement('canvas');
   canvas.width = 320;
   canvas.height = 560;
   const context = canvas.getContext('2d');
-  if (!context) return new THREE.Group();
+  if (!context) return panel;
 
   context.fillStyle = '#0f1817';
   context.fillRect(0, 0, canvas.width, canvas.height);
@@ -3839,7 +3880,127 @@ function createElevatorCabinControlPanel() {
     roughness: 0.42,
     metalness: 0.06
   });
-  return new THREE.Mesh(new THREE.PlaneGeometry(1.28, 2.22), material);
+  const backing = new THREE.Mesh(
+    new THREE.BoxGeometry(1.48, 2.56, 0.12),
+    makeMaterial(0x101716, 0.34, 0.72)
+  );
+  backing.name = 'building-elevator-cabin-control-backing';
+  panel.add(backing);
+
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.28, 2.22), material);
+  screen.name = 'building-elevator-cabin-control-screen';
+  screen.position.z = 0.066;
+  panel.add(screen);
+
+  [
+    { y: 0.3, color: 0x9fcfbe },
+    { y: -0.255, color: 0xd8bd77 }
+  ].forEach((button, index) => {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.245, 0.035, 12, 32),
+      new THREE.MeshStandardMaterial({
+        color: button.color,
+        emissive: button.color,
+        emissiveIntensity: 0.22,
+        roughness: 0.32,
+        metalness: 0.62
+      })
+    );
+    ring.name = `building-elevator-cabin-control-button-${index + 1}`;
+    ring.position.set(0, button.y, 0.095);
+    panel.add(ring);
+  });
+
+  [
+    [-0.61, 1.08],
+    [0.61, 1.08],
+    [-0.61, -1.08],
+    [0.61, -1.08]
+  ].forEach(([x, y], index) => {
+    const screw = new THREE.Mesh(
+      new THREE.CircleGeometry(0.038, 18),
+      new THREE.MeshStandardMaterial({ color: 0xc7b16f, roughness: 0.3, metalness: 0.8 })
+    );
+    screw.name = `building-elevator-cabin-control-screw-${index + 1}`;
+    screw.position.set(x, y, 0.132);
+    panel.add(screw);
+  });
+
+  return panel;
+}
+
+function addElevatorCallStation(parent, { name, position, rotationY = 0, direction = 'up' }) {
+  const station = new THREE.Group();
+  station.name = name;
+  station.position.set(...position);
+  station.rotation.y = rotationY;
+
+  const plate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.94, 1.54, 0.14),
+    makeMaterial(0x111817, 0.32, 0.72)
+  );
+  plate.castShadow = true;
+  station.add(plate);
+
+  const inset = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.72, 1.3),
+    new THREE.MeshStandardMaterial({ color: 0x25322f, roughness: 0.54, metalness: 0.28 })
+  );
+  inset.position.z = 0.076;
+  station.add(inset);
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.255, 0.055, 12, 32),
+    new THREE.MeshStandardMaterial({
+      color: 0xc5ad67,
+      emissive: 0x6b5a2f,
+      emissiveIntensity: 0.16,
+      roughness: 0.28,
+      metalness: 0.78
+    })
+  );
+  ring.position.set(0, -0.08, 0.12);
+  station.add(ring);
+
+  const buttonFace = new THREE.Mesh(
+    new THREE.CircleGeometry(0.19, 32),
+    new THREE.MeshStandardMaterial({
+      color: 0xc8ece0,
+      emissive: 0x8cc8b6,
+      emissiveIntensity: 0.55,
+      roughness: 0.25,
+      metalness: 0.18
+    })
+  );
+  buttonFace.position.set(0, -0.08, 0.124);
+  station.add(buttonFace);
+
+  const arrowShape = new THREE.Shape();
+  arrowShape.moveTo(0, 0.12);
+  arrowShape.lineTo(-0.105, -0.025);
+  arrowShape.lineTo(-0.04, -0.025);
+  arrowShape.lineTo(-0.04, -0.13);
+  arrowShape.lineTo(0.04, -0.13);
+  arrowShape.lineTo(0.04, -0.025);
+  arrowShape.lineTo(0.105, -0.025);
+  arrowShape.closePath();
+  const arrow = new THREE.Mesh(
+    new THREE.ShapeGeometry(arrowShape),
+    new THREE.MeshBasicMaterial({ color: 0x17201e })
+  );
+  arrow.position.set(0, -0.08, 0.132);
+  if (direction === 'down') arrow.rotation.z = Math.PI;
+  station.add(arrow);
+
+  const status = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.42, 0.08),
+    new THREE.MeshBasicMaterial({ color: 0xd8bd77 })
+  );
+  status.position.set(0, 0.53, 0.123);
+  station.add(status);
+
+  parent.add(station);
+  return station;
 }
 
 function createBuildingElevatorDoorController(scene) {

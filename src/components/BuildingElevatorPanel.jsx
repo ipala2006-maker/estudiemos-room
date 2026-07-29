@@ -1,9 +1,11 @@
-import { ArrowDown, ArrowUp, Building2, Check, X } from 'lucide-react';
+import { Building2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { BUILDING_FLOORS } from '../maps/BuildingWorld.js';
 
 export function BuildingElevatorPanel({ currentFloor, onSelectFloor, onClose }) {
   const availableFloors = useMemo(() => BUILDING_FLOORS.filter((floor) => floor.id !== currentFloor), [currentFloor]);
+  const orderedFloors = useMemo(() => [...BUILDING_FLOORS].sort((a, b) => b.number - a.number), []);
+  const currentFloorInfo = BUILDING_FLOORS.find((floor) => floor.id === currentFloor) ?? BUILDING_FLOORS[0];
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
@@ -44,47 +46,61 @@ export function BuildingElevatorPanel({ currentFloor, onSelectFloor, onClose }) 
   return (
     <div className="building-elevator-overlay" role="presentation" onPointerDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="building-elevator-panel" role="dialog" aria-modal="true" aria-label="Seleccionar piso del ascensor">
+        <span className="building-elevator-screw is-top-left" aria-hidden="true" />
+        <span className="building-elevator-screw is-top-right" aria-hidden="true" />
+        <span className="building-elevator-screw is-bottom-left" aria-hidden="true" />
+        <span className="building-elevator-screw is-bottom-right" aria-hidden="true" />
+
         <header>
           <span className="building-elevator-mark" aria-hidden="true"><Building2 size={20} /></span>
           <div>
             <small>EDIFICIO ESTUDIEMOS</small>
-            <h2>Ascensor</h2>
+            <h2>Botonera de cabina</h2>
           </div>
           <button type="button" className="building-elevator-close" onClick={onClose} aria-label="Cerrar ascensor" title="Cerrar">
             <X size={19} />
           </button>
         </header>
 
-        <div className="building-elevator-current">
-          <span>Estas en</span>
-          <strong>{BUILDING_FLOORS.find((floor) => floor.id === currentFloor)?.label ?? 'Lobby'}</strong>
+        <div className="building-elevator-display" aria-live="polite">
+          <span>POSICION</span>
+          <strong>{currentFloorInfo.shortLabel}</strong>
+          <small>CABINA DETENIDA</small>
         </div>
 
-        <div className="building-elevator-floor-list" role="listbox" aria-label="Pisos disponibles">
-          {availableFloors.map((floor, index) => (
-            <button
-              type="button"
-              key={floor.id}
-              className={index === selectedIndex ? 'is-selected' : ''}
-              onMouseEnter={() => setSelectedIndex(index)}
-              onClick={() => onSelectFloor(floor.id)}
-              role="option"
-              aria-selected={index === selectedIndex}
-            >
-              <span className="building-elevator-floor-number">{floor.shortLabel}</span>
-              <span>
-                <strong>{floor.label}</strong>
-                <small>{floor.description}</small>
-              </span>
-              <Check size={18} aria-hidden="true" />
-            </button>
-          ))}
+        <div className="building-elevator-button-bank" role="group" aria-label="Botones de piso">
+          {orderedFloors.map((floor) => {
+            const availableIndex = availableFloors.findIndex((candidate) => candidate.id === floor.id);
+            const isCurrent = floor.id === currentFloor;
+            const isSelected = availableIndex === selectedIndex && !isCurrent;
+
+            return (
+              <button
+                type="button"
+                key={floor.id}
+                className={`${isCurrent ? 'is-current' : ''}${isSelected ? ' is-selected' : ''}`}
+                onMouseEnter={() => availableIndex >= 0 && setSelectedIndex(availableIndex)}
+                onClick={() => !isCurrent && onSelectFloor(floor.id)}
+                disabled={isCurrent}
+                aria-label={isCurrent ? `${floor.label}, piso actual` : `Ir a ${floor.label}`}
+              >
+                <span className="building-elevator-button-bezel" aria-hidden="true">
+                  <span>{floor.shortLabel}</span>
+                </span>
+                <span className="building-elevator-button-copy">
+                  <strong>{floor.label}</strong>
+                  <small>{floor.description}</small>
+                </span>
+                <span className="building-elevator-button-status">{isCurrent ? 'ACTUAL' : 'PRESIONAR'}</span>
+              </button>
+            );
+          })}
         </div>
 
         <footer>
-          <span><ArrowUp size={14} /><ArrowDown size={14} /> elegir</span>
+          <span>Presiona el boton del piso</span>
           <span><kbd>Enter</kbd> confirmar</span>
-          <span><kbd>Backspace</kbd> volver</span>
+          <span><kbd>Esc</kbd> cerrar</span>
         </footer>
       </section>
     </div>

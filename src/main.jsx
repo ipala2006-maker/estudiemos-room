@@ -563,7 +563,7 @@ function App() {
   const canShowWorldPrompts = hasStarted && !computerOpen && !screenRemoteOpen && !speakerRemoteOpen && !wallAgendaOpen && !roomShopOpen && !elevatorPanelOpen;
   const activeInteractionPrompt = canShowWorldPrompts
     ? isNearElevator && elevatorAction === 'select'
-      ? { key: 'elevator-select', control: 'E', title: 'Panel interior', label: 'E - elegir piso' }
+      ? { key: 'elevator-select', control: 'E', title: 'Panel interior', label: 'E - usar botonera' }
       : isNearElevator && elevatorAction === 'call'
         ? { key: 'elevator-call', control: 'E', title: 'Llamar ascensor', label: 'E - llamar ascensor' }
         : isNearElevator && elevatorAction === 'board'

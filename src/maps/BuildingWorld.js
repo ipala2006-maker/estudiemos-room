@@ -19,7 +19,7 @@ export const BUILDING_FLOORS = [
     number: 0,
     shortLabel: 'PB',
     label: 'Lobby',
-    description: 'Recepcion y Tienda Salchi'
+    description: 'Acceso principal y Tienda Salchi'
   },
   {
     id: 'study',
