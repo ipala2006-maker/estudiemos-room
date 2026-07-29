@@ -53,7 +53,7 @@ export const BuildingWorld = {
   lobbyElevatorPosition: new THREE.Vector3(BUILDING_ELEVATOR_CENTER.x, -8.3, lobbyElevatorDoorZ),
   lobbyElevatorArrival: new THREE.Vector3(BUILDING_ELEVATOR_CENTER.x, -8.3, lobbyElevatorDoorZ + 3.1),
   studyStairsPosition: new THREE.Vector3(76.2, 1.7, 19.4),
-  studyStairsArrival: new THREE.Vector3(76.2, 1.7, 20.3),
+  studyStairsArrival: new THREE.Vector3(76.2, 1.7, 22.2),
   studyElevatorPosition: new THREE.Vector3(BUILDING_ELEVATOR_CENTER.x, 1.7, studyElevatorDoorZ),
   studyElevatorArrival: new THREE.Vector3(BUILDING_ELEVATOR_CENTER.x, 1.7, studyElevatorDoorZ - 3.1),
   floors: BUILDING_FLOORS,

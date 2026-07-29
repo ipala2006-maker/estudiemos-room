@@ -1258,7 +1258,7 @@ function getRequestedBuildingStartPosition(requestedFloor = 'lobby') {
 function getRequestedBuildingStartLookTarget(requestedFloor = 'lobby') {
   if (typeof window === 'undefined') return activeMap.startLookAt.clone();
   const spawn = new URLSearchParams(window.location.search).get('spawn');
-  if (spawn === 'stairs') return new THREE.Vector3(76.2, 0.9, 22.2);
+  if (spawn === 'stairs') return new THREE.Vector3(76.2, 0.7, 25.1);
   if (spawn === 'elevator') {
     return (
       requestedFloor === 'study'
@@ -3095,6 +3095,11 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
   const stairRunCenterZ = (BUILDING_STAIR_WORLD_MIN_Z + BUILDING_STAIR_WORLD_MAX_Z) / 2;
   const stairRunDepth = BUILDING_STAIR_WORLD_MAX_Z - BUILDING_STAIR_WORLD_MIN_Z + 0.4;
   const stairWallThickness = 0.28;
+  const buildingLoggiaColliders = [
+    interiorCollider(-22.78, 28.72, 10.1, 0.2, 'loggia-rail'),
+    interiorCollider(-2.95, 28.72, 14, 0.2, 'loggia-rail'),
+    interiorCollider(19.83, 28.72, 16.1, 0.2, 'loggia-rail')
+  ];
   const buildingStairColliders = [
     createCollider(
       BUILDING_STAIR_WORLD_MIN_X - stairWallThickness / 2,
@@ -3138,6 +3143,7 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
             lobbyCollider(-5.4, -11.8, 1.25, 1.25),
             lobbyCollider(4.9, -11.8, 1.25, 1.25),
             lobbyCollider(4.9, 8.2, 2.8, 1.9),
+            lobbyCollider(-4.8, 7.35, 4.5, 0.38, 'reception-wall'),
             createCollider(
               BUILDING_ELEVATOR_X,
               BUILDING_LOBBY_ELEVATOR_DOOR_Z,
@@ -3157,6 +3163,7 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
         0.55,
         'elevator-door'
       ),
+      ...(worldMode === BUILDING_WORLD_MODE ? buildingLoggiaColliders : []),
       ...buildingStairColliders
     ],
     stairs: buildingStairColliders
@@ -3319,14 +3326,14 @@ function addBuildingLobbyArchitecturalFinish(group, materials) {
   addBuildingBox(group, 'building-lobby-floor-elevator-inlay', [0.12, 0.035, 17], [10.6, 0.04, -0.6], edge, 0x9ab9aa, 0.1);
 
   [
-    { size: [7.6, 0.24, 0.24], position: [10.6, 9.12, -13.12] },
-    { size: [7.6, 0.24, 0.24], position: [10.6, 9.12, -3.68] },
-    { size: [0.24, 0.24, 9.44], position: [6.72, 9.12, -8.4] },
-    { size: [0.24, 0.24, 9.44], position: [14.48, 9.12, -8.4] },
-    { size: [6.9, 0.24, 0.24], position: [-11.1, 9.12, -13.12] },
-    { size: [6.9, 0.24, 0.24], position: [-11.1, 9.12, -3.68] },
-    { size: [0.24, 0.24, 9.44], position: [-14.55, 9.12, -8.4] },
-    { size: [0.24, 0.24, 9.44], position: [-7.65, 9.12, -8.4] }
+    { size: [7.6, 0.12, 0.16], position: [10.6, 9.5, -13.12] },
+    { size: [7.6, 0.12, 0.16], position: [10.6, 9.5, -3.68] },
+    { size: [0.16, 0.12, 9.44], position: [6.72, 9.5, -8.4] },
+    { size: [0.16, 0.12, 9.44], position: [14.48, 9.5, -8.4] },
+    { size: [6.9, 0.12, 0.16], position: [-11.1, 9.5, -13.12] },
+    { size: [6.9, 0.12, 0.16], position: [-11.1, 9.5, -3.68] },
+    { size: [0.16, 0.12, 9.44], position: [-14.55, 9.5, -8.4] },
+    { size: [0.16, 0.12, 9.44], position: [-7.65, 9.5, -8.4] }
   ].forEach((part, index) => {
     addBuildingBox(group, `building-lobby-ceiling-opening-finish-${index}`, part.size, part.position, index < 4 ? edge : warm, 0xd8bd77, 0.1);
   });
@@ -3410,10 +3417,18 @@ function addBuildingLobby(group, textures) {
 
   addBuildingBox(group, 'building-lobby-entry-runner', [6.8, 0.05, 8.2], [0, 0.03, 14.8], materials.wallDark, 0x78958a, 0.12);
   addBuildingBox(group, 'building-lobby-elevator-passage', [6.2, 0.05, 17.2], [10.6, 0.03, -0.7], materials.metal, 0x9ab9aa, 0.12);
-  addBuildingBox(group, 'building-lobby-reception-backdrop', [5.4, 2.3, 0.3], [-4.8, 3.05, 7.35], materials.wallDark, 0x78958a, 0.14);
+  addBuildingBox(group, 'building-lobby-reception-backdrop', [4.5, 1.55, 0.18], [-4.8, 2.82, 7.35], materials.wallDark, 0x78958a, 0.14);
   addBuildingBox(group, 'building-lobby-reception-desk', [4.35, 0.86, 1.55], [-4.8, 0.52, 9.6], materials.wood, 0x9b7654, 0.14);
   addBuildingBox(group, 'building-lobby-reception-top', [4.6, 0.12, 1.76], [-4.8, 1, 9.6], materials.metal, 0x9ab9aa, 0.14);
   addBuildingBox(group, 'building-lobby-reception-kick', [3.9, 0.08, 0.14], [-4.8, 0.18, 10.38], materials.gold, 0xf0d38c, 0.12);
+  addBuildingLabel(group, {
+    name: 'building-lobby-reception-label',
+    title: 'RECEPCION',
+    subtitle: 'Ayuda y accesos',
+    position: [-4.8, 2.82, 7.46],
+    size: [3.75, 0.92],
+    accent: '#d8bd77'
+  });
   addBuildingLabel(group, {
     name: 'building-lobby-main-sign',
     title: 'ESTUDIEMOS',
@@ -3426,6 +3441,7 @@ function addBuildingLobby(group, textures) {
   addBuildingStairs(group, materials);
   addBuildingElevator(group, materials);
   addBuildingLobbyDetails(group, materials);
+  addBuildingLoggia(group, materials);
   addBuildingLobbyArchitecturalFinish(group, materials);
 
   const lobbyAmbient = new THREE.AmbientLight(0xe7eee7, 0.9);
@@ -3436,6 +3452,9 @@ function addBuildingLobby(group, textures) {
   const circulationLight = new THREE.PointLight(0xa9daca, 0.98, 20, 2.05);
   circulationLight.position.set(-9, 6.2, -7);
   group.add(circulationLight);
+  const stairLight = new THREE.PointLight(0xffd58a, 1.65, 17, 2.1);
+  stairLight.position.set(-11.1, 8.25, -8.8);
+  group.add(stairLight);
 }
 
 function addBuildingStairs(group, materials) {
@@ -3474,8 +3493,8 @@ function addBuildingStairs(group, materials) {
   addBuildingBox(
     group,
     'building-lobby-stair-landing',
-    [stairWidth + 0.4, 0.32, 1.35],
-    [stairCenterX, BUILDING_STAIR_RISE, -8.85],
+    [stairWidth + 0.4, 0.32, 4.25],
+    [stairCenterX, BUILDING_STAIR_RISE, -10.35],
     materials.stairTread,
     0x9ab9aa,
     0.12
@@ -3497,10 +3516,6 @@ function addBuildingStairs(group, materials) {
     );
     stringer.rotation.x = stringerAngle;
   });
-  addBuildingBox(group, 'building-lobby-stair-left-reveal', [0.42, 1.1, 0.45], [BUILDING_STAIR_MIN_X - 0.2, 8.35, -11.48], materials.wallDark);
-  addBuildingBox(group, 'building-lobby-stair-right-reveal', [0.42, 1.1, 0.45], [BUILDING_STAIR_MAX_X + 0.2, 8.35, -11.48], materials.wallDark);
-  addBuildingBox(group, 'building-lobby-stair-header', [stairWidth + 0.8, 0.42, 0.45], [stairCenterX, 8.95, -11.48], materials.wallDark);
-
   const railLength = Math.hypot(run, BUILDING_STAIR_RISE);
   const railAngle = -Math.atan2(BUILDING_STAIR_RISE, run);
   [
@@ -3525,9 +3540,41 @@ function addBuildingStairs(group, materials) {
     name: 'building-lobby-stairs-sign',
     title: 'PISO 1',
     subtitle: 'Sala de estudio',
-    position: [stairCenterX, 8.02, -11.18],
-    size: [4.6, 1.25],
+    position: [stairCenterX, 8.3, -12.18],
+    size: [3.9, 0.96],
     accent: '#d8bd77'
+  });
+}
+
+function addBuildingLoggia(group, materials) {
+  const loggiaFloor = addBuildingBox(
+    group,
+    'building-lobby-loggia-floor',
+    [12, 0.2, 3.6],
+    [0, -0.1, 22],
+    materials.floor,
+    0x9ab9aa,
+    0.12
+  );
+  loggiaFloor.receiveShadow = true;
+  addBuildingBox(group, 'building-lobby-loggia-roof', [12.6, 0.24, 3.85], [0, 8.82, 22], materials.ceiling, 0x78958a, 0.12);
+  [-5.6, 5.6].forEach((x) => {
+    addBuildingBox(group, 'building-lobby-loggia-column', [0.42, 8.7, 0.42], [x, 4.25, 22], materials.metal, 0x9ab9aa, 0.1);
+  });
+  addBuildingBox(group, 'building-lobby-loggia-front-rail', [11.8, 0.16, 0.18], [0, 1.08, 23.65], materials.gold, 0xf0d38c, 0.12);
+  addBuildingBox(group, 'building-lobby-loggia-left-rail', [0.18, 0.16, 3.2], [-5.95, 1.08, 22], materials.gold, 0xf0d38c, 0.12);
+  addBuildingBox(group, 'building-lobby-loggia-right-rail', [0.18, 0.16, 3.2], [5.95, 1.08, 22], materials.gold, 0xf0d38c, 0.12);
+  [-5.6, 0, 5.6].forEach((x) => {
+    addBuildingBox(group, 'building-lobby-loggia-rail-post', [0.14, 2.1, 0.14], [x, 1.02, 23.65], materials.gold);
+  });
+  addBuildingLabel(group, {
+    name: 'building-lobby-loggia-label',
+    title: 'LOGIA',
+    subtitle: 'Acceso principal',
+    position: [0, 5.95, 23.78],
+    size: [4.15, 0.9],
+    accent: '#9fd1be',
+    rotationY: Math.PI
   });
 }
 
@@ -3600,15 +3647,18 @@ function addBuildingLobbyDetails(group, materials) {
 }
 
 function addStudyFloorCirculation(room, textures) {
-  const dark = makeMaterial(0x24312e, 0.7, 0.05, textures.brushedMetal);
+  const dark = makeMaterial(0x3c544d, 0.68, 0.04, textures.brushedMetal);
   const metal = makeMaterial(0x43534d, 0.48, 0.14, textures.brushedMetal);
   const gold = makeMaterial(0xd8bd77, 0.5, 0.06);
   const mint = makeMaterial(0x9fcfbe, 0.56, 0.03);
 
+  addStudyFloorLoggia(room, { metal, gold, mint });
+
   addBuildingBox(room, 'building-study-stairwell-left-wall', [0.34, 18.4, 17.8], [-17.52, -1.1, 37.6], dark, 0x78978c, 0.08);
   addBuildingBox(room, 'building-study-stairwell-right-wall', [0.34, 18.4, 17.8], [-10.08, -1.1, 37.6], dark, 0x78978c, 0.08);
   addBuildingBox(room, 'building-study-stairwell-ceiling', [7.78, 0.34, 17.8], [-13.8, 8.12, 37.6], metal, 0x78978c, 0.08);
-  addBuildingBox(room, 'building-study-stairwell-end-wall', [7.78, 18.4, 0.34], [-13.8, -1.1, 46.55], dark, 0x78978c, 0.08);
+  // Close the upper part of the shaft without blocking the lobby-side exit.
+  addBuildingBox(room, 'building-study-stairwell-end-wall', [7.78, 8.1, 0.34], [-13.8, 4.05, 46.55], dark, 0x78978c, 0.08);
   addBuildingBox(room, 'building-study-stairwell-end-accent', [4.2, 0.06, 0.16], [-13.8, 7.9, 46.34], mint);
   addBuildingBox(room, 'building-study-stairwell-left-base', [0.16, 0.34, 17.5], [-17.3, 0.2, 37.6], gold);
   addBuildingBox(room, 'building-study-stairwell-right-base', [0.16, 0.34, 17.5], [-10.3, 0.2, 37.6], gold);
@@ -3617,6 +3667,15 @@ function addStudyFloorCirculation(room, textures) {
   const circulationLight = new THREE.PointLight(0xc5eadb, 0.78, 19, 2.1);
   circulationLight.position.set(-2.8, 5.4, 24.2);
   room.add(circulationLight);
+  const stairwellNearLight = new THREE.PointLight(0xd9fff1, 3.4, 20, 2.05);
+  stairwellNearLight.position.set(-13.8, 4.8, 31.6);
+  room.add(stairwellNearLight);
+  const stairwellFarLight = new THREE.PointLight(0xffd58a, 2.8, 19, 2.05);
+  stairwellFarLight.position.set(-13.8, 4.8, 41.4);
+  room.add(stairwellFarLight);
+  const stairwellEndLight = new THREE.PointLight(0xffd58a, 2.2, 11, 2.05);
+  stairwellEndLight.position.set(-13.8, 3.9, 45.8);
+  room.add(stairwellEndLight);
 
   addBuildingBox(room, 'building-study-stairs-left-frame', [0.42, 7.2, 0.42], [-17.34, 4, 28.25], dark, 0x9ab9aa, 0.12);
   addBuildingBox(room, 'building-study-stairs-right-frame', [0.42, 7.2, 0.42], [-10.26, 4, 28.25], dark, 0x9ab9aa, 0.12);
@@ -3672,6 +3731,23 @@ function addStudyFloorCirculation(room, textures) {
 
   addBuildingBox(room, 'building-study-wayfinding-left', [0.06, 0.035, 4.8], [-16.2, 0.045, 24.5], gold, 0xd8bd77, 0.08);
   addBuildingBox(room, 'building-study-wayfinding-right', [0.06, 0.035, 5.2], [elevatorX - 2.35, 0.045, elevatorDoorZ - 2.6], mint, 0x9ab9aa, 0.08);
+}
+
+function addStudyFloorLoggia(room, { metal, gold, mint }) {
+  [
+    { x: -22.78, width: 10.1, accent: gold },
+    { x: -2.95, width: 14, accent: mint },
+    { x: 19.83, width: 16.1, accent: gold }
+  ].forEach((part, index) => {
+    addBuildingBox(room, `building-study-loggia-floor-${index}`, [part.width, 0.16, 2.1], [part.x, -0.08, 27.7], metal, 0x78978c, 0.1);
+    addBuildingBox(room, `building-study-loggia-front-rail-${index}`, [part.width, 0.14, 0.16], [part.x, 1.05, 28.72], part.accent, 0xf0d38c, 0.1);
+    addBuildingBox(room, `building-study-loggia-back-trim-${index}`, [part.width, 0.08, 0.12], [part.x, 0.06, 26.68], metal, 0x9ab9aa, 0.08);
+    const leftX = part.x - part.width / 2 + 0.3;
+    const rightX = part.x + part.width / 2 - 0.3;
+    [leftX, rightX].forEach((x) => {
+      addBuildingBox(room, `building-study-loggia-post-${index}`, [0.12, 1.9, 0.12], [x, 0.98, 28.72], part.accent);
+    });
+  });
 }
 
 function addElevatorDoorFinish(door, name, width, height, panelMaterial, accentMaterial, faceDirection = 1) {

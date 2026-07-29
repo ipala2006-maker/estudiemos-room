@@ -14,5 +14,5 @@ import '../utils/installSpotifyPlaybackEnhancer.js';
 import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installComputerAgendaCleanup.js';
 
-export const BUILD_LABEL = 'Circulacion fisica sin superposiciones 2026-07-29';
-export const BUILD_MARKER = 'physical-circulation-no-overlap-2026-07-29-v3';
+export const BUILD_LABEL = 'Revision arquitectonica logia y circulacion 2026-07-29';
+export const BUILD_MARKER = 'architectural-loggia-circulation-2026-07-29-v4';
