@@ -174,6 +174,7 @@ def create_materials() -> None:
     make_material("Oak_Dark", "#4a352b", 0.58, texture=oak)
     make_material("Metal_Charcoal", "#26312f", 0.34, metallic=0.58, texture=metal)
     make_material("Metal_Black", "#111817", 0.3, metallic=0.5, texture=metal)
+    make_material("Metal_BrushedSteel", "#77827e", 0.31, metallic=0.72, texture=metal)
     make_material("Brass_Satin", "#b89b62", 0.35, metallic=0.68)
     make_material("Sage_Fabric", "#567469", 0.83, texture=fabric)
     make_material("Sage_Panel", "#607f75", 0.62)
@@ -334,11 +335,10 @@ def create_ceiling_panel() -> None:
 
 def create_column() -> None:
     c = module_collection("column")
-    box(c, "Column_Core", (0.78, 0.78, 3.0), (0, 0, 1.5), "Plaster_SoftGrey", 0.085, rotation=(0, 0, math.radians(2)))
-    box(c, "Column_Base", (1.02, 1.02, 0.18), (0, 0, 0.09), "Metal_Charcoal", 0.045)
-    box(c, "Column_Cap", (1.02, 1.02, 0.18), (0, 0, 2.91), "Oak_Warm", 0.045)
-    box(c, "Column_Band", (0.86, 0.86, 0.09), (0, 0, 1.18), "Brass_Satin", 0.022)
-    box(c, "Column_Band_Shadow", (0.9, 0.9, 0.045), (0, 0, 1.08), "Metal_Charcoal", 0.012)
+    box(c, "Column_Core", (0.78, 0.78, 3.0), (0, 0, 1.5), "Plaster_SoftGrey", 0.065)
+    box(c, "Column_Base", (0.94, 0.94, 0.16), (0, 0, 0.08), "Metal_Charcoal", 0.038)
+    box(c, "Column_Cap", (0.94, 0.94, 0.16), (0, 0, 2.92), "Oak_Warm", 0.038)
+    box(c, "Column_Band", (0.83, 0.83, 0.055), (0, 0, 1.18), "Brass_Satin", 0.014)
 
 
 def create_railing() -> None:
@@ -357,7 +357,7 @@ def create_stair_flight() -> None:
     width = 6.6
     run = 15.4
     rise = 10.0
-    step_count = 30
+    step_count = 32
     step_depth = run / step_count
     step_rise = rise / step_count
 
@@ -366,63 +366,129 @@ def create_stair_flight() -> None:
         y = -run / 2 + step_depth * (index + 0.5)
         box(
             c,
-            f"Stair_Step_{index + 1:02d}",
-            (width - 0.16, step_depth + 0.025, height),
-            (0, y, height / 2),
+            f"Stair_Tread_{index + 1:02d}",
+            (width - 0.22, step_depth + 0.035, 0.16),
+            (0, y, height - 0.08),
             "Terrazzo_Greige",
-            0.018,
+            0.022,
+        )
+        box(
+            c,
+            f"Stair_Riser_{index + 1:02d}",
+            (width - 0.24, 0.095, step_rise + 0.03),
+            (0, y - step_depth / 2 + 0.035, height - step_rise / 2),
+            "Plaster_SoftGrey",
+            0.015,
         )
         box(
             c,
             f"Stair_Nosing_{index + 1:02d}",
-            (width - 0.3, 0.06, 0.055),
-            (0, y - step_depth / 2 + 0.03, height + 0.025),
-            "Brass_Satin",
-            0.012,
+            (width - 0.38, 0.045, 0.035),
+            (0, y - step_depth / 2 + 0.018, height + 0.018),
+            "Metal_BrushedSteel",
+            0.009,
         )
 
     slope_length = math.hypot(run, rise)
     slope_angle = math.atan2(rise, run)
+    box(
+        c,
+        "Stair_Structural_Slab",
+        (width - 0.72, slope_length, 0.28),
+        (0, 0, rise / 2 - 0.42),
+        "Plaster_SoftGrey",
+        0.035,
+        rotation=(slope_angle, 0, 0),
+    )
     for x in (-width / 2 + 0.14, width / 2 - 0.14):
         box(
             c,
             f"Stair_Stringer_{x}",
-            (0.3, slope_length, 0.32),
-            (x, 0, rise / 2 - 0.08),
+            (0.22, slope_length, 0.38),
+            (x, 0, rise / 2 - 0.18),
             "Metal_Charcoal",
-            0.035,
+            0.03,
             rotation=(slope_angle, 0, 0),
         )
-        cylinder(
-            c,
-            f"Stair_TopRail_{x}",
-            0.065,
-            slope_length,
-            (x, 0, rise / 2 + 1.08),
-            "Oak_Warm",
-            rotation=(math.pi / 2 + slope_angle, 0, 0),
-            vertices=16,
-        )
-        for post_index in range(6):
-            progress = post_index / 5
-            y = -run / 2 + progress * run
-            z = progress * rise + 0.58
-            box(c, f"Stair_Post_{x}_{post_index}", (0.1, 0.1, 1.16), (x, y, z), "Metal_Charcoal", 0.02)
-            box(
+        for rail_index, rail_height in enumerate((0.64, 1.08)):
+            cylinder(
                 c,
-                f"Stair_Post_Accent_{x}_{post_index}",
-                (0.13, 0.13, 0.08),
-                (x, y, z + 0.54),
-                "Brass_Satin",
-                0.018,
+                f"Stair_Rail_{x}_{rail_index + 1}",
+                0.052 if rail_index == 0 else 0.065,
+                slope_length,
+                (x, 0, rise / 2 + rail_height),
+                "Metal_BrushedSteel" if rail_index == 0 else "Oak_Warm",
+                rotation=(math.pi / 2 + slope_angle, 0, 0),
+                vertices=16,
             )
+        for post_index in range(7):
+            progress = post_index / 6
+            y = -run / 2 + progress * run
+            z = progress * rise + 0.56
+            box(c, f"Stair_Post_{x}_{post_index}", (0.09, 0.09, 1.12), (x, y, z), "Metal_Charcoal", 0.018)
 
 
 def create_stair_landing() -> None:
     c = module_collection("stair-landing")
-    box(c, "Landing_Slab", (7.0, 4.25, 0.3), (0, 0, -0.15), "Terrazzo_Greige", 0.04)
-    box(c, "Landing_Edge", (6.78, 0.14, 0.12), (0, -2.03, 0.02), "Brass_Satin", 0.018)
-    box(c, "Landing_Inlay", (5.5, 0.05, 0.025), (0, 0, 0.02), "Metal_Charcoal", 0.008)
+    box(c, "Landing_Slab", (7.0, 4.25, 0.26), (0, 0, -0.13), "Terrazzo_Greige", 0.04)
+    box(c, "Landing_Edge", (6.78, 0.12, 0.08), (0, -2.03, 0.02), "Metal_BrushedSteel", 0.016)
+    box(c, "Landing_Inlay", (5.5, 0.04, 0.02), (0, 0, 0.018), "Brass_Satin", 0.007)
+
+
+def create_stairwell_portal() -> None:
+    c = module_collection("stairwell-portal")
+    width = 7.8
+    height = 7.8
+    box(c, "StairPortal_Left", (0.42, 0.64, height), (-3.69, 0, height / 2), "Plaster_SoftGrey", 0.055)
+    box(c, "StairPortal_Right", (0.42, 0.64, height), (3.69, 0, height / 2), "Plaster_SoftGrey", 0.055)
+    box(c, "StairPortal_Header", (width, 0.64, 0.42), (0, 0, height - 0.21), "Plaster_SoftGrey", 0.055)
+    box(c, "StairPortal_InnerLeft", (0.12, 0.72, height - 0.72), (-3.43, -0.03, (height - 0.72) / 2), "Metal_Charcoal", 0.022)
+    box(c, "StairPortal_InnerRight", (0.12, 0.72, height - 0.72), (3.43, -0.03, (height - 0.72) / 2), "Metal_Charcoal", 0.022)
+    box(c, "StairPortal_InnerTop", (6.98, 0.72, 0.12), (0, -0.03, height - 0.47), "Oak_Warm", 0.025)
+    box(c, "StairPortal_BaseLeft", (0.72, 0.82, 0.18), (-3.52, 0, 0.09), "Metal_Charcoal", 0.03)
+    box(c, "StairPortal_BaseRight", (0.72, 0.82, 0.18), (3.52, 0, 0.09), "Metal_Charcoal", 0.03)
+    box(c, "StairPortal_Light", (3.7, 0.16, 0.08), (0, -0.38, height - 0.58), "Light_Warm", 0.018)
+
+
+def create_elevator_shaft_shell() -> None:
+    c = module_collection("elevator-shaft-shell")
+    width = 10.6
+    depth = 5.6
+    height = 9.25
+    wall = 0.34
+    front_fill = (width - 8.9) / 2
+
+    for x in (-width / 2 + wall / 2, width / 2 - wall / 2):
+        box(c, f"Shaft_Side_{x}", (wall, depth, height), (x, depth / 2, height / 2), "Plaster_WarmWhite", 0.055)
+        box(
+            c,
+            f"Shaft_InteriorPanel_{x}",
+            (0.055, depth - 0.65, 4.7),
+            (x - math.copysign(0.2, x), depth / 2 + 0.1, 2.75),
+            "Sage_Panel",
+            0.018,
+        )
+        box(
+            c,
+            f"Shaft_InteriorBase_{x}",
+            (0.07, depth - 0.45, 0.22),
+            (x - math.copysign(0.21, x), depth / 2, 0.16),
+            "Oak_Dark",
+            0.018,
+        )
+
+    box(c, "Shaft_BackWall", (width, wall, height), (0, depth - wall / 2, height / 2), "Plaster_WarmWhite", 0.055)
+    box(c, "Shaft_BackPanel", (8.8, 0.055, 4.7), (0, depth - wall - 0.02, 2.75), "Sage_Panel", 0.018)
+    box(c, "Shaft_BackBase", (9.7, 0.07, 0.22), (0, depth - wall - 0.03, 0.16), "Oak_Dark", 0.018)
+    box(c, "Shaft_Ceiling", (width, depth, 0.24), (0, depth / 2, height - 0.12), "Plaster_SoftGrey", 0.045)
+    box(c, "Shaft_CeilingLight", (4.4, 0.5, 0.065), (0, depth / 2, height - 0.27), "Light_Mint", 0.02)
+
+    for side in (-1, 1):
+        x = side * (8.9 / 2 + front_fill / 2)
+        box(c, f"Shaft_FrontPier_{side}", (front_fill, 0.52, height), (x, 0.2, height / 2), "Plaster_WarmWhite", 0.055)
+        box(c, f"Shaft_FrontPierBase_{side}", (front_fill + 0.08, 0.58, 0.22), (x, 0.14, 0.16), "Oak_Dark", 0.02)
+    box(c, "Shaft_FrontHeader", (width, 0.52, 1.1), (0, 0.2, 8.7), "Plaster_WarmWhite", 0.055)
+    box(c, "Shaft_FrontShadowLine", (9.7, 0.06, 0.055), (0, -0.075, 8.18), "Brass_Satin", 0.012)
 
 
 def create_elevator_portal() -> None:
@@ -443,8 +509,8 @@ def create_elevator_portal() -> None:
 
 def create_elevator_door_panel() -> None:
     c = module_collection("elevator-door-panel")
-    box(c, "Elevator_Door_Core", (3.15, 0.14, 5.8), (0, 0, 2.9), "Metal_Charcoal", 0.035)
-    box(c, "Elevator_Door_Inset", (2.72, 0.045, 5.25), (0, -0.085, 2.9), "Metal_Black", 0.018)
+    box(c, "Elevator_Door_Core", (3.15, 0.14, 5.8), (0, 0, 2.9), "Metal_BrushedSteel", 0.035)
+    box(c, "Elevator_Door_Inset", (2.72, 0.045, 5.25), (0, -0.085, 2.9), "Metal_Charcoal", 0.018)
     for z in (0.68, 2.9, 5.12):
         box(c, f"Elevator_Door_Band_{z}", (2.5, 0.06, 0.055), (0, -0.12, z), "Brass_Satin", 0.012)
     for x in (-1.18, 1.18):
@@ -664,6 +730,8 @@ def create_modules() -> None:
     create_railing()
     create_stair_flight()
     create_stair_landing()
+    create_stairwell_portal()
+    create_elevator_shaft_shell()
     create_elevator_portal()
     create_elevator_door_panel()
     create_elevator_cabin_shell()

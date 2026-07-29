@@ -24,6 +24,8 @@ EXPECTED_MODULES = {
     "railing",
     "stair-flight",
     "stair-landing",
+    "stairwell-portal",
+    "elevator-shaft-shell",
     "elevator-portal",
     "elevator-door-panel",
     "elevator-cabin-shell",

@@ -16,6 +16,8 @@ export const BUILDING_ARCHITECTURE = Object.freeze({
   railing: 'railing.glb',
   stairFlight: 'stair-flight.glb',
   stairLanding: 'stair-landing.glb',
+  stairwellPortal: 'stairwell-portal.glb',
+  elevatorShaftShell: 'elevator-shaft-shell.glb',
   elevatorPortal: 'elevator-portal.glb',
   elevatorDoorPanel: 'elevator-door-panel.glb',
   elevatorCabinShell: 'elevator-cabin-shell.glb',
