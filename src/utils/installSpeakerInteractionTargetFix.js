@@ -3,8 +3,8 @@ import * as THREE from 'three';
 const INSTALL_FLAG = '__estudiemosSpeakerInteractionTargetFixInstalled';
 const TARGET_EVENT = 'estudiemos:interaction-target';
 const OVERRIDE_SOURCE = 'speaker-target-fix';
-const SPEAKER_CENTER = new THREE.Vector3(65.4, 3.35, -29.55);
-const SPEAKER_RADIUS = 3.85;
+const SPEAKER_CENTER = new THREE.Vector3(64.65, 2.35, -29.25);
+const SPEAKER_RADIUS = 3.2;
 const SPEAKER_MAX_DISTANCE = 34;
 const INTERIOR_BOUNDS = {
   minX: 62,

@@ -23,7 +23,6 @@ import {
 } from '../utils/installInteractionTargeting.js';
 import { ensureRoomShopInScene, updateRoomShopInScene } from '../utils/installRoomShopWorldPolishFix.js';
 import {
-  ensureRoomSpeakerCssOccluder,
   ensureRoomSpeakerInScene,
   updateRoomSpeakerInScene
 } from '../utils/installRoomSpeakerWorld.js';
@@ -324,7 +323,6 @@ export function FirstPersonWorld({
     const cssAgendaBoard = createCssAgendaBoardObject();
     cssAgendaBoard.visible = false;
     cssScene.add(cssAgendaBoard);
-    ensureRoomSpeakerCssOccluder(cssScene);
 
     const ambient = new THREE.HemisphereLight(0xfff2df, 0x35443f, 1.05);
     scene.add(ambient);
@@ -3190,6 +3188,7 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
       interiorCollider(27.4, 8, 1.35, 4.9, 'bench'),
       interiorCollider(-26, -26.4, 1.4, 1.4, 'planter'),
       interiorCollider(26, -26.4, 1.4, 1.4, 'planter'),
+      interiorCollider(-25.35, -22.8, 2.9, 2.3, 'speaker'),
       ...createBuildingElevatorShaftColliders('study'),
       createCollider(
         BUILDING_ELEVATOR_X,

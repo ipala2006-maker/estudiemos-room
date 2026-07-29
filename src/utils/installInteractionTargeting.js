@@ -33,8 +33,8 @@ const AGENDA_TARGET = {
 };
 
 const ROOM_SPEAKER_TARGET = {
-  center: new THREE.Vector3(65.4, 3.35, -29.55),
-  radius: 2.1,
+  center: new THREE.Vector3(64.65, 2.35, -29.25),
+  radius: 2.65,
   distance: 9.5
 };
 

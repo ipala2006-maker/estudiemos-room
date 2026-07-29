@@ -34,3 +34,28 @@ Validate the saved source and all exported modules:
 
 Each component uses metric scale, a base-aligned pivot, named materials and
 clean low-poly geometry suitable for browser rendering.
+
+## Study speaker
+
+The room speaker is a separate original Blender asset with its own editable
+source:
+
+```powershell
+& "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" `
+  --background `
+  --python tools/blender/create_speaker.py
+```
+
+This creates:
+
+- `tools/blender/estudiemos-speaker.blend`
+- `public/models/custom/study-speaker.glb`
+
+Validate it with:
+
+```powershell
+& "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" `
+  tools/blender/estudiemos-speaker.blend `
+  --background `
+  --python tools/blender/validate_speaker.py
+```
