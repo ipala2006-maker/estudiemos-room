@@ -4,7 +4,7 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, onBackHome, onRese
   return (
     <aside className="hud">
       <div>
-        <strong>Lobby 3D</strong>
+        <strong>{isDoorOpen ? 'Casa 1' : 'Lobby 3D'}</strong>
         <span>WASD o flechas para caminar</span>
         <span>Click en el mundo para capturar el mouse</span>
         <span>E para interactuar cuando estes cerca</span>
@@ -13,7 +13,7 @@ export function Hud({ isDoorOpen, isNearComputer, isNearDoor, onBackHome, onRese
       <div>
         <span>
           {isDoorOpen
-            ? 'La puerta esta abierta: entra, mira a la esquina izquierda y acercate a la computadora.'
+            ? 'Estas dentro de Casa 1. La computadora esta en la esquina izquierda.'
             : 'Segui el camino hasta la puerta de la casita.'}
         </span>
       </div>

@@ -2,6 +2,10 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Casa1 } from '../maps/Casa1.js';
+import {
+  composeCameraRelativeDirection,
+  updateHorizontalCameraBasis
+} from '../utils/cameraMovement.js';
 
 const activeMap = Casa1;
 const startPosition = activeMap.startPosition;
@@ -39,6 +43,7 @@ export function FirstPersonWorld({
 
   useEffect(() => {
     const mount = mountRef.current;
+    const loadState = { disposed: false };
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x7ddff0);
     scene.fog = new THREE.Fog(0x7ddff0, 46, 98);
@@ -46,6 +51,9 @@ export function FirstPersonWorld({
     const camera = new THREE.PerspectiveCamera(68, mount.clientWidth / mount.clientHeight, 0.1, 120);
     camera.position.copy(startPosition);
     camera.rotation.order = 'YXZ';
+    const debugSpawn = import.meta.env.DEV
+      ? new URLSearchParams(window.location.search).get('debugSpawn')
+      : null;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -54,7 +62,7 @@ export function FirstPersonWorld({
     renderer.toneMapping = THREE.NoToneMapping;
     renderer.toneMappingExposure = 1;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     mount.appendChild(renderer.domElement);
 
     const ambient = new THREE.HemisphereLight(0xffffff, 0x24425e, 1.55);
@@ -80,7 +88,10 @@ export function FirstPersonWorld({
     softFill.position.set(-18, 12, -8);
     scene.add(softFill);
 
-    const { giantScreen } = buildWorldScene(scene);
+    const { giantScreen } = buildWorldScene(scene, loadState);
+    if (import.meta.env.DEV) {
+      window.__ESTUDIEMOS_ROOM_DEBUG__ = { scene, camera };
+    }
 
     const keys = {
       forward: false,
@@ -91,6 +102,8 @@ export function FirstPersonWorld({
     const inputDirection = new THREE.Vector3();
     const cameraForwardHorizontal = new THREE.Vector3();
     const cameraRightHorizontal = new THREE.Vector3();
+    const targetVelocity = new THREE.Vector3();
+    const movementVelocity = new THREE.Vector3();
     let yaw = 0;
     let pitch = 0;
     let pointerLocked = false;
@@ -104,6 +117,7 @@ export function FirstPersonWorld({
 
     function resetCamera() {
       camera.position.copy(startPosition);
+      movementVelocity.set(0, 0, 0);
       yaw = 0;
       pitch = 0;
       camera.rotation.set(pitch, yaw, 0);
@@ -119,12 +133,45 @@ export function FirstPersonWorld({
     toggleDoorRef.current = () => {
       doorOpenRef.current = !doorOpenRef.current;
       camera.position.copy(doorOpenRef.current ? activeMap.interiorSpawnPosition : startPosition);
-      yaw = doorOpenRef.current ? Math.PI : 0;
+      yaw = 0;
       pitch = 0;
       camera.rotation.set(pitch, yaw, 0);
+      movementVelocity.set(0, 0, 0);
       clearMovementInput();
       onDoorOpenChange(doorOpenRef.current);
     };
+
+    if (debugSpawn === 'door') {
+      camera.position.set(
+        houseDoorPosition.x,
+        houseDoorPosition.y,
+        houseDoorPosition.z + 3.8
+      );
+      yaw = 0;
+      pitch = 0;
+      camera.rotation.set(pitch, yaw, 0);
+    } else if (
+      debugSpawn === 'interior' ||
+      debugSpawn === 'computer' ||
+      debugSpawn === 'exit'
+    ) {
+      doorOpenRef.current = true;
+      camera.position.copy(
+        debugSpawn === 'computer'
+          ? new THREE.Vector3(computerPosition.x, computerPosition.y, computerPosition.z + 3)
+          : debugSpawn === 'exit'
+            ? new THREE.Vector3(
+                activeMap.interiorExitPosition.x,
+                activeMap.interiorExitPosition.y,
+                activeMap.interiorExitPosition.z - 3.5
+              )
+          : activeMap.interiorSpawnPosition
+      );
+      yaw = debugSpawn === 'exit' ? Math.PI : 0;
+      pitch = 0;
+      camera.rotation.set(pitch, yaw, 0);
+      onDoorOpenChange(true);
+    }
 
     function onKeyDown(event) {
       if (!controlsEnabledRef.current) {
@@ -154,6 +201,10 @@ export function FirstPersonWorld({
 
     function onPointerLockChange() {
       pointerLocked = document.pointerLockElement === renderer.domElement;
+      if (!pointerLocked) {
+        clearMovementInput();
+        movementVelocity.set(0, 0, 0);
+      }
     }
 
     function onCanvasClick() {
@@ -177,39 +228,70 @@ export function FirstPersonWorld({
       renderer.setSize(mount.clientWidth, mount.clientHeight);
     }
 
+    function onWindowBlur() {
+      clearMovementInput();
+      movementVelocity.set(0, 0, 0);
+    }
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onWindowBlur);
     window.addEventListener('resize', onResize);
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('pointerlockchange', onPointerLockChange);
     renderer.domElement.addEventListener('click', onCanvasClick);
 
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
     let frameId = 0;
 
-    function animate() {
-      const delta = Math.min(clock.getDelta(), 0.04);
+    function animate(timestamp) {
+      timer.update(timestamp);
+      const delta = Math.min(timer.getDelta(), 0.04);
       if (!controlsEnabledRef.current) {
         clearMovementInput();
+        movementVelocity.set(0, 0, 0);
       }
 
-      camera.getWorldDirection(cameraForwardHorizontal);
-      cameraForwardHorizontal.y = 0;
-      cameraForwardHorizontal.normalize();
-      cameraRightHorizontal.crossVectors(cameraForwardHorizontal, camera.up).normalize();
+      updateHorizontalCameraBasis(camera, cameraForwardHorizontal, cameraRightHorizontal);
 
       const inputVertical = Number(keys.forward) - Number(keys.backward);
       const inputHorizontal = Number(keys.right) - Number(keys.left);
-      inputDirection.set(0, 0, 0);
-      inputDirection.addScaledVector(cameraForwardHorizontal, inputVertical);
-      inputDirection.addScaledVector(cameraRightHorizontal, inputHorizontal);
+      composeCameraRelativeDirection(
+        cameraForwardHorizontal,
+        cameraRightHorizontal,
+        inputHorizontal,
+        inputVertical,
+        inputDirection
+      );
 
-      if (controlsEnabledRef.current && inputDirection.lengthSq() > 0) {
+      if (inputDirection.lengthSq() > 0) {
         inputDirection.normalize();
-        camera.position.addScaledVector(inputDirection, 6.4 * delta);
+        targetVelocity.copy(inputDirection).multiplyScalar(6.2);
+      } else {
+        targetVelocity.set(0, 0, 0);
+      }
+
+      const responsiveness = inputDirection.lengthSq() > 0 ? 18 : 24;
+      movementVelocity.x = THREE.MathUtils.damp(
+        movementVelocity.x,
+        targetVelocity.x,
+        responsiveness,
+        delta
+      );
+      movementVelocity.z = THREE.MathUtils.damp(
+        movementVelocity.z,
+        targetVelocity.z,
+        responsiveness,
+        delta
+      );
+
+      if (controlsEnabledRef.current && movementVelocity.lengthSq() > 0.0001) {
         const bounds = doorOpenRef.current ? activeMap.interiorBounds : activeMap.neighborhoodBounds;
-        camera.position.x = clamp(camera.position.x, bounds.minX, bounds.maxX);
-        camera.position.z = clamp(camera.position.z, bounds.minZ, bounds.maxZ);
+        const colliders = doorOpenRef.current
+          ? activeMap.interiorColliders
+          : activeMap.neighborhoodColliders;
+        moveCameraOnPlane(camera, movementVelocity, delta, bounds, colliders);
       }
 
       updateGiantScreen(giantScreen, screenPlatformRef.current);
@@ -222,7 +304,7 @@ export function FirstPersonWorld({
         onNearDoorChange(nearDoor);
       }
 
-      const nearComputer = doorOpenRef.current && camera.position.distanceTo(computerPosition) < 7;
+      const nearComputer = doorOpenRef.current && camera.position.distanceTo(computerPosition) < 5.2;
       if (nearComputer !== nearComputerRef.current) {
         nearComputerRef.current = nearComputer;
         onNearComputerChange(nearComputer);
@@ -235,22 +317,32 @@ export function FirstPersonWorld({
     animate();
 
     return () => {
+      loadState.disposed = true;
       cancelAnimationFrame(frameId);
+      timer.dispose();
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onWindowBlur);
       window.removeEventListener('resize', onResize);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('pointerlockchange', onPointerLockChange);
       renderer.domElement.removeEventListener('click', onCanvasClick);
+      disposeObject3D(scene);
       renderer.dispose();
-      mount.removeChild(renderer.domElement);
+      renderer.renderLists.dispose();
+      if (import.meta.env.DEV && window.__ESTUDIEMOS_ROOM_DEBUG__?.scene === scene) {
+        delete window.__ESTUDIEMOS_ROOM_DEBUG__;
+      }
+      if (renderer.domElement.parentNode === mount) {
+        mount.removeChild(renderer.domElement);
+      }
     };
   }, [onDoorOpenChange, onNearComputerChange, onNearDoorChange, resetRef, toggleDoorRef]);
 
   return <section className="three-world" ref={mountRef} aria-label="Mundo 3D en primera persona" />;
 }
 
-function buildWorldScene(scene) {
+function buildWorldScene(scene, loadState) {
   const textures = {
     grass: createTexture('grass'),
     path: createTexture('path'),
@@ -268,12 +360,16 @@ function buildWorldScene(scene) {
   const roofMaterial = makeMaterial(0xff3d34, 0.26, 0, textures.roof);
   const doorMaterial = makeMaterial(0x211a3d, 0.28, 0, textures.wood);
 
-  addNeighborhood(scene, { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures });
-  const giantScreen = addCasa1Interior(scene, textures);
+  addNeighborhood(
+    scene,
+    { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures },
+    loadState
+  );
+  const giantScreen = addCasa1Interior(scene, textures, loadState);
   return { giantScreen };
 }
 
-function addNeighborhood(scene, materials) {
+function addNeighborhood(scene, materials, loadState) {
   const { groundMaterial, pathMaterial, wallMaterial, houseWall, roofMaterial, doorMaterial, textures } = materials;
   const ground = new THREE.Mesh(new THREE.BoxGeometry(60, 0.6, 60), groundMaterial);
   ground.position.y = -0.3;
@@ -301,13 +397,10 @@ function addNeighborhood(scene, materials) {
   addBoundaryWalls(scene, wallMaterial);
   addPathSign(scene, textures);
   addNeighborhoodAccents(scene);
-  addRhythmRoad(scene);
   addDesignedPath(scene);
-  addModelNeighborhoodHouses(scene);
-  addSkylinePanels(scene);
-  addStageSetPieces(scene);
+  addModelNeighborhoodHouses(scene, loadState);
   addCourtyardProps(scene, textures);
-  addModelNatureAssets(scene);
+  addModelNatureAssets(scene, loadState);
 }
 
 function addBoundaryWalls(scene, wallMaterial) {
@@ -327,20 +420,6 @@ function addBoundaryWalls(scene, wallMaterial) {
     addEdges(wall, 0x2f6c78, 0.34);
   });
   addBoundaryMurals(scene);
-
-  [
-    { position: [-16, 3.4, -29.25], size: [8, 4.8, 0.22], color: 0xff4f4a, rot: -0.08 },
-    { position: [14, 3.1, -29.2], size: [10, 4.2, 0.22], color: 0xffd95c, rot: 0.08 },
-    { position: [-29.2, 3.2, 12], size: [0.22, 4.4, 8], color: 0x38d8ff, rot: 0 },
-    { position: [29.2, 3.6, -12], size: [0.22, 5.1, 9], color: 0xff4f4a, rot: 0 }
-  ].forEach((spec) => {
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(...spec.size), makeMaterial(spec.color, 0.22));
-    panel.position.set(...spec.position);
-    panel.rotation.z = spec.rot;
-    panel.castShadow = true;
-    scene.add(panel);
-    addEdges(panel, 0x111622, 0.45);
-  });
 
   const capMaterial = makeMaterial(0xfff0c9, 0.5);
   [
@@ -366,21 +445,13 @@ function addPathSign(scene, textures) {
   scene.add(post);
 
   const board = new THREE.Mesh(
-    new THREE.BoxGeometry(2.55, 1.1, 0.28),
-    makeMaterial(0xffd95c, 0.48, 0, textures.wood)
+    new THREE.BoxGeometry(3.4, 1.35, 0.28),
+    new THREE.MeshBasicMaterial({ map: createPathSignTexture() })
   );
-  board.position.set(-4.6, 2.3, 5.5);
+  board.position.set(-4.6, 2.45, 5.5);
   board.castShadow = true;
   scene.add(board);
-
-  const arrow = new THREE.Mesh(
-    new THREE.ConeGeometry(0.55, 1.2, 3),
-    makeMaterial(0xff4f4a, 0.42)
-  );
-  arrow.position.set(-4.6, 2.3, 4.82);
-  arrow.rotation.x = Math.PI / 2;
-  arrow.rotation.z = Math.PI;
-  scene.add(arrow);
+  addEdges(board, 0x111622, 0.72);
 
   const marker = new THREE.Mesh(
     new THREE.BoxGeometry(0.16, 0.05, 13),
@@ -390,8 +461,8 @@ function addPathSign(scene, textures) {
   marker.receiveShadow = true;
   scene.add(marker);
 
-  const cap = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.22, 0.42), makeMaterial(0x111622, 0.18));
-  cap.position.set(-4.6, 2.92, 5.5);
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(3.72, 0.22, 0.42), makeMaterial(0x111622, 0.18));
+  cap.position.set(-4.6, 3.17, 5.5);
   cap.rotation.z = -0.08;
   scene.add(cap);
 
@@ -658,7 +729,7 @@ function addCourtyardProps(scene, textures) {
   addGroundGrate(scene, 18.8, 18.2, -0.15);
 }
 
-function addModelNeighborhoodHouses(scene) {
+function addModelNeighborhoodHouses(scene, loadState) {
   const houseModels = [
     {
       file: 'Two story house-9N6ROCbmO1.glb',
@@ -686,6 +757,10 @@ function addModelNeighborhoodHouses(scene) {
       url,
       (gltf) => {
         const root = gltf.scene;
+        if (loadState.disposed) {
+          disposeObject3D(root);
+          return;
+        }
         root.name = `cc0-house-${index + 1}`;
         prepareImportedModel(root);
         fitImportedModel(root, config.targetSize);
@@ -695,13 +770,21 @@ function addModelNeighborhoodHouses(scene) {
       },
       undefined,
       () => {
-        addNeighborhoodHouse(scene, createFallbackHouseMaterials(), config.position[0], config.position[2], index === 0);
+        if (!loadState.disposed) {
+          addNeighborhoodHouse(
+            scene,
+            createFallbackHouseMaterials(),
+            config.position[0],
+            config.position[2],
+            index === 0
+          );
+        }
       }
     );
   });
 }
 
-function addModelNatureAssets(scene) {
+function addModelNatureAssets(scene, loadState) {
   const natureFolder = 'stylized-nature-megakit';
   const treePlacements = [
     { file: 'Tree.glb', position: [-17, 0, -11], targetSize: 6.8, rotation: [0, -0.35, 0] },
@@ -713,12 +796,16 @@ function addModelNatureAssets(scene) {
   ];
 
   treePlacements.forEach((asset, index) => {
-    addImportedAsset(scene, {
-      ...asset,
-      folder: natureFolder,
-      name: `cc0-stylized-tree-${index + 1}`,
-      outlineOpacity: 0.36
-    });
+    addImportedAsset(
+      scene,
+      {
+        ...asset,
+        folder: natureFolder,
+        name: `cc0-stylized-tree-${index + 1}`,
+        outlineOpacity: 0.36
+      },
+      loadState
+    );
   });
 
   [
@@ -731,16 +818,20 @@ function addModelNatureAssets(scene) {
     { file: 'Rock Medium.glb', position: [23, 0, 5.5], targetSize: 2.4, rotation: [0, -0.4, 0] },
     { file: 'Pebble Round.glb', position: [-23, 0, 17], targetSize: 1.6, rotation: [0, 0.1, 0] }
   ].forEach((asset, index) => {
-    addImportedAsset(scene, {
-      ...asset,
-      folder: natureFolder,
-      name: `cc0-nature-detail-${index + 1}`,
-      outlineOpacity: 0.3
-    });
+    addImportedAsset(
+      scene,
+      {
+        ...asset,
+        folder: natureFolder,
+        name: `cc0-nature-detail-${index + 1}`,
+        outlineOpacity: 0.3
+      },
+      loadState
+    );
   });
 }
 
-function addImportedAsset(parent, config) {
+function addImportedAsset(parent, config, loadState) {
   const {
     folder,
     file,
@@ -748,6 +839,7 @@ function addImportedAsset(parent, config) {
     position = [0, 0, 0],
     rotation = [0, 0, 0],
     targetSize = 1,
+    targetHeight,
     scale = 1,
     outlineColor = 0x111622,
     outlineOpacity = 0.28,
@@ -759,9 +851,13 @@ function addImportedAsset(parent, config) {
     url,
     (gltf) => {
       const root = gltf.scene;
+      if (loadState.disposed) {
+        disposeObject3D(root);
+        return;
+      }
       root.name = name ?? file.replace('.glb', '');
       prepareImportedModel(root, outlineColor, outlineOpacity);
-      fitImportedModel(root, targetSize);
+      fitImportedModel(root, targetHeight ?? targetSize, targetHeight ? 'height' : 'footprint');
       root.scale.multiplyScalar(scale);
       root.rotation.set(rotation[0], rotation[1], rotation[2]);
       root.position.set(position[0], position[1], position[2]);
@@ -792,14 +888,15 @@ function prepareImportedModel(root, outlineColor = 0x111622, outlineOpacity = 0.
   prepareImportedModelWithStyle(root, outlineColor, outlineOpacity);
 }
 
-function fitImportedModel(root, targetSize) {
+function fitImportedModel(root, targetSize, fitMode = 'footprint') {
   const box = new THREE.Box3().setFromObject(root);
   const size = new THREE.Vector3();
   const center = new THREE.Vector3();
   box.getSize(size);
   box.getCenter(center);
-  const widest = Math.max(size.x, size.z, 0.001);
-  const scale = targetSize / widest;
+  const referenceSize =
+    fitMode === 'height' ? Math.max(size.y, 0.001) : Math.max(size.x, size.z, 0.001);
+  const scale = targetSize / referenceSize;
   root.scale.setScalar(scale);
 
   const scaledBox = new THREE.Box3().setFromObject(root);
@@ -1256,7 +1353,7 @@ function addHouseGraphicTrim(houseGroup, isCasa1) {
   });
 }
 
-function addCasa1Interior(scene, textures) {
+function addCasa1Interior(scene, textures, loadState) {
   const room = new THREE.Group();
   room.position.set(90, 0, -6);
 
@@ -1285,7 +1382,7 @@ function addCasa1Interior(scene, textures) {
   addMinimalRoomDetails(room);
   addInteriorSetPieces(room);
   addInteriorWorkstationSet(room, textures);
-  addImportedCasa1InteriorAssets(room);
+  addImportedCasa1InteriorAssets(room, loadState);
 
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(56, 0.4, 58), makeMaterial(0xf8fbff, 0.36));
   ceiling.position.set(0, 16, 0);
@@ -1298,7 +1395,7 @@ function addCasa1Interior(scene, textures) {
   room.add(screenFrame);
 
   const screenCanvas = document.createElement('canvas');
-  screenCanvas.width = 1024;
+  screenCanvas.width = 1384;
   screenCanvas.height = 512;
   const screenTexture = new THREE.CanvasTexture(screenCanvas);
   screenTexture.colorSpace = THREE.SRGBColorSpace;
@@ -1416,7 +1513,7 @@ function addInteriorWorkstationSet(room, textures) {
   addSmallTableCluster(room);
 }
 
-function addImportedCasa1InteriorAssets(room) {
+function addImportedCasa1InteriorAssets(room, loadState) {
   const furnitureFolder = 'furniture-pack';
   const interiorFolder = 'house-interior-pack';
 
@@ -1436,7 +1533,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-study-chair',
       position: [-12, 0, -1.45],
       rotation: [0, Math.PI, 0],
-      targetSize: 2.25,
+      targetHeight: 2.35,
       outlineOpacity: 0.34
     },
     {
@@ -1445,7 +1542,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-bookcase-left',
       position: [-24.8, 0, 13.8],
       rotation: [0, Math.PI / 2, 0],
-      targetSize: 6.4,
+      targetHeight: 5.8,
       outlineOpacity: 0.32
     },
     {
@@ -1454,7 +1551,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-shelf-right',
       position: [24.6, 0, 11],
       rotation: [0, -Math.PI / 2, 0],
-      targetSize: 6.2,
+      targetHeight: 5.5,
       outlineOpacity: 0.32
     },
     {
@@ -1481,16 +1578,16 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-floor-light-left',
       position: [-21.8, 0, 20.6],
       rotation: [0, 0.35, 0],
-      targetSize: 3.6,
+      targetHeight: 4.5,
       outlineOpacity: 0.34
     },
     {
       folder: interiorFolder,
       file: 'Light Desk.glb',
       name: 'cc0-desk-light',
-      position: [-9.8, 0, -3.1],
+      position: [-9.8, 2.28, -4.2],
       rotation: [0, -0.35, 0],
-      targetSize: 1.8,
+      targetHeight: 1.1,
       outlineOpacity: 0.34
     },
     {
@@ -1499,7 +1596,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-houseplant-screen-left',
       position: [-24.6, 0, -22.4],
       rotation: [0, 0.25, 0],
-      targetSize: 3.4,
+      targetHeight: 2.8,
       outlineOpacity: 0.34
     },
     {
@@ -1508,7 +1605,7 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-cactus-screen-right',
       position: [24.5, 0, -21.2],
       rotation: [0, -0.45, 0],
-      targetSize: 3.2,
+      targetHeight: 2.35,
       outlineOpacity: 0.34
     },
     {
@@ -1517,24 +1614,24 @@ function addImportedCasa1InteriorAssets(room) {
       name: 'cc0-trashcan',
       position: [-19.5, 0, -3.2],
       rotation: [0, 0.1, 0],
-      targetSize: 1.8,
+      targetHeight: 1.35,
       outlineOpacity: 0.34
     },
     {
       folder: interiorFolder,
       file: 'Table Lamp.glb',
       name: 'cc0-table-lamp',
-      position: [6.6, 0, 13.8],
+      position: [9.1, 1.52, 13.25],
       rotation: [0, -0.15, 0],
-      targetSize: 2.2,
+      targetHeight: 0.9,
       outlineOpacity: 0.34
     }
-  ].forEach((asset) => addImportedAsset(room, asset));
+  ].forEach((asset) => addImportedAsset(room, asset, loadState));
 
   [
     { position: [-12.1, 3.2, -3.7], color: 0x38d8ff, intensity: 1.25 },
     { position: [-21.9, 4.7, 20.6], color: 0xffd95c, intensity: 1 },
-    { position: [6.5, 2.7, 13.8], color: 0xff4f4a, intensity: 0.85 }
+    { position: [8.5, 2.6, 13.4], color: 0xff4f4a, intensity: 0.72 }
   ].forEach((light) => {
     const point = new THREE.PointLight(light.color, light.intensity, 10, 2.4);
     point.position.set(...light.position);
@@ -1739,20 +1836,23 @@ function addStorageWall(room, textures) {
 }
 
 function addSmallTableCluster(room) {
+  const group = new THREE.Group();
+  group.position.set(8, 0, 13.4);
+
   const table = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.28, 2.8), makeMaterial(0xe1d2ad, 0.22));
-  table.position.set(0, 1.35, 13.4);
-  room.add(table);
+  table.position.set(0, 1.35, 0);
+  group.add(table);
   addEdges(table, 0x111622, 0.36);
   [-1.65, 1.65].forEach((x) => {
     [-1, 1].forEach((z) => {
       const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.35, 0.18), makeMaterial(0x111622, 0.18));
-      leg.position.set(x, 0.68, 13.4 + z);
-      room.add(leg);
+      leg.position.set(x, 0.68, z);
+      group.add(leg);
     });
   });
   const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.7, 16), makeMaterial(0xff4f4a, 0.2));
-  cup.position.set(1.25, 1.85, 13.1);
-  room.add(cup);
+  cup.position.set(1.25, 1.85, -0.3);
+  group.add(cup);
   const tablet = createGroundShapeMesh(
     [
       [-0.7, -0.45],
@@ -1762,9 +1862,10 @@ function addSmallTableCluster(room) {
     ],
     0x155cff
   );
-  tablet.position.set(-0.8, 1.53, 13.4);
+  tablet.position.set(-0.8, 1.53, 0);
   tablet.rotation.y = 0.2;
-  room.add(tablet);
+  group.add(tablet);
+  room.add(group);
 }
 
 function addInteriorExitMarker(room) {
@@ -1928,53 +2029,20 @@ function addMinimalRoomDetails(room) {
 }
 
 function addScreenControllerComputer(room, textures) {
-  const platform = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.32, 4.2), makeMaterial(0x111622, 0.16, 0, textures.blackStripe));
-  platform.position.set(-12, 0.18, -4);
-  platform.castShadow = true;
-  platform.receiveShadow = true;
-  room.add(platform);
-  addEdges(platform, 0x38d8ff, 0.32);
-
-  const desk = new THREE.Mesh(
-    new THREE.BoxGeometry(5.4, 1, 2.1),
-    makeMaterial(0x211a3d, 0.24, 0, textures.blackStripe)
-  );
-  desk.position.set(-12, 1.05, -4);
-  desk.castShadow = true;
-  room.add(desk);
-  addEdges(desk, 0x111622, 0.5);
-
-  const deskAccent = new THREE.Mesh(new THREE.BoxGeometry(5.7, 0.18, 0.18), makeMaterial(0xffd95c, 0.18));
-  deskAccent.position.set(-12, 1.63, -2.98);
-  room.add(deskAccent);
-
-  const consoleSlab = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.32, 1.25), makeMaterial(0xff4f4a, 0.18));
-  consoleSlab.position.set(-12, 1.78, -3.55);
-  consoleSlab.rotation.x = -0.18;
-  room.add(consoleSlab);
-  addEdges(consoleSlab, 0x111622, 0.44);
-
-  [-13.65, -10.35].forEach((x) => {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.65, 0.28), makeMaterial(0x111622, 0.16));
-    arm.position.set(x, 2.12, -4.25);
-    arm.rotation.z = x < -12 ? -0.24 : 0.24;
-    room.add(arm);
-    addEdges(arm, 0x38d8ff, 0.32);
-  });
-
   const upperScreen = new THREE.Mesh(
-    new THREE.BoxGeometry(3.15, 1.9, 0.24),
+    new THREE.BoxGeometry(3.5, 2.25, 0.24),
     makeMaterial(0x111622, 0.16, 0.04, textures.screenFrame)
   );
-  upperScreen.position.set(-12, 2.7, -4.35);
+  upperScreen.position.set(-12, 3.55, -4.35);
   upperScreen.castShadow = true;
   room.add(upperScreen);
+  addEdges(upperScreen, 0x111622, 0.5);
 
   const upperGlow = new THREE.Mesh(
-    new THREE.BoxGeometry(2.62, 1.3, 0.08),
+    new THREE.BoxGeometry(2.9, 1.6, 0.08),
     new THREE.MeshStandardMaterial({ color: 0x9beaff, roughness: 0.18, emissive: 0x18d8ff, emissiveIntensity: 0.9 })
   );
-  upperGlow.position.set(-12, 2.7, -4.18);
+  upperGlow.position.set(-12, 3.55, -4.18);
   room.add(upperGlow);
 
   const monitorFace = createVerticalShapeMesh(
@@ -1988,7 +2056,7 @@ function addScreenControllerComputer(room, textures) {
     ],
     0x111622
   );
-  monitorFace.position.set(-12, 2.72, -4.08);
+  monitorFace.position.set(-12, 3.57, -4.08);
   room.add(monitorFace);
 
   const monitorScreen = createVerticalShapeMesh(
@@ -2002,35 +2070,46 @@ function addScreenControllerComputer(room, textures) {
     ],
     0x9beaff
   );
-  monitorScreen.position.set(-12, 2.72, -4.0);
+  monitorScreen.position.set(-12, 3.57, -4);
   room.add(monitorScreen);
 
   const monitorCrown = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.28, 0.28), makeMaterial(0xffd95c, 0.18));
-  monitorCrown.position.set(-12, 3.75, -4.22);
+  monitorCrown.position.set(-12, 4.78, -4.22);
   monitorCrown.rotation.z = -0.05;
   room.add(monitorCrown);
 
   const miniBolt = createBoltMesh(0xff4f4a, 0.42);
-  miniBolt.position.set(-10.62, 2.72, -4.05);
+  miniBolt.position.set(-10.45, 3.58, -4.05);
   miniBolt.rotation.y = Math.PI;
   room.add(miniBolt);
 
-  const chair = new THREE.Mesh(
-    new THREE.BoxGeometry(1.25, 1.5, 1.15),
-    makeMaterial(0xff4f4a, 0.48)
+  const monitorStem = new THREE.Mesh(
+    new THREE.BoxGeometry(0.32, 1.15, 0.32),
+    makeMaterial(0x111622, 0.18)
   );
-  chair.position.set(-12, 0.86, -1.9);
-  chair.castShadow = true;
-  room.add(chair);
-  addEdges(chair, 0x151f22, 0.32);
+  monitorStem.position.set(-12, 2.05, -4.22);
+  room.add(monitorStem);
+
+  const monitorBase = new THREE.Mesh(
+    new THREE.BoxGeometry(1.8, 0.18, 0.85),
+    makeMaterial(0xff4f4a, 0.18)
+  );
+  monitorBase.position.set(-12, 1.5, -4.05);
+  monitorBase.rotation.y = -0.08;
+  room.add(monitorBase);
+  addEdges(monitorBase, 0x111622, 0.42);
 
   const interactionRing = new THREE.Mesh(
-    new THREE.TorusGeometry(1.35, 0.055, 8, 32),
+    new THREE.TorusGeometry(1.15, 0.055, 8, 32),
     makeEmissiveMaterial(0xffd95c, 0.7)
   );
-  interactionRing.position.set(-12, 0.08, -4);
+  interactionRing.position.set(-12, 0.08, -0.2);
   interactionRing.rotation.x = Math.PI / 2;
   room.add(interactionRing);
+
+  const computerGlow = new THREE.PointLight(0x38d8ff, 0.8, 8, 2);
+  computerGlow.position.set(-12, 3.5, -2.8);
+  room.add(computerGlow);
 }
 
 function addControlConsoleGeometry(room, textures) {
@@ -2378,6 +2457,61 @@ function createTexture(type) {
   return texture;
 }
 
+function createPathSignTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 204;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#ffd95c';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#38d8ff';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(150, 0);
+  ctx.lineTo(92, canvas.height);
+  ctx.lineTo(0, canvas.height);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+  for (let x = -180; x < canvas.width; x += 54) {
+    ctx.beginPath();
+    ctx.moveTo(x, canvas.height);
+    ctx.lineTo(x + 78, 0);
+    ctx.lineTo(x + 94, 0);
+    ctx.lineTo(x + 16, canvas.height);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.lineWidth = 16;
+  ctx.strokeStyle = '#111622';
+  ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+
+  ctx.fillStyle = '#111622';
+  ctx.font = '900 82px system-ui, sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('CASA 1', 122, 104);
+
+  ctx.fillStyle = '#ff4f4a';
+  ctx.beginPath();
+  ctx.moveTo(452, 65);
+  ctx.lineTo(496, 102);
+  ctx.lineTo(452, 139);
+  ctx.lineTo(452, 116);
+  ctx.lineTo(410, 116);
+  ctx.lineTo(410, 88);
+  ctx.lineTo(452, 88);
+  ctx.closePath();
+  ctx.fill();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
 function createToonGradient() {
   const canvas = document.createElement('canvas');
   canvas.width = 4;
@@ -2575,6 +2709,69 @@ function drawBlackStripeTexture(ctx) {
   ctx.moveTo(0, 24);
   ctx.lineTo(128, 54);
   ctx.stroke();
+}
+
+function moveCameraOnPlane(camera, velocity, delta, bounds, colliders = [], playerRadius = 0.45) {
+  const nextX = clamp(
+    camera.position.x + velocity.x * delta,
+    bounds.minX + playerRadius,
+    bounds.maxX - playerRadius
+  );
+  if (!isPointBlocked(nextX, camera.position.z, colliders, playerRadius)) {
+    camera.position.x = nextX;
+  } else {
+    velocity.x = 0;
+  }
+
+  const nextZ = clamp(
+    camera.position.z + velocity.z * delta,
+    bounds.minZ + playerRadius,
+    bounds.maxZ - playerRadius
+  );
+  if (!isPointBlocked(camera.position.x, nextZ, colliders, playerRadius)) {
+    camera.position.z = nextZ;
+  } else {
+    velocity.z = 0;
+  }
+}
+
+function isPointBlocked(x, z, colliders, radius) {
+  return colliders.some(
+    (collider) =>
+      x > collider.minX - radius &&
+      x < collider.maxX + radius &&
+      z > collider.minZ - radius &&
+      z < collider.maxZ + radius
+  );
+}
+
+function disposeObject3D(root) {
+  const geometries = new Set();
+  const materials = new Set();
+  const textures = new Set();
+
+  root.traverse((object) => {
+    if (object.geometry) geometries.add(object.geometry);
+    const objectMaterials = Array.isArray(object.material)
+      ? object.material
+      : object.material
+        ? [object.material]
+        : [];
+
+    objectMaterials.forEach((material) => {
+      materials.add(material);
+      Object.entries(material).forEach(([key, value]) => {
+        if (key !== 'gradientMap' && value?.isTexture) {
+          textures.add(value);
+        }
+      });
+    });
+  });
+
+  textures.forEach((texture) => texture.dispose());
+  materials.forEach((material) => material.dispose());
+  geometries.forEach((geometry) => geometry.dispose());
+  root.clear?.();
 }
 
 function clamp(value, min, max) {
