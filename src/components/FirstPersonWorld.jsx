@@ -3369,8 +3369,21 @@ function addBuildingLobby(group, textures) {
     })
   };
 
-  const floor = addBuildingBox(group, 'building-lobby-floor', [36, 0.36, 40], [0, -0.18, 0], materials.floor, 0x9ab9aa, 0.18);
-  floor.receiveShadow = true;
+  // Keep the circulation openings physically clear: the stairs and elevator
+  // occupy these areas, so one continuous slab would show through them.
+  const floorParts = [
+    { name: 'left', size: [3.15, 0.36, 40], position: [-16.43, -0.18, 0] },
+    { name: 'center', size: [14.05, 0.36, 40], position: [-0.73, -0.18, 0] },
+    { name: 'right', size: [2.55, 0.36, 40], position: [16.73, -0.18, 0] },
+    { name: 'stairs-back', size: [7.1, 0.36, 11.65], position: [-11.3, -0.18, -14.18] },
+    { name: 'stairs-front', size: [7.1, 0.36, 12.65], position: [-11.3, -0.18, 13.68] },
+    { name: 'elevator-back', size: [9.15, 0.36, 7.35], position: [10.88, -0.18, -16.33] },
+    { name: 'elevator-front', size: [9.15, 0.36, 13.25], position: [10.88, -0.18, 6.63] }
+  ];
+  floorParts.forEach(({ name, size, position }) => {
+    const floor = addBuildingBox(group, `building-lobby-floor-${name}`, size, position, materials.floor, 0x9ab9aa, 0.18);
+    floor.receiveShadow = true;
+  });
   addBuildingBox(group, 'building-lobby-left-wall', [0.5, 9.4, 40], [-17.75, 4.7, 0], materials.wall, 0x73887c, 0.12);
   addBuildingBox(group, 'building-lobby-right-wall', [0.5, 9.4, 40], [17.75, 4.7, 0], materials.wall, 0x73887c, 0.12);
   addBuildingBox(group, 'building-lobby-back-wall', [36, 9.4, 0.5], [0, 4.7, -19.75], materials.wallDark, 0x78958a, 0.13);
@@ -3404,9 +3417,9 @@ function addBuildingLobby(group, textures) {
   addBuildingLabel(group, {
     name: 'building-lobby-main-sign',
     title: 'ESTUDIEMOS',
-    subtitle: 'Lobby  |  Accesos detras de recepcion',
-    position: [-4.8, 4.42, 7.52],
-    size: [7.2, 1.78],
+    subtitle: 'Lobby  |  Recepcion y accesos',
+    position: [0, 6.75, -19.42],
+    size: [7.8, 1.55],
     accent: '#9fd1be'
   });
 
@@ -3461,8 +3474,8 @@ function addBuildingStairs(group, materials) {
   addBuildingBox(
     group,
     'building-lobby-stair-landing',
-    [stairWidth + 0.4, 0.32, 3.4],
-    [stairCenterX, BUILDING_STAIR_RISE, -9.7],
+    [stairWidth + 0.4, 0.32, 1.35],
+    [stairCenterX, BUILDING_STAIR_RISE, -8.85],
     materials.stairTread,
     0x9ab9aa,
     0.12
@@ -3484,9 +3497,9 @@ function addBuildingStairs(group, materials) {
     );
     stringer.rotation.x = stringerAngle;
   });
-  addBuildingBox(group, 'building-lobby-stair-left-reveal', [0.42, 7.6, 0.45], [BUILDING_STAIR_MIN_X - 0.2, BUILDING_STAIR_RISE + 3.8, -11.48], materials.wallDark);
-  addBuildingBox(group, 'building-lobby-stair-right-reveal', [0.42, 7.6, 0.45], [BUILDING_STAIR_MAX_X + 0.2, BUILDING_STAIR_RISE + 3.8, -11.48], materials.wallDark);
-  addBuildingBox(group, 'building-lobby-stair-header', [stairWidth + 0.8, 0.42, 0.45], [stairCenterX, BUILDING_STAIR_RISE + 7.4, -11.48], materials.wallDark);
+  addBuildingBox(group, 'building-lobby-stair-left-reveal', [0.42, 1.1, 0.45], [BUILDING_STAIR_MIN_X - 0.2, 8.35, -11.48], materials.wallDark);
+  addBuildingBox(group, 'building-lobby-stair-right-reveal', [0.42, 1.1, 0.45], [BUILDING_STAIR_MAX_X + 0.2, 8.35, -11.48], materials.wallDark);
+  addBuildingBox(group, 'building-lobby-stair-header', [stairWidth + 0.8, 0.42, 0.45], [stairCenterX, 8.95, -11.48], materials.wallDark);
 
   const railLength = Math.hypot(run, BUILDING_STAIR_RISE);
   const railAngle = -Math.atan2(BUILDING_STAIR_RISE, run);
@@ -3512,7 +3525,7 @@ function addBuildingStairs(group, materials) {
     name: 'building-lobby-stairs-sign',
     title: 'PISO 1',
     subtitle: 'Sala de estudio',
-    position: [stairCenterX, BUILDING_STAIR_RISE + 6.65, -11.18],
+    position: [stairCenterX, 8.02, -11.18],
     size: [4.6, 1.25],
     accent: '#d8bd77'
   });
@@ -3595,6 +3608,8 @@ function addStudyFloorCirculation(room, textures) {
   addBuildingBox(room, 'building-study-stairwell-left-wall', [0.34, 18.4, 17.8], [-17.52, -1.1, 37.6], dark, 0x78978c, 0.08);
   addBuildingBox(room, 'building-study-stairwell-right-wall', [0.34, 18.4, 17.8], [-10.08, -1.1, 37.6], dark, 0x78978c, 0.08);
   addBuildingBox(room, 'building-study-stairwell-ceiling', [7.78, 0.34, 17.8], [-13.8, 8.12, 37.6], metal, 0x78978c, 0.08);
+  addBuildingBox(room, 'building-study-stairwell-end-wall', [7.78, 18.4, 0.34], [-13.8, -1.1, 46.55], dark, 0x78978c, 0.08);
+  addBuildingBox(room, 'building-study-stairwell-end-accent', [4.2, 0.06, 0.16], [-13.8, 7.9, 46.34], mint);
   addBuildingBox(room, 'building-study-stairwell-left-base', [0.16, 0.34, 17.5], [-17.3, 0.2, 37.6], gold);
   addBuildingBox(room, 'building-study-stairwell-right-base', [0.16, 0.34, 17.5], [-10.3, 0.2, 37.6], gold);
   addBuildingBox(room, 'building-study-stairwell-light-near', [4.2, 0.06, 0.18], [-13.8, 7.91, 32.2], mint);
@@ -3613,7 +3628,8 @@ function addStudyFloorCirculation(room, textures) {
     subtitle: 'Baja caminando al lobby',
     position: [-13.8, 7.02, 27.76],
     size: [5.7, 1.2],
-    accent: '#d8bd77'
+    accent: '#d8bd77',
+    rotationY: Math.PI
   });
 
   const elevatorX = BUILDING_ELEVATOR_X - STUDY_ROOM_ORIGIN_X;
@@ -3650,7 +3666,8 @@ function addStudyFloorCirculation(room, textures) {
     subtitle: 'E  llamar  |  entra caminando',
     position: [elevatorX, 7.02, elevatorDoorZ - 0.31],
     size: [5.7, 1.2],
-    accent: '#9fcfbe'
+    accent: '#9fcfbe',
+    rotationY: Math.PI
   });
 
   addBuildingBox(room, 'building-study-wayfinding-left', [0.06, 0.035, 4.8], [-16.2, 0.045, 24.5], gold, 0xd8bd77, 0.08);
@@ -3984,7 +4001,7 @@ function addBuildingBox(parent, name, size, position, material, edgeColor = null
   return mesh;
 }
 
-function addBuildingLabel(parent, { name, title, subtitle, position, size, accent }) {
+function addBuildingLabel(parent, { name, title, subtitle, position, size, accent, rotationY = 0 }) {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
   canvas.height = 320;
@@ -4019,6 +4036,7 @@ function addBuildingLabel(parent, { name, title, subtitle, position, size, accen
   );
   mesh.name = name;
   mesh.position.set(...position);
+  mesh.rotation.y = rotationY;
   parent.add(mesh);
   return mesh;
 }
