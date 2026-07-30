@@ -177,6 +177,7 @@ export function addRepeatedWall(
 ) {
   const count = Math.max(1, Math.ceil(length / maxModuleLength));
   const segmentLength = length / count;
+  const interlockLength = segmentLength + Math.min(0.1, segmentLength * 0.025);
   const direction = new THREE.Vector3(Math.cos(rotationY), 0, -Math.sin(rotationY));
 
   for (let index = 0; index < count; index += 1) {
@@ -190,7 +191,7 @@ export function addRepeatedWall(
         center[2] + direction.z * offset
       ],
       rotation: [0, rotationY, 0],
-      scale: [segmentLength / 4, height / 3, 1]
+      scale: [interlockLength / 4, height / 3, 1]
     });
   }
 }

@@ -278,6 +278,8 @@ def cylinder(
 
 def create_wall_solid() -> None:
     c = module_collection("wall-solid")
+    # A recessed, unbeveled core keeps repeated modules visually watertight.
+    box(c, "Wall_ClosureCore", (4.08, 0.28, 3.04), (0, 0, 1.5), "Plaster_WarmWhite", 0)
     box(c, "Wall_Core", (4.0, 0.34, 3.0), (0, 0, 1.5), "Plaster_WarmWhite", 0.045)
     for side in (-1, 1):
         face_y = side * 0.185
@@ -317,6 +319,7 @@ def create_wall_window() -> None:
 
 def create_floor_panel() -> None:
     c = module_collection("floor-panel")
+    box(c, "Floor_ClosureSlab", (4.08, 4.08, 0.18), (0, 0, -0.14), "Terrazzo_Greige", 0)
     box(c, "Floor_Slab", (4.0, 4.0, 0.22), (0, 0, -0.12), "Terrazzo_Greige", 0.035)
     box(c, "Floor_Inlay_X", (3.72, 0.035, 0.018), (0, 0, 0.015), "Brass_Satin", 0.006)
     box(c, "Floor_Inlay_Y", (0.035, 3.72, 0.018), (0, 0, 0.015), "Brass_Satin", 0.006)
@@ -326,6 +329,7 @@ def create_floor_panel() -> None:
 
 def create_ceiling_panel() -> None:
     c = module_collection("ceiling-panel")
+    box(c, "Ceiling_ClosureSlab", (4.08, 4.08, 0.12), (0, 0, 0.08), "Plaster_SoftGrey", 0)
     box(c, "Ceiling_Slab", (4.0, 4.0, 0.2), (0, 0, 0.1), "Plaster_SoftGrey", 0.035)
     box(c, "Ceiling_Recess", (2.9, 2.9, 0.08), (0, 0, -0.035), "Sage_Panel", 0.035)
     box(c, "Ceiling_Light", (2.45, 0.22, 0.055), (0, 0, -0.085), "Light_Warm", 0.02)
@@ -430,6 +434,7 @@ def create_stair_flight() -> None:
 
 def create_stair_landing() -> None:
     c = module_collection("stair-landing")
+    box(c, "Landing_ClosureSlab", (7.08, 4.33, 0.2), (0, 0, -0.15), "Terrazzo_Greige", 0)
     box(c, "Landing_Slab", (7.0, 4.25, 0.26), (0, 0, -0.13), "Terrazzo_Greige", 0.04)
     box(c, "Landing_Edge", (6.78, 0.12, 0.08), (0, -2.03, 0.02), "Metal_BrushedSteel", 0.016)
     box(c, "Landing_Inlay", (5.5, 0.04, 0.02), (0, 0, 0.018), "Brass_Satin", 0.007)
@@ -459,6 +464,14 @@ def create_elevator_shaft_shell() -> None:
     front_fill = (width - 8.9) / 2
 
     for x in (-width / 2 + wall / 2, width / 2 - wall / 2):
+        box(
+            c,
+            f"Shaft_SideClosure_{x}",
+            (wall - 0.06, depth + 0.08, height + 0.06),
+            (x, depth / 2, height / 2 - 0.01),
+            "Plaster_WarmWhite",
+            0,
+        )
         box(c, f"Shaft_Side_{x}", (wall, depth, height), (x, depth / 2, height / 2), "Plaster_WarmWhite", 0.055)
         box(
             c,
@@ -477,6 +490,14 @@ def create_elevator_shaft_shell() -> None:
             0.018,
         )
 
+    box(
+        c,
+        "Shaft_BackClosure",
+        (width + 0.08, wall - 0.06, height + 0.06),
+        (0, depth - wall / 2, height / 2 - 0.01),
+        "Plaster_WarmWhite",
+        0,
+    )
     box(c, "Shaft_BackWall", (width, wall, height), (0, depth - wall / 2, height / 2), "Plaster_WarmWhite", 0.055)
     box(c, "Shaft_BackPanel", (8.8, 0.055, 4.7), (0, depth - wall - 0.02, 2.75), "Sage_Panel", 0.018)
     box(c, "Shaft_BackBase", (9.7, 0.07, 0.22), (0, depth - wall - 0.03, 0.16), "Oak_Dark", 0.018)
@@ -485,26 +506,38 @@ def create_elevator_shaft_shell() -> None:
 
     for side in (-1, 1):
         x = side * (8.9 / 2 + front_fill / 2)
+        box(
+            c,
+            f"Shaft_FrontPierClosure_{side}",
+            (front_fill + 0.08, 0.44, height + 0.06),
+            (x, 0.22, height / 2 - 0.01),
+            "Plaster_WarmWhite",
+            0,
+        )
         box(c, f"Shaft_FrontPier_{side}", (front_fill, 0.52, height), (x, 0.2, height / 2), "Plaster_WarmWhite", 0.055)
         box(c, f"Shaft_FrontPierBase_{side}", (front_fill + 0.08, 0.58, 0.22), (x, 0.14, 0.16), "Oak_Dark", 0.02)
+    box(c, "Shaft_FrontHeaderClosure", (width + 0.08, 0.44, 1.16), (0, 0.22, 8.68), "Plaster_WarmWhite", 0)
     box(c, "Shaft_FrontHeader", (width, 0.52, 1.1), (0, 0.2, 8.7), "Plaster_WarmWhite", 0.055)
     box(c, "Shaft_FrontShadowLine", (9.7, 0.06, 0.055), (0, -0.075, 8.18), "Brass_Satin", 0.012)
 
 
 def create_elevator_portal() -> None:
     c = module_collection("elevator-portal")
-    box(c, "Portal_Left", (0.58, 0.72, 7.8), (-3.84, 0, 3.9), "Metal_Charcoal", 0.07)
-    box(c, "Portal_Right", (0.58, 0.72, 7.8), (3.84, 0, 3.9), "Metal_Charcoal", 0.07)
-    box(c, "Portal_Header", (8.26, 0.72, 0.58), (0, 0, 7.62), "Metal_Charcoal", 0.07)
+    # The closure pieces overlap the shaft piers so no background can show
+    # through the beveled portal-to-wall joint.
+    box(c, "Portal_Closure_Left", (1.34, 0.58, 7.82), (-4.04, 0.05, 3.91), "Metal_Black", 0)
+    box(c, "Portal_Closure_Right", (1.34, 0.58, 7.82), (4.04, 0.05, 3.91), "Metal_Black", 0)
+    box(c, "Portal_Closure_Header", (9.42, 0.58, 0.72), (0, 0.05, 7.62), "Metal_Black", 0)
+    box(c, "Portal_Left", (1.24, 0.72, 7.8), (-4.02, 0, 3.9), "Metal_Charcoal", 0.07)
+    box(c, "Portal_Right", (1.24, 0.72, 7.8), (4.02, 0, 3.9), "Metal_Charcoal", 0.07)
+    box(c, "Portal_Header", (9.28, 0.72, 0.58), (0, 0, 7.62), "Metal_Charcoal", 0.07)
     box(c, "Portal_Reveal_Left", (0.2, 0.82, 6.72), (-3.45, 0, 3.36), "Brass_Satin", 0.025)
     box(c, "Portal_Reveal_Right", (0.2, 0.82, 6.72), (3.45, 0, 3.36), "Brass_Satin", 0.025)
     box(c, "Portal_Reveal_Top", (7.0, 0.82, 0.2), (0, 0, 6.68), "Brass_Satin", 0.025)
     box(c, "Portal_Threshold", (7.35, 1.0, 0.13), (0, -0.08, 0.06), "Metal_Black", 0.025)
     box(c, "Portal_Threshold_Inlay", (6.82, 0.82, 0.035), (0, -0.08, 0.14), "Brass_Satin", 0.009)
-    box(c, "Portal_Canopy", (8.9, 1.1, 0.2), (0, 0, 8.05), "Oak_Warm", 0.055)
+    box(c, "Portal_Canopy", (9.62, 1.1, 0.2), (0, 0, 8.05), "Oak_Warm", 0.055)
     box(c, "Portal_Light", (4.8, 0.2, 0.1), (0, -0.55, 7.34), "Light_Mint", 0.025)
-    box(c, "Portal_CallPlate", (0.68, 0.28, 1.2), (4.25, -0.32, 2.18), "Metal_Black", 0.06)
-    cylinder(c, "Portal_CallButton", 0.16, 0.08, (4.25, -0.5, 2.25), "Light_Warm", rotation=(math.pi / 2, 0, 0), vertices=20)
 
 
 def create_elevator_door_panel() -> None:

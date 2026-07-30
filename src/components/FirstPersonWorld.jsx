@@ -159,6 +159,7 @@ const ELEVATOR_SHAFT_SHELL_DEPTH = 5.6;
 const ELEVATOR_SHAFT_SHELL_HALF_WIDTH = ELEVATOR_SHAFT_SHELL_WIDTH / 2;
 const ELEVATOR_SHAFT_WALL_THICKNESS = 0.4;
 const ELEVATOR_PORTAL_OPENING_WIDTH = 6.9;
+const ELEVATOR_DOOR_CLOSED_OFFSET = 1.57;
 const ELEVATOR_FRONT_PIER_WIDTH = (ELEVATOR_SHAFT_SHELL_WIDTH - ELEVATOR_PORTAL_OPENING_WIDTH) / 2;
 const BUILDING_LOBBY_ELEVATOR_DOOR_Z = BUILDING_ELEVATOR_Z + ELEVATOR_CABIN_HALF_DEPTH;
 const BUILDING_STUDY_ELEVATOR_DOOR_Z = BUILDING_ELEVATOR_Z - ELEVATOR_CABIN_HALF_DEPTH;
@@ -175,6 +176,73 @@ const STUDY_FRONT_SOLID_SEGMENTS = Object.freeze([
   { name: 'center', minX: STUDY_STAIR_OPENING_MAX_X, maxX: STUDY_ELEVATOR_OPENING_MIN_X },
   { name: 'right', minX: STUDY_ELEVATOR_OPENING_MAX_X, maxX: 28 }
 ]);
+const BUILDING_VISUAL_AUDIT_VIEWS = Object.freeze({
+  'lobby-elevator-left': {
+    floor: 'lobby',
+    position: [92.2, -8.3, 29.4],
+    lookAt: [94.3, -7.7, BUILDING_LOBBY_ELEVATOR_DOOR_Z]
+  },
+  'lobby-elevator-right': {
+    floor: 'lobby',
+    position: [103.4, -8.3, 29.4],
+    lookAt: [101.5, -7.7, BUILDING_LOBBY_ELEVATOR_DOOR_Z]
+  },
+  'lobby-back-left': {
+    floor: 'lobby',
+    position: [71.8, -8.3, 15.4],
+    lookAt: [76.6, -7.7, 20.2]
+  },
+  'lobby-back-right': {
+    floor: 'lobby',
+    position: [103.2, -8.3, 15.4],
+    lookAt: [98.4, -7.7, 20.2]
+  },
+  'lobby-front-left': {
+    floor: 'lobby',
+    position: [71.8, -8.3, 48.2],
+    lookAt: [76.6, -7.7, 43.4]
+  },
+  'lobby-front-right': {
+    floor: 'lobby',
+    position: [103.2, -8.3, 48.2],
+    lookAt: [98.4, -7.7, 43.4]
+  },
+  'study-elevator-left': {
+    floor: 'study',
+    position: [92.2, 1.7, 16.2],
+    lookAt: [94.3, 2.3, BUILDING_STUDY_ELEVATOR_DOOR_Z]
+  },
+  'study-elevator-right': {
+    floor: 'study',
+    position: [103.4, 1.7, 16.2],
+    lookAt: [101.5, 2.3, BUILDING_STUDY_ELEVATOR_DOOR_Z]
+  },
+  'study-front-left': {
+    floor: 'study',
+    position: [63.8, 1.7, 21.8],
+    lookAt: [68.5, 2.3, 17.2]
+  },
+  'study-front-right': {
+    floor: 'study',
+    position: [116.2, 1.7, 21.8],
+    lookAt: [111.5, 2.3, 17.2]
+  },
+  'study-back-left': {
+    floor: 'study',
+    position: [63.8, 1.7, -33.8],
+    lookAt: [68.5, 2.3, -29]
+  },
+  'study-back-right': {
+    floor: 'study',
+    position: [116.2, 1.7, -33.8],
+    lookAt: [111.5, 2.3, -29]
+  },
+  'study-computer': {
+    floor: 'study',
+    position: [82.2, 1.7, -11.8],
+    lookAt: [78.6, 2.35, -14.55]
+  }
+});
 const ELEVATOR_CABIN_COLLIDER_THICKNESS = 0.3;
 const ELEVATOR_INSIDE_CLEARANCE = 0.06;
 const ELEVATOR_CABIN_SAFE_MIN_X =
@@ -1268,11 +1336,23 @@ function getRequestedInitialFloor() {
 
 function hasRequestedBuildingSpawn() {
   if (typeof window === 'undefined') return false;
-  return ['elevator', 'stairs', 'shop'].includes(new URLSearchParams(window.location.search).get('spawn'));
+  const searchParams = new URLSearchParams(window.location.search);
+  return (
+    ['elevator', 'stairs', 'shop'].includes(searchParams.get('spawn')) ||
+    Boolean(BUILDING_VISUAL_AUDIT_VIEWS[searchParams.get('audit')])
+  );
+}
+
+function getRequestedBuildingAuditView(requestedFloor) {
+  if (typeof window === 'undefined') return null;
+  const auditView = BUILDING_VISUAL_AUDIT_VIEWS[new URLSearchParams(window.location.search).get('audit')];
+  return auditView?.floor === requestedFloor ? auditView : null;
 }
 
 function getRequestedBuildingStartPosition(requestedFloor = 'lobby') {
   if (typeof window === 'undefined') return activeMap.startPosition.clone();
+  const auditView = getRequestedBuildingAuditView(requestedFloor);
+  if (auditView) return new THREE.Vector3(...auditView.position);
   const spawn = new URLSearchParams(window.location.search).get('spawn');
   if (spawn === 'elevator') {
     return (requestedFloor === 'study' ? activeMap.studyElevatorArrival : activeMap.lobbyElevatorArrival).clone();
@@ -1287,6 +1367,8 @@ function getRequestedBuildingStartPosition(requestedFloor = 'lobby') {
 
 function getRequestedBuildingStartLookTarget(requestedFloor = 'lobby') {
   if (typeof window === 'undefined') return activeMap.startLookAt.clone();
+  const auditView = getRequestedBuildingAuditView(requestedFloor);
+  if (auditView) return new THREE.Vector3(...auditView.lookAt);
   const spawn = new URLSearchParams(window.location.search).get('spawn');
   if (spawn === 'stairs') return new THREE.Vector3(76.2, 0.7, 25.1);
   if (spawn === 'elevator') {
@@ -3337,7 +3419,24 @@ function isPlayerColliding(x, z, colliders, radius) {
   );
 }
 
+function addFloorBacking(parent, { name, size, position }) {
+  const backing = new THREE.Mesh(
+    new THREE.BoxGeometry(size[0] + 0.16, 0.24, size[1] + 0.16),
+    makeMaterial(0x9f9d94, 0.9, 0.01)
+  );
+  backing.name = name;
+  backing.position.set(position[0], -0.2, position[2]);
+  backing.receiveShadow = true;
+  parent.add(backing);
+  return backing;
+}
+
 function addBuildingLobby(group) {
+  addFloorBacking(group, {
+    name: 'building-lobby-continuous-floor-backing',
+    size: [36, 40],
+    position: [0, 0, 0]
+  });
   const floorParts = [
     { name: 'left', size: [3.15, 40], position: [-16.43, 0, 0] },
     { name: 'center', size: [14.05, 40], position: [-0.73, 0, 0] },
@@ -3550,17 +3649,24 @@ function addBuildingElevator(group) {
   addArchitectureModel(group, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-lobby-elevator-left-door',
-    position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X - 1.65, 0.18, elevatorDoorZ + 0.13],
+    position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X - ELEVATOR_DOOR_CLOSED_OFFSET, 0.18, elevatorDoorZ + 0.13],
     scale: [1, 6.5 / 5.8, 1]
   });
   addArchitectureModel(group, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-lobby-elevator-right-door',
-    position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X + 1.65, 0.18, elevatorDoorZ + 0.13],
+    position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X + ELEVATOR_DOOR_CLOSED_OFFSET, 0.18, elevatorDoorZ + 0.13],
     scale: [1, 6.5 / 5.8, 1]
   });
   const seam = new THREE.Group();
   seam.name = 'building-lobby-elevator-seam';
+  seam.position.set(BUILDING_LOBBY_ELEVATOR_LOCAL_X, 3.43, elevatorDoorZ + 0.16);
+  const seamBacking = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 6.42, 0.08),
+    makeMaterial(0x080c0b, 0.42, 0.5)
+  );
+  seamBacking.name = 'building-lobby-elevator-seam-backing';
+  seam.add(seamBacking);
   group.add(seam);
   addBuildingLabel(group, {
     name: 'building-lobby-elevator-sign',
@@ -3685,19 +3791,26 @@ function addStudyFloorCirculation(room) {
   addArchitectureModel(room, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-study-elevator-left-door',
-    position: [elevatorX - 1.65, 0.18, elevatorDoorZ - 0.13],
+    position: [elevatorX - ELEVATOR_DOOR_CLOSED_OFFSET, 0.18, elevatorDoorZ - 0.13],
     rotation: [0, Math.PI, 0],
     scale: [1, 6.5 / 5.8, 1]
   });
   addArchitectureModel(room, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-study-elevator-right-door',
-    position: [elevatorX + 1.65, 0.18, elevatorDoorZ - 0.13],
+    position: [elevatorX + ELEVATOR_DOOR_CLOSED_OFFSET, 0.18, elevatorDoorZ - 0.13],
     rotation: [0, Math.PI, 0],
     scale: [1, 6.5 / 5.8, 1]
   });
   const seam = new THREE.Group();
   seam.name = 'building-study-elevator-seam';
+  seam.position.set(elevatorX, 3.43, elevatorDoorZ - 0.16);
+  const seamBacking = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, 6.42, 0.08),
+    makeMaterial(0x080c0b, 0.42, 0.5)
+  );
+  seamBacking.name = 'building-study-elevator-seam-backing';
+  seam.add(seamBacking);
   room.add(seam);
   addBuildingLabel(room, {
     name: 'building-study-elevator-label',
@@ -3810,7 +3923,7 @@ function addElevatorCabinInteriorDetails(cabin) {
 
 function addElevatorCabinDoorPair(parent, side, z, faceDirection) {
   const doorWidth = 3.15;
-  const closedOffset = 1.65;
+  const closedOffset = ELEVATOR_DOOR_CLOSED_OFFSET;
   const rotationY = faceDirection < 0 ? Math.PI : 0;
   addArchitectureModel(parent, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
@@ -5387,6 +5500,11 @@ function addCasa1Interior(scene, textures, hasBuildingCirculation = false) {
       ]
     : [{ name: 'main', position: [0, 0, 0], size: [56, 58] }];
   floorParts.forEach((part) => {
+    addFloorBacking(room, {
+      name: `building-study-floor-backing-${part.name}`,
+      size: part.size,
+      position: part.position
+    });
     addArchitectureModel(room, {
       asset: BUILDING_ARCHITECTURE.floorPanel,
       name: `building-study-floor-${part.name}`,
