@@ -13,10 +13,11 @@ const SHOP_RADIUS = 2.8;
 const FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
 const SHOP_PLACEMENTS = {
   building: {
-    id: 'building-lobby',
+    id: 'building-lobby-backwall',
     anchor: BUILDING_LOBBY_OFFSET.clone(),
-    local: new THREE.Vector3(15.35, 0, 1.9),
-    center: new THREE.Vector3(101.55, -8.45, 34.6),
+    local: new THREE.Vector3(0, 0, -17.55),
+    center: new THREE.Vector3(87.3, -8.45, 15.7),
+    rotationY: Math.PI / 2,
     bounds: { minX: 70.1, maxX: 104.5, minY: -10.8, maxY: -3.2, minZ: 13.5, maxZ: 49.9 }
   },
   legacy: {
@@ -24,6 +25,7 @@ const SHOP_PLACEMENTS = {
     anchor: new THREE.Vector3(90, 0, -6),
     local: new THREE.Vector3(25.85, 0, -11.5),
     center: new THREE.Vector3(116.15, 1.55, -17.5),
+    rotationY: 0,
     bounds: { minX: 62, maxX: 118, minZ: -36, maxZ: 23 }
   }
 };
@@ -164,6 +166,7 @@ function createCleanShop(anchor, placement) {
   const shop = new THREE.Group();
   shop.name = SHOP_OBJECT_NAME;
   shop.position.copy(placement.local);
+  shop.rotation.y = placement.rotationY ?? 0;
   shop.userData.interactionTarget = 'shop';
   shop.userData.idleSeed = Math.random() * Math.PI * 2;
   shop.userData.estudiemosCleanShop = true;

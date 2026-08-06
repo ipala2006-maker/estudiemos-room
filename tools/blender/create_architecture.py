@@ -276,6 +276,82 @@ def cylinder(
     return obj
 
 
+def uv_sphere(
+    collection: bpy.types.Collection,
+    name: str,
+    radius: float,
+    location: tuple[float, float, float],
+    material: str,
+    scale: tuple[float, float, float] = (1, 1, 1),
+    segments: int = 24,
+    rings: int = 12,
+) -> bpy.types.Object:
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=segments,
+        ring_count=rings,
+        radius=radius,
+        location=location,
+    )
+    obj = bpy.context.object
+    obj.name = name
+    obj.scale = scale
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    assign_material(obj, material)
+    move_to_collection(obj, collection)
+    return obj
+
+
+def curve_tube(
+    collection: bpy.types.Collection,
+    name: str,
+    points: tuple[tuple[float, float, float], ...],
+    radius: float,
+    material: str,
+) -> bpy.types.Object:
+    curve_data = bpy.data.curves.new(name=f"{name}_Curve", type="CURVE")
+    curve_data.dimensions = "3D"
+    curve_data.resolution_u = 2
+    curve_data.bevel_depth = radius
+    curve_data.bevel_resolution = 2
+    spline = curve_data.splines.new(type="BEZIER")
+    spline.bezier_points.add(len(points) - 1)
+    for point, coordinate in zip(spline.bezier_points, points):
+        point.co = coordinate
+        point.handle_left_type = "AUTO"
+        point.handle_right_type = "AUTO"
+    obj = bpy.data.objects.new(name, curve_data)
+    curve_data.materials.append(MATERIALS[material])
+    collection.objects.link(obj)
+    return obj
+
+
+def text_mesh(
+    collection: bpy.types.Collection,
+    name: str,
+    text: str,
+    location: tuple[float, float, float],
+    material: str,
+    size: float,
+    extrude: float = 0.012,
+    align: str = "CENTER",
+) -> bpy.types.Object:
+    bpy.ops.object.text_add(location=location, rotation=(math.pi / 2, 0, 0))
+    obj = bpy.context.object
+    obj.name = name
+    obj.data.body = text
+    obj.data.align_x = align
+    obj.data.align_y = "CENTER"
+    obj.data.size = size
+    obj.data.extrude = extrude
+    obj.data.bevel_depth = min(0.006, extrude * 0.35)
+    obj.data.materials.append(MATERIALS[material])
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.convert(target="MESH")
+    move_to_collection(obj, collection)
+    return obj
+
+
 def create_wall_solid() -> None:
     c = module_collection("wall-solid")
     # A recessed, unbeveled core keeps repeated modules visually watertight.
@@ -560,16 +636,17 @@ def create_elevator_cabin_shell() -> None:
     for x in (-width / 2 + 0.09, width / 2 - 0.09):
         box(c, f"Cabin_Side_{x}", (0.18, depth, height), (x, 0, height / 2), "Plaster_SoftGrey", 0.045)
         box(c, f"Cabin_SideInset_{x}", (0.05, depth - 0.65, 4.35), (x - math.copysign(0.105, x), 0, 2.72), "Sage_Panel", 0.018)
-        cylinder(
-            c,
-            f"Cabin_Handrail_{x}",
-            0.075,
-            depth - 0.9,
-            (x - math.copysign(0.18, x), 0, 1.32),
-            "Oak_Warm",
-            rotation=(math.pi / 2, 0, 0),
-            vertices=16,
-        )
+        if x < 0:
+            cylinder(
+                c,
+                f"Cabin_Handrail_{x}",
+                0.075,
+                depth - 0.9,
+                (x - math.copysign(0.18, x), 0, 1.32),
+                "Oak_Warm",
+                rotation=(math.pi / 2, 0, 0),
+                vertices=16,
+            )
     box(c, "Cabin_Ceiling", (width, depth, 0.2), (0, 0, height + 0.1), "Metal_Charcoal", 0.04)
     box(c, "Cabin_Ceiling_Recess", (5.8, 4.0, 0.08), (0, 0, height - 0.03), "Metal_Black", 0.03)
     box(c, "Cabin_Light_Left", (2.35, 0.45, 0.055), (-1.48, 0, height - 0.1), "Light_Mint", 0.02)
@@ -577,7 +654,135 @@ def create_elevator_cabin_shell() -> None:
     for y in (-depth / 2 + 0.08, depth / 2 - 0.08):
         box(c, f"Cabin_Header_{y}", (width, 0.18, 0.5), (0, y, height - 0.3), "Metal_Charcoal", 0.035)
         box(c, f"Cabin_Header_Accent_{y}", (5.0, 0.055, 0.055), (0, y - math.copysign(0.12, y), height - 0.52), "Brass_Satin", 0.012)
-    box(c, "Cabin_Control_Backplate", (0.08, 1.5, 2.55), (width / 2 - 0.17, 0.45, 3.16), "Metal_Black", 0.035)
+
+
+def create_elevator_call_station() -> None:
+    c = module_collection("elevator-call-station")
+
+    box(c, "CallStation_WallGasket", (1.02, 0.08, 1.78), (0, 0.055, 0.89), "Rubber_Dark", 0.055)
+    box(c, "CallStation_Housing", (0.9, 0.2, 1.66), (0, 0, 0.86), "Metal_BrushedSteel", 0.095)
+    box(c, "CallStation_Face", (0.72, 0.075, 1.43), (0, -0.13, 0.86), "Metal_Black", 0.06)
+    box(c, "CallStation_Display", (0.48, 0.035, 0.25), (0, -0.185, 1.39), "Glass_Smoke", 0.035)
+    box(c, "CallStation_StatusLight", (0.3, 0.025, 0.045), (0, -0.207, 1.39), "Light_Mint", 0.012)
+
+    cylinder(
+        c,
+        "CallStation_ButtonOuter",
+        0.255,
+        0.115,
+        (0, -0.19, 0.78),
+        "Brass_Satin",
+        rotation=(math.pi / 2, 0, 0),
+        vertices=32,
+    )
+    cylinder(
+        c,
+        "CallStation_ButtonBezel",
+        0.205,
+        0.13,
+        (0, -0.215, 0.78),
+        "Metal_Charcoal",
+        rotation=(math.pi / 2, 0, 0),
+        vertices=32,
+    )
+    cylinder(
+        c,
+        "Elevator_Call_Button",
+        0.155,
+        0.145,
+        (0, -0.24, 0.78),
+        "Light_Mint",
+        rotation=(math.pi / 2, 0, 0),
+        vertices=32,
+    )
+
+    box(c, "CallStation_ArrowLeft", (0.18, 0.035, 0.055), (-0.058, -0.322, 0.79), "Metal_Black", 0.012, rotation=(0, math.radians(-42), 0))
+    box(c, "CallStation_ArrowRight", (0.18, 0.035, 0.055), (0.058, -0.322, 0.79), "Metal_Black", 0.012, rotation=(0, math.radians(42), 0))
+    text_mesh(c, "CallStation_Label", "LLAMAR", (0, -0.205, 0.32), "Plaster_WarmWhite", 0.16, 0.008)
+
+    for x in (-0.33, 0.33):
+        for z in (0.18, 1.53):
+            cylinder(
+                c,
+                f"CallStation_Fastener_{x}_{z}",
+                0.026,
+                0.045,
+                (x, -0.185, z),
+                "Brass_Satin",
+                rotation=(math.pi / 2, 0, 0),
+                vertices=16,
+            )
+
+
+def create_elevator_control_panel() -> None:
+    c = module_collection("elevator-control-panel")
+
+    box(c, "ControlPanel_WallGasket", (1.4, 0.08, 2.24), (0, 0.055, 1.12), "Rubber_Dark", 0.07)
+    box(c, "ControlPanel_Housing", (1.28, 0.2, 2.12), (0, 0, 1.08), "Metal_BrushedSteel", 0.1)
+    box(c, "ControlPanel_Face", (1.08, 0.075, 1.9), (0, -0.132, 1.08), "Metal_Black", 0.065)
+    box(c, "ControlPanel_Display", (0.82, 0.035, 0.28), (0, -0.184, 1.83), "Glass_Smoke", 0.035)
+    text_mesh(c, "ControlPanel_DisplayText", "PISO", (-0.25, -0.21, 1.83), "Light_Mint", 0.13, 0.006, "LEFT")
+    box(c, "ControlPanel_DisplayBar", (0.22, 0.025, 0.04), (0.31, -0.214, 1.83), "Light_Mint", 0.01)
+
+    button_specs = (
+        ("P1", 1.38, "Elevator_Control_P1_Button", "Light_Mint"),
+        ("PB", 0.95, "Elevator_Control_PB_Button", "Light_Warm"),
+    )
+    for label, z, button_name, light_material in button_specs:
+        cylinder(
+            c,
+            f"{button_name}_Outer",
+            0.2,
+            0.105,
+            (-0.27, -0.19, z),
+            "Brass_Satin",
+            rotation=(math.pi / 2, 0, 0),
+            vertices=32,
+        )
+        cylinder(
+            c,
+            button_name,
+            0.145,
+            0.14,
+            (-0.27, -0.238, z),
+            light_material,
+            rotation=(math.pi / 2, 0, 0),
+            vertices=32,
+        )
+        text_mesh(c, f"{button_name}_Label", label, (0.2, -0.205, z), "Plaster_WarmWhite", 0.2, 0.008)
+
+    box(c, "ControlPanel_DoorCloseBezel", (0.84, 0.12, 0.34), (0, -0.19, 0.43), "Brass_Satin", 0.1)
+    box(c, "Elevator_Control_Close_Button", (0.72, 0.1, 0.24), (0, -0.255, 0.43), "Light_Warm", 0.075)
+    box(c, "ControlPanel_CloseArrowLeft", (0.2, 0.03, 0.05), (-0.12, -0.32, 0.43), "Metal_Black", 0.01, rotation=(0, math.radians(35), 0))
+    box(c, "ControlPanel_CloseArrowRight", (0.2, 0.03, 0.05), (0.12, -0.32, 0.43), "Metal_Black", 0.01, rotation=(0, math.radians(-35), 0))
+    text_mesh(c, "ControlPanel_CloseLabel", "CERRAR", (0, -0.205, 0.18), "Plaster_WarmWhite", 0.13, 0.006)
+
+    for x in (-0.48, 0.48):
+        for z in (0.16, 2.0):
+            cylinder(
+                c,
+                f"ControlPanel_Fastener_{x}_{z}",
+                0.026,
+                0.045,
+                (x, -0.185, z),
+                "Brass_Satin",
+                rotation=(math.pi / 2, 0, 0),
+                vertices=16,
+            )
+
+
+def create_lobby_circulation_screen() -> None:
+    c = module_collection("lobby-circulation-screen")
+    width = 5.0
+    box(c, "CirculationScreen_Plinth", (width, 0.46, 0.64), (0, 0, 0.32), "Oak_Dark", 0.09)
+    box(c, "CirculationScreen_Body", (width - 0.16, 0.34, 1.55), (0, 0, 1.37), "Plaster_SoftGrey", 0.075)
+    box(c, "CirculationScreen_Inset", (width - 0.52, 0.07, 0.98), (0, -0.205, 1.42), "Sage_Panel", 0.045)
+    box(c, "CirculationScreen_Top", (width + 0.12, 0.54, 0.15), (0, 0, 2.21), "Oak_Warm", 0.055)
+    box(c, "CirculationScreen_Light", (2.4, 0.035, 0.055), (0.92, -0.245, 1.88), "Light_Mint", 0.014)
+    text_mesh(c, "CirculationScreen_Title", "ESCALERAS", (-1.98, -0.25, 1.57), "Plaster_WarmWhite", 0.24, 0.008, "LEFT")
+    text_mesh(c, "CirculationScreen_Subtitle", "PISO 1", (-1.98, -0.25, 1.18), "Light_Warm", 0.17, 0.006, "LEFT")
+    for x in (-2.24, 2.24):
+        box(c, f"CirculationScreen_EndCap_{x}", (0.14, 0.5, 2.05), (x, 0, 1.16), "Metal_Charcoal", 0.025)
 
 
 def create_reception_desk() -> None:
@@ -640,51 +845,87 @@ def create_giant_screen_surround() -> None:
 
 def create_study_workstation() -> None:
     c = module_collection("study-workstation")
-    box(c, "Workstation_Desktop", (6.4, 2.35, 0.24), (0, 0, 1.07), "Oak_Warm", 0.09)
-    box(c, "Workstation_Desktop_Inlay", (5.85, 0.055, 0.035), (0, -1.18, 1.12), "Brass_Satin", 0.009)
-    for x in (-2.9, 2.9):
-        for y in (-0.84, 0.84):
-            cylinder(c, f"Workstation_Leg_{x}_{y}", 0.09, 0.96, (x, y, 0.52), "Metal_Charcoal", vertices=16)
-            box(c, f"Workstation_Foot_{x}_{y}", (0.42, 0.42, 0.08), (x, y, 0.04), "Rubber_Dark", 0.025)
-    box(c, "Workstation_Drawer", (1.12, 1.5, 0.86), (-2.4, -0.02, 0.48), "Oak_Dark", 0.07)
-    for z in (0.34, 0.66):
-        box(c, f"Workstation_DrawerFront_{z}", (0.94, 0.08, 0.24), (-2.4, -0.8, z), "Sage_Panel", 0.04)
-        box(c, f"Workstation_DrawerPull_{z}", (0.36, 0.09, 0.05), (-2.4, -0.87, z), "Brass_Satin", 0.018)
-    box(c, "Workstation_Monitor_Base", (1.3, 0.75, 0.09), (0, -0.18, 1.23), "Metal_Charcoal", 0.04)
-    box(c, "Workstation_Monitor_Stem", (0.22, 0.18, 0.78), (0, 0.24, 1.61), "Metal_Charcoal", 0.035)
-    box(c, "Workstation_Monitor_Frame", (2.78, 0.22, 1.62), (0, 0.49, 2.42), "Metal_Black", 0.08)
-    box(c, "Workstation_Monitor_Recess", (2.48, 0.06, 1.32), (0, 0.365, 2.42), "Sage_Panel", 0.035)
-    box(c, "Workstation_Tower", (0.82, 1.0, 1.34), (2.42, 0.18, 0.73), "Metal_Black", 0.08)
-    box(c, "Workstation_TowerInset", (0.62, 0.05, 1.06), (2.42, -0.345, 0.78), "Sage_Panel", 0.04)
-    cylinder(c, "Workstation_TowerButton", 0.085, 0.06, (2.42, -0.4, 1.15), "Light_Mint", rotation=(math.pi / 2, 0, 0), vertices=16)
-    box(c, "Workstation_Keyboard", (1.9, 0.58, 0.08), (-0.55, -0.72, 1.23), "Metal_Charcoal", 0.045, rotation=(math.radians(-3), 0, 0))
+    box(c, "Workstation_DesktopCore", (6.48, 2.4, 0.17), (0, 0, 1.02), "Oak_Dark", 0.06)
+    box(c, "Workstation_Desktop", (6.36, 2.28, 0.2), (0, -0.01, 1.12), "Oak_Warm", 0.105)
+    box(c, "Workstation_Desktop_Inlay", (5.76, 0.045, 0.035), (0, -1.165, 1.17), "Brass_Satin", 0.009)
+    box(c, "Workstation_CableTray", (3.65, 0.52, 0.16), (0.15, 0.48, 0.79), "Metal_Charcoal", 0.04)
+    for x in (-2.82, 2.82):
+        box(c, f"Workstation_Leg_{x}", (0.22, 1.72, 0.88), (x, 0.04, 0.53), "Metal_Charcoal", 0.055)
+        box(c, f"Workstation_LegInset_{x}", (0.12, 1.38, 0.62), (x, 0.04, 0.53), "Sage_Panel", 0.035)
+        box(c, f"Workstation_Foot_{x}_Front", (0.48, 0.48, 0.08), (x, -0.65, 0.04), "Rubber_Dark", 0.028)
+        box(c, f"Workstation_Foot_{x}_Back", (0.48, 0.48, 0.08), (x, 0.65, 0.04), "Rubber_Dark", 0.028)
+    box(c, "Workstation_Drawer", (1.08, 1.46, 0.82), (-2.2, 0.05, 0.51), "Oak_Dark", 0.075)
+    for z in (0.38, 0.67):
+        box(c, f"Workstation_DrawerFront_{z}", (0.9, 0.08, 0.24), (-2.2, -0.72, z), "Sage_Panel", 0.045)
+        cylinder(c, f"Workstation_DrawerPull_{z}", 0.045, 0.38, (-2.2, -0.8, z), "Brass_Satin", rotation=(0, math.pi / 2, 0), vertices=16)
+
+    box(c, "Workstation_Monitor_Base", (1.42, 0.76, 0.09), (0, 0.12, 1.26), "Metal_Charcoal", 0.055)
+    cylinder(c, "Workstation_Monitor_Pivot", 0.19, 0.2, (0, 0.37, 1.47), "Brass_Satin", rotation=(math.pi / 2, 0, 0), vertices=24)
+    box(c, "Workstation_Monitor_Stem", (0.18, 0.18, 0.75), (0, 0.36, 1.67), "Metal_Charcoal", 0.05, rotation=(0, math.radians(-6), 0))
+    box(c, "Workstation_Monitor_Frame", (2.86, 0.22, 1.7), (0, 0.49, 2.42), "Metal_Black", 0.115)
+    box(c, "Workstation_Monitor_Recess", (2.5, 0.06, 1.34), (0, 0.36, 2.42), "Glass_Smoke", 0.055)
+    box(c, "Workstation_Monitor_Chin", (1.0, 0.045, 0.08), (0, 0.35, 1.66), "Brass_Satin", 0.018)
+    cylinder(c, "Workstation_Monitor_Camera", 0.035, 0.035, (0, 0.34, 3.18), "Light_Mint", rotation=(math.pi / 2, 0, 0), vertices=16)
+
+    box(c, "Workstation_Tower", (0.9, 1.04, 1.43), (2.33, 0.15, 0.76), "Metal_Black", 0.105)
+    box(c, "Workstation_TowerInset", (0.67, 0.055, 1.12), (2.33, -0.395, 0.79), "Sage_Panel", 0.05)
+    for row in range(5):
+        box(c, f"Workstation_TowerVent_{row}", (0.5, 0.03, 0.035), (2.33, -0.43, 0.43 + row * 0.13), "Metal_BrushedSteel", 0.008)
+    cylinder(c, "Workstation_TowerButtonRing", 0.105, 0.06, (2.33, -0.43, 1.19), "Brass_Satin", rotation=(math.pi / 2, 0, 0), vertices=24)
+    cylinder(c, "Workstation_TowerButton", 0.068, 0.075, (2.33, -0.455, 1.19), "Light_Mint", rotation=(math.pi / 2, 0, 0), vertices=24)
+
+    box(c, "Workstation_Keyboard", (2.02, 0.62, 0.075), (-0.48, -0.68, 1.25), "Metal_Charcoal", 0.055, rotation=(math.radians(-3), 0, 0))
     for row in range(3):
-        for col in range(8):
+        for col in range(9):
             box(
                 c,
                 f"Workstation_Key_{row}_{col}",
-                (0.15, 0.1, 0.035),
-                (-1.12 + col * 0.17, -0.9 + row * 0.13, 1.3),
+                (0.145, 0.105, 0.035),
+                (-1.15 + col * 0.17, -0.9 + row * 0.135, 1.31),
                 "Plaster_WarmWhite",
                 0.012,
             )
-    box(c, "Workstation_MousePad", (1.05, 0.72, 0.035), (1.3, -0.72, 1.2), "Rubber_Dark", 0.06)
-    box(c, "Workstation_Mouse", (0.34, 0.48, 0.14), (1.3, -0.72, 1.31), "Plaster_SoftGrey", 0.09)
-    cylinder(c, "Workstation_Lamp_Stem", 0.055, 1.18, (-2.65, 0.45, 1.78), "Metal_Charcoal", rotation=(0, math.radians(-18), 0), vertices=16)
-    box(c, "Workstation_Lamp_Head", (0.62, 0.42, 0.2), (-2.45, 0.45, 2.35), "Oak_Dark", 0.08, rotation=(0, math.radians(-12), 0))
-    box(c, "Workstation_Lamp_Light", (0.42, 0.22, 0.05), (-2.42, 0.23, 2.27), "Light_Warm", 0.02)
+    box(c, "Workstation_MousePad", (1.12, 0.78, 0.035), (1.25, -0.68, 1.2), "Rubber_Dark", 0.075)
+    uv_sphere(c, "Workstation_Mouse", 0.24, (1.25, -0.68, 1.3), "Plaster_SoftGrey", scale=(0.72, 1.0, 0.43))
+    box(c, "Workstation_MouseDivider", (0.018, 0.3, 0.018), (1.25, -0.79, 1.405), "Metal_Charcoal", 0.004)
+
+    cylinder(c, "Workstation_Lamp_Base", 0.34, 0.07, (-2.55, 0.48, 1.25), "Metal_Charcoal", vertices=24)
+    curve_tube(c, "Workstation_Lamp_Arm", ((-2.55, 0.48, 1.28), (-2.72, 0.5, 1.86), (-2.35, 0.47, 2.33)), 0.055, "Metal_Charcoal")
+    box(c, "Workstation_Lamp_Head", (0.72, 0.48, 0.22), (-2.15, 0.46, 2.38), "Oak_Dark", 0.11, rotation=(0, math.radians(-12), 0))
+    box(c, "Workstation_Lamp_Light", (0.46, 0.26, 0.05), (-2.12, 0.21, 2.31), "Light_Warm", 0.025)
+
+    curve_tube(c, "Workstation_MonitorCable", ((0.12, 0.47, 1.95), (0.35, 0.62, 1.35), (0.55, 0.52, 0.82)), 0.022, "Rubber_Dark")
+    curve_tube(c, "Workstation_TowerCable", ((1.98, 0.48, 0.98), (1.48, 0.62, 0.72), (0.62, 0.52, 0.78)), 0.024, "Rubber_Dark")
 
 
 def create_shop_counter() -> None:
     c = module_collection("shop-counter")
-    box(c, "Shop_Counter_Body", (3.4, 1.25, 0.72), (0, 0, 0.42), "Sage_Panel", 0.12)
-    box(c, "Shop_Counter_Front", (3.1, 0.16, 0.68), (0, -0.66, 0.46), "Metal_Black", 0.07, rotation=(math.radians(-3), 0, 0))
-    box(c, "Shop_Counter_Top", (3.65, 1.5, 0.14), (0, 0, 0.87), "Oak_Warm", 0.08)
-    box(c, "Shop_Counter_Plinth", (3.05, 1.1, 0.11), (0, 0, 0.055), "Metal_Charcoal", 0.035)
-    for x in (-1.18, -0.58, 0, 0.58, 1.18):
-        box(c, f"Shop_Counter_Rib_{x}", (0.065, 0.08, 0.5), (x, -0.77, 0.47), "Brass_Satin", 0.014)
-    box(c, "Shop_Counter_Display", (1.55, 0.68, 0.08), (0.66, 0.05, 1.02), "Glass_Clear", 0.04)
-    box(c, "Shop_Counter_DisplayRail", (1.72, 0.76, 0.06), (0.66, 0.05, 0.96), "Metal_Charcoal", 0.025)
+    box(c, "Shop_Counter_Plinth", (3.65, 1.42, 0.12), (0, 0, 0.06), "Metal_Charcoal", 0.055)
+    box(c, "Shop_Counter_Body", (3.82, 1.5, 0.78), (0, 0, 0.5), "Sage_Panel", 0.18)
+    box(c, "Shop_Counter_Front", (3.5, 0.12, 0.62), (0, -0.78, 0.52), "Metal_Black", 0.09, rotation=(math.radians(-3), 0, 0))
+    box(c, "Shop_Counter_Top", (4.05, 1.7, 0.16), (0, 0, 0.97), "Oak_Warm", 0.105)
+    box(c, "Shop_Counter_ToeKick", (3.35, 0.16, 0.13), (0, -0.64, 0.16), "Oak_Dark", 0.035)
+    for x in (-1.45, -0.72, 0, 0.72, 1.45):
+        box(c, f"Shop_Counter_Rib_{x}", (0.075, 0.09, 0.53), (x, -0.85, 0.53), "Brass_Satin", 0.016)
+
+    box(c, "Shop_Display_Base", (1.72, 0.82, 0.08), (0.78, 0.1, 1.1), "Metal_Charcoal", 0.04)
+    box(c, "Shop_Display_GlassFront", (1.64, 0.045, 0.58), (0.78, -0.33, 1.38), "Glass_Clear", 0.025)
+    box(c, "Shop_Display_GlassBack", (1.64, 0.045, 0.58), (0.78, 0.53, 1.38), "Glass_Clear", 0.025)
+    for x in (-0.04, 1.6):
+        box(c, f"Shop_Display_End_{x}", (0.045, 0.82, 0.58), (x, 0.1, 1.38), "Glass_Clear", 0.025)
+    box(c, "Shop_Display_Top", (1.74, 0.9, 0.08), (0.78, 0.1, 1.71), "Brass_Satin", 0.045)
+
+    for index, (x, y, material_name) in enumerate((
+        (0.35, -0.03, "Light_Warm"),
+        (0.77, 0.06, "Light_Mint"),
+        (1.17, -0.08, "Plaster_WarmWhite"),
+    )):
+        cylinder(c, f"Shop_Display_Item_{index + 1}", 0.13, 0.16, (x, y, 1.21), material_name, vertices=24)
+
+    box(c, "Shop_Register_Base", (0.7, 0.58, 0.08), (-1.05, 0.18, 1.09), "Metal_Charcoal", 0.045)
+    box(c, "Shop_Register_Screen", (0.74, 0.12, 0.52), (-1.05, 0.35, 1.39), "Metal_Black", 0.075, rotation=(math.radians(-12), 0, 0))
+    box(c, "Shop_Register_Display", (0.59, 0.035, 0.37), (-1.05, 0.27, 1.4), "Light_Mint", 0.045, rotation=(math.radians(-12), 0, 0))
+    cylinder(c, "Shop_Register_Button", 0.055, 0.045, (-1.32, -0.13, 1.1), "Light_Warm", rotation=(math.pi / 2, 0, 0), vertices=20)
 
 
 def create_study_shelf() -> None:
@@ -768,6 +1009,9 @@ def create_modules() -> None:
     create_elevator_portal()
     create_elevator_door_panel()
     create_elevator_cabin_shell()
+    create_elevator_call_station()
+    create_elevator_control_panel()
+    create_lobby_circulation_screen()
     create_reception_desk()
     create_built_in_bench()
     create_entry_portal()

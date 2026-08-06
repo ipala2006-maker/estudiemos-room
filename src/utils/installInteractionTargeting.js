@@ -44,7 +44,7 @@ const LEGACY_SHOP_TARGET = {
   distance: 10.5
 };
 const BUILDING_SHOP_TARGET = {
-  center: new THREE.Vector3(101.55, -8.45, 34.6),
+  center: new THREE.Vector3(87.3, -8.45, 15.7),
   radius: 3.1,
   distance: 11.5
 };
