@@ -128,10 +128,14 @@ const WORLD_MODE_QUERY_KEY = 'world';
 const LEGACY_WORLD_MODE = 'legacy';
 const BUILDING_WORLD_MODE = 'building';
 const BUILDING_STAIR_RISE = BUILDING_FLOOR_HEIGHT;
+const BUILDING_LOBBY_REAR_WALL_Z = -13.2;
+const BUILDING_LOBBY_FRONT_WALL_Z = 19.75;
+const BUILDING_LOBBY_DEPTH = BUILDING_LOBBY_FRONT_WALL_Z - BUILDING_LOBBY_REAR_WALL_Z;
+const BUILDING_LOBBY_CENTER_Z = (BUILDING_LOBBY_FRONT_WALL_Z + BUILDING_LOBBY_REAR_WALL_Z) / 2;
 const BUILDING_STAIR_MIN_Z = -8.2;
 const BUILDING_STAIR_MAX_Z = 7.2;
-const BUILDING_STAIR_MIN_X = -14.4;
-const BUILDING_STAIR_MAX_X = -7.8;
+const BUILDING_STAIR_MIN_X = -17.1;
+const BUILDING_STAIR_MAX_X = -10.5;
 const BUILDING_STAIR_OPENING_MIN_X = BUILDING_STAIR_MIN_X - 0.3;
 const BUILDING_STAIR_OPENING_MAX_X = BUILDING_STAIR_MAX_X + 0.3;
 const BUILDING_STAIR_WORLD_MIN_Z = BUILDING_LOBBY_OFFSET.z + BUILDING_STAIR_MIN_Z;
@@ -155,12 +159,15 @@ const ELEVATOR_CABIN_WIDTH = BUILDING_ELEVATOR_SIZE.width;
 const ELEVATOR_CABIN_DEPTH = BUILDING_ELEVATOR_SIZE.depth;
 const ELEVATOR_CABIN_HALF_WIDTH = ELEVATOR_CABIN_WIDTH / 2;
 const ELEVATOR_CABIN_HALF_DEPTH = ELEVATOR_CABIN_DEPTH / 2;
-const ELEVATOR_SHAFT_SHELL_WIDTH = 10.6;
-const ELEVATOR_SHAFT_SHELL_DEPTH = 5.6;
+const ELEVATOR_SHAFT_SHELL_WIDTH = 12.2;
+const ELEVATOR_SHAFT_SHELL_DEPTH = 6.6;
 const ELEVATOR_SHAFT_SHELL_HALF_WIDTH = ELEVATOR_SHAFT_SHELL_WIDTH / 2;
 const ELEVATOR_SHAFT_WALL_THICKNESS = 0.4;
-const ELEVATOR_PORTAL_OPENING_WIDTH = 6.9;
-const ELEVATOR_DOOR_CLOSED_OFFSET = 1.57;
+const ELEVATOR_PORTAL_OPENING_WIDTH = 8.3;
+const ELEVATOR_DOOR_PANEL_WIDTH = 3.7;
+const ELEVATOR_DOOR_CLOSED_OFFSET = ELEVATOR_DOOR_PANEL_WIDTH / 2;
+const ELEVATOR_DOOR_SLIDE_DISTANCE = 2.05;
+const ELEVATOR_CALL_STATION_OFFSET = 5.05;
 const ELEVATOR_FRONT_PIER_WIDTH = (ELEVATOR_SHAFT_SHELL_WIDTH - ELEVATOR_PORTAL_OPENING_WIDTH) / 2;
 const BUILDING_LOBBY_ELEVATOR_DOOR_Z = BUILDING_ELEVATOR_Z + ELEVATOR_CABIN_HALF_DEPTH;
 const BUILDING_STUDY_ELEVATOR_DOOR_Z = BUILDING_ELEVATOR_Z - ELEVATOR_CABIN_HALF_DEPTH;
@@ -190,14 +197,14 @@ const BUILDING_VISUAL_AUDIT_VIEWS = Object.freeze({
   },
   'lobby-elevator-call': {
     floor: 'lobby',
-    position: [100, -8.3, 28.8],
-    lookAt: [102.15, -8.94, 26.26],
+    position: [94.6, -8.3, 29.2],
+    lookAt: [92.85, -8.94, BUILDING_LOBBY_ELEVATOR_DOOR_Z + 0.66],
     pitch: -0.19
   },
   'lobby-elevator-call-away': {
     floor: 'lobby',
-    position: [100, -8.3, 28.8],
-    lookAt: [102.15, -8.94, 26.26],
+    position: [94.6, -8.3, 29.2],
+    lookAt: [92.85, -8.94, BUILDING_LOBBY_ELEVATOR_DOOR_Z + 0.66],
     pitch: -0.19,
     elevatorState: 'away'
   },
@@ -210,25 +217,31 @@ const BUILDING_VISUAL_AUDIT_VIEWS = Object.freeze({
   'lobby-elevator-cabin': {
     floor: 'lobby',
     position: [BUILDING_ELEVATOR_X, -8.3, BUILDING_ELEVATOR_Z],
-    lookAt: [BUILDING_ELEVATOR_X + 3, -8.32, BUILDING_ELEVATOR_Z + 0.13],
+    lookAt: [BUILDING_ELEVATOR_X + ELEVATOR_CABIN_HALF_WIDTH - 0.38, -8.32, BUILDING_ELEVATOR_Z + 0.13],
     elevatorState: 'ready-inside'
   },
   'lobby-elevator-cabin-close': {
     floor: 'lobby',
     position: [BUILDING_ELEVATOR_X, -8.3, BUILDING_ELEVATOR_Z],
-    lookAt: [BUILDING_ELEVATOR_X + 3, -9.1, BUILDING_ELEVATOR_Z + 0.35],
+    lookAt: [BUILDING_ELEVATOR_X + ELEVATOR_CABIN_HALF_WIDTH - 0.38, -9.1, BUILDING_ELEVATOR_Z + 0.35],
     pitch: -0.24,
+    elevatorState: 'boarding-inside'
+  },
+  'lobby-elevator-exit': {
+    floor: 'lobby',
+    position: [BUILDING_ELEVATOR_X, -8.3, BUILDING_LOBBY_ELEVATOR_DOOR_Z + 1.35],
+    lookAt: [BUILDING_ELEVATOR_X, -7.9, BUILDING_LOBBY_ELEVATOR_DOOR_Z + 5],
     elevatorState: 'boarding-inside'
   },
   'lobby-back-left': {
     floor: 'lobby',
-    position: [71.8, -8.3, 15.4],
-    lookAt: [76.6, -7.7, 20.2]
+    position: [71.8, -8.3, 20.8],
+    lookAt: [76.6, -7.7, 26.2]
   },
   'lobby-back-right': {
     floor: 'lobby',
-    position: [103.2, -8.3, 15.4],
-    lookAt: [98.4, -7.7, 20.2]
+    position: [103.2, -8.3, 20.8],
+    lookAt: [98.4, -7.7, 26.2]
   },
   'lobby-front-left': {
     floor: 'lobby',
@@ -242,23 +255,23 @@ const BUILDING_VISUAL_AUDIT_VIEWS = Object.freeze({
   },
   'lobby-stair-bottom': {
     floor: 'lobby',
-    position: [76.2, -8.3, 42.7],
-    lookAt: [76.2, -5.9, 35.8]
+    position: [73.5, -8.3, 42.7],
+    lookAt: [73.5, -5.9, 35.8]
   },
   'lobby-stair-transition-up': {
     floor: 'lobby',
-    position: [76.2, 1.28, 25.15],
-    lookAt: [76.2, 1.7, 22.1]
+    position: [73.5, 1.65, 24.58],
+    lookAt: [73.5, 1.7, 22.1]
   },
   'study-stair-top': {
     floor: 'study',
-    position: [76.2, 1.7, 22.3],
-    lookAt: [76.2, 0.15, 28.6]
+    position: [73.5, 1.7, 22.3],
+    lookAt: [73.5, 0.15, 28.6]
   },
   'study-stair-transition-down': {
     floor: 'study',
-    position: [76.2, -7.88, 39.25],
-    lookAt: [76.2, -8.3, 42.4]
+    position: [73.5, -8.25, 39.82],
+    lookAt: [73.5, -8.3, 42.4]
   },
   'study-elevator-left': {
     floor: 'study',
@@ -269,6 +282,12 @@ const BUILDING_VISUAL_AUDIT_VIEWS = Object.freeze({
     floor: 'study',
     position: [103.4, 1.7, 16.2],
     lookAt: [101.5, 2.3, BUILDING_STUDY_ELEVATOR_DOOR_Z]
+  },
+  'study-elevator-exit': {
+    floor: 'study',
+    position: [BUILDING_ELEVATOR_X, 1.7, BUILDING_STUDY_ELEVATOR_DOOR_Z - 1.35],
+    lookAt: [BUILDING_ELEVATOR_X, 2.1, BUILDING_STUDY_ELEVATOR_DOOR_Z - 5],
+    elevatorState: 'boarding-inside'
   },
   'study-front-left': {
     floor: 'study',
@@ -325,24 +344,24 @@ const ELEVATOR_CABIN_SAFE_MAX_Z =
 const ELEVATOR_CALL_STATION = Object.freeze({
   lobby: {
     anchor: new THREE.Vector3(
-      BUILDING_ELEVATOR_X + 4.25,
+      BUILDING_ELEVATOR_X - ELEVATOR_CALL_STATION_OFFSET,
       BUILDING_LOBBY_OFFSET.y + 0.28,
       BUILDING_LOBBY_ELEVATOR_DOOR_Z + 0.42
     ),
     button: new THREE.Vector3(
-      BUILDING_ELEVATOR_X + 4.25,
+      BUILDING_ELEVATOR_X - ELEVATOR_CALL_STATION_OFFSET,
       BUILDING_LOBBY_OFFSET.y + 1.06,
       BUILDING_LOBBY_ELEVATOR_DOOR_Z + 0.66
     )
   },
   study: {
     anchor: new THREE.Vector3(
-      BUILDING_ELEVATOR_X - 4.25,
+      BUILDING_ELEVATOR_X - ELEVATOR_CALL_STATION_OFFSET,
       0.28,
       BUILDING_STUDY_ELEVATOR_DOOR_Z - 0.42
     ),
     button: new THREE.Vector3(
-      BUILDING_ELEVATOR_X - 4.25,
+      BUILDING_ELEVATOR_X - ELEVATOR_CALL_STATION_OFFSET,
       1.06,
       BUILDING_STUDY_ELEVATOR_DOOR_Z - 0.66
     )
@@ -816,7 +835,7 @@ export function FirstPersonWorld({
       if (nextIsStudyFloor) {
         faceCameraToward(new THREE.Vector3(90, 2.2, -8));
       } else if (!isLegacyWorld && travelMode === 'stairs') {
-        faceCameraToward(new THREE.Vector3(-11.1, 1.9, 5.8));
+        faceCameraToward(new THREE.Vector3(73.5, -7.8, 46));
       } else if (!isLegacyWorld) {
         faceCameraToward(new THREE.Vector3(0, 2.2, -5));
       } else {
@@ -1584,7 +1603,7 @@ function getRequestedBuildingStartPosition(requestedFloor = 'lobby') {
   if (spawn === 'stairs') {
     return (requestedFloor === 'study' ? activeMap.studyStairsArrival : activeMap.lobbyStairsArrival).clone();
   }
-  if (spawn === 'shop') return new THREE.Vector3(87.3, activeMap.startPosition.y, 22.7);
+  if (spawn === 'shop') return new THREE.Vector3(87.3, activeMap.startPosition.y, 26.4);
   if (requestedFloor === 'study') return activeMap.interiorSpawnPosition.clone();
   return activeMap.startPosition.clone();
 }
@@ -1594,7 +1613,7 @@ function getRequestedBuildingStartLookTarget(requestedFloor = 'lobby') {
   const auditView = getRequestedBuildingAuditView(requestedFloor);
   if (auditView) return new THREE.Vector3(...auditView.lookAt);
   const spawn = new URLSearchParams(window.location.search).get('spawn');
-  if (spawn === 'stairs') return new THREE.Vector3(76.2, 0.7, 25.1);
+  if (spawn === 'stairs') return new THREE.Vector3(73.5, 0.7, 25.1);
   if (spawn === 'elevator') {
     return (
       requestedFloor === 'study'
@@ -1602,7 +1621,7 @@ function getRequestedBuildingStartLookTarget(requestedFloor = 'lobby') {
         : activeMap.lobbyElevatorPosition
     ).clone();
   }
-  if (spawn === 'shop') return new THREE.Vector3(87.3, -8.2, 15.7);
+  if (spawn === 'shop') return new THREE.Vector3(87.3, -8.2, 21.7);
   return activeMap.startLookAt.clone();
 }
 
@@ -1616,7 +1635,7 @@ function isPositionInsideBuildingElevator(position) {
 }
 
 function hasPlayerClearedBuildingElevator(position, floor) {
-  const clearance = PLAYER_RADIUS + 0.12;
+  const clearance = PLAYER_RADIUS + 0.58;
   return floor === 'study'
     ? position.z <= BUILDING_STUDY_ELEVATOR_DOOR_Z - clearance
     : position.z >= BUILDING_LOBBY_ELEVATOR_DOOR_Z + clearance;
@@ -3447,6 +3466,7 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
       'stair-rail'
     )
   ];
+  const buildingRearWallCollider = lobbyCollider(0, BUILDING_LOBBY_REAR_WALL_Z, 36, 0.46, 'rear-wall');
   const legacyExteriorColliders = [
     createCollider(0, -20.8, 15.2, 8.7),
     createCollider(-18, -19, 12.5, 8.5),
@@ -3471,10 +3491,11 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
         ? legacyExteriorColliders
         : [
             lobbyCollider(15.9, 11.4, 1.45, 5.6, 'bench'),
-            lobbyCollider(0, -17.55, 4.35, 2.45, 'shop'),
+            lobbyCollider(0, -11, 4.35, 2.45, 'shop'),
             lobbyCollider(-7.32, 4.7, 0.58, 5.2, 'stair-screen'),
-            lobbyCollider(-15.8, -16.8, 1.35, 1.35, 'planter'),
+            lobbyCollider(-8.6, -10.7, 1.35, 1.35, 'planter'),
             lobbyCollider(15.8, 16.2, 1.35, 1.35, 'planter'),
+            buildingRearWallCollider,
             ...createBuildingElevatorShaftColliders('lobby'),
             createCollider(
               BUILDING_ELEVATOR_X,
@@ -3505,7 +3526,7 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
       ),
       ...buildingStairColliders
     ],
-    stairs: buildingStairColliders
+    stairs: [...buildingStairColliders, buildingRearWallCollider]
   };
 }
 
@@ -3658,17 +3679,57 @@ function addFloorBacking(parent, { name, size, position }) {
 function addBuildingLobby(group) {
   addFloorBacking(group, {
     name: 'building-lobby-continuous-floor-backing',
-    size: [36, 40],
-    position: [0, 0, 0]
+    size: [36, BUILDING_LOBBY_DEPTH],
+    position: [0, 0, BUILDING_LOBBY_CENTER_Z]
   });
+  const elevatorDoorZ = BUILDING_LOBBY_ELEVATOR_DOOR_Z - BUILDING_LOBBY_OFFSET.z;
+  const stairOpeningMinX = BUILDING_STAIR_OPENING_MIN_X;
+  const stairOpeningMaxX = BUILDING_STAIR_OPENING_MAX_X;
+  const elevatorOpeningMinX = BUILDING_LOBBY_ELEVATOR_LOCAL_X - ELEVATOR_SHAFT_SHELL_HALF_WIDTH;
+  const elevatorOpeningMaxX = BUILDING_LOBBY_ELEVATOR_LOCAL_X + ELEVATOR_SHAFT_SHELL_HALF_WIDTH;
   const floorParts = [
-    { name: 'left', size: [3.15, 40], position: [-16.43, 0, 0] },
-    { name: 'center', size: [14.05, 40], position: [-0.73, 0, 0] },
-    { name: 'right', size: [2.55, 40], position: [16.73, 0, 0] },
-    { name: 'stairs-back', size: [7.1, 11.65], position: [-11.3, 0, -14.18] },
-    { name: 'stairs-front', size: [7.1, 12.65], position: [-11.3, 0, 13.68] },
-    { name: 'elevator-back', size: [9.15, 7.35], position: [10.88, 0, -16.33] },
-    { name: 'elevator-front', size: [9.15, 27.1], position: [10.88, 0, 6.45] }
+    {
+      name: 'left-edge',
+      size: [stairOpeningMinX + 18, BUILDING_LOBBY_DEPTH],
+      position: [(-18 + stairOpeningMinX) / 2, 0, BUILDING_LOBBY_CENTER_Z]
+    },
+    {
+      name: 'center',
+      size: [elevatorOpeningMinX - stairOpeningMaxX, BUILDING_LOBBY_DEPTH],
+      position: [(stairOpeningMaxX + elevatorOpeningMinX) / 2, 0, BUILDING_LOBBY_CENTER_Z]
+    },
+    {
+      name: 'right-edge',
+      size: [18 - elevatorOpeningMaxX, BUILDING_LOBBY_DEPTH],
+      position: [(elevatorOpeningMaxX + 18) / 2, 0, BUILDING_LOBBY_CENTER_Z]
+    },
+    {
+      name: 'stairs-rear',
+      size: [stairOpeningMaxX - stairOpeningMinX, BUILDING_STAIR_MIN_Z - BUILDING_LOBBY_REAR_WALL_Z],
+      position: [
+        (stairOpeningMinX + stairOpeningMaxX) / 2,
+        0,
+        (BUILDING_STAIR_MIN_Z + BUILDING_LOBBY_REAR_WALL_Z) / 2
+      ]
+    },
+    {
+      name: 'stairs-front',
+      size: [stairOpeningMaxX - stairOpeningMinX, BUILDING_LOBBY_FRONT_WALL_Z - BUILDING_STAIR_MAX_Z],
+      position: [
+        (stairOpeningMinX + stairOpeningMaxX) / 2,
+        0,
+        (BUILDING_STAIR_MAX_Z + BUILDING_LOBBY_FRONT_WALL_Z) / 2
+      ]
+    },
+    {
+      name: 'elevator-front',
+      size: [elevatorOpeningMaxX - elevatorOpeningMinX, BUILDING_LOBBY_FRONT_WALL_Z - elevatorDoorZ],
+      position: [
+        (elevatorOpeningMinX + elevatorOpeningMaxX) / 2,
+        0,
+        (elevatorDoorZ + BUILDING_LOBBY_FRONT_WALL_Z) / 2
+      ]
+    }
   ];
   floorParts.forEach(({ name, size, position }) => {
     addArchitectureModel(group, {
@@ -3681,9 +3742,30 @@ function addBuildingLobby(group) {
   });
 
   [
-    { name: 'left-wall', center: [-17.75, 0, 0], length: 40, rotationY: Math.PI / 2 },
-    { name: 'right-wall', center: [17.75, 0, 0], length: 40, rotationY: Math.PI / 2 },
-    { name: 'back-wall', center: [0, 0, -19.75], length: 36, rotationY: 0 },
+    {
+      name: 'left-wall',
+      center: [-17.75, 0, BUILDING_LOBBY_CENTER_Z],
+      length: BUILDING_LOBBY_DEPTH,
+      rotationY: Math.PI / 2
+    },
+    {
+      name: 'right-wall',
+      center: [17.75, 0, BUILDING_LOBBY_CENTER_Z],
+      length: BUILDING_LOBBY_DEPTH,
+      rotationY: Math.PI / 2
+    },
+    {
+      name: 'back-left',
+      center: [(-18 + elevatorOpeningMinX) / 2, 0, BUILDING_LOBBY_REAR_WALL_Z],
+      length: elevatorOpeningMinX + 18,
+      rotationY: 0
+    },
+    {
+      name: 'back-right',
+      center: [(elevatorOpeningMaxX + 18) / 2, 0, BUILDING_LOBBY_REAR_WALL_Z],
+      length: 18 - elevatorOpeningMaxX,
+      rotationY: 0
+    },
     { name: 'front-left', center: [-11, 0, 19.75], length: 14, rotationY: 0 },
     { name: 'front-right', center: [11, 0, 19.75], length: 14, rotationY: 0 }
   ].forEach((wall) => {
@@ -3703,13 +3785,47 @@ function addBuildingLobby(group) {
   });
 
   const ceilingParts = [
-    { name: 'back', size: [36, 7.3], position: [0, 9.28, -16.35] },
-    { name: 'shaft-band-left', size: [3.3, 5.6], position: [-16.35, 9.28, -9.9] },
-    { name: 'shaft-band-center', size: [12.8, 5.6], position: [-1.1, 9.28, -9.9] },
-    { name: 'shaft-band-right', size: [2.1, 5.6], position: [16.95, 9.28, -9.9] },
-    { name: 'stair-band-left', size: [3.3, 15.1], position: [-16.35, 9.28, 0.45] },
-    { name: 'stair-band-right', size: [25.5, 15.1], position: [5.25, 9.28, 0.45] },
-    { name: 'front', size: [36, 12], position: [0, 9.28, 14] }
+    {
+      name: 'rear-center',
+      size: [elevatorOpeningMinX - stairOpeningMaxX, elevatorDoorZ - BUILDING_LOBBY_REAR_WALL_Z],
+      position: [
+        (stairOpeningMaxX + elevatorOpeningMinX) / 2,
+        9.28,
+        (BUILDING_LOBBY_REAR_WALL_Z + elevatorDoorZ) / 2
+      ]
+    },
+    {
+      name: 'rear-right',
+      size: [18 - elevatorOpeningMaxX, elevatorDoorZ - BUILDING_LOBBY_REAR_WALL_Z],
+      position: [
+        (elevatorOpeningMaxX + 18) / 2,
+        9.28,
+        (BUILDING_LOBBY_REAR_WALL_Z + elevatorDoorZ) / 2
+      ]
+    },
+    {
+      name: 'stair-side',
+      size: [stairOpeningMinX + 18, BUILDING_STAIR_MAX_Z - BUILDING_LOBBY_REAR_WALL_Z],
+      position: [
+        (-18 + stairOpeningMinX) / 2,
+        9.28,
+        (BUILDING_LOBBY_REAR_WALL_Z + BUILDING_STAIR_MAX_Z) / 2
+      ]
+    },
+    {
+      name: 'middle',
+      size: [18 - stairOpeningMaxX, BUILDING_STAIR_MAX_Z - elevatorDoorZ],
+      position: [
+        (stairOpeningMaxX + 18) / 2,
+        9.28,
+        (elevatorDoorZ + BUILDING_STAIR_MAX_Z) / 2
+      ]
+    },
+    {
+      name: 'front',
+      size: [36, BUILDING_LOBBY_FRONT_WALL_Z - BUILDING_STAIR_MAX_Z],
+      position: [0, 9.28, (BUILDING_STAIR_MAX_Z + BUILDING_LOBBY_FRONT_WALL_Z) / 2]
+    }
   ];
   ceilingParts.forEach((part) => {
     addArchitectureModel(group, {
@@ -3726,32 +3842,11 @@ function addBuildingLobby(group) {
     name: 'building-lobby-entry-portal',
     position: [0, 0.03, 19.54]
   });
-  addArchitectureModel(group, {
-    asset: BUILDING_ARCHITECTURE.floorPanel,
-    name: 'building-lobby-entry-runner',
-    position: [0, 0.055, 14.8],
-    scale: [6.8 / 4, 0.22, 8.2 / 4],
-    castShadow: false
-  });
-  addArchitectureModel(group, {
-    asset: BUILDING_ARCHITECTURE.floorPanel,
-    name: 'building-lobby-main-passage',
-    position: [0, 0.05, -3.4],
-    scale: [5.4 / 4, 0.2, 27.2 / 4],
-    castShadow: false
-  });
-  addArchitectureModel(group, {
-    asset: BUILDING_ARCHITECTURE.floorPanel,
-    name: 'building-lobby-elevator-passage',
-    position: [10.6, 0.05, -0.7],
-    scale: [6.2 / 4, 0.2, 17.2 / 4],
-    castShadow: false
-  });
   addBuildingLabel(group, {
     name: 'building-lobby-main-sign',
     title: 'ESTUDIEMOS',
     subtitle: 'Lobby  |  Escaleras y ascensor',
-    position: [0, 6.75, -19.42],
+    position: [0, 6.75, BUILDING_LOBBY_REAR_WALL_Z + 0.33],
     size: [7.8, 1.55],
     accent: '#9fd1be'
   });
@@ -3770,7 +3865,7 @@ function addBuildingLobby(group) {
   circulationLight.position.set(-9, 6.2, -7);
   group.add(circulationLight);
   const stairLight = new THREE.PointLight(0xffd9a1, 2.05, 19, 2.1);
-  stairLight.position.set(-11.1, 8.25, -8.8);
+  stairLight.position.set((BUILDING_STAIR_MIN_X + BUILDING_STAIR_MAX_X) / 2, 8.25, -8.8);
   group.add(stairLight);
 }
 
@@ -3797,7 +3892,7 @@ function addBuildingStairs(group) {
       name: `building-lobby-stair-landing-rail-${index + 1}`,
       position: [x, BUILDING_STAIR_RISE, -10.35],
       rotation: [0, Math.PI / 2, 0],
-      scale: [4.1 / 4, 1, 1]
+      scale: [5.5 / 4, 1, 1]
     });
   });
 
@@ -3874,20 +3969,20 @@ function addBuildingElevator(group) {
   });
   addElevatorCallStation(group, {
     name: 'building-lobby-elevator-call-station',
-    position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X + 4.25, 0.28, elevatorDoorZ + 0.42],
+    position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X - ELEVATOR_CALL_STATION_OFFSET, 0.28, elevatorDoorZ + 0.42],
     direction: 'up'
   });
   addArchitectureModel(group, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-lobby-elevator-left-door',
     position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X - ELEVATOR_DOOR_CLOSED_OFFSET, 0.18, elevatorDoorZ + 0.13],
-    scale: [1, 6.5 / 5.8, 1]
+    scale: [ELEVATOR_DOOR_PANEL_WIDTH / 3.7, 6.5 / 5.8, 1]
   });
   addArchitectureModel(group, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-lobby-elevator-right-door',
     position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X + ELEVATOR_DOOR_CLOSED_OFFSET, 0.18, elevatorDoorZ + 0.13],
-    scale: [1, 6.5 / 5.8, 1]
+    scale: [ELEVATOR_DOOR_PANEL_WIDTH / 3.7, 6.5 / 5.8, 1]
   });
   const seam = new THREE.Group();
   seam.name = 'building-lobby-elevator-seam';
@@ -3904,7 +3999,7 @@ function addBuildingElevator(group) {
     title: 'ASCENSOR',
     subtitle: 'E  llamar  |  entra caminando',
     position: [BUILDING_LOBBY_ELEVATOR_LOCAL_X, 8.55, elevatorDoorZ + 0.4],
-    size: [5.4, 1.08],
+    size: [6.2, 1.08],
     accent: '#9fd1be'
   });
 }
@@ -3926,7 +4021,7 @@ function addBuildingLobbyDetails(group) {
   });
 
   [
-    { position: [-15.8, 0, -16.8], rotationY: 0.18 },
+    { position: [-8.6, 0, -10.7], rotationY: 0.18 },
     { position: [15.8, 0, 16.2], rotationY: -0.22 }
   ].forEach((planter, index) => {
     addArchitectureModel(group, {
@@ -3949,9 +4044,10 @@ function addBuildingLobbyDetails(group) {
 }
 
 function addStudyFloorCirculation(room) {
+  const stairCenterX = (STUDY_STAIR_OPENING_MIN_X + STUDY_STAIR_OPENING_MAX_X) / 2;
   [
-    { name: 'left', center: [-17.52, -10.3, 37.6] },
-    { name: 'right', center: [-10.08, -10.3, 37.6] }
+    { name: 'left', center: [STUDY_STAIR_OPENING_MIN_X - 0.12, -10.3, 37.6] },
+    { name: 'right', center: [STUDY_STAIR_OPENING_MAX_X + 0.12, -10.3, 37.6] }
   ].forEach((wall) => {
     addRepeatedWall(room, {
       name: `building-study-stairwell-${wall.name}-wall`,
@@ -3965,13 +4061,13 @@ function addStudyFloorCirculation(room) {
   addArchitectureModel(room, {
     asset: BUILDING_ARCHITECTURE.ceilingPanel,
     name: 'building-study-stairwell-ceiling',
-    position: [-13.8, 8.02, 37.6],
+    position: [stairCenterX, 8.02, 37.6],
     scale: [7.78 / 4, 1, 17.8 / 4],
     castShadow: false
   });
   addRepeatedWall(room, {
     name: 'building-study-stairwell-end-wall',
-    center: [-13.8, -2.2, 46.55],
+    center: [stairCenterX, -2.2, 46.55],
     length: 7.78,
     height: 10.3,
     maxModuleLength: 3.89
@@ -3981,19 +4077,19 @@ function addStudyFloorCirculation(room) {
   circulationLight.position.set(-2.8, 5.4, 24.2);
   room.add(circulationLight);
   const stairwellNearLight = new THREE.PointLight(0xd9fff1, 2.25, 20, 2.05);
-  stairwellNearLight.position.set(-13.8, 4.8, 31.6);
+  stairwellNearLight.position.set(stairCenterX, 4.8, 31.6);
   room.add(stairwellNearLight);
   const stairwellFarLight = new THREE.PointLight(0xffd8a0, 2.1, 19, 2.05);
-  stairwellFarLight.position.set(-13.8, 4.8, 41.4);
+  stairwellFarLight.position.set(stairCenterX, 4.8, 41.4);
   room.add(stairwellFarLight);
   const stairwellEndLight = new THREE.PointLight(0xffd8a0, 1.55, 11, 2.05);
-  stairwellEndLight.position.set(-13.8, 3.9, 45.8);
+  stairwellEndLight.position.set(stairCenterX, 3.9, 45.8);
   room.add(stairwellEndLight);
 
   addArchitectureModel(room, {
     asset: BUILDING_ARCHITECTURE.stairwellPortal,
     name: 'building-study-stair-top-portal',
-    position: [-13.8, 0, 28.25],
+    position: [stairCenterX, 0, 28.25],
     rotation: [0, Math.PI, 0]
   });
 
@@ -4013,7 +4109,7 @@ function addStudyFloorCirculation(room) {
   });
   addElevatorCallStation(room, {
     name: 'building-study-elevator-call-station',
-    position: [elevatorX - 4.25, 0.28, elevatorDoorZ - 0.42],
+    position: [elevatorX - ELEVATOR_CALL_STATION_OFFSET, 0.28, elevatorDoorZ - 0.42],
     rotationY: Math.PI,
     direction: 'down'
   });
@@ -4022,14 +4118,14 @@ function addStudyFloorCirculation(room) {
     name: 'building-study-elevator-left-door',
     position: [elevatorX - ELEVATOR_DOOR_CLOSED_OFFSET, 0.18, elevatorDoorZ - 0.13],
     rotation: [0, Math.PI, 0],
-    scale: [1, 6.5 / 5.8, 1]
+    scale: [ELEVATOR_DOOR_PANEL_WIDTH / 3.7, 6.5 / 5.8, 1]
   });
   addArchitectureModel(room, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: 'building-study-elevator-right-door',
     position: [elevatorX + ELEVATOR_DOOR_CLOSED_OFFSET, 0.18, elevatorDoorZ - 0.13],
     rotation: [0, Math.PI, 0],
-    scale: [1, 6.5 / 5.8, 1]
+    scale: [ELEVATOR_DOOR_PANEL_WIDTH / 3.7, 6.5 / 5.8, 1]
   });
   const seam = new THREE.Group();
   seam.name = 'building-study-elevator-seam';
@@ -4046,7 +4142,7 @@ function addStudyFloorCirculation(room) {
     title: 'ASCENSOR',
     subtitle: 'E  llamar  |  entra caminando',
     position: [elevatorX, 8.55, elevatorDoorZ - 0.4],
-    size: [5.4, 1.08],
+    size: [6.2, 1.08],
     accent: '#9fcfbe',
     rotationY: Math.PI
   });
@@ -4115,10 +4211,17 @@ function addElevatorCabinInteriorDetails(cabin) {
 
   [-1, 1].forEach((side) => {
     const x = side * (ELEVATOR_CABIN_HALF_WIDTH - 0.13);
-    addDetail(`building-elevator-cabin-lower-panel-${side}`, [0.08, 1.7, 4.55], [x, 1.04, 0], wallLower);
-    addDetail(`building-elevator-cabin-upper-panel-${side}`, [0.08, 3.55, 4.55], [x, 3.78, 0], wallUpper);
-    addDetail(`building-elevator-cabin-side-band-${side}`, [0.12, 0.1, 4.62], [x - side * 0.03, 1.94, 0], brassTrim);
-    [-1.48, 1.48].forEach((z, index) => {
+    const sidePanelDepth = ELEVATOR_CABIN_DEPTH - 0.65;
+    addDetail(`building-elevator-cabin-lower-panel-${side}`, [0.08, 1.7, sidePanelDepth], [x, 1.04, 0], wallLower);
+    addDetail(`building-elevator-cabin-upper-panel-${side}`, [0.08, 3.55, sidePanelDepth], [x, 3.78, 0], wallUpper);
+    addDetail(
+      `building-elevator-cabin-side-band-${side}`,
+      [0.12, 0.1, sidePanelDepth + 0.07],
+      [x - side * 0.03, 1.94, 0],
+      brassTrim
+    );
+    const sideRevealZ = ELEVATOR_CABIN_HALF_DEPTH - 1.05;
+    [-sideRevealZ, sideRevealZ].forEach((z, index) => {
       addDetail(
         `building-elevator-cabin-side-reveal-${side}-${index + 1}`,
         [0.105, 4.86, 0.06],
@@ -4128,8 +4231,13 @@ function addElevatorCabinInteriorDetails(cabin) {
     });
   });
 
-  addDetail('building-elevator-cabin-inner-ceiling', [6.66, 0.14, 4.9], [0, 6.02, 0], wallUpper);
-  [-1.65, 0, 1.65].forEach((x, index) => {
+  addDetail(
+    'building-elevator-cabin-inner-ceiling',
+    [ELEVATOR_CABIN_WIDTH - 0.34, 0.14, ELEVATOR_CABIN_DEPTH - 0.3],
+    [0, 6.02, 0],
+    wallUpper
+  );
+  [-2.05, 0, 2.05].forEach((x, index) => {
     addDetail(
       `building-elevator-cabin-ceiling-light-${index + 1}`,
       [1.18, 0.035, 0.24],
@@ -4137,12 +4245,14 @@ function addElevatorCabinInteriorDetails(cabin) {
       lightMaterial
     );
   });
-  addDetail('building-elevator-cabin-floor-mat', [5.72, 0.035, 3.86], [0, 0.045, 0], floorMat);
+  const matWidth = ELEVATOR_CABIN_WIDTH - 1.28;
+  const matDepth = ELEVATOR_CABIN_DEPTH - 1.34;
+  addDetail('building-elevator-cabin-floor-mat', [matWidth, 0.035, matDepth], [0, 0.045, 0], floorMat);
   [
-    [0, 0.065, -1.98, 5.72, 0.035, 0.05],
-    [0, 0.065, 1.98, 5.72, 0.035, 0.05],
-    [-2.91, 0.065, 0, 0.05, 0.035, 3.9],
-    [2.91, 0.065, 0, 0.05, 0.035, 3.9]
+    [0, 0.065, -matDepth / 2 - 0.05, matWidth, 0.035, 0.05],
+    [0, 0.065, matDepth / 2 + 0.05, matWidth, 0.035, 0.05],
+    [-matWidth / 2 - 0.05, 0.065, 0, 0.05, 0.035, matDepth],
+    [matWidth / 2 + 0.05, 0.065, 0, 0.05, 0.035, matDepth]
   ].forEach(([x, y, z, width, height, depth], index) => {
     addDetail(
       `building-elevator-cabin-floor-inlay-${index + 1}`,
@@ -4154,7 +4264,7 @@ function addElevatorCabinInteriorDetails(cabin) {
 }
 
 function addElevatorCabinDoorPair(parent, side, z, faceDirection) {
-  const doorWidth = 3.15;
+  const doorWidth = ELEVATOR_DOOR_PANEL_WIDTH;
   const closedOffset = ELEVATOR_DOOR_CLOSED_OFFSET;
   const rotationY = faceDirection < 0 ? Math.PI : 0;
   addArchitectureModel(parent, {
@@ -4162,14 +4272,14 @@ function addElevatorCabinDoorPair(parent, side, z, faceDirection) {
     name: `building-elevator-cabin-${side}-left-door`,
     position: [-closedOffset, 0.18, z],
     rotation: [0, rotationY, 0],
-    scale: [doorWidth / 3.15, 5.76 / 5.8, 1]
+    scale: [doorWidth / 3.7, 5.76 / 5.8, 1]
   });
   addArchitectureModel(parent, {
     asset: BUILDING_ARCHITECTURE.elevatorDoorPanel,
     name: `building-elevator-cabin-${side}-right-door`,
     position: [closedOffset, 0.18, z],
     rotation: [0, rotationY, 0],
-    scale: [doorWidth / 3.15, 5.76 / 5.8, 1]
+    scale: [doorWidth / 3.7, 5.76 / 5.8, 1]
   });
 }
 
@@ -4309,7 +4419,7 @@ function setBuildingElevatorDoorProgress(controller, floor, openProgress) {
   const doors = controller?.[floor];
   if (!doors) return;
   const progress = clamp(openProgress, 0, 1);
-  const slideDistance = 1.62;
+  const slideDistance = ELEVATOR_DOOR_SLIDE_DISTANCE;
 
   if (doors.left) doors.left.position.x = doors.leftClosedX - slideDistance * progress;
   if (doors.right) doors.right.position.x = doors.rightClosedX + slideDistance * progress;
@@ -4325,7 +4435,7 @@ function setBuildingElevatorCabinDoorProgress(controller, side, openProgress) {
   const doors = controller?.[side];
   if (!doors) return;
   const progress = clamp(openProgress, 0, 1);
-  const slideDistance = 1.62;
+  const slideDistance = ELEVATOR_DOOR_SLIDE_DISTANCE;
 
   if (doors.left) doors.left.position.x = doors.leftClosedX - slideDistance * progress;
   if (doors.right) doors.right.position.x = doors.rightClosedX + slideDistance * progress;

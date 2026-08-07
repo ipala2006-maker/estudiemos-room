@@ -5,8 +5,8 @@ export const BUILDING_FLOOR_HEIGHT = 10;
 export const BUILDING_LOBBY_OFFSET = new THREE.Vector3(87.3, -BUILDING_FLOOR_HEIGHT, 32.7);
 export const BUILDING_ELEVATOR_CENTER = new THREE.Vector3(97.9, 0, 23);
 export const BUILDING_ELEVATOR_SIZE = Object.freeze({
-  width: 7,
-  depth: 5.2
+  width: 8.4,
+  depth: 6.2
 });
 
 const elevatorHalfDepth = BUILDING_ELEVATOR_SIZE.depth / 2;
@@ -39,7 +39,7 @@ export const BuildingWorld = {
   lobbyBounds: {
     minX: 70.1,
     maxX: 104.5,
-    minZ: 13.5,
+    minZ: 20.2,
     maxZ: 49.9
   },
   neighborhoodBounds: {
@@ -48,12 +48,12 @@ export const BuildingWorld = {
     minZ: -36,
     maxZ: 49.9
   },
-  lobbyStairsPosition: new THREE.Vector3(76.2, -8.3, 39.2),
-  lobbyStairsArrival: new THREE.Vector3(76.2, -8.3, 41.2),
+  lobbyStairsPosition: new THREE.Vector3(73.5, -8.3, 39.2),
+  lobbyStairsArrival: new THREE.Vector3(73.5, -8.3, 41.2),
   lobbyElevatorPosition: new THREE.Vector3(BUILDING_ELEVATOR_CENTER.x, -8.3, lobbyElevatorDoorZ),
   lobbyElevatorArrival: new THREE.Vector3(BUILDING_ELEVATOR_CENTER.x, -8.3, lobbyElevatorDoorZ + 3.1),
-  studyStairsPosition: new THREE.Vector3(76.2, 1.7, 19.4),
-  studyStairsArrival: new THREE.Vector3(76.2, 1.7, 22.2),
+  studyStairsPosition: new THREE.Vector3(73.5, 1.7, 19.4),
+  studyStairsArrival: new THREE.Vector3(73.5, 1.7, 22.2),
   studyElevatorPosition: new THREE.Vector3(BUILDING_ELEVATOR_CENTER.x, 1.7, studyElevatorDoorZ),
   studyElevatorArrival: new THREE.Vector3(BUILDING_ELEVATOR_CENTER.x, 1.7, studyElevatorDoorZ - 3.1),
   floors: BUILDING_FLOORS,

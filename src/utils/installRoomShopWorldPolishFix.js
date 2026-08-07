@@ -15,10 +15,10 @@ const SHOP_PLACEMENTS = {
   building: {
     id: 'building-lobby-backwall',
     anchor: BUILDING_LOBBY_OFFSET.clone(),
-    local: new THREE.Vector3(0, 0, -17.55),
-    center: new THREE.Vector3(87.3, -8.45, 15.7),
+    local: new THREE.Vector3(0, 0, -11),
+    center: new THREE.Vector3(87.3, -8.45, 21.7),
     rotationY: Math.PI / 2,
-    bounds: { minX: 70.1, maxX: 104.5, minY: -10.8, maxY: -3.2, minZ: 13.5, maxZ: 49.9 }
+    bounds: { minX: 70.1, maxX: 104.5, minY: -10.8, maxY: -3.2, minZ: 20.2, maxZ: 49.9 }
   },
   legacy: {
     id: 'legacy-casa1',

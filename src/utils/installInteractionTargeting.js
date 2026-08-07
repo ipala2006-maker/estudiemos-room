@@ -44,7 +44,7 @@ const LEGACY_SHOP_TARGET = {
   distance: 10.5
 };
 const BUILDING_SHOP_TARGET = {
-  center: new THREE.Vector3(87.3, -8.45, 15.7),
+  center: new THREE.Vector3(87.3, -8.45, 21.7),
   radius: 3.1,
   distance: 11.5
 };
@@ -62,7 +62,7 @@ const LOBBY_BOUNDS = {
   maxX: 104.5,
   minY: -10.8,
   maxY: -3.2,
-  minZ: 13.5,
+  minZ: 20.2,
   maxZ: 49.9
 };
 
