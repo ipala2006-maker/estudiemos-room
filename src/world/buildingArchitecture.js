@@ -178,7 +178,7 @@ export function addRepeatedWall(
     asset = BUILDING_ARCHITECTURE.wallSolid
   }
 ) {
-  const count = Math.max(1, Math.ceil(length / maxModuleLength));
+  const count = asset === BUILDING_ARCHITECTURE.wallSolid ? 1 : Math.max(1, Math.ceil(length / maxModuleLength));
   const segmentLength = length / count;
   const direction = new THREE.Vector3(Math.cos(rotationY), 0, -Math.sin(rotationY));
 

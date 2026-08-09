@@ -14,5 +14,5 @@ import '../utils/installSpotifyPlaybackEnhancer.js';
 import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installComputerAgendaCleanup.js';
 
-export const BUILD_LABEL = 'Revision arquitectonica logia y circulacion 2026-07-29';
-export const BUILD_MARKER = 'architectural-loggia-circulation-2026-07-29-v4';
+export const BUILD_LABEL = 'Limpieza arquitectonica y ascensor fluido 2026-08-08';
+export const BUILD_MARKER = 'clean-architecture-elevator-performance-2026-08-08-v2';

@@ -391,15 +391,8 @@ def text_mesh(
 
 def create_wall_solid() -> None:
     c = module_collection("wall-solid")
-    # A recessed, unbeveled core keeps repeated modules visually watertight.
-    box(c, "Wall_ClosureCore", (4.0, 0.28, 3.04), (0, 0, 1.5), "Plaster_WarmWhite", 0)
-    box(c, "Wall_Core", (4.0, 0.34, 3.0), (0, 0, 1.5), "Plaster_WarmWhite", 0.045)
-    for side in (-1, 1):
-        face_y = side * 0.185
-        box(c, f"Wall_Base_{side}", (3.84, 0.07, 0.24), (0, face_y, 0.16), "Oak_Dark", 0.018)
-        box(c, f"Wall_ShadowLine_{side}", (3.7, 0.045, 0.045), (0, face_y, 2.55), "Brass_Satin", 0.008)
-        for x in (-1.35, 1.35):
-            box(c, f"Wall_Reveal_{side}_{x}", (0.038, 0.045, 2.0), (x, face_y, 1.35), "Metal_Charcoal", 0.006)
+    # One continuous plaster volume avoids seams, repeated trims and z-fighting.
+    box(c, "Wall_Core", (4.0, 0.36, 3.0), (0, 0, 1.5), "Plaster_WarmWhite", 0)
 
 
 def create_wall_door() -> None:
@@ -432,41 +425,28 @@ def create_wall_window() -> None:
 
 def create_floor_panel() -> None:
     c = module_collection("floor-panel")
-    box(c, "Floor_ClosureSlab", (4.0, 4.0, 0.18), (0, 0, -0.14), "Terrazzo_Greige", 0)
-    box(c, "Floor_Slab", (4.0, 4.0, 0.22), (0, 0, -0.12), "Terrazzo_Greige", 0.035)
-    box(c, "Floor_Inlay_X", (3.72, 0.035, 0.018), (0, 0, 0.015), "Brass_Satin", 0.006)
-    box(c, "Floor_Inlay_Y", (0.035, 3.72, 0.018), (0, 0, 0.015), "Brass_Satin", 0.006)
-    for x, y in ((-1.72, -1.72), (1.72, -1.72), (-1.72, 1.72), (1.72, 1.72)):
-        cylinder(c, f"Floor_Pin_{x}_{y}", 0.045, 0.024, (x, y, 0.018), "Brass_Satin", vertices=12)
+    box(c, "Floor_Slab", (4.0, 4.0, 0.24), (0, 0, -0.12), "Terrazzo_Greige", 0)
 
 
 def create_ceiling_panel() -> None:
     c = module_collection("ceiling-panel")
-    box(c, "Ceiling_ClosureSlab", (4.0, 4.0, 0.12), (0, 0, 0.08), "Plaster_SoftGrey", 0)
-    box(c, "Ceiling_Slab", (4.0, 4.0, 0.2), (0, 0, 0.1), "Plaster_SoftGrey", 0.035)
-    box(c, "Ceiling_Recess", (2.9, 2.9, 0.08), (0, 0, -0.035), "Sage_Panel", 0.035)
-    box(c, "Ceiling_Light", (2.45, 0.22, 0.055), (0, 0, -0.085), "Light_Warm", 0.02)
-    for x in (-1.55, 1.55):
-        box(c, f"Ceiling_Trim_{x}", (0.035, 3.3, 0.04), (x, 0, -0.045), "Metal_Charcoal", 0.006)
+    box(c, "Ceiling_Slab", (4.0, 4.0, 0.2), (0, 0, 0.1), "Plaster_SoftGrey", 0)
+    box(c, "Ceiling_Recess", (3.05, 2.4, 0.055), (0, 0, -0.025), "Sage_Panel", 0.018)
+    box(c, "Ceiling_Light", (2.35, 0.24, 0.04), (0, 0, -0.065), "Light_Warm", 0.012)
 
 
 def create_column() -> None:
     c = module_collection("column")
-    box(c, "Column_Core", (0.78, 0.78, 3.0), (0, 0, 1.5), "Plaster_SoftGrey", 0.065)
-    box(c, "Column_Base", (0.94, 0.94, 0.16), (0, 0, 0.08), "Metal_Charcoal", 0.038)
-    box(c, "Column_Cap", (0.94, 0.94, 0.16), (0, 0, 2.92), "Oak_Warm", 0.038)
-    box(c, "Column_Band", (0.83, 0.83, 0.055), (0, 0, 1.18), "Brass_Satin", 0.014)
+    box(c, "Column_Core", (0.8, 0.8, 3.0), (0, 0, 1.5), "Plaster_SoftGrey", 0.028)
 
 
 def create_railing() -> None:
     c = module_collection("railing")
-    box(c, "Railing_Top", (4.0, 0.12, 0.12), (0, 0, 1.08), "Oak_Warm", 0.035)
+    box(c, "Railing_Top", (4.0, 0.11, 0.11), (0, 0, 1.08), "Metal_Charcoal", 0.025)
     box(c, "Railing_Bottom", (3.88, 0.08, 0.08), (0, 0, 0.16), "Metal_Charcoal", 0.018)
-    for x in (-1.92, -0.64, 0.64, 1.92):
+    for x in (-1.92, 1.92):
         box(c, f"Railing_Post_{x}", (0.1, 0.1, 1.04), (x, 0, 0.54), "Metal_Charcoal", 0.022)
-    for x in (-1.28, 0, 1.28):
-        box(c, f"Railing_Glass_{x}", (1.14, 0.035, 0.72), (x, 0, 0.58), "Glass_Clear", 0.008)
-    box(c, "Railing_Accent", (3.78, 0.045, 0.045), (0, -0.075, 0.89), "Brass_Satin", 0.008)
+    box(c, "Railing_Glass", (3.72, 0.035, 0.72), (0, 0, 0.58), "Glass_Clear", 0.008)
 
 
 def create_stair_flight() -> None:
@@ -484,10 +464,10 @@ def create_stair_flight() -> None:
         box(
             c,
             f"Stair_Tread_{index + 1:02d}",
-            (width - 0.22, step_depth + 0.035, 0.16),
+            (width - 0.12, step_depth + 0.025, 0.16),
             (0, y, height - 0.08),
             "Terrazzo_Greige",
-            0.022,
+            0.01,
         )
         box(
             c,
@@ -495,15 +475,7 @@ def create_stair_flight() -> None:
             (width - 0.24, 0.095, step_rise + 0.03),
             (0, y - step_depth / 2 + 0.035, height - step_rise / 2),
             "Plaster_SoftGrey",
-            0.015,
-        )
-        box(
-            c,
-            f"Stair_Nosing_{index + 1:02d}",
-            (width - 0.38, 0.045, 0.035),
-            (0, y - step_depth / 2 + 0.018, height + 0.018),
-            "Metal_BrushedSteel",
-            0.009,
+            0.008,
         )
 
     slope_length = math.hypot(run, rise)
@@ -529,56 +501,20 @@ def create_stair_flight() -> None:
             rise - 0.22,
             "Plaster_SoftGrey",
         )
-    for x in (-width / 2 + 0.14, width / 2 - 0.14):
-        box(
-            c,
-            f"Stair_Stringer_{x}",
-            (0.22, slope_length, 0.38),
-            (x, 0, rise / 2 - 0.18),
-            "Metal_Charcoal",
-            0.03,
-            rotation=(slope_angle, 0, 0),
-        )
-        for rail_index, rail_height in enumerate((0.64, 1.08)):
-            cylinder(
-                c,
-                f"Stair_Rail_{x}_{rail_index + 1}",
-                0.052 if rail_index == 0 else 0.065,
-                slope_length,
-                (x, 0, rise / 2 + rail_height),
-                "Metal_BrushedSteel" if rail_index == 0 else "Oak_Warm",
-                rotation=(math.pi / 2 + slope_angle, 0, 0),
-                vertices=16,
-            )
-        for post_index in range(7):
-            progress = post_index / 6
-            y = -run / 2 + progress * run
-            z = progress * rise + 0.56
-            box(c, f"Stair_Post_{x}_{post_index}", (0.09, 0.09, 1.12), (x, y, z), "Metal_Charcoal", 0.018)
-
-
 def create_stair_landing() -> None:
     c = module_collection("stair-landing")
     depth = 5.7
-    box(c, "Landing_ClosureSlab", (7.0, depth, 0.2), (0, 0, -0.15), "Terrazzo_Greige", 0)
-    box(c, "Landing_Slab", (7.0, depth, 0.26), (0, 0, -0.13), "Terrazzo_Greige", 0.04)
-    box(c, "Landing_Edge", (6.78, 0.12, 0.08), (0, -depth / 2 + 0.09, 0.02), "Metal_BrushedSteel", 0.016)
-    box(c, "Landing_Inlay", (5.5, 0.04, 0.02), (0, 0, 0.018), "Brass_Satin", 0.007)
+    box(c, "Landing_Slab", (7.0, depth, 0.26), (0, 0, -0.13), "Terrazzo_Greige", 0.012)
 
 
 def create_stairwell_portal() -> None:
     c = module_collection("stairwell-portal")
     width = 7.8
     height = 7.8
-    box(c, "StairPortal_Left", (0.42, 0.64, height), (-3.69, 0, height / 2), "Plaster_SoftGrey", 0.055)
-    box(c, "StairPortal_Right", (0.42, 0.64, height), (3.69, 0, height / 2), "Plaster_SoftGrey", 0.055)
-    box(c, "StairPortal_Header", (width, 0.64, 0.42), (0, 0, height - 0.21), "Plaster_SoftGrey", 0.055)
-    box(c, "StairPortal_InnerLeft", (0.12, 0.72, height - 0.72), (-3.43, -0.03, (height - 0.72) / 2), "Metal_Charcoal", 0.022)
-    box(c, "StairPortal_InnerRight", (0.12, 0.72, height - 0.72), (3.43, -0.03, (height - 0.72) / 2), "Metal_Charcoal", 0.022)
-    box(c, "StairPortal_InnerTop", (6.98, 0.72, 0.12), (0, -0.03, height - 0.47), "Oak_Warm", 0.025)
-    box(c, "StairPortal_BaseLeft", (0.72, 0.82, 0.18), (-3.52, 0, 0.09), "Metal_Charcoal", 0.03)
-    box(c, "StairPortal_BaseRight", (0.72, 0.82, 0.18), (3.52, 0, 0.09), "Metal_Charcoal", 0.03)
-    box(c, "StairPortal_Light", (3.7, 0.16, 0.08), (0, -0.38, height - 0.58), "Light_Warm", 0.018)
+    box(c, "StairPortal_Left", (0.46, 0.66, height), (-3.67, 0, height / 2), "Plaster_SoftGrey", 0.018)
+    box(c, "StairPortal_Right", (0.46, 0.66, height), (3.67, 0, height / 2), "Plaster_SoftGrey", 0.018)
+    box(c, "StairPortal_Header", (width, 0.66, 0.46), (0, 0, height - 0.23), "Plaster_SoftGrey", 0.018)
+    box(c, "StairPortal_Light", (3.5, 0.16, 0.07), (0, -0.38, height - 0.56), "Light_Warm", 0.012)
 
 
 def create_elevator_shaft_shell() -> None:
@@ -599,23 +535,7 @@ def create_elevator_shaft_shell() -> None:
             "Plaster_WarmWhite",
             0,
         )
-        box(c, f"Shaft_Side_{x}", (wall, depth, height), (x, depth / 2, height / 2), "Plaster_WarmWhite", 0.055)
-        box(
-            c,
-            f"Shaft_InteriorPanel_{x}",
-            (0.055, depth - 0.65, 4.7),
-            (x - math.copysign(0.2, x), depth / 2 + 0.1, 2.75),
-            "Sage_Panel",
-            0.018,
-        )
-        box(
-            c,
-            f"Shaft_InteriorBase_{x}",
-            (0.07, depth - 0.45, 0.22),
-            (x - math.copysign(0.21, x), depth / 2, 0.16),
-            "Oak_Dark",
-            0.018,
-        )
+        box(c, f"Shaft_Side_{x}", (wall, depth, height), (x, depth / 2, height / 2), "Plaster_WarmWhite", 0.018)
 
     box(
         c,
@@ -625,11 +545,9 @@ def create_elevator_shaft_shell() -> None:
         "Plaster_WarmWhite",
         0,
     )
-    box(c, "Shaft_BackWall", (width, wall, height), (0, depth - wall / 2, height / 2), "Plaster_WarmWhite", 0.055)
-    box(c, "Shaft_BackPanel", (9.55, 0.055, 4.7), (0, depth - wall - 0.02, 2.75), "Sage_Panel", 0.018)
-    box(c, "Shaft_BackBase", (10.05, 0.07, 0.22), (0, depth - wall - 0.03, 0.16), "Oak_Dark", 0.018)
-    box(c, "Shaft_Ceiling", (width, depth, 0.24), (0, depth / 2, height - 0.12), "Plaster_SoftGrey", 0.045)
-    box(c, "Shaft_CeilingLight", (5.4, 0.5, 0.065), (0, depth / 2, height - 0.27), "Light_Mint", 0.02)
+    box(c, "Shaft_BackWall", (width, wall, height), (0, depth - wall / 2, height / 2), "Plaster_WarmWhite", 0.018)
+    box(c, "Shaft_Ceiling", (width, depth, 0.24), (0, depth / 2, height - 0.12), "Plaster_SoftGrey", 0.016)
+    box(c, "Shaft_CeilingLight", (5.4, 0.48, 0.055), (0, depth / 2, height - 0.27), "Light_Mint", 0.012)
 
     for side in (-1, 1):
         x = side * (front_opening / 2 + front_fill / 2)
@@ -641,40 +559,28 @@ def create_elevator_shaft_shell() -> None:
             "Plaster_WarmWhite",
             0,
         )
-        box(c, f"Shaft_FrontPier_{side}", (front_fill, 0.52, height), (x, 0.2, height / 2), "Plaster_WarmWhite", 0.055)
-        box(c, f"Shaft_FrontPierBase_{side}", (front_fill + 0.08, 0.58, 0.22), (x, 0.14, 0.16), "Oak_Dark", 0.02)
+        box(c, f"Shaft_FrontPier_{side}", (front_fill, 0.52, height), (x, 0.2, height / 2), "Plaster_WarmWhite", 0.018)
     box(c, "Shaft_FrontHeaderClosure", (width + 0.08, 0.44, 1.16), (0, 0.22, 8.68), "Plaster_WarmWhite", 0)
-    box(c, "Shaft_FrontHeader", (width, 0.52, 1.1), (0, 0.2, 8.7), "Plaster_WarmWhite", 0.055)
-    box(c, "Shaft_FrontShadowLine", (9.95, 0.06, 0.055), (0, -0.075, 8.18), "Brass_Satin", 0.012)
+    box(c, "Shaft_FrontHeader", (width, 0.52, 1.1), (0, 0.2, 8.7), "Plaster_WarmWhite", 0.018)
 
 
 def create_elevator_portal() -> None:
     c = module_collection("elevator-portal")
-    # The closure pieces overlap the shaft piers so no background can show
-    # through the beveled portal-to-wall joint.
-    box(c, "Portal_Closure_Left", (1.42, 0.58, 7.82), (-4.86, 0.05, 3.91), "Metal_Black", 0)
-    box(c, "Portal_Closure_Right", (1.42, 0.58, 7.82), (4.86, 0.05, 3.91), "Metal_Black", 0)
-    box(c, "Portal_Closure_Header", (11.12, 0.58, 0.72), (0, 0.05, 7.62), "Metal_Black", 0)
-    box(c, "Portal_Left", (1.32, 0.72, 7.8), (-4.84, 0, 3.9), "Metal_Charcoal", 0.07)
-    box(c, "Portal_Right", (1.32, 0.72, 7.8), (4.84, 0, 3.9), "Metal_Charcoal", 0.07)
-    box(c, "Portal_Header", (10.98, 0.72, 0.58), (0, 0, 7.62), "Metal_Charcoal", 0.07)
-    box(c, "Portal_Reveal_Left", (0.2, 0.82, 6.72), (-4.25, 0, 3.36), "Brass_Satin", 0.025)
-    box(c, "Portal_Reveal_Right", (0.2, 0.82, 6.72), (4.25, 0, 3.36), "Brass_Satin", 0.025)
-    box(c, "Portal_Reveal_Top", (8.6, 0.82, 0.2), (0, 0, 6.68), "Brass_Satin", 0.025)
-    box(c, "Portal_Threshold", (8.95, 1.0, 0.13), (0, -0.08, 0.06), "Metal_Black", 0.025)
-    box(c, "Portal_Threshold_Inlay", (8.42, 0.82, 0.035), (0, -0.08, 0.14), "Brass_Satin", 0.009)
-    box(c, "Portal_Canopy", (11.32, 1.1, 0.2), (0, 0, 8.05), "Oak_Warm", 0.055)
-    box(c, "Portal_Light", (5.6, 0.2, 0.1), (0, -0.55, 7.34), "Light_Mint", 0.025)
+    # A compact portal reads as one architectural opening instead of nested frames.
+    box(c, "Portal_Closure_Left", (1.46, 0.62, 7.84), (-4.84, 0.04, 3.92), "Metal_Charcoal", 0)
+    box(c, "Portal_Closure_Right", (1.46, 0.62, 7.84), (4.84, 0.04, 3.92), "Metal_Charcoal", 0)
+    box(c, "Portal_Closure_Header", (11.08, 0.62, 0.78), (0, 0.04, 7.58), "Metal_Charcoal", 0)
+    box(c, "Portal_Left", (1.3, 0.7, 7.72), (-4.82, 0, 3.86), "Metal_Black", 0.025)
+    box(c, "Portal_Right", (1.3, 0.7, 7.72), (4.82, 0, 3.86), "Metal_Black", 0.025)
+    box(c, "Portal_Header", (10.94, 0.7, 0.64), (0, 0, 7.56), "Metal_Black", 0.025)
+    box(c, "Portal_Threshold", (8.74, 0.86, 0.1), (0, -0.04, 0.045), "Metal_Charcoal", 0.012)
+    box(c, "Portal_Light", (4.8, 0.18, 0.08), (0, -0.46, 7.28), "Light_Mint", 0.015)
 
 
 def create_elevator_door_panel() -> None:
     c = module_collection("elevator-door-panel")
-    box(c, "Elevator_Door_Core", (3.7, 0.14, 5.8), (0, 0, 2.9), "Metal_BrushedSteel", 0.035)
-    box(c, "Elevator_Door_Inset", (3.25, 0.045, 5.25), (0, -0.085, 2.9), "Metal_Charcoal", 0.018)
-    for z in (0.68, 2.9, 5.12):
-        box(c, f"Elevator_Door_Band_{z}", (3.0, 0.06, 0.055), (0, -0.12, z), "Brass_Satin", 0.012)
-    for x in (-1.42, 1.42):
-        box(c, f"Elevator_Door_Rib_{x}", (0.045, 0.055, 4.7), (x, -0.115, 2.9), "Sage_Panel", 0.008)
+    box(c, "Elevator_Door_Core", (3.7, 0.18, 5.84), (0, 0, 2.92), "Metal_BrushedSteel", 0.014)
+    box(c, "Elevator_Door_Face", (3.5, 0.035, 5.58), (0, -0.105, 2.92), "Metal_Charcoal", 0.01)
 
 
 def create_elevator_cabin_shell() -> None:
@@ -682,11 +588,9 @@ def create_elevator_cabin_shell() -> None:
     width = 8.4
     depth = 6.2
     height = 6.2
-    box(c, "Cabin_Floor", (width, depth, 0.2), (0, 0, -0.1), "Terrazzo_Greige", 0.04)
-    box(c, "Cabin_Floor_Inlay", (7.12, 4.86, 0.035), (0, 0, 0.03), "Metal_Charcoal", 0.025)
+    box(c, "Cabin_Floor", (width, depth, 0.22), (0, 0, -0.11), "Terrazzo_Greige", 0.014)
     for x in (-width / 2 + 0.09, width / 2 - 0.09):
-        box(c, f"Cabin_Side_{x}", (0.18, depth, height), (x, 0, height / 2), "Plaster_SoftGrey", 0.045)
-        box(c, f"Cabin_SideInset_{x}", (0.05, depth - 0.65, 4.35), (x - math.copysign(0.105, x), 0, 2.72), "Sage_Panel", 0.018)
+        box(c, f"Cabin_Side_{x}", (0.2, depth, height), (x, 0, height / 2), "Plaster_SoftGrey", 0.016)
         if x < 0:
             cylinder(
                 c,
@@ -698,13 +602,9 @@ def create_elevator_cabin_shell() -> None:
                 rotation=(math.pi / 2, 0, 0),
                 vertices=16,
             )
-    box(c, "Cabin_Ceiling", (width, depth, 0.2), (0, 0, height + 0.1), "Metal_Charcoal", 0.04)
-    box(c, "Cabin_Ceiling_Recess", (7.0, 5.0, 0.08), (0, 0, height - 0.03), "Metal_Black", 0.03)
-    box(c, "Cabin_Light_Left", (2.8, 0.45, 0.055), (-1.92, 0, height - 0.1), "Light_Mint", 0.02)
-    box(c, "Cabin_Light_Right", (2.8, 0.45, 0.055), (1.92, 0, height - 0.1), "Light_Warm", 0.02)
-    for y in (-depth / 2 + 0.08, depth / 2 - 0.08):
-        box(c, f"Cabin_Header_{y}", (width, 0.18, 0.5), (0, y, height - 0.3), "Metal_Charcoal", 0.035)
-        box(c, f"Cabin_Header_Accent_{y}", (6.2, 0.055, 0.055), (0, y - math.copysign(0.12, y), height - 0.52), "Brass_Satin", 0.012)
+    box(c, "Cabin_Ceiling", (width, depth, 0.2), (0, 0, height + 0.1), "Plaster_SoftGrey", 0.016)
+    box(c, "Cabin_Ceiling_Recess", (6.9, 4.9, 0.055), (0, 0, height - 0.03), "Sage_Panel", 0.018)
+    box(c, "Cabin_Light", (4.6, 0.48, 0.045), (0, 0, height - 0.08), "Light_Mint", 0.014)
 
 
 def create_elevator_call_station() -> None:
@@ -864,11 +764,9 @@ def create_entry_portal() -> None:
     box(c, "Entry_Header", (8.22, 0.5, 0.38), (0, 0, 7.02), "Metal_Charcoal", 0.055)
     box(c, "Entry_Glass_Left", (3.65, 0.06, 6.55), (-1.88, 0, 3.36), "Glass_Clear", 0.012)
     box(c, "Entry_Glass_Right", (3.65, 0.06, 6.55), (1.88, 0, 3.36), "Glass_Clear", 0.012)
-    box(c, "Entry_Mullion", (0.14, 0.18, 6.7), (0, 0, 3.4), "Brass_Satin", 0.022)
     for x in (-1.88, 1.88):
-        box(c, f"Entry_Handle_{x}", (0.11, 0.24, 1.05), (x + math.copysign(0.55, -x), -0.18, 3.05), "Oak_Warm", 0.03)
+        box(c, f"Entry_Handle_{x}", (0.1, 0.22, 1.0), (x + math.copysign(0.55, -x), -0.18, 3.05), "Metal_BrushedSteel", 0.025)
     box(c, "Entry_Threshold", (8.0, 0.88, 0.12), (0, 0, 0.055), "Terrazzo_Greige", 0.025)
-    box(c, "Entry_Canopy", (9.1, 1.45, 0.22), (0, 0.25, 7.48), "Oak_Warm", 0.065)
     box(c, "Entry_Canopy_Light", (5.2, 0.2, 0.07), (0, -0.48, 7.32), "Light_Warm", 0.02)
 
 
@@ -876,22 +774,12 @@ def create_giant_screen_surround() -> None:
     c = module_collection("giant-screen-surround")
     width = 50.6
     height = 15.4
-    frame = 0.72
-    box(c, "Screen_Frame_Left", (frame, 0.52, height), (-width / 2 + frame / 2, 0, height / 2), "Metal_Black", 0.11)
-    box(c, "Screen_Frame_Right", (frame, 0.52, height), (width / 2 - frame / 2, 0, height / 2), "Metal_Black", 0.11)
-    box(c, "Screen_Frame_Top", (width - frame * 2, 0.52, frame), (0, 0, height - frame / 2), "Metal_Black", 0.11)
-    box(c, "Screen_Frame_Bottom", (width - frame * 2, 0.52, frame), (0, 0, frame / 2), "Metal_Black", 0.11)
-    box(c, "Screen_Shadow_Left", (0.18, 0.62, height - 1.6), (-width / 2 + 1.0, 0, height / 2), "Brass_Satin", 0.025)
-    box(c, "Screen_Shadow_Right", (0.18, 0.62, height - 1.6), (width / 2 - 1.0, 0, height / 2), "Sage_Panel", 0.025)
-    box(c, "Screen_Inner_Top", (width - 2.2, 0.62, 0.13), (0, -0.04, height - 1.0), "Light_Mint", 0.025)
-    box(c, "Screen_Inner_Bottom", (width - 2.2, 0.62, 0.13), (0, -0.04, 1.0), "Light_Warm", 0.025)
-    box(c, "Screen_Low_Console", (40.0, 1.05, 0.52), (0, 0.32, 0.28), "Oak_Dark", 0.12)
-    box(c, "Screen_Low_Console_Top", (41.2, 1.25, 0.14), (0, 0.32, 0.62), "Terrazzo_Greige", 0.07)
-    for x in (-18, -12, -6, 0, 6, 12, 18):
-        box(c, f"Screen_Console_Rib_{x}", (0.1, 1.1, 0.4), (x, -0.28, 0.25), "Brass_Satin", 0.018)
-    for x in (-23.55, 23.55):
-        for z in (2.0, 7.7, 13.4):
-            cylinder(c, f"Screen_Fastener_{x}_{z}", 0.11, 0.08, (x, -0.34, z), "Brass_Satin", rotation=(math.pi / 2, 0, 0), vertices=16)
+    frame = 0.5
+    box(c, "Screen_Frame_Left", (frame, 0.48, height), (-width / 2 + frame / 2, 0, height / 2), "Metal_Black", 0.045)
+    box(c, "Screen_Frame_Right", (frame, 0.48, height), (width / 2 - frame / 2, 0, height / 2), "Metal_Black", 0.045)
+    box(c, "Screen_Frame_Top", (width - frame * 2, 0.48, frame), (0, 0, height - frame / 2), "Metal_Black", 0.045)
+    box(c, "Screen_Frame_Bottom", (width - frame * 2, 0.48, frame), (0, 0, frame / 2), "Metal_Black", 0.045)
+    box(c, "Screen_Low_Console", (39.5, 0.86, 0.38), (0, 0.3, 0.22), "Metal_Charcoal", 0.06)
 
 
 def create_study_workstation() -> None:
