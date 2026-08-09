@@ -311,8 +311,10 @@ function refreshShop(scene = lastScene, camera = lastCamera, frameTime = perform
   }
   if (!anchor || !shop) return;
 
-  const shouldShow = Boolean(window.__estudiemosForceShopView || isInsideRoom(camera, scene));
-  const active = shouldShow && isAimingShop(camera, scene);
+  const isStackedBuilding = scene.userData?.worldMode !== 'legacy';
+  const isPlayerOnShopFloor = isInsideRoom(camera, scene);
+  const shouldShow = Boolean(isStackedBuilding || window.__estudiemosForceShopView || isPlayerOnShopFloor);
+  const active = isPlayerOnShopFloor && isAimingShop(camera, scene);
   anchor.visible = shouldShow;
   shop.visible = shouldShow;
 

@@ -584,9 +584,9 @@ export function ComputerUI({
 
   function returnToComputerDesktop() {
     setDrawerOpen(false);
-    setOpenWindows((current) => (current.length > 0 ? current : [normalizedInitialApp]));
+    setOpenWindows([]);
     setMinimizedWindows([]);
-    setFocusedWindow((current) => current || normalizedInitialApp);
+    setFocusedWindow('');
     setSystemNote('Inicio de la computadora');
     onBackToDesktop?.();
   }
@@ -700,6 +700,12 @@ export function ComputerUI({
   }
 
   function minimizeWindow(appId) {
+    const remainingVisible = visibleWindows.filter((id) => id !== appId);
+    if (remainingVisible.length === 0) {
+      returnToComputerDesktop();
+      return;
+    }
+
     setMinimizedWindows((current) => (current.includes(appId) ? current : [...current, appId]));
     setFocusedWindow((current) => {
       if (current !== appId) return current;
@@ -710,6 +716,11 @@ export function ComputerUI({
   function closeWindow(appId) {
     const remainingOpen = openWindows.filter((id) => id !== appId);
     const remainingVisible = remainingOpen.filter((id) => !minimizedWindows.includes(id));
+
+    if (remainingOpen.length === 0) {
+      returnToComputerDesktop();
+      return;
+    }
 
     setOpenWindows(remainingOpen);
     setMinimizedWindows((current) => current.filter((id) => id !== appId));

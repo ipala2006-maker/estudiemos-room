@@ -14,6 +14,7 @@ import math
 import random
 from pathlib import Path
 
+import bmesh
 import bpy
 from mathutils import Vector
 
@@ -127,6 +128,7 @@ def make_material(
 ) -> bpy.types.Material:
     material = bpy.data.materials.new(name)
     material.use_nodes = True
+    material.use_backface_culling = alpha >= 1
     material.diffuse_color = (*srgb(color)[:3], alpha)
     material.metallic = metallic
     material.roughness = roughness
@@ -170,6 +172,8 @@ def create_materials() -> None:
     make_material("Plaster_WarmWhite", "#ddd9cf", 0.78, texture=plaster)
     make_material("Plaster_SoftGrey", "#b7bbb5", 0.74, texture=plaster)
     make_material("Terrazzo_Greige", "#aaa79d", 0.7, texture=terrazzo)
+    make_material("Stair_Riser_Matte", "#92968f", 0.82)
+    make_material("Stair_Nosing_Matte", "#35443f", 0.56, metallic=0.08)
     make_material("Oak_Warm", "#9b704e", 0.52, texture=oak)
     make_material("Oak_Dark", "#4a352b", 0.58, texture=oak)
     make_material("Metal_Charcoal", "#26312f", 0.34, metallic=0.58, texture=metal)
@@ -458,49 +462,75 @@ def create_stair_flight() -> None:
     step_depth = run / step_count
     step_rise = rise / step_count
 
+    # One continuous stepped surface replaces the old stack of overlapping
+    # treads, risers and under-panels. The stairwell walls close both sides;
+    # omitting concave side caps avoids invalid glTF triangulation in WebGL.
+    profile: list[tuple[float, float]] = [(-run / 2, 0.0)]
     for index in range(step_count):
+        y_min = -run / 2 + step_depth * index
+        y_max = y_min + step_depth
         height = step_rise * (index + 1)
-        y = -run / 2 + step_depth * (index + 0.5)
-        box(
-            c,
-            f"Stair_Tread_{index + 1:02d}",
-            (width - 0.12, step_depth + 0.025, 0.16),
-            (0, y, height - 0.08),
-            "Terrazzo_Greige",
-            0.01,
-        )
-        box(
-            c,
-            f"Stair_Riser_{index + 1:02d}",
-            (width - 0.24, 0.095, step_rise + 0.03),
-            (0, y - step_depth / 2 + 0.035, height - step_rise / 2),
-            "Plaster_SoftGrey",
-            0.008,
-        )
+        profile.extend(((y_min, height), (y_max, height)))
+    half_width = width / 2
+    vertices = [(-half_width, y, z) for y, z in profile]
+    vertices.extend((half_width, y, z) for y, z in profile)
+    profile_size = len(profile)
 
-    slope_length = math.hypot(run, rise)
-    slope_angle = math.atan2(rise, run)
-    box(
-        c,
-        "Stair_Structural_Slab",
-        (width - 0.72, slope_length, 0.28),
-        (0, 0, rise / 2 - 0.42),
-        "Plaster_SoftGrey",
-        0.035,
-        rotation=(slope_angle, 0, 0),
-    )
-    for side, x in (("Left", -width / 2 + 0.28), ("Right", width / 2 - 0.28)):
-        triangular_prism(
-            c,
-            f"Stair_Underpanel_{side}",
-            x,
-            0.16,
-            -run / 2,
-            run / 2,
-            0.04,
-            rise - 0.22,
-            "Plaster_SoftGrey",
-        )
+    faces: list[tuple[int, ...]] = []
+    face_materials: list[int] = []
+    for index, (point_a, point_b) in enumerate(zip(profile, profile[1:])):
+        next_index = index + 1
+        is_tread = abs(point_a[1] - point_b[1]) < 0.0001 and point_a[1] > 0
+        if is_tread:
+            nosing_depth = min(0.1, abs(point_b[0] - point_a[0]) * 0.24)
+            split_y = point_a[0] + nosing_depth
+            left_split = len(vertices)
+            vertices.append((-half_width, split_y, point_a[1]))
+            right_split = len(vertices)
+            vertices.append((half_width, split_y, point_a[1]))
+            faces.extend(
+                (
+                    (index, left_split, right_split, profile_size + index),
+                    (left_split, next_index, profile_size + next_index, right_split),
+                )
+            )
+            face_materials.extend((2, 0))
+        else:
+            faces.append((index, next_index, profile_size + next_index, profile_size + index))
+            face_materials.append(1)
+
+    mesh = bpy.data.meshes.new("StairFlight_Solid_Mesh")
+    mesh.from_pydata(vertices, (), faces)
+    mesh.materials.append(MATERIALS["Terrazzo_Greige"])
+    mesh.materials.append(MATERIALS["Stair_Riser_Matte"])
+    mesh.materials.append(MATERIALS["Stair_Nosing_Matte"])
+    for polygon, material_index in zip(mesh.polygons, face_materials):
+        polygon.material_index = material_index
+
+    mesh.validate(verbose=True)
+    normal_mesh = bmesh.new()
+    normal_mesh.from_mesh(mesh)
+    bmesh.ops.recalc_face_normals(normal_mesh, faces=normal_mesh.faces)
+    normal_mesh.to_mesh(mesh)
+    normal_mesh.free()
+    mesh.update(calc_edges=True)
+
+    uv_layer = mesh.uv_layers.new(name="StairFlight_UV")
+    for polygon in mesh.polygons:
+        normal = polygon.normal
+        for loop_index in polygon.loop_indices:
+            vertex = mesh.vertices[mesh.loops[loop_index].vertex_index].co
+            if abs(normal.z) >= max(abs(normal.x), abs(normal.y)):
+                uv_layer.data[loop_index].uv = (vertex.x / 2, vertex.y / 2)
+            elif abs(normal.x) >= abs(normal.y):
+                uv_layer.data[loop_index].uv = (vertex.y / 2, vertex.z / 2)
+            else:
+                uv_layer.data[loop_index].uv = (vertex.x / 2, vertex.z / 2)
+
+    stair = bpy.data.objects.new("StairFlight_Solid", mesh)
+    c.objects.link(stair)
+
+
 def create_stair_landing() -> None:
     c = module_collection("stair-landing")
     depth = 5.7
@@ -1001,6 +1031,7 @@ def main() -> None:
     bpy.context.scene["asset_library"] = "Estudiemos Room Architecture"
     bpy.context.scene["units"] = "meters"
     bpy.context.scene["export_format"] = "glTF 2.0 binary"
+    bpy.context.preferences.filepaths.save_version = 0
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND_PATH), compress=True)
     export_modules()
     print(f"Created {len(MODULES)} architecture modules in {EXPORT_DIR}")

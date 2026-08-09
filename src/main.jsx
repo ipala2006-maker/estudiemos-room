@@ -22,6 +22,7 @@ import './styles/hud-xp-bar.css';
 import './styles/room-shop.css';
 import './styles/typography-system.css';
 import { installInteractionTargeting } from './utils/installInteractionTargeting.js';
+import { preloadBuildingArchitecture } from './world/buildingArchitecture.js';
 
 installInteractionTargeting();
 
@@ -91,6 +92,12 @@ function App() {
   const [computerOpen, setComputerOpen] = useState(false);
   const [screenRemoteOpen, setScreenRemoteOpen] = useState(false);
   const [speakerRemoteOpen, setSpeakerRemoteOpen] = useState(false);
+
+  useEffect(() => {
+    preloadBuildingArchitecture().catch(() => {
+      // Individual models keep their existing fallback/error handling.
+    });
+  }, []);
   const [roomShopOpen, setRoomShopOpen] = useState(false);
   const [wallAgendaOpen, setWallAgendaOpen] = useState(false);
   const [currentFloor, setCurrentFloor] = useState('lobby');

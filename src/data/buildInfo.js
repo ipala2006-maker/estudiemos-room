@@ -14,5 +14,5 @@ import '../utils/installSpotifyPlaybackEnhancer.js';
 import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installComputerAgendaCleanup.js';
 
-export const BUILD_LABEL = 'Limpieza arquitectonica y ascensor fluido 2026-08-08';
-export const BUILD_MARKER = 'clean-architecture-elevator-performance-2026-08-08-v2';
+export const BUILD_LABEL = 'Escalera, ascensor y computadora corregidos 2026-08-08';
+export const BUILD_MARKER = 'stairs-elevator-computer-fixes-2026-08-08-v3';

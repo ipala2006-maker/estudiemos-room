@@ -15,7 +15,8 @@ import { Casa1 } from '../maps/Casa1.js';
 import {
   addArchitectureModel,
   addRepeatedWall,
-  BUILDING_ARCHITECTURE
+  BUILDING_ARCHITECTURE,
+  preloadBuildingArchitecture
 } from '../world/buildingArchitecture.js';
 import {
   ensureInteractionTargetingInScene,
@@ -62,7 +63,7 @@ const MEADOW_SIZE = 1400;
 const MEADOW_HORIZON_RADIUS = 118;
 const PERFORMANCE_PASS_MARKER = 'performance-pass-smoother-room-2026-07-10';
 const CSS_CONTENT_SYNC_INTERVAL_MS = 220;
-const ELEVATOR_FEEDBACK_INTERVAL_MS = 50;
+const ELEVATOR_FEEDBACK_INTERVAL_MS = 120;
 const PLAYER_RADIUS = 0.58;
 const WALK_SPEED = 9.1;
 const WALK_ACCELERATION = 22;
@@ -536,6 +537,39 @@ export function FirstPersonWorld({
     scene.add(softFill);
 
     const { giantScreen, colliders, exteriorGroup, elevatorCabin } = buildWorldScene(scene, worldMode);
+
+    let disposed = false;
+    preloadBuildingArchitecture()
+      .then(() => {
+        if (disposed) return;
+        const previousRoomVisibility = giantScreen.room.visible;
+        const previousLobbyVisibility = exteriorGroup.visible;
+        giantScreen.room.visible = true;
+        exteriorGroup.visible = true;
+
+        const textures = new Set();
+        scene.traverse((object) => {
+          if (!object.isMesh || !object.material) return;
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach((material) => {
+            ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'alphaMap'].forEach((key) => {
+              if (material?.[key]) textures.add(material[key]);
+            });
+          });
+        });
+        textures.forEach((texture) => renderer.initTexture(texture));
+        const compilePromise = renderer.compileAsync(scene, camera);
+
+        giantScreen.room.visible = previousRoomVisibility;
+        exteriorGroup.visible = previousLobbyVisibility;
+        return compilePromise;
+      })
+      .then(() => {
+        if (!disposed) mount.dataset.renderWarmup = 'ready';
+      })
+      .catch(() => {
+        if (!disposed) mount.dataset.renderWarmup = 'skipped';
+      });
     const elevatorDoors = createBuildingElevatorDoorController(scene);
     const elevatorCabinDoors = createBuildingElevatorCabinDoorController(elevatorCabin);
     const elevatorCabinColliders = createBuildingElevatorCabinColliders();
@@ -1393,10 +1427,10 @@ export function FirstPersonWorld({
         giantScreen.room.visible = doorOpenRef.current;
         exteriorGroup.visible = !doorOpenRef.current;
       } else {
-        const isBetweenFloors = elevatorPhase === 'traveling' && !elevatorSequence?.floorApplied;
-        const isUsingStairs = isPositionOnBuildingStairs(playerPosition);
-        giantScreen.room.visible = !isBetweenFloors && (currentFloor === 'study' || isUsingStairs);
-        exteriorGroup.visible = !isBetweenFloors && (currentFloor === 'lobby' || isUsingStairs);
+        // Both floors are one physical building. Keeping their lights and
+        // materials active also avoids recompiling shaders during elevator travel.
+        giantScreen.room.visible = true;
+        exteriorGroup.visible = true;
       }
       updateRoomShopInScene(scene, camera, frameTime);
       updateRoomSpeakerInScene(scene, camera);
@@ -1493,7 +1527,9 @@ export function FirstPersonWorld({
         else publishElevatorAction(null);
       }
 
-      if (frameTime - lastElevatorFeedbackTime >= ELEVATOR_FEEDBACK_INTERVAL_MS) {
+      const elevatorFeedbackInterval =
+        elevatorPhase === 'traveling' ? ELEVATOR_FEEDBACK_INTERVAL_MS * 2 : ELEVATOR_FEEDBACK_INTERVAL_MS;
+      if (frameTime - lastElevatorFeedbackTime >= elevatorFeedbackInterval) {
         lastElevatorFeedbackTime = frameTime;
         updateElevatorControlFeedback(scene, elevatorCabin, publishedElevatorAction, elevatorPhase, currentFloor, frameTime);
       }
@@ -1540,6 +1576,7 @@ export function FirstPersonWorld({
     animate();
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(frameId);
       timer.dispose();
       window.removeEventListener('keydown', onKeyDown);

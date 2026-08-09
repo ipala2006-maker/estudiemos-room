@@ -180,7 +180,10 @@ function updateSpeakerSceneVisibility(scene, camera) {
   const anchor = scene?.userData?.estudiemosRoomSpeakerAnchor ?? scene?.getObjectByName?.(SPEAKER_ANCHOR_NAME);
   if (!anchor) return;
 
-  anchor.visible = Boolean(window.__estudiemosForceSpeakerView || (camera?.isCamera && isCameraInsideRoom(camera)));
+  const isStackedBuilding = scene?.userData?.worldMode !== 'legacy';
+  anchor.visible = Boolean(
+    isStackedBuilding || window.__estudiemosForceSpeakerView || (camera?.isCamera && isCameraInsideRoom(camera))
+  );
 }
 
 function refreshSpeakerRuntime(scene = lastSpeakerScene, camera = lastSpeakerCamera, { ensure = false } = {}) {

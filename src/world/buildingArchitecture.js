@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const ARCHITECTURE_ROOT = 'models/custom/architecture';
+const STAIR_ASSET_REVISION = '2026-08-08-3';
 const architectureLoader = new GLTFLoader();
 const architecturePromises = new Map();
 const materialVariants = new Map();
@@ -35,7 +36,8 @@ export const BUILDING_ARCHITECTURE = Object.freeze({
 });
 
 function architectureUrl(file) {
-  return `${import.meta.env.BASE_URL}${ARCHITECTURE_ROOT}/${file}`;
+  const revision = file === BUILDING_ARCHITECTURE.stairFlight ? `?v=${STAIR_ASSET_REVISION}` : '';
+  return `${import.meta.env.BASE_URL}${ARCHITECTURE_ROOT}/${file}${revision}`;
 }
 
 function prepareArchitectureRoot(root) {
@@ -57,6 +59,8 @@ function prepareArchitectureRoot(root) {
         material.transparent = true;
         material.depthWrite = false;
         material.side = THREE.DoubleSide;
+      } else {
+        material.side = THREE.FrontSide;
       }
       material.needsUpdate = true;
     });
@@ -75,6 +79,10 @@ function loadArchitectureTemplate(file) {
     );
   }
   return architecturePromises.get(file);
+}
+
+export function preloadBuildingArchitecture() {
+  return Promise.all(Object.values(BUILDING_ARCHITECTURE).map((file) => loadArchitectureTemplate(file)));
 }
 
 function architectureTextureRepeat(asset, scale) {
