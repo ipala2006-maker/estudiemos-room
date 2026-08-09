@@ -14,5 +14,5 @@ import '../utils/installSpotifyPlaybackEnhancer.js';
 import '../utils/installLiveEstudiemosSync.js';
 import '../utils/installComputerAgendaCleanup.js';
 
-export const BUILD_LABEL = 'Escalera, ascensor y computadora corregidos 2026-08-08';
-export const BUILD_MARKER = 'stairs-elevator-computer-fixes-2026-08-08-v3';
+export const BUILD_LABEL = 'Revision integral visual y funcional 2026-08-09';
+export const BUILD_MARKER = 'integral-visual-functional-pass-2026-08-09-v1';

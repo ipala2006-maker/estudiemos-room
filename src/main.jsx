@@ -21,6 +21,7 @@ import './styles/computer-keyboard-scroll.css';
 import './styles/hud-xp-bar.css';
 import './styles/room-shop.css';
 import './styles/typography-system.css';
+import './styles/experience-polish.css';
 import { installInteractionTargeting } from './utils/installInteractionTargeting.js';
 import { preloadBuildingArchitecture } from './world/buildingArchitecture.js';
 
@@ -113,7 +114,8 @@ function App() {
   const [isAimingShop, setIsAimingShop] = useState(false);
   const [aimedInteractionTarget, setAimedInteractionTarget] = useState(undefined);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
-  const [screenLayout, setScreenLayout] = useState('side-by-side');
+  const [showCameraHint, setShowCameraHint] = useState(true);
+  const [screenLayout, setScreenLayout] = useState('split-70-30');
   const [agendaItems, setAgendaItemsState] = useState(loadStoredAgendaItems);
   const [roomSpotifyContent, setRoomSpotifyContent] = useState(loadStoredSpotifyContent);
   const [speakerCommand, setSpeakerCommand] = useState(null);
@@ -213,12 +215,34 @@ function App() {
 
   useEffect(() => {
     function onPointerLockChange() {
-      setIsPointerLocked(Boolean(document.pointerLockElement));
+      const nextIsPointerLocked = Boolean(document.pointerLockElement);
+      setIsPointerLocked(nextIsPointerLocked);
+      if (nextIsPointerLocked) setShowCameraHint(false);
     }
 
     document.addEventListener('pointerlockchange', onPointerLockChange);
     return () => document.removeEventListener('pointerlockchange', onPointerLockChange);
   }, []);
+
+  useEffect(() => {
+    if (!hasStarted) {
+      setShowCameraHint(true);
+      return undefined;
+    }
+
+    const dismissTimer = window.setTimeout(() => setShowCameraHint(false), 6500);
+    function dismissOnMovement(event) {
+      if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+        setShowCameraHint(false);
+      }
+    }
+
+    window.addEventListener('keydown', dismissOnMovement);
+    return () => {
+      window.clearTimeout(dismissTimer);
+      window.removeEventListener('keydown', dismissOnMovement);
+    };
+  }, [hasStarted]);
 
   useEffect(() => {
     function onSpeakerAimChange(event) {
@@ -666,6 +690,7 @@ function App() {
         !roomShopOpen &&
         !isElevatorSessionActive &&
         !activeInteractionPrompt &&
+        showCameraHint &&
         !isPointerLocked && (
         <div className="camera-lock-prompt">
           <strong>La camara sigue el mouse</strong>

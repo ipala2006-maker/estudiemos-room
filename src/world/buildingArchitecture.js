@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const ARCHITECTURE_ROOT = 'models/custom/architecture';
-const STAIR_ASSET_REVISION = '2026-08-08-3';
+const ARCHITECTURE_ASSET_REVISION = '2026-08-09-7';
 const architectureLoader = new GLTFLoader();
 const architecturePromises = new Map();
 const materialVariants = new Map();
@@ -36,8 +36,7 @@ export const BUILDING_ARCHITECTURE = Object.freeze({
 });
 
 function architectureUrl(file) {
-  const revision = file === BUILDING_ARCHITECTURE.stairFlight ? `?v=${STAIR_ASSET_REVISION}` : '';
-  return `${import.meta.env.BASE_URL}${ARCHITECTURE_ROOT}/${file}${revision}`;
+  return `${import.meta.env.BASE_URL}${ARCHITECTURE_ROOT}/${file}?v=${ARCHITECTURE_ASSET_REVISION}`;
 }
 
 function prepareArchitectureRoot(root) {

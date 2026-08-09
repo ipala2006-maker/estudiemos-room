@@ -25,17 +25,22 @@ TEXTURE_DIR = TOOLS_DIR / "textures"
 EXPORT_DIR = ROOT / "public" / "models" / "custom" / "architecture"
 BLEND_PATH = TOOLS_DIR / "estudiemos-architecture.blend"
 
-TEXTURE_SIZE = 128
+TEXTURE_SIZE = 256
 MODULES: dict[str, bpy.types.Collection] = {}
 MATERIALS: dict[str, bpy.types.Material] = {}
 
 
 def srgb(hex_value: str) -> tuple[float, float, float, float]:
     value = hex_value.lstrip("#")
+
+    def to_linear(channel: str) -> float:
+        encoded = int(channel, 16) / 255
+        return encoded / 12.92 if encoded <= 0.04045 else ((encoded + 0.055) / 1.055) ** 2.4
+
     return (
-        int(value[0:2], 16) / 255,
-        int(value[2:4], 16) / 255,
-        int(value[4:6], 16) / 255,
+        to_linear(value[0:2]),
+        to_linear(value[2:4]),
+        to_linear(value[4:6]),
         1.0,
     )
 
@@ -163,40 +168,42 @@ def make_material(
 
 def create_materials() -> None:
     TEXTURE_DIR.mkdir(parents=True, exist_ok=True)
-    oak = make_texture("oak_warm", "#9b704e", "oak", 11)
-    terrazzo = make_texture("terrazzo_greige", "#aaa79d", "terrazzo", 23)
-    fabric = make_texture("fabric_sage", "#567469", "fabric", 37)
-    metal = make_texture("metal_charcoal", "#26312f", "metal", 41)
-    plaster = make_texture("plaster_warm", "#ddd9cf", "plaster", 53)
+    oak = make_texture("oak_warm", "#815a3d", "oak", 11)
+    terrazzo = make_texture("terrazzo_greige", "#7f8884", "terrazzo", 23)
+    fabric = make_texture("fabric_sage", "#315d54", "fabric", 37)
+    metal = make_texture("metal_charcoal", "#273634", "metal", 41)
+    plaster = make_texture("plaster_warm", "#c9c7bd", "plaster", 53)
 
-    make_material("Plaster_WarmWhite", "#ddd9cf", 0.78, texture=plaster)
-    make_material("Plaster_SoftGrey", "#b7bbb5", 0.74, texture=plaster)
-    make_material("Terrazzo_Greige", "#aaa79d", 0.7, texture=terrazzo)
-    make_material("Stair_Riser_Matte", "#92968f", 0.82)
-    make_material("Stair_Nosing_Matte", "#35443f", 0.56, metallic=0.08)
-    make_material("Oak_Warm", "#9b704e", 0.52, texture=oak)
-    make_material("Oak_Dark", "#4a352b", 0.58, texture=oak)
-    make_material("Metal_Charcoal", "#26312f", 0.34, metallic=0.58, texture=metal)
-    make_material("Metal_Black", "#111817", 0.3, metallic=0.5, texture=metal)
-    make_material("Metal_BrushedSteel", "#77827e", 0.31, metallic=0.72, texture=metal)
-    make_material("Brass_Satin", "#b89b62", 0.35, metallic=0.68)
-    make_material("Sage_Fabric", "#567469", 0.83, texture=fabric)
-    make_material("Sage_Panel", "#607f75", 0.62)
-    make_material("Glass_Clear", "#bcd8d4", 0.18, metallic=0.02, alpha=0.28)
-    make_material("Glass_Smoke", "#49615d", 0.22, metallic=0.05, alpha=0.34)
+    make_material("Plaster_WarmWhite", "#c9c7bd", 0.76, texture=plaster)
+    make_material("Plaster_SoftGrey", "#919b96", 0.7, texture=plaster)
+    make_material("Terrazzo_Greige", "#7f8884", 0.66, texture=terrazzo)
+    make_material("Stair_Riser_Matte", "#737d79", 0.78)
+    make_material("Stair_Nosing_Matte", "#293e3a", 0.48, metallic=0.12)
+    make_material("Oak_Warm", "#815a3d", 0.49, texture=oak)
+    make_material("Oak_Dark", "#352925", 0.55, texture=oak)
+    make_material("Metal_Charcoal", "#273634", 0.3, metallic=0.62, texture=metal)
+    make_material("Metal_Black", "#111918", 0.27, metallic=0.56, texture=metal)
+    make_material("Metal_BrushedSteel", "#687873", 0.27, metallic=0.76, texture=metal)
+    make_material("Metal_GraphiteSatin", "#3b4b48", 0.32, metallic=0.64, texture=metal)
+    make_material("Metal_ElevatorDoor", "#657570", 0.38, metallic=0.58, texture=metal)
+    make_material("Brass_Satin", "#b28d51", 0.32, metallic=0.7)
+    make_material("Sage_Fabric", "#315d54", 0.78, texture=fabric)
+    make_material("Sage_Panel", "#3e6a60", 0.57)
+    make_material("Glass_Clear", "#a8d1c7", 0.16, metallic=0.02, alpha=0.25)
+    make_material("Glass_Smoke", "#385450", 0.2, metallic=0.06, alpha=0.32)
     make_material(
         "Light_Warm",
         "#fff0d2",
         0.28,
         emission="#ffe2aa",
-        emission_strength=2.4,
+        emission_strength=1.65,
     )
     make_material(
         "Light_Mint",
         "#bde4d9",
         0.3,
         emission="#9dd8c7",
-        emission_strength=2.0,
+        emission_strength=1.55,
     )
     make_material("Rubber_Dark", "#141b1a", 0.9)
 
@@ -496,8 +503,24 @@ def create_stair_flight() -> None:
             )
             face_materials.extend((2, 0))
         else:
-            faces.append((index, next_index, profile_size + next_index, profile_size + index))
-            face_materials.append(1)
+            riser_height = point_b[1] - point_a[1]
+            if abs(point_a[0] - point_b[0]) < 0.0001 and riser_height > 0.0001:
+                strip_height = min(0.065, riser_height * 0.28)
+                split_height = point_b[1] - strip_height
+                left_split = len(vertices)
+                vertices.append((-half_width, point_a[0], split_height))
+                right_split = len(vertices)
+                vertices.append((half_width, point_a[0], split_height))
+                faces.extend(
+                    (
+                        (index, left_split, right_split, profile_size + index),
+                        (left_split, next_index, profile_size + next_index, right_split),
+                    )
+                )
+                face_materials.extend((1, 2))
+            else:
+                faces.append((index, next_index, profile_size + next_index, profile_size + index))
+                face_materials.append(1)
 
     mesh = bpy.data.meshes.new("StairFlight_Solid_Mesh")
     mesh.from_pydata(vertices, (), faces)
@@ -533,7 +556,9 @@ def create_stair_flight() -> None:
 
 def create_stair_landing() -> None:
     c = module_collection("stair-landing")
-    depth = 5.7
+    # Matches the room threshold to the first tread exactly. The previous
+    # oversized slab overlapped the flight and could shimmer at grazing angles.
+    depth = 4.6
     box(c, "Landing_Slab", (7.0, depth, 0.26), (0, 0, -0.13), "Terrazzo_Greige", 0.012)
 
 
@@ -596,13 +621,17 @@ def create_elevator_shaft_shell() -> None:
 
 def create_elevator_portal() -> None:
     c = module_collection("elevator-portal")
-    # A compact portal reads as one architectural opening instead of nested frames.
-    box(c, "Portal_Closure_Left", (1.46, 0.62, 7.84), (-4.84, 0.04, 3.92), "Metal_Charcoal", 0)
-    box(c, "Portal_Closure_Right", (1.46, 0.62, 7.84), (4.84, 0.04, 3.92), "Metal_Charcoal", 0)
-    box(c, "Portal_Closure_Header", (11.08, 0.62, 0.78), (0, 0.04, 7.58), "Metal_Charcoal", 0)
-    box(c, "Portal_Left", (1.3, 0.7, 7.72), (-4.82, 0, 3.86), "Metal_Black", 0.025)
-    box(c, "Portal_Right", (1.3, 0.7, 7.72), (4.82, 0, 3.86), "Metal_Black", 0.025)
-    box(c, "Portal_Header", (10.94, 0.7, 0.64), (0, 0, 7.56), "Metal_Black", 0.025)
+    # The portal is recessed into the wall: broad plaster piers and one slim
+    # metal jamb avoid the old freestanding black block.
+    box(c, "Portal_Closure_Left", (1.46, 0.62, 7.84), (-4.84, 0.04, 3.92), "Plaster_WarmWhite", 0)
+    box(c, "Portal_Closure_Right", (1.46, 0.62, 7.84), (4.84, 0.04, 3.92), "Plaster_WarmWhite", 0)
+    box(c, "Portal_Closure_Header", (11.08, 0.62, 0.78), (0, 0.04, 7.58), "Plaster_WarmWhite", 0)
+    box(c, "Portal_Left", (1.3, 0.7, 7.72), (-4.82, 0, 3.86), "Plaster_SoftGrey", 0.018)
+    box(c, "Portal_Right", (1.3, 0.7, 7.72), (4.82, 0, 3.86), "Plaster_SoftGrey", 0.018)
+    box(c, "Portal_Header", (10.94, 0.7, 0.64), (0, 0, 7.56), "Plaster_SoftGrey", 0.018)
+    box(c, "Portal_InnerJamb_Left", (0.2, 0.76, 7.08), (-4.22, -0.02, 3.54), "Metal_GraphiteSatin", 0.018)
+    box(c, "Portal_InnerJamb_Right", (0.2, 0.76, 7.08), (4.22, -0.02, 3.54), "Metal_GraphiteSatin", 0.018)
+    box(c, "Portal_InnerJamb_Header", (8.64, 0.76, 0.2), (0, -0.02, 7.02), "Metal_GraphiteSatin", 0.018)
     box(c, "Portal_Threshold", (8.74, 0.86, 0.1), (0, -0.04, 0.045), "Metal_Charcoal", 0.012)
     box(c, "Portal_Light", (4.8, 0.18, 0.08), (0, -0.46, 7.28), "Light_Mint", 0.015)
 
@@ -610,7 +639,7 @@ def create_elevator_portal() -> None:
 def create_elevator_door_panel() -> None:
     c = module_collection("elevator-door-panel")
     box(c, "Elevator_Door_Core", (3.7, 0.18, 5.84), (0, 0, 2.92), "Metal_BrushedSteel", 0.014)
-    box(c, "Elevator_Door_Face", (3.5, 0.035, 5.58), (0, -0.105, 2.92), "Metal_Charcoal", 0.01)
+    box(c, "Elevator_Door_Face", (3.5, 0.035, 5.58), (0, -0.105, 2.92), "Metal_ElevatorDoor", 0.01)
 
 
 def create_elevator_cabin_shell() -> None:
@@ -618,9 +647,12 @@ def create_elevator_cabin_shell() -> None:
     width = 8.4
     depth = 6.2
     height = 6.2
-    box(c, "Cabin_Floor", (width, depth, 0.22), (0, 0, -0.11), "Terrazzo_Greige", 0.014)
+    box(c, "Cabin_Floor", (width, depth, 0.22), (0, 0, -0.11), "Metal_Charcoal", 0.014)
+    box(c, "Cabin_Floor_Inlay", (6.95, 4.78, 0.035), (0, 0, 0.025), "Sage_Panel", 0.08)
     for x in (-width / 2 + 0.09, width / 2 - 0.09):
         box(c, f"Cabin_Side_{x}", (0.2, depth, height), (x, 0, height / 2), "Plaster_SoftGrey", 0.016)
+        inner_x = x - math.copysign(0.115, x)
+        box(c, f"Cabin_SideInset_{x}", (0.045, 4.7, 2.1), (inner_x, 0, 2.65), "Sage_Panel", 0.035)
         if x < 0:
             cylinder(
                 c,
@@ -805,11 +837,15 @@ def create_giant_screen_surround() -> None:
     width = 50.6
     height = 15.4
     frame = 0.5
-    box(c, "Screen_Frame_Left", (frame, 0.48, height), (-width / 2 + frame / 2, 0, height / 2), "Metal_Black", 0.045)
-    box(c, "Screen_Frame_Right", (frame, 0.48, height), (width / 2 - frame / 2, 0, height / 2), "Metal_Black", 0.045)
-    box(c, "Screen_Frame_Top", (width - frame * 2, 0.48, frame), (0, 0, height - frame / 2), "Metal_Black", 0.045)
-    box(c, "Screen_Frame_Bottom", (width - frame * 2, 0.48, frame), (0, 0, frame / 2), "Metal_Black", 0.045)
-    box(c, "Screen_Low_Console", (39.5, 0.86, 0.38), (0, 0.3, 0.22), "Metal_Charcoal", 0.06)
+    # A recessed acoustic backer makes the display read as one intentional
+    # installation instead of a dark rectangle floating on a blank wall.
+    box(c, "Screen_AcousticBacker", (52.2, 0.18, 16.2), (0, 0.2, 8.1), "Sage_Panel", 0.16)
+    box(c, "Screen_Frame_Left", (frame, 0.48, height), (-width / 2 + frame / 2, 0, height / 2), "Metal_GraphiteSatin", 0.045)
+    box(c, "Screen_Frame_Right", (frame, 0.48, height), (width / 2 - frame / 2, 0, height / 2), "Metal_GraphiteSatin", 0.045)
+    box(c, "Screen_Frame_Top", (width - frame * 2, 0.48, frame), (0, 0, height - frame / 2), "Metal_GraphiteSatin", 0.045)
+    box(c, "Screen_Frame_Bottom", (width - frame * 2, 0.48, frame), (0, 0, frame / 2), "Metal_GraphiteSatin", 0.045)
+    box(c, "Screen_Low_Console", (39.5, 0.86, 0.38), (0, 0.3, 0.22), "Oak_Dark", 0.06)
+    box(c, "Screen_Low_Console_Top", (39.1, 0.72, 0.08), (0, 0.3, 0.46), "Oak_Warm", 0.025)
 
 
 def create_study_workstation() -> None:

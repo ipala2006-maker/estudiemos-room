@@ -65,21 +65,21 @@ import { parseYouTubeUrl } from '../utils/youtube.js';
 const ZONES = [
   {
     id: 'upper',
-    label: 'Pantalla izquierda',
+    label: 'Zona superior',
     description: 'Contenido principal de la sala'
   },
   {
     id: 'lower',
-    label: 'Pantalla derecha',
+    label: 'Zona inferior',
     description: 'Apoyo, ambiente o referencia'
   }
 ];
 
 const SCREEN_LAYOUTS = [
+  { id: 'split-70-30', label: '70/30', description: 'Principal arriba' },
   { id: 'side-by-side', label: '2 x 16:9', description: 'Dos videos lado a lado' },
   { id: 'single', label: '100%', description: 'Una pantalla' },
   { id: 'split-50-50', label: '50/50', description: 'Doble foco' },
-  { id: 'split-70-30', label: '70/30', description: 'Principal arriba' },
   { id: 'split-30-70', label: '30/70', description: 'Secundaria grande' }
 ];
 
@@ -393,7 +393,7 @@ export function ComputerUI({
   onClose,
   onBackToDesktop,
   screenZones,
-  screenLayout = 'side-by-side',
+  screenLayout = 'split-70-30',
   initialApp = 'estudiemos',
   onAssignVideo,
   onClearZone,

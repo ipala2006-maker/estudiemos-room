@@ -1,0 +1,251 @@
+/* Cohesive final layer for the playable world and its in-world interfaces. */
+:root {
+  --room-ink: #0d1716;
+  --room-panel: rgba(13, 25, 23, 0.9);
+  --room-mint: #9ee0cf;
+  --room-gold: #d8b56d;
+  --room-paper: #f4eee1;
+}
+
+.hud.hud-compact.hud-clean {
+  top: 14px;
+  left: 14px;
+  width: min(214px, calc(100vw - 28px)) !important;
+  gap: 6px;
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.24));
+}
+
+.hud.hud-compact.hud-clean::before {
+  inset: -8px -10px -10px -8px;
+  border-radius: 12px;
+  background: rgba(7, 14, 13, 0.26);
+}
+
+.hud.hud-compact.hud-clean .hud-heading {
+  min-height: 18px;
+  padding-left: 0;
+}
+
+.hud.hud-compact.hud-clean .hud-heading strong {
+  color: rgba(255, 250, 239, 0.9);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.hud.hud-compact.hud-clean .hud-focus-supercharged {
+  display: none !important;
+}
+
+.hud.hud-compact.hud-clean .hud-focus-card.hud-focus-xp-card {
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  min-height: 46px !important;
+  gap: 8px !important;
+  margin-top: 0;
+  padding: 7px 9px 7px 7px;
+  border-color: rgba(158, 224, 207, 0.24);
+  border-radius: 9px;
+  background:
+    linear-gradient(135deg, rgba(158, 224, 207, 0.1), transparent 52%),
+    rgba(8, 17, 16, 0.84);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 24px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(7px);
+}
+
+.hud.hud-compact.hud-clean .hud-focus-card.hud-focus-xp-card::before {
+  background: linear-gradient(90deg, rgba(158, 224, 207, 0.08), transparent 55%);
+}
+
+.hud-focus-avatar-shell {
+  width: 34px;
+  height: 34px;
+  border-color: rgba(216, 181, 109, 0.72);
+  background: #283b36;
+  box-shadow: 0 0 0 2px rgba(8, 17, 16, 0.9);
+}
+
+.hud.hud-clean .hud-focus-avatar-shell .dachshund-mascot-hud,
+.hud.hud-clean .hud-focus-avatar-shell .dachshund-render-card {
+  width: 30px !important;
+  height: 30px !important;
+  flex-basis: 30px !important;
+}
+
+.hud-focus-level-prefix {
+  color: rgba(158, 224, 207, 0.8) !important;
+  font-size: 0.58rem !important;
+  font-style: normal;
+  text-shadow: none;
+}
+
+.hud-focus-level-row strong {
+  color: var(--room-paper);
+  font-size: 0.88rem !important;
+  text-shadow: none;
+}
+
+.hud.hud-compact .hud-focus-card.hud-focus-xp-card .hud-focus-kicker {
+  color: var(--room-gold) !important;
+  font-style: normal;
+  text-shadow: none;
+}
+
+.hud.hud-compact .hud-focus-card.hud-focus-xp-card .hud-focus-kicker small {
+  display: none;
+}
+
+.hud.hud-clean .hud-focus-progress.hud-focus-segment-track {
+  height: 5px !important;
+  margin-top: 5px;
+}
+
+.hud.hud-clean .hud-focus-progress.hud-focus-segment-track .hud-focus-xp-segment {
+  clip-path: none;
+  border-radius: 999px;
+  background: rgba(158, 224, 207, 0.2);
+  box-shadow: none;
+}
+
+.hud.hud-clean .hud-focus-progress.hud-focus-segment-track .hud-focus-xp-segment.is-filled,
+.hud.hud-clean .hud-focus-progress.hud-focus-segment-track .hud-focus-xp-segment.is-active {
+  background: linear-gradient(90deg, var(--room-mint), #d4edcb);
+  box-shadow: 0 0 8px rgba(158, 224, 207, 0.35);
+}
+
+.hud.hud-compact.hud-clean .hud-actions button {
+  border-color: rgba(244, 238, 225, 0.14);
+  color: rgba(244, 238, 225, 0.86);
+  background: rgba(8, 17, 16, 0.72);
+}
+
+.interaction-prompt-stack .interaction-prompt {
+  min-height: 38px;
+  padding: 0 16px;
+  border-color: rgba(158, 224, 207, 0.34);
+  border-radius: 8px;
+  color: var(--room-paper);
+  background:
+    linear-gradient(90deg, rgba(158, 224, 207, 0.08), transparent 35%),
+    rgba(8, 17, 16, 0.9);
+  box-shadow:
+    0 13px 30px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.camera-lock-prompt {
+  width: min(248px, calc(100vw - 32px));
+  border-color: rgba(158, 224, 207, 0.24);
+  background: rgba(8, 17, 16, 0.84);
+  animation: room-hint-in 180ms ease-out both;
+}
+
+.camera-lock-prompt strong {
+  color: var(--room-paper);
+}
+
+.physical-screen-content:not([data-layout="side-by-side"]):not([data-layout="single"]) {
+  gap: 1px;
+  padding: 0;
+  background: #07100f;
+}
+
+.physical-screen-content:not([data-layout="side-by-side"]):not([data-layout="single"]) .physical-screen-slot {
+  border-top: 1px solid rgba(216, 181, 109, 0.52);
+  background:
+    radial-gradient(circle at 18% 16%, rgba(158, 224, 207, 0.09), transparent 34%),
+    #07100f;
+}
+
+.physical-screen-content:not([data-layout="side-by-side"]):not([data-layout="single"]) .physical-screen-slot:first-child {
+  border-top: 0;
+}
+
+.computer-landing-desktop {
+  background:
+    linear-gradient(112deg, transparent 0 31%, rgba(158, 224, 207, 0.14) 31% 32%, transparent 32% 64%, rgba(216, 181, 109, 0.1) 64% 65%, transparent 65%),
+    radial-gradient(circle at 76% 18%, rgba(77, 132, 119, 0.28), transparent 28%),
+    linear-gradient(145deg, #111d1b, #1c302d 58%, #0a1212);
+}
+
+/* Opening an app or returning to the desktop must feel immediate. The old
+   power-on scan replayed on every view change and looked like a broken dimmer. */
+.game-shell .mediahub-boot-overlay,
+.game-shell .game-computer-window.estudiemos-os-live-desktop {
+  animation: none !important;
+}
+
+.game-shell .computer-boot-glow {
+  display: none;
+}
+
+.computer-landing-desktop .virtual-desktop-shell {
+  background:
+    linear-gradient(112deg, transparent 0 28%, rgba(255, 255, 255, 0.08) 28% 29%, transparent 29% 72%, rgba(216, 181, 109, 0.08) 72% 73%, transparent 73%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.12));
+}
+
+.computer-landing-desktop .virtual-desktop-topbar,
+.computer-landing-desktop .virtual-side-panel,
+.virtual-desktop-close {
+  border-color: rgba(158, 224, 207, 0.18);
+  background: rgba(7, 16, 15, 0.66);
+}
+
+.computer-landing-desktop .virtual-app-icon {
+  color: #17312c;
+  background: linear-gradient(145deg, #f8f4e9, #cce5dd);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.computer-landing-desktop .virtual-app-tile.is-ready:hover,
+.computer-landing-desktop .virtual-app-tile.is-ready:focus-visible {
+  border-color: rgba(158, 224, 207, 0.36);
+  background: rgba(158, 224, 207, 0.11);
+  box-shadow: inset 0 0 0 1px rgba(158, 224, 207, 0.08);
+}
+
+.screen-remote-phone {
+  border-color: rgba(158, 224, 207, 0.3);
+  background: linear-gradient(180deg, #1a2926, #0b1312);
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.screen-remote-targets button.is-selected,
+.screen-remote-layouts button.is-selected {
+  border-color: rgba(158, 224, 207, 0.72);
+  color: #0c1a17;
+  background: var(--room-mint);
+}
+
+@keyframes room-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 0.92;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 700px), (max-height: 620px) {
+  .hud.hud-compact.hud-clean {
+    top: 10px;
+    left: 10px;
+    width: min(196px, calc(100vw - 20px)) !important;
+  }
+
+  .hud.hud-compact.hud-clean .hud-focus-card.hud-focus-xp-card {
+    grid-template-columns: 30px minmax(0, 1fr) !important;
+    min-height: 42px !important;
+  }
+
+  .camera-lock-prompt {
+    display: none;
+  }
+}
