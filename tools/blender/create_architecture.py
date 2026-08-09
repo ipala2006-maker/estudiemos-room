@@ -583,11 +583,11 @@ def create_stairwell_portal() -> None:
 
 def create_elevator_shaft_shell() -> None:
     c = module_collection("elevator-shaft-shell")
-    width = 12.2
+    width = 10.9
     depth = 6.6
     height = 9.25
     wall = 0.34
-    front_opening = 10.5
+    front_opening = 8.3
     front_fill = (width - front_opening) / 2
 
     for x in (-width / 2 + wall / 2, width / 2 - wall / 2):
@@ -626,8 +626,8 @@ def create_elevator_shaft_shell() -> None:
         0,
     )
     box(c, "Shaft_BackWall", (width, wall, height), (0, depth - wall / 2, height / 2), "Plaster_WarmWhite", 0.055)
-    box(c, "Shaft_BackPanel", (10.4, 0.055, 4.7), (0, depth - wall - 0.02, 2.75), "Sage_Panel", 0.018)
-    box(c, "Shaft_BackBase", (11.25, 0.07, 0.22), (0, depth - wall - 0.03, 0.16), "Oak_Dark", 0.018)
+    box(c, "Shaft_BackPanel", (9.55, 0.055, 4.7), (0, depth - wall - 0.02, 2.75), "Sage_Panel", 0.018)
+    box(c, "Shaft_BackBase", (10.05, 0.07, 0.22), (0, depth - wall - 0.03, 0.16), "Oak_Dark", 0.018)
     box(c, "Shaft_Ceiling", (width, depth, 0.24), (0, depth / 2, height - 0.12), "Plaster_SoftGrey", 0.045)
     box(c, "Shaft_CeilingLight", (5.4, 0.5, 0.065), (0, depth / 2, height - 0.27), "Light_Mint", 0.02)
 
@@ -645,7 +645,7 @@ def create_elevator_shaft_shell() -> None:
         box(c, f"Shaft_FrontPierBase_{side}", (front_fill + 0.08, 0.58, 0.22), (x, 0.14, 0.16), "Oak_Dark", 0.02)
     box(c, "Shaft_FrontHeaderClosure", (width + 0.08, 0.44, 1.16), (0, 0.22, 8.68), "Plaster_WarmWhite", 0)
     box(c, "Shaft_FrontHeader", (width, 0.52, 1.1), (0, 0.2, 8.7), "Plaster_WarmWhite", 0.055)
-    box(c, "Shaft_FrontShadowLine", (11.25, 0.06, 0.055), (0, -0.075, 8.18), "Brass_Satin", 0.012)
+    box(c, "Shaft_FrontShadowLine", (9.95, 0.06, 0.055), (0, -0.075, 8.18), "Brass_Satin", 0.012)
 
 
 def create_elevator_portal() -> None:

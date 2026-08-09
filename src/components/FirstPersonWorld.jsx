@@ -159,7 +159,7 @@ const ELEVATOR_CABIN_WIDTH = BUILDING_ELEVATOR_SIZE.width;
 const ELEVATOR_CABIN_DEPTH = BUILDING_ELEVATOR_SIZE.depth;
 const ELEVATOR_CABIN_HALF_WIDTH = ELEVATOR_CABIN_WIDTH / 2;
 const ELEVATOR_CABIN_HALF_DEPTH = ELEVATOR_CABIN_DEPTH / 2;
-const ELEVATOR_SHAFT_SHELL_WIDTH = 12.2;
+const ELEVATOR_SHAFT_SHELL_WIDTH = 10.9;
 const ELEVATOR_SHAFT_SHELL_DEPTH = 6.6;
 const ELEVATOR_SHAFT_SHELL_HALF_WIDTH = ELEVATOR_SHAFT_SHELL_WIDTH / 2;
 const ELEVATOR_SHAFT_WALL_THICKNESS = 0.4;
@@ -172,6 +172,10 @@ const ELEVATOR_FRONT_PIER_WIDTH = (ELEVATOR_SHAFT_SHELL_WIDTH - ELEVATOR_PORTAL_
 const BUILDING_LOBBY_ELEVATOR_DOOR_Z = BUILDING_ELEVATOR_Z + ELEVATOR_CABIN_HALF_DEPTH;
 const BUILDING_STUDY_ELEVATOR_DOOR_Z = BUILDING_ELEVATOR_Z - ELEVATOR_CABIN_HALF_DEPTH;
 const BUILDING_LOBBY_ELEVATOR_LOCAL_X = BUILDING_ELEVATOR_X - BUILDING_LOBBY_OFFSET.x;
+const BUILDING_LOBBY_REAR_FACADE_Z =
+  BUILDING_LOBBY_ELEVATOR_DOOR_Z - BUILDING_LOBBY_OFFSET.z;
+const BUILDING_LOBBY_SHOP_LOCAL_Z = BUILDING_LOBBY_REAR_FACADE_Z + 1.6;
+const BUILDING_LOBBY_SHOP_WORLD_Z = BUILDING_LOBBY_OFFSET.z + BUILDING_LOBBY_SHOP_LOCAL_Z;
 const STUDY_ELEVATOR_LOCAL_X = BUILDING_ELEVATOR_X - STUDY_ROOM_ORIGIN_X;
 const STUDY_STAIR_OPENING_MIN_X =
   BUILDING_LOBBY_OFFSET.x + BUILDING_STAIR_OPENING_MIN_X - STUDY_ROOM_ORIGIN_X;
@@ -235,12 +239,12 @@ const BUILDING_VISUAL_AUDIT_VIEWS = Object.freeze({
   },
   'lobby-back-left': {
     floor: 'lobby',
-    position: [71.8, -8.3, 20.8],
-    lookAt: [76.6, -7.7, 26.2]
+    position: [83, -8.3, 44],
+    lookAt: [76, -7.7, 28]
   },
   'lobby-back-right': {
     floor: 'lobby',
-    position: [103.2, -8.3, 20.8],
+    position: [103.2, -8.3, 30.2],
     lookAt: [98.4, -7.7, 26.2]
   },
   'lobby-front-left': {
@@ -1603,7 +1607,9 @@ function getRequestedBuildingStartPosition(requestedFloor = 'lobby') {
   if (spawn === 'stairs') {
     return (requestedFloor === 'study' ? activeMap.studyStairsArrival : activeMap.lobbyStairsArrival).clone();
   }
-  if (spawn === 'shop') return new THREE.Vector3(87.3, activeMap.startPosition.y, 26.4);
+  if (spawn === 'shop') {
+    return new THREE.Vector3(87.3, activeMap.startPosition.y, BUILDING_LOBBY_SHOP_WORLD_Z + 4.7);
+  }
   if (requestedFloor === 'study') return activeMap.interiorSpawnPosition.clone();
   return activeMap.startPosition.clone();
 }
@@ -1621,7 +1627,7 @@ function getRequestedBuildingStartLookTarget(requestedFloor = 'lobby') {
         : activeMap.lobbyElevatorPosition
     ).clone();
   }
-  if (spawn === 'shop') return new THREE.Vector3(87.3, -8.2, 21.7);
+  if (spawn === 'shop') return new THREE.Vector3(87.3, -8.2, BUILDING_LOBBY_SHOP_WORLD_Z);
   return activeMap.startLookAt.clone();
 }
 
@@ -3467,6 +3473,30 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
     )
   ];
   const buildingRearWallCollider = lobbyCollider(0, BUILDING_LOBBY_REAR_WALL_Z, 36, 0.46, 'rear-wall');
+  const elevatorOpeningMinX = BUILDING_LOBBY_ELEVATOR_LOCAL_X - ELEVATOR_SHAFT_SHELL_HALF_WIDTH;
+  const elevatorOpeningMaxX = BUILDING_LOBBY_ELEVATOR_LOCAL_X + ELEVATOR_SHAFT_SHELL_HALF_WIDTH;
+  const buildingRearFacadeColliders = [
+    {
+      minX: -18,
+      maxX: BUILDING_STAIR_OPENING_MIN_X
+    },
+    {
+      minX: BUILDING_STAIR_OPENING_MAX_X,
+      maxX: elevatorOpeningMinX
+    },
+    {
+      minX: elevatorOpeningMaxX,
+      maxX: 18
+    }
+  ].map(({ minX, maxX }) =>
+    lobbyCollider(
+      (minX + maxX) / 2,
+      BUILDING_LOBBY_REAR_FACADE_Z,
+      maxX - minX,
+      0.46,
+      'rear-facade'
+    )
+  );
   const legacyExteriorColliders = [
     createCollider(0, -20.8, 15.2, 8.7),
     createCollider(-18, -19, 12.5, 8.5),
@@ -3491,11 +3521,10 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
         ? legacyExteriorColliders
         : [
             lobbyCollider(15.9, 11.4, 1.45, 5.6, 'bench'),
-            lobbyCollider(0, -11, 4.35, 2.45, 'shop'),
-            lobbyCollider(-7.32, 4.7, 0.58, 5.2, 'stair-screen'),
-            lobbyCollider(-8.6, -10.7, 1.35, 1.35, 'planter'),
+            lobbyCollider(0, BUILDING_LOBBY_SHOP_LOCAL_Z, 4.35, 2.45, 'shop'),
             lobbyCollider(15.8, 16.2, 1.35, 1.35, 'planter'),
             buildingRearWallCollider,
+            ...buildingRearFacadeColliders,
             ...createBuildingElevatorShaftColliders('lobby'),
             createCollider(
               BUILDING_ELEVATOR_X,
@@ -3776,6 +3805,19 @@ function addBuildingLobby(group) {
       maxModuleLength: 8
     });
   });
+  [
+    { name: 'left', minX: -18, maxX: stairOpeningMinX },
+    { name: 'center', minX: stairOpeningMaxX, maxX: elevatorOpeningMinX },
+    { name: 'right', minX: elevatorOpeningMaxX, maxX: 18 }
+  ].forEach(({ name, minX, maxX }) => {
+    addRepeatedWall(group, {
+      name: `building-lobby-rear-facade-${name}`,
+      center: [(minX + maxX) / 2, 0, BUILDING_LOBBY_REAR_FACADE_Z],
+      length: maxX - minX,
+      height: 9.4,
+      maxModuleLength: 7.7
+    });
+  });
   addRepeatedWall(group, {
     name: 'building-lobby-front-header',
     center: [0, 7.15, 19.75],
@@ -3846,7 +3888,7 @@ function addBuildingLobby(group) {
     name: 'building-lobby-main-sign',
     title: 'ESTUDIEMOS',
     subtitle: 'Lobby  |  Escaleras y ascensor',
-    position: [0, 6.75, BUILDING_LOBBY_REAR_WALL_Z + 0.33],
+    position: [0, 6.75, BUILDING_LOBBY_REAR_FACADE_Z + 0.33],
     size: [7.8, 1.55],
     accent: '#9fd1be'
   });
@@ -3886,14 +3928,12 @@ function addBuildingStairs(group) {
     name: 'building-lobby-stair-landing',
     position: [stairCenterX, BUILDING_STAIR_RISE, -10.35]
   });
-  [BUILDING_STAIR_MIN_X - 0.08, BUILDING_STAIR_MAX_X + 0.08].forEach((x, index) => {
-    addArchitectureModel(group, {
-      asset: BUILDING_ARCHITECTURE.railing,
-      name: `building-lobby-stair-landing-rail-${index + 1}`,
-      position: [x, BUILDING_STAIR_RISE, -10.35],
-      rotation: [0, Math.PI / 2, 0],
-      scale: [5.5 / 4, 1, 1]
-    });
+  addRepeatedWall(group, {
+    name: 'building-lobby-stair-underlanding-closure',
+    center: [stairCenterX, 0, BUILDING_STAIR_MIN_Z - 0.18],
+    length: BUILDING_STAIR_MAX_X - BUILDING_STAIR_MIN_X,
+    height: BUILDING_STAIR_RISE,
+    maxModuleLength: BUILDING_STAIR_MAX_X - BUILDING_STAIR_MIN_X
   });
 
   addBuildingLabel(group, {
@@ -4013,17 +4053,7 @@ function addBuildingLobbyDetails(group) {
     scale: [5.4 / 4.8, 1, 1]
   });
 
-  addArchitectureModel(group, {
-    asset: BUILDING_ARCHITECTURE.lobbyCirculationScreen,
-    name: 'building-lobby-stair-circulation-screen',
-    position: [-7.32, 0, 4.7],
-    rotation: [0, Math.PI / 2, 0]
-  });
-
-  [
-    { position: [-8.6, 0, -10.7], rotationY: 0.18 },
-    { position: [15.8, 0, 16.2], rotationY: -0.22 }
-  ].forEach((planter, index) => {
+  [{ position: [15.8, 0, 16.2], rotationY: -0.22 }].forEach((planter, index) => {
     addArchitectureModel(group, {
       asset: BUILDING_ARCHITECTURE.architecturalPlanter,
       name: `building-lobby-planter-${index + 1}`,

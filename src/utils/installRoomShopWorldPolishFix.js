@@ -13,10 +13,10 @@ const SHOP_RADIUS = 2.8;
 const FONT_STACK = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
 const SHOP_PLACEMENTS = {
   building: {
-    id: 'building-lobby-backwall',
+    id: 'building-lobby-rear-facade',
     anchor: BUILDING_LOBBY_OFFSET.clone(),
-    local: new THREE.Vector3(0, 0, -11),
-    center: new THREE.Vector3(87.3, -8.45, 21.7),
+    local: new THREE.Vector3(0, 0, -5),
+    center: new THREE.Vector3(87.3, -8.45, 27.7),
     rotationY: Math.PI / 2,
     bounds: { minX: 70.1, maxX: 104.5, minY: -10.8, maxY: -3.2, minZ: 20.2, maxZ: 49.9 }
   },
