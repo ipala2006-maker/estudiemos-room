@@ -553,6 +553,21 @@ def create_stair_flight() -> None:
     stair = bpy.data.objects.new("StairFlight_Solid", mesh)
     c.objects.link(stair)
 
+    # Thin structural cheeks close the exposed underside from side views while
+    # preserving the open walking width and the clean wall-to-stair junction.
+    for side in (-1, 1):
+        triangular_prism(
+            c,
+            f"StairFlight_SideSupport_{side}",
+            side * (half_width + 0.09),
+            0.18,
+            -run / 2,
+            run / 2,
+            0,
+            rise,
+            "Plaster_SoftGrey",
+        )
+
 
 def create_stair_landing() -> None:
     c = module_collection("stair-landing")
