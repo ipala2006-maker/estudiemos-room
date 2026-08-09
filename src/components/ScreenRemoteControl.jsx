@@ -20,15 +20,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseYouTubeUrl } from '../utils/youtube.js';
 
 const REMOTE_ZONES = [
-  { id: 'upper', label: 'Superior' },
-  { id: 'lower', label: 'Inferior' }
+  { id: 'upper', label: 'Izquierda' },
+  { id: 'lower', label: 'Derecha' }
 ];
 
 const REMOTE_LAYOUTS = [
-  { id: 'split-70-30', label: '70/30' },
   { id: 'side-by-side', label: '2 x 16:9' },
   { id: 'single', label: '100%' },
   { id: 'split-50-50', label: '50/50' },
+  { id: 'split-70-30', label: '70/30' },
   { id: 'split-30-70', label: '30/70' }
 ];
 

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { CSS3DObject, CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { getEquippedSkinState, getSkinVisuals } from '../data/focusEconomy.js';
 import { getStudyAgendaBoardLines, studyAgendaItems } from '../data/studyAgenda.js';
@@ -62,7 +61,7 @@ const PERFORMANCE_PROFILE = {
 };
 const MEADOW_SIZE = 1400;
 const MEADOW_HORIZON_RADIUS = 118;
-const PERFORMANCE_PASS_MARKER = 'premium-building-pass-2026-08-09';
+const PERFORMANCE_PASS_MARKER = 'performance-pass-smoother-room-2026-07-10';
 const CSS_CONTENT_SYNC_INTERVAL_MS = 220;
 const ELEVATOR_FEEDBACK_INTERVAL_MS = 120;
 const PLAYER_RADIUS = 0.58;
@@ -152,10 +151,10 @@ const BUILDING_ELEVATOR_X = BUILDING_ELEVATOR_CENTER.x;
 const BUILDING_ELEVATOR_Z = BUILDING_ELEVATOR_CENTER.z;
 const STUDY_ROOM_ORIGIN_X = 90;
 const STUDY_ROOM_ORIGIN_Z = -6;
-const ELEVATOR_INTERACTION_DISTANCE = 5.2;
+const ELEVATOR_INTERACTION_DISTANCE = 4.8;
 const ELEVATOR_BOARDING_GUIDE_DISTANCE = 5.4;
-const ELEVATOR_BUTTON_AIM_DISTANCE = 5.2;
-const ELEVATOR_BUTTON_AIM_RADIUS = 0.48;
+const ELEVATOR_BUTTON_AIM_DISTANCE = 4.6;
+const ELEVATOR_BUTTON_AIM_RADIUS = 0.34;
 const ELEVATOR_DOOR_SECONDS = 0.82;
 const ELEVATOR_LIFT_SECONDS = 2.85;
 const ELEVATOR_CABIN_WIDTH = BUILDING_ELEVATOR_SIZE.width;
@@ -273,9 +272,8 @@ const BUILDING_VISUAL_AUDIT_VIEWS = Object.freeze({
   },
   'study-stair-top': {
     floor: 'study',
-    position: [73.5, 1.7, 23.75],
-    lookAt: [73.5, -1.2, 30.4],
-    pitch: -0.42
+    position: [73.5, 1.7, 22.3],
+    lookAt: [73.5, 0.15, 28.6]
   },
   'study-stair-transition-down': {
     floor: 'study',
@@ -390,7 +388,7 @@ const ELEVATOR_CABIN_PANEL = Object.freeze({
 });
 const ELEVATOR_CABIN_BUTTON_ENTRIES = Object.freeze(Object.entries(ELEVATOR_CABIN_PANEL.buttons));
 const ELEVATOR_PASSENGER_PHASES = Object.freeze(['boarding', 'closing-inside', 'ready', 'traveling']);
-const DEFAULT_SCREEN_LAYOUT = 'split-70-30';
+const DEFAULT_SCREEN_LAYOUT = 'side-by-side';
 const DEFAULT_SCREEN_ZONES = {
   upper: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, displayScale: 100, updatedAt: 0 },
   lower: { videoId: '', embedUrl: '', contentType: 'empty', resourceUrl: '', title: '', muted: true, volume: 70, displayScale: 100, updatedAt: 0 }
@@ -472,8 +470,8 @@ export function FirstPersonWorld({
     const scene = new THREE.Scene();
     scene.userData.performancePass = PERFORMANCE_PASS_MARKER;
     scene.userData.worldMode = worldMode;
-    scene.background = new THREE.Color(0xaab7b1);
-    scene.fog = new THREE.Fog(0xaab7b1, 92, 230);
+    scene.background = new THREE.Color(0xc8cec7);
+    scene.fog = new THREE.Fog(0xc8cec7, 82, 220);
 
     const shouldStartInside = isLegacyWorld ? Boolean(initialInside) : requestedInitialFloor === 'study';
     const playerPosition = (isLegacyWorld && shouldStartInside ? activeMap.interiorSpawnPosition : modeStartPosition).clone();
@@ -487,18 +485,12 @@ export function FirstPersonWorld({
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.86;
+    renderer.toneMappingExposure = 1.08;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.needsUpdate = true;
     mount.appendChild(renderer.domElement);
-
-    const environmentGenerator = new THREE.PMREMGenerator(renderer);
-    const environmentRenderTarget = environmentGenerator.fromScene(new RoomEnvironment(), 0.04);
-    scene.environment = environmentRenderTarget.texture;
-    scene.environmentIntensity = 0.48;
-    environmentGenerator.dispose();
 
     const cssScene = new THREE.Scene();
     const cssRenderer = new CSS3DRenderer();
@@ -519,10 +511,10 @@ export function FirstPersonWorld({
     cssAgendaBoard.visible = false;
     cssScene.add(cssAgendaBoard);
 
-    const ambient = new THREE.HemisphereLight(0xfff0d8, 0x263b38, 0.48);
+    const ambient = new THREE.HemisphereLight(0xfff2df, 0x35443f, 1.05);
     scene.add(ambient);
 
-    const sun = new THREE.DirectionalLight(0xffe0ae, 1.64);
+    const sun = new THREE.DirectionalLight(0xffe3b8, 2.1);
     sun.position.set(28, 31, 16);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -536,11 +528,11 @@ export function FirstPersonWorld({
     sun.shadow.normalBias = 0.045;
     scene.add(sun);
 
-    const rimLight = new THREE.DirectionalLight(0x9fdccc, 0.26);
+    const rimLight = new THREE.DirectionalLight(0xb9d7df, 0.32);
     rimLight.position.set(-24, 13, 24);
     scene.add(rimLight);
 
-    const softFill = new THREE.DirectionalLight(0xffe9c8, 0.16);
+    const softFill = new THREE.DirectionalLight(0xfff0d2, 0.24);
     softFill.position.set(-18, 11, -8);
     scene.add(softFill);
 
@@ -585,8 +577,8 @@ export function FirstPersonWorld({
     ensureRoomShopInScene(scene);
     ensureRoomSpeakerInScene(scene);
     doorOpenRef.current = shouldStartInside;
-    giantScreen.room.visible = shouldStartInside;
-    exteriorGroup.visible = !shouldStartInside;
+    giantScreen.room.visible = isLegacyWorld ? shouldStartInside : true;
+    exteriorGroup.visible = isLegacyWorld ? !shouldStartInside : true;
     const companionMascot = createCompanionDachshund(getEquippedSkinState(focusProgressRef.current));
     scene.add(companionMascot.group);
     const firstPersonArm = createFirstPersonArmViewModel();
@@ -776,8 +768,8 @@ export function FirstPersonWorld({
       onFloorChange(currentFloor);
       onAgendaBoardAimChange(false);
       onScreenAimChange(false);
-      giantScreen.room.visible = shouldStartInside;
-      exteriorGroup.visible = !shouldStartInside;
+      giantScreen.room.visible = !isLegacyWorld;
+      exteriorGroup.visible = true;
       if (elevatorCabin) elevatorCabin.position.y = shouldStartInside ? 0 : BUILDING_LOBBY_OFFSET.y;
       setAllBuildingElevatorDoors(elevatorDoors, 0);
       setAllBuildingElevatorCabinDoors(elevatorCabinDoors, 0);
@@ -844,8 +836,8 @@ export function FirstPersonWorld({
       }
       currentFloor = nextIsStudyFloor ? 'study' : isLegacyWorld ? 'legacy' : 'lobby';
       doorOpenRef.current = nextIsStudyFloor;
-      giantScreen.room.visible = nextIsStudyFloor;
-      exteriorGroup.visible = !nextIsStudyFloor;
+      giantScreen.room.visible = isLegacyWorld ? nextIsStudyFloor : true;
+      exteriorGroup.visible = isLegacyWorld ? !nextIsStudyFloor : true;
 
       nearDoorRef.current = false;
       nearElevatorRef.current = false;
@@ -1399,31 +1391,21 @@ export function FirstPersonWorld({
         }
       }
 
-      if (
-        doorOpenRef.current &&
-        elevatorPhase !== 'traveling' &&
-        frameTime - lastCssContentSyncTime >= CSS_CONTENT_SYNC_INTERVAL_MS
-      ) {
+      if (doorOpenRef.current && frameTime - lastCssContentSyncTime >= CSS_CONTENT_SYNC_INTERVAL_MS) {
         lastCssContentSyncTime = frameTime;
         updateGiantScreen(giantScreen, screenZonesRef.current, screenLayoutRef.current);
         updateCssGiantScreenContent(cssGiantScreen, screenZonesRef.current, screenLayoutRef.current);
         updateCssAgendaContent(cssComputerMonitorOccluder, agendaItemsRef.current, 3);
         updateCssAgendaContent(cssAgendaBoard, agendaItemsRef.current, 4);
       }
-      const companionHiddenForTransit =
-        !isLegacyWorld &&
-        (elevatorPassengerInside || isPositionOnBuildingStairs(playerPosition));
-      companionMascot.group.visible = !companionHiddenForTransit;
-      if (!companionHiddenForTransit) {
-        updateCompanionDachshund(
-          companionMascot,
-          playerViewProxy,
-          delta,
-          doorOpenRef.current,
-          focusProgressRef.current,
-          doorOpenRef.current ? activeMap.interiorBounds : exteriorBounds
-        );
-      }
+      updateCompanionDachshund(
+        companionMascot,
+        playerViewProxy,
+        delta,
+        doorOpenRef.current,
+        focusProgressRef.current,
+        doorOpenRef.current ? activeMap.interiorBounds : exteriorBounds
+      );
       updateFirstPersonArmViewModel(firstPersonArm, delta, hasMovementInput, frameTime);
       updateCameraForViewMode(
         camera,
@@ -1441,19 +1423,18 @@ export function FirstPersonWorld({
         cameraDesiredPosition,
         cameraLookTarget
       );
-      const elevatorIsTraveling = !isLegacyWorld && elevatorPhase === 'traveling';
-      const buildingInStairTransition = !isLegacyWorld && isPositionOnBuildingStairs(playerPosition);
-      giantScreen.room.visible = isLegacyWorld
-        ? doorOpenRef.current
-        : !elevatorIsTraveling && (currentFloor === 'study' || buildingInStairTransition);
-      exteriorGroup.visible = isLegacyWorld
-        ? !doorOpenRef.current
-        : !elevatorIsTraveling && (currentFloor === 'lobby' || buildingInStairTransition);
-      if (!elevatorIsTraveling) {
-        updateRoomShopInScene(scene, camera, frameTime);
-        updateRoomSpeakerInScene(scene, camera);
-        updateInteractionTargeting(scene, camera);
+      if (isLegacyWorld) {
+        giantScreen.room.visible = doorOpenRef.current;
+        exteriorGroup.visible = !doorOpenRef.current;
+      } else {
+        // Both floors are one physical building. Keeping their lights and
+        // materials active also avoids recompiling shaders during elevator travel.
+        giantScreen.room.visible = true;
+        exteriorGroup.visible = true;
       }
+      updateRoomShopInScene(scene, camera, frameTime);
+      updateRoomSpeakerInScene(scene, camera);
+      updateInteractionTargeting(scene, camera);
       const showPhysicalScreenContent =
         doorOpenRef.current &&
         screenContentEnabledRef.current &&
@@ -1608,7 +1589,6 @@ export function FirstPersonWorld({
       document.removeEventListener('visibilitychange', onVisibilityChange);
       mount.removeEventListener('mouseleave', resetFreeMouseLook);
       mount.removeEventListener('click', requestCameraLock);
-      environmentRenderTarget.dispose();
       renderer.dispose();
       onAgendaBoardAimChange(false);
       onNearElevatorChange(false);
@@ -3600,7 +3580,6 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
         ? legacyExteriorColliders
         : [
             lobbyCollider(0, BUILDING_LOBBY_SHOP_LOCAL_Z, 4.35, 2.45, 'shop'),
-            lobbyCollider(16.55, 6.7, 1.35, 5, 'lobby-bench'),
             buildingRearWallCollider,
             ...buildingRearFacadeColliders,
             ...createBuildingElevatorShaftColliders('lobby'),
@@ -3617,9 +3596,6 @@ function createWorldColliders(worldMode = BUILDING_WORLD_MODE) {
       interiorCollider(0, -28.3, 39, 3.6),
       interiorCollider(-11.4, -8.6, 6.7, 2.7, 'computer-desk'),
       interiorCollider(-25.35, -22.8, 2.9, 2.3, 'speaker'),
-      interiorCollider(-26.85, -13.2, 1.4, 5, 'study-bench'),
-      interiorCollider(26.85, -10.8, 1.1, 3.9, 'study-shelf'),
-      interiorCollider(26.85, -15.2, 1.1, 3.9, 'study-shelf'),
       ...studyFacadeColliders,
       ...createBuildingElevatorShaftColliders('study'),
       createCollider(
@@ -3781,18 +3757,6 @@ function addFloorBacking(parent, { name, size, position }) {
   return backing;
 }
 
-function addFloorInlay(parent, { name, size, position, color }) {
-  const inlay = new THREE.Mesh(
-    new THREE.BoxGeometry(size[0], 0.045, size[1]),
-    makeMaterial(color, 0.88, 0.01)
-  );
-  inlay.name = name;
-  inlay.position.set(position[0], 0.025, position[2]);
-  inlay.receiveShadow = true;
-  parent.add(inlay);
-  return inlay;
-}
-
 function addBuildingLobby(group) {
   addFloorBacking(group, {
     name: 'building-lobby-continuous-floor-backing',
@@ -3856,13 +3820,6 @@ function addBuildingLobby(group) {
       scale: [size[0] / 4, 1.35, size[1] / 4],
       castShadow: false
     });
-  });
-
-  addFloorInlay(group, {
-    name: 'building-lobby-entry-inlay',
-    size: [8.8, 5.2],
-    position: [0, 0, 14.6],
-    color: 0x294740
   });
 
   [
@@ -3982,22 +3939,16 @@ function addBuildingLobby(group) {
   addBuildingStairs(group);
   addBuildingElevator(group);
   addBuildingLoggia(group);
-  addArchitectureModel(group, {
-    asset: BUILDING_ARCHITECTURE.builtInBench,
-    name: 'building-lobby-wall-bench',
-    position: [16.8, 0, 6.7],
-    rotation: [0, -Math.PI / 2, 0]
-  });
 
-  const lobbyAmbient = new THREE.AmbientLight(0xe9e6dc, 0.16);
+  const lobbyAmbient = new THREE.AmbientLight(0xf2eee4, 0.72);
   group.add(lobbyAmbient);
-  const welcomeLight = new THREE.PointLight(0xffd59a, 1.05, 28, 2.05);
+  const welcomeLight = new THREE.PointLight(0xffdfb0, 2.15, 28, 2.05);
   welcomeLight.position.set(0, 7.6, 5.5);
   group.add(welcomeLight);
-  const circulationLight = new THREE.PointLight(0x9ee0cf, 0.82, 22, 2.05);
+  const circulationLight = new THREE.PointLight(0xbfe2d6, 1.35, 22, 2.05);
   circulationLight.position.set(-9, 6.2, -7);
   group.add(circulationLight);
-  const stairLight = new THREE.PointLight(0xffce87, 1.12, 19, 2.1);
+  const stairLight = new THREE.PointLight(0xffd9a1, 2.05, 19, 2.1);
   stairLight.position.set((BUILDING_STAIR_MIN_X + BUILDING_STAIR_MAX_X) / 2, 8.25, -8.8);
   group.add(stairLight);
 }
@@ -4017,8 +3968,16 @@ function addBuildingStairs(group) {
   addArchitectureModel(group, {
     asset: BUILDING_ARCHITECTURE.stairLanding,
     name: 'building-lobby-stair-landing',
-    position: [stairCenterX, BUILDING_STAIR_RISE, -10.5]
+    position: [stairCenterX, BUILDING_STAIR_RISE, -10.35]
   });
+  addRepeatedWall(group, {
+    name: 'building-lobby-stair-underlanding-closure',
+    center: [stairCenterX, 0, BUILDING_STAIR_MIN_Z - 0.18],
+    length: BUILDING_STAIR_MAX_X - BUILDING_STAIR_MIN_X,
+    height: BUILDING_STAIR_RISE,
+    maxModuleLength: BUILDING_STAIR_MAX_X - BUILDING_STAIR_MIN_X
+  });
+
 }
 
 function addBuildingLoggia(group) {
@@ -4164,16 +4123,16 @@ function addStudyFloorCirculation(room) {
     maxModuleLength: 3.89
   });
 
-  const circulationLight = new THREE.PointLight(0x9fddcd, 0.48, 19, 2.1);
+  const circulationLight = new THREE.PointLight(0xc5eadb, 0.78, 19, 2.1);
   circulationLight.position.set(-2.8, 5.4, 24.2);
   room.add(circulationLight);
-  const stairwellNearLight = new THREE.PointLight(0xbff3e4, 1.12, 20, 2.05);
+  const stairwellNearLight = new THREE.PointLight(0xd9fff1, 2.25, 20, 2.05);
   stairwellNearLight.position.set(stairCenterX, 4.8, 31.6);
   room.add(stairwellNearLight);
-  const stairwellFarLight = new THREE.PointLight(0xffd39a, 1.05, 19, 2.05);
+  const stairwellFarLight = new THREE.PointLight(0xffd8a0, 2.1, 19, 2.05);
   stairwellFarLight.position.set(stairCenterX, 4.8, 41.4);
   room.add(stairwellFarLight);
-  const stairwellEndLight = new THREE.PointLight(0xffd39a, 0.72, 11, 2.05);
+  const stairwellEndLight = new THREE.PointLight(0xffd8a0, 1.55, 11, 2.05);
   stairwellEndLight.position.set(stairCenterX, 3.9, 45.8);
   room.add(stairwellEndLight);
 
@@ -4269,7 +4228,7 @@ function addBuildingElevatorCabin(scene) {
     onReady: prepareElevatorInteractiveModel
   });
 
-  const cabinLight = new THREE.PointLight(0xc8f2e7, 1.55, 9, 2);
+  const cabinLight = new THREE.PointLight(0xd9fff1, 3.2, 9, 2);
   cabinLight.position.set(0, 5.45, 0);
   cabin.add(cabinLight);
   scene.add(cabin);
@@ -5786,19 +5745,6 @@ function addCasa1Interior(scene, textures, hasBuildingCirculation = false) {
     });
   });
 
-  addFloorInlay(room, {
-    name: 'building-study-workstation-inlay',
-    size: [11.4, 8.2],
-    position: [-11.4, 0, -8.7],
-    color: 0x294740
-  });
-  addFloorInlay(room, {
-    name: 'building-study-screen-zone-inlay',
-    size: [36, 9.5],
-    position: [0, 0, -21.6],
-    color: 0x455b56
-  });
-
   [
     { name: 'rear-wall', center: [0, 0, -29], length: 56, rotationY: 0 },
     { name: 'left-wall', center: [-28, 0, 0], length: 58, rotationY: Math.PI / 2 },
@@ -5824,20 +5770,6 @@ function addCasa1Interior(scene, textures, hasBuildingCirculation = false) {
 
   addAgendaBoard(room, getStudyAgendaBoardLines(), textures);
   addStudyComputerStation(room);
-  addArchitectureModel(room, {
-    asset: BUILDING_ARCHITECTURE.builtInBench,
-    name: 'building-study-left-wall-bench',
-    position: [-27.1, 0, -13.2],
-    rotation: [0, Math.PI / 2, 0]
-  });
-  [-10.8, -15.2].forEach((z, index) => {
-    addArchitectureModel(room, {
-      asset: BUILDING_ARCHITECTURE.studyShelf,
-      name: `building-study-wall-shelf-${index + 1}`,
-      position: [27.15, 0, z],
-      rotation: [0, -Math.PI / 2, 0]
-    });
-  });
 
   const ceilingColumns = 4;
   const ceilingRows = 3;
@@ -5877,7 +5809,7 @@ function addCasa1Interior(scene, textures, hasBuildingCirculation = false) {
       color: 0xffffff,
       map: screenTexture,
       emissive: 0xffffff,
-      emissiveIntensity: 0.24,
+      emissiveIntensity: 0.42,
       roughness: 0.28,
       metalness: 0.04
     })
@@ -5885,7 +5817,7 @@ function addCasa1Interior(scene, textures, hasBuildingCirculation = false) {
   screenSurface.position.set(0, 8.25, -28.25);
   room.add(screenSurface);
 
-  const keyLight = new THREE.SpotLight(0xffbf75, 2.75, 36, Math.PI / 5.8, 0.55, 1.35);
+  const keyLight = new THREE.SpotLight(0xffc27a, 4.8, 36, Math.PI / 5.8, 0.55, 1.35);
   keyLight.position.set(-8.2, 7.2, -4.8);
   keyLight.target.position.set(-11.2, 0.85, -8.3);
   keyLight.castShadow = false;
@@ -5894,15 +5826,15 @@ function addCasa1Interior(scene, textures, hasBuildingCirculation = false) {
   room.add(keyLight);
   room.add(keyLight.target);
 
-  const screenBounce = new THREE.PointLight(0x9fd9d0, 0.62, 32, 2.05);
+  const screenBounce = new THREE.PointLight(0xb9d7df, 1.05, 32, 2.05);
   screenBounce.position.set(0, 7.5, -19);
   room.add(screenBounce);
 
-  const warmRoomFill = new THREE.PointLight(0xffd9a4, 0.72, 38, 2.2);
+  const warmRoomFill = new THREE.PointLight(0xffdfaf, 1.25, 38, 2.2);
   warmRoomFill.position.set(11, 8.5, -5);
   room.add(warmRoomFill);
 
-  const ceilingPractical = new THREE.PointLight(0xffe5c2, 0.46, 24, 2);
+  const ceilingPractical = new THREE.PointLight(0xffebcf, 0.85, 24, 2);
   ceilingPractical.position.set(0, 13.7, -4);
   room.add(ceilingPractical);
 
@@ -5952,7 +5884,7 @@ function addStudyComputerStation(room) {
       color: 0xffffff,
       map: monitorTexture,
       emissive: 0xffffff,
-      emissiveIntensity: 0.2,
+      emissiveIntensity: 0.28,
       roughness: 0.34,
       metalness: 0.02
     })
@@ -5961,7 +5893,7 @@ function addStudyComputerStation(room) {
   monitorScreen.position.set(0, 2.42, -0.31);
   station.add(monitorScreen);
 
-  const lampGlow = new THREE.PointLight(0xffc985, 0.82, 7.5, 2.1);
+  const lampGlow = new THREE.PointLight(0xffd3a0, 1.35, 7.5, 2.1);
   lampGlow.position.set(-2.42, 2.26, 0.2);
   station.add(lampGlow);
 
